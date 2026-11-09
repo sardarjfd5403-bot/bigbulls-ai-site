@@ -85,7 +85,7 @@ alter table public.profiles add column if not exists email text;
 update public.profiles p set email=u.email from auth.users u where u.id=p.id and p.email is distinct from u.email;
 create or replace function public.sync_auth_profile()
 returns trigger language plpgsql security definer set search_path=public
-as $
+as $$
 begin
  insert into public.profiles(id,full_name,email,country,phone,account_type)
  values(new.id,new.raw_user_meta_data->>'full_name',new.email,new.raw_user_meta_data->>'country',
@@ -96,7 +96,7 @@ begin
   account_type=excluded.account_type,updated_at=now();
  return new;
 end;
-$;
+$$;
 
 drop trigger if exists bigbulls_auth_profile_sync on auth.users;
 create trigger bigbulls_auth_profile_sync after insert or update of raw_user_meta_data,email on auth.users
@@ -211,7 +211,7 @@ grant execute on function public.admin_adjust_account_balance(uuid,numeric,text)
 grant execute on function public.admin_review_wallet_transaction(uuid,text,text) to authenticated;
 
 -- Enable database change events for client and Admin live transaction histories.
-do $
+do $$
 begin
  if exists(select 1 from pg_publication where pubname='supabase_realtime')
   and not exists(select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='wallet_transactions') then
