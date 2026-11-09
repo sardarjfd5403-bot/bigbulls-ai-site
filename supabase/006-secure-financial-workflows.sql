@@ -80,6 +80,24 @@ revoke update on public.wallet_transactions from authenticated;
 revoke update on public.trading_accounts from authenticated;
 grant update(account_type,platform,currency,status,account_mode,account_number,display_name,server_name,zero_balance_since,archived_at,deleted_at) on public.trading_accounts to authenticated;
 
+-- Expose verified account email to Admin's client-management list.
+alter table public.profiles add column if not exists email text;
+update public.profiles p set email=u.email from auth.users u where u.id=p.id and p.email is distinct from u.email;
+create or replace function public.sync_auth_profile()
+returns trigger language plpgsql security definer set search_path=public
+as $
+begin
+ insert into public.profiles(id,full_name,email,country,phone,account_type)
+ values(new.id,new.raw_user_meta_data->>'full_name',new.email,new.raw_user_meta_data->>'country',
+        new.raw_user_meta_data->>'phone',coalesce(new.raw_user_meta_data->>'account_type','Individual'))
+ on conflict(id) do update set
+  full_name=coalesce(excluded.full_name,public.profiles.full_name),
+  email=excluded.email,country=excluded.country,phone=excluded.phone,
+  account_type=excluded.account_type,updated_at=now();
+ return new;
+end;
+$;
+
 -- Prevent direct client-created trading-account rows from carrying a seeded balance.
 drop policy if exists "clients request own trading accounts" on public.trading_accounts;
 create policy "clients request own zero-balance trading accounts" on public.trading_accounts
