@@ -542,3 +542,20 @@ body.app-mode .terminal #client-page .account-mode-demo :is(h3,h4,b,strong){colo
 body.app-mode .terminal #client-page .account-mode-demo :is(p,small,span,li){color:#d5e8c9!important}
 body.app-mode .terminal #client-page .account-mode-demo .account-number{color:#ffe34e!important}
 @media(max-width:680px){body.app-mode .terminal #client-page .accounts-page-intro{padding:20px!important}body.app-mode .terminal #client-page .accounts-workspace>.client-panel,body.app-mode .terminal #client-page .account-transfer-panel{padding:16px!important}}
+
+/* BIGBULLS account manager */
+.bb-account-tabs{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}
+.bb-account-tabs button,.bb-account-actions button{background:#111827;color:#f8fafc;border:1px solid #334155;border-radius:9px;padding:10px 15px;font-weight:700;cursor:pointer}
+.bb-account-tabs button.active{background:#d5a83d;color:#111827;border-color:#d5a83d}
+.bb-account-card{background:#111827;color:#f8fafc;border:1px solid #334155;border-radius:14px;padding:18px;margin:12px 0}
+.bb-account-card small,.bb-account-meta span{color:#cbd5e1}
+.bb-account-card h4{color:#fff;margin:7px 0;font-size:18px}
+.bb-account-number{color:#f4c75e;font-weight:800}
+.bb-account-card-top{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.bb-account-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0}
+.bb-account-meta span{font-size:11px;display:flex;flex-direction:column;gap:4px}
+.bb-account-meta b{font-size:13px;color:#fff}
+.bb-account-actions{display:flex;gap:8px;flex-wrap:wrap}
+.bb-account-actions button{font-size:12px;padding:8px 12px}
+.bb-account-actions button.danger{border-color:#9f3b45;color:#fecaca}
+@media(max-width:600px){.bb-account-meta{grid-template-columns:1fr 1fr}.bb-account-card{padding:14px}}
