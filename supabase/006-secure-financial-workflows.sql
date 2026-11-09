@@ -222,7 +222,7 @@ begin
   alter publication supabase_realtime add table public.wallet_transactions;
  end if;
 exception when others then raise notice 'Realtime publication could not be updated: %',sqlerrm;
-end $;
+end $$;
 
 notify pgrst,'reload schema';
 commit;
