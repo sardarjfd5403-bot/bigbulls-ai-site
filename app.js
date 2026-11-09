@@ -145,10 +145,15 @@ async function loadPageData(){
   const tl=document.getElementById("admin-transactions");
   if(tl){
    if(t.error)tl.textContent="Transaction table not ready: "+t.error.message;
-   else tl.innerHTML=(await Promise.all((t.data||[]).map(async x=>{
-    const proof=x.proof_path?await sb.storage.from("payment-proofs").createSignedUrl(x.proof_path,300):null;
-    const processing=x.status==="processing";
-    return '<div class="admin-transaction"><b>'+esc(x.kind.toUpperCase())+' · '+esc(x.asset)+' / '+esc(x.network)+' · '+esc(x.status.toUpperCase())+'</b><small>Invoice '+esc(x.invoice_id||x.id)+' · Client '+esc(x.user_id)+' · Account '+esc(x.account_id||"—")+'</small><small>Amount 
+   else {
+    const rows=await Promise.all((t.data||[]).map(async x=>{
+     const proof=x.proof_path?await sb.storage.from("payment-proofs").createSignedUrl(x.proof_path,300):null;
+     const processing=x.status==="processing";
+     return '<div class="admin-transaction"><b>'+esc(x.kind.toUpperCase())+' · '+esc(x.asset)+' / '+esc(x.network)+' · '+esc(x.status.toUpperCase())+'</b><small>Invoice '+esc(x.invoice_id||x.id)+' · Client '+esc(x.user_id)+' · Account '+esc(x.account_id||"—")+'</small><small>Amount $'+Number(x.amount_usd||0).toFixed(2)+' · '+esc(x.amount_crypto||"")+' · '+new Date(x.created_at).toLocaleString()+'</small><small>'+(x.kind==="withdrawal"?'Receiving address / Binance ID: ':'Deposit TXID: ')+esc(x.kind==="withdrawal"?x.destination_address:x.tx_hash||"")+'</small>'+(proof?.data?.signedUrl?'<a href="'+esc(proof.data.signedUrl)+'" target="_blank" rel="noopener">View payment proof</a>':'')+(processing?'<button data-complete-withdrawal="'+esc(x.id)+'">Confirm payout sent</button>':'<button data-review="'+esc(x.id)+'" data-status="approved">Approve / process</button>')+'<button data-review="'+esc(x.id)+'" data-status="rejected">Reject</button>'+(x.rejection_reason?'<small>Rejection: '+esc(x.rejection_reason)+'</small>':'')+'</div>';
+    }));
+    tl.innerHTML=rows.join("")||"No pending wallet requests.";
+   }
+  }
   const kq=document.getElementById("admin-kyc-queue");
   if(kq){
    if(kyc.error)kq.textContent="KYC queue unavailable: "+kyc.error.message;
