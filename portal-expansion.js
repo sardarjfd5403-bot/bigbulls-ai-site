@@ -6,7 +6,7 @@ const notice=(message)=>{
  n.textContent=message;n.classList.add("show");window.setTimeout(()=>n.classList.remove("show"),4200);
 };
 const card=(kicker,title,body,foot)=>'<article class="bbx-card"><small>'+kicker+'</small><h4>'+title+'</h4><p>'+body+'</p>'+(foot?'<span>'+foot+'</span>':'')+'</article>';
-function inject(page,html){if(!page||page.dataset.bbxReady==="1")return;page.dataset.bbxReady="1";page.insertAdjacentHTML("beforeend",html);}
+function inject(page,html){if(!page||page.dataset.bbxReady==="1")return;page.dataset.bbxReady="1";const isKyc=document.querySelector(".terminal-sidebar button[data-page=verification].active");page.insertAdjacentHTML(isKyc?"afterbegin":"beforeend",html);}
 function enhance(){
  const page=document.getElementById("client-page");if(!page)return;
  const shell=document.querySelector(".terminal");if(!shell)return;
