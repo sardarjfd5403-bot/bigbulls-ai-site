@@ -2,7 +2,7 @@
 "use strict";
 const URL="https://ztiiyulusburxjkpcfxu.supabase.co";
 const KEY="sb_publishable_5hDwqvbcUHeSJdXFHf9ugw_VPYGN4J_";
-let api=null,interval=null,observer=null;
+let api=null,observer=null,loaded=false;
 const names={"EUR/USD":"EURUSD","GBP/USD":"GBPUSD","USD/JPY":"USDJPY","XAU/USD":"XAUUSD"};
 function render(grid,rows,updated){
  grid.innerHTML=rows.map(q=>{
@@ -28,8 +28,7 @@ function attach(){
  const grid=document.getElementById("bb-fx-market-grid");if(!grid)return;
  if(!api&&window.supabase?.createClient)api=window.supabase.createClient(URL,KEY);
  if(!api)return;
- if(!grid.dataset.feedAttached){grid.dataset.feedAttached="true";refresh();}
- if(!interval)interval=setInterval(refresh,15*60*1000);
+ if(!grid.dataset.feedAttached){grid.dataset.feedAttached="true";if(!loaded){loaded=true;refresh();}}
 }
 function init(){attach();observer=new MutationObserver(attach);observer.observe(document.body,{childList:true,subtree:true});}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
