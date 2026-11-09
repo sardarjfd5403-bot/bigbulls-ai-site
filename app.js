@@ -87,7 +87,7 @@ async function clickHandler(e){
  const page=el.closest("[data-page]");if(page){e.preventDefault();showApp(page.getAttribute("data-page"));return;}
  const view=el.closest("[data-auth-view]");if(view){if(view.dataset.authView==="signup")signupForm();else loginForm();return;}
  const trigger=el.closest("[data-open]");if(trigger){e.preventDefault();openModal(trigger.getAttribute("data-open"));return;}
- const appOpen=el.closest("[data-app-open]");if(appOpen){e.preventDefault();showApp("dashboard");return;}
+ const appOpen=el.closest("[data-app-open]");if(appOpen){e.preventDefault();showApp("dashboard");return;}const appPage=el.closest("[data-app-page]");if(appPage){e.preventDefault();showApp(appPage.getAttribute("data-app-page"));return;}
  const action=el.closest("[data-action]");if(action){
   if(action.dataset.action==="logout"){const {error}=await sb.auth.signOut();if(error)alert(error.message);else{user=null;hideApp();window.scrollTo({top:0,behavior:"smooth"});}return;}
   if(action.dataset.action==="forgot"){const email=prompt("Registered email address:");if(!email)return;const {error}=await sb.auth.resetPasswordForEmail(email.trim(),{redirectTo:location.origin+location.pathname});if(error)alert(error.message);else alert("Password reset email requested. Check your inbox.");return;}
