@@ -98,6 +98,10 @@ begin
 end;
 $;
 
+drop trigger if exists bigbulls_auth_profile_sync on auth.users;
+create trigger bigbulls_auth_profile_sync after insert or update of raw_user_meta_data,email on auth.users
+for each row execute function public.sync_auth_profile();
+
 -- Prevent direct client-created trading-account rows from carrying a seeded balance.
 drop policy if exists "clients request own trading accounts" on public.trading_accounts;
 create policy "clients request own zero-balance trading accounts" on public.trading_accounts
