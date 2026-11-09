@@ -140,10 +140,13 @@ async function loadPageData(){
   ]);
   const rb=document.getElementById("partner-referrals"),cb=document.getElementById("partner-commissions");
   if(rb)rb.innerHTML=refs.error?esc(refs.error.message):(refs.data||[]).map(x=>'<div class="admin-row"><span>Client '+esc(x.referred_user_id)+'<small>'+new Date(x.created_at).toLocaleDateString()+'</small></span></div>').join("")||"No referred clients recorded.";
-  if(cb)cb.innerHTML=comm.error?esc(comm.error.message):(comm.data||[]).map(x=>'<div class="admin-row"><span><b>
-  if(box){const {data,error}=await sb.from("trading_accounts").select("*").eq("user_id",user.id).order("created_at",{ascending:false});box.innerHTML=error?"Trading accounts unavailable: "+esc(error.message):(data||[]).map(x=>'<div class="admin-row"><span><b>'+esc(x.account_type)+' · '+esc(x.platform)+'</b><small>'+esc(x.currency)+' · '+esc(x.status)+'</small></span><b>'+esc(x.id)+'</b></div>').join("")||"No trading accounts yet.";}
+  if(cb)cb.innerHTML=comm.error?esc(comm.error.message):(comm.data||[]).map(x=>'<div class="admin-row"><span><b>$'+Number(x.commission_usd||0).toFixed(2)+' · '+esc(x.status)+'</b><small>'+Number(x.verified_lots||0).toFixed(2)+' lots · '+esc(x.source_reference||"")+'</small></span></div>').join("")||"No commission records yet.";
+  }
+  if(activePage==="accounts"){
+   const box=document.getElementById("my-trading-accounts");
+   if(box){const {data,error}=await sb.from("trading_accounts").select("*").eq("user_id",user.id).order("created_at",{ascending:false});box.innerHTML=error?"Trading accounts unavailable: "+esc(error.message):(data||[]).map(x=>'<div class="admin-row"><span><b>'+esc(x.account_type)+' · '+esc(x.platform)+'</b><small>'+esc(x.currency)+' · '+esc(x.status)+'</small></span><b>'+esc(x.id)+'</b></div>').join("")||"No trading accounts yet.";}
+  }
  }
-}
 async function loadWalletHistory(){
  const box=document.getElementById('wallet-history-list');
  if(!box||!sb||!user)return;
@@ -227,8 +230,6 @@ async function clickHandler(e){
   if(action.dataset.action==="forgot"){const email=prompt("Registered email address:");if(!email)return;const {error}=await sb.auth.resetPasswordForEmail(email.trim(),{redirectTo:location.origin+location.pathname});if(error)alert(error.message);else alert("Password reset email requested. Check your inbox.");return;}
  }
  if(el.closest("[data-close]")||el.classList.contains("portal-close")||el===modal)closeModal();
-}
-if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();+Number(x.commission_usd).toFixed(2)+' · '+esc(x.status)+'</b><small>'+Number(x.verified_lots).toFixed(2)+' lots · '+esc(x.source_reference||"")+'</small></span></div>').join("")||"No commission records yet.";
  }
  if(activePage==="accounts"){
