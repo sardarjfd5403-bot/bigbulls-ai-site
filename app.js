@@ -47,8 +47,10 @@ function initPortal(){
   modal.classList.add("show");
   modal.setAttribute("aria-hidden","false");
   document.body.classList.add("portal-open");
+  requestAnimationFrame(()=>{const first=body.querySelector("input:not([disabled])");if(first){first.focus({preventScroll:true});}});
  }
  document.addEventListener("click",async function(e){
+  if(!(e.target instanceof Element))return;
   const opener=e.target.closest("[data-open]");
   if(opener){e.preventDefault();openPortal(opener.getAttribute("data-open"));return;}
   if(e.target.closest("[data-close]")||e.target.classList.contains("portal-close")||e.target===modal){closePortal();return;}
