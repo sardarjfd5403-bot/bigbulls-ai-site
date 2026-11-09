@@ -6,10 +6,11 @@ let sb=null,modal,body,shell,user=null,activePage="dashboard",licenseActive=fals
 const pages=["dashboard","terminal","accounts","wallet","market-analysis","signals","learning","services","portfolio","orders","license","echo-system","downloads","settings","support","verification","partner","admin"];
 function init(){
  modal=document.getElementById("portal-modal");body=document.getElementById("portal-body");shell=document.getElementById("app-shell");
- if(!modal||!body||!shell){console.error("Portal shell missing");return;}
+ if(!modal||!body){console.error("Login modal markup missing");return;}
+ // Capture clicks early so navigation scripts or mobile wrappers cannot swallow auth actions.
+ document.addEventListener("click",clickHandler,true);document.addEventListener("submit",submitHandler);
  if(window.supabase&&window.supabase.createClient){sb=window.supabase.createClient(URL,KEY);}
  else console.error("Supabase SDK failed to load");
- document.addEventListener("click",clickHandler);document.addEventListener("submit",submitHandler);
  document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();});
  window.openPortal=openModal;window.closePortal=closeModal;
  updateHeader();
