@@ -3,7 +3,7 @@
 const URL="https://ztiiyulusburxjkpcfxu.supabase.co";
 const KEY="sb_publishable_5hDwqvbcUHeSJdXFHf9ugw_VPYGN4J_";
 let sb=null,modal,body,shell,user=null,activePage="dashboard",licenseActive=false;
-const pages=["dashboard","accounts","wallet","market-analysis","signals","learning","services","portfolio","orders","license","echo-system","downloads","settings","support"];
+const pages=["dashboard","accounts","wallet","market-analysis","signals","learning","services","portfolio","orders","license","echo-system","downloads","settings","support","admin"];
 function init(){
  modal=document.getElementById("portal-modal");body=document.getElementById("portal-body");shell=document.getElementById("app-shell");
  if(!modal||!body||!shell){console.error("Portal shell missing");return;}
@@ -37,18 +37,19 @@ function loginForm(){body.innerHTML='<p class="eyebrow">CUSTOMER ACCOUNT</p><h2>
 function message(t,bad){let el=body.querySelector("[data-msg]");if(!el){el=document.createElement("div");el.dataset.msg="";body.append(el);}el.className="notice auth-message"+(bad?" error":"");el.textContent=t;}
 function esc(v){return String(v||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function hideApp(){shell.hidden=true;document.body.classList.remove("app-mode");document.querySelector("main")?.removeAttribute("hidden");document.querySelector("footer")?.removeAttribute("hidden");activePage="dashboard";updateHeader();}
+function isAdmin(){return user?.app_metadata?.role==="admin";}
 function showApp(page){
- if(!user||!shell)return;activePage=pages.includes(page)?page:"dashboard";
+ if(!user||!shell)return;activePage=pages.includes(page)?page:"dashboard";if(activePage==="admin"&&!isAdmin())activePage="dashboard";
  shell.hidden=false;document.body.classList.add("app-mode");
  const main=document.querySelector("main"),footer=document.querySelector("footer");if(main)main.setAttribute("hidden","");if(footer)footer.setAttribute("hidden","");
  closeModal();renderApp();
 }
 function renderApp(){
  const meta=user.user_metadata||{},name=meta.full_name||user.email?.split("@")[0]||"Client";
- const nav=[["dashboard","Overview"],["accounts","Trading Accounts"],["wallet","Wallet"],["market-analysis","Markets"],["signals","Live Signals"],["learning","Learning"],["services","Services"],["portfolio","Portfolio"],["orders","Orders"],["echo-system","Echo System"],["settings","Settings"]];
+ const nav=[["dashboard","Overview"],["accounts","Trading Accounts"],["wallet","Wallet"],["market-analysis","Markets"],["signals","Live Signals"],["learning","Learning"],["services","Services"],["portfolio","Portfolio"],["orders","Orders"],["echo-system","Echo System"],["settings","Settings"]];if(isAdmin())nav.push(["admin","Admin Panel"]);
  shell.innerHTML='<div class="terminal"><header class="terminal-head"><a class="terminal-brand" href="#" data-page="dashboard"><span class="mark">B</span><span>BIGBULLS <b>FX</b><small>CLIENT TERMINAL</small></span></a><div class="terminal-head-right"><span class="terminal-user">'+esc(name)+'</span><span class="client-status">● SECURE SESSION</span><button data-action="logout">Logout</button></div></header><nav class="terminal-nav">'+nav.map(([id,label])=>'<button type="button" data-page="'+id+'" class="'+(activePage===id?"active":"")+'">'+label+(id==="echo-system"&&!licenseActive?'<i>PRO</i>':"")+'</button>').join("")+'</nav><main class="terminal-main"><div class="terminal-page-head"><div><small>BIGBULLS FX MARKET / CLIENT AREA</small><h2>'+title(activePage)+'</h2></div><span class="terminal-session"><i></i> Account online</span></div><div id="client-page">'+pageContent(activePage,name)+'</div></main><footer class="terminal-footer"><span>BIGBULLS FX MARKET</span><span>Client services · Risk-first trading</span><button data-action="logout">Sign out</button></footer></div>';
 }
-function title(p){return ({dashboard:"Dashboard",accounts:"Trading Accounts",wallet:"Wallet & Payments",profile:"My Profile",services:"Services","market-analysis":"Market Analysis",signals:"Live Signals",learning:"Learning Centre", "copy-trading":"Copy Trading",portfolio:"Portfolio",orders:"Orders",license:"License","echo-system":"Echo System",downloads:"Downloads",settings:"Settings",support:"Support"})[p]||"Dashboard";}
+function title(p){return ({dashboard:"Dashboard",accounts:"Trading Accounts",wallet:"Wallet & Payments",profile:"My Profile",services:"Services","market-analysis":"Market Analysis",signals:"Live Signals",learning:"Learning Centre", "copy-trading":"Copy Trading",portfolio:"Portfolio",orders:"Orders",license:"License","echo-system":"Echo System",downloads:"Downloads",settings:"Settings",support:"Support",admin:"Admin Control Panel"})[p]||"Dashboard";}
 function stat(label,value,sub){return '<div class="client-stat"><small>'+label+'</small><b>'+value+'</b><span>'+sub+'</span></div>';}
 function tile(id,icon,heading,desc,tag){return '<button class="service-tile" data-page="'+id+'"><span>'+icon+'</span><b>'+heading+'</b><small>'+desc+'</small><i>'+tag+' →</i></button>';}
 function pageContent(p,name){
@@ -66,6 +67,7 @@ function pageContent(p,name){
  if(p==="downloads")return '<div class="client-panel"><h3>My Downloads</h3><div class="empty-state">No private downloads available.<br><small>Echo System download is unlocked only after verified payment and license activation.</small></div></div>';
  if(p==="settings")return '<div class="settings-tabs"><button class="active" data-settings-tab="profile">Profile</button><button data-settings-tab="security">Security</button><button data-settings-tab="preferences">Preferences</button></div><div class="client-panel" id="settings-content"><h3>Manage profile</h3><form id="profile-form" class="client-form"><label>Full name<input name="full_name" value="'+esc(user.user_metadata?.full_name||"")+'" required></label><label>Email address<input value="'+esc(user.email||"")+'" disabled></label><button class="portal-primary">Save profile</button></form><div data-page-message></div></div>';
  if(p==="profile")return '<div class="client-panel"><h3>Personal information</h3><form id="profile-form" class="client-form"><label>Full name<input name="full_name" value="'+esc(user.user_metadata?.full_name||"")+'" required></label><label>Email address<input value="'+esc(user.email||"")+'" disabled></label><button class="portal-primary">Save profile</button></form><div data-page-message></div></div>';
+ if(p==="admin")return isAdmin()?'<div class="client-panel"><h3>Admin control panel</h3><p>Admin wallet and transaction review console.</p><form id="admin-wallet-form" class="client-form"><label>Asset<select name="asset"><option>BTC</option><option>ETH</option><option>USDT</option><option>BNB</option><option>SOL</option><option>LTC</option></select></label><label>Network<input name="network" required></label><label>Wallet address<input name="address" required></label><label>Label<input name="label"></label><button class="portal-primary">Save wallet</button></form><div data-page-message></div><div id="admin-wallet-list"></div></div><div class="client-panel"><h3>Pending wallet transactions</h3><div id="admin-transactions"></div><h3>Account requests and transfers</h3><div id="admin-account-requests"></div></div>' : '<div class="notice error">Admin access restricted.</div>';
  if(p==="support")return '<div class="client-panel"><h3>Customer Support</h3><p>Support ticket submission will be connected to the backend in a later phase.</p><div class="empty-state">Support centre setup pending.</div></div>';
  return '<div class="client-panel">Page not found.</div>';
 }
