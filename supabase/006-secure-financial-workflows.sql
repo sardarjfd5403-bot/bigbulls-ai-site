@@ -112,6 +112,7 @@ begin
   if v_tx.account_id is null then raise exception 'Withdrawal must be linked to a trading account'; end if;
   select * into v_acc from public.trading_accounts where id=v_tx.account_id for update;
   if not found or v_acc.user_id<>v_tx.user_id then raise exception 'Account mismatch'; end if;
+  if v_acc.currency<>'USD' then raise exception 'Funding for non-USD accounts requires currency conversion setup'; end if;
   if v_acc.balance<v_tx.amount_usd then raise exception 'Insufficient account balance'; end if;
   update public.wallet_transactions set status='processing',admin_note=p_admin_note,reviewed_by=auth.uid(),reviewed_at=now()
    where id=p_transaction_id;
@@ -119,6 +120,7 @@ begin
   if v_tx.account_id is null then raise exception 'Deposit must be linked to a trading account'; end if;
   select * into v_acc from public.trading_accounts where id=v_tx.account_id for update;
   if not found or v_acc.user_id<>v_tx.user_id then raise exception 'Account mismatch'; end if;
+  if v_acc.currency<>'USD' then raise exception 'Funding for non-USD accounts requires currency conversion setup'; end if;
   v_before:=v_acc.balance;
   update public.trading_accounts set balance=balance+v_tx.amount_usd where id=v_acc.id;
   insert into public.account_balance_ledger(account_id,user_id,transaction_id,actor_user_id,entry_type,amount,balance_before,balance_after,note)
@@ -144,7 +146,7 @@ begin
  select * into v_tx from public.wallet_transactions where id=p_transaction_id for update;
  if not found or v_tx.kind<>'withdrawal' or v_tx.status<>'processing' then raise exception 'Withdrawal is not processing'; end if;
  select * into v_acc from public.trading_accounts where id=v_tx.account_id for update;
- if not found or v_acc.user_id<>v_tx.user_id or v_acc.balance<v_tx.amount_usd then raise exception 'Account or balance validation failed'; end if;
+ if not found or v_acc.user_id<>v_tx.user_id or v_acc.currency<>'USD' or v_acc.balance<v_tx.amount_usd then raise exception 'Account or balance validation failed'; end if;
  v_before:=v_acc.balance;
  update public.trading_accounts set balance=balance-v_tx.amount_usd where id=v_acc.id;
  insert into public.account_balance_ledger(account_id,user_id,transaction_id,actor_user_id,entry_type,amount,balance_before,balance_after,note)
