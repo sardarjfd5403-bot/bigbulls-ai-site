@@ -80,6 +80,11 @@ revoke update on public.wallet_transactions from authenticated;
 revoke update on public.trading_accounts from authenticated;
 grant update(account_type,platform,currency,status,account_mode,account_number,display_name,server_name,zero_balance_since,archived_at,deleted_at) on public.trading_accounts to authenticated;
 
+-- Prevent direct client-created trading-account rows from carrying a seeded balance.
+drop policy if exists "clients request own trading accounts" on public.trading_accounts;
+create policy "clients request own zero-balance trading accounts" on public.trading_accounts
+for insert to authenticated with check(user_id=auth.uid() and status='pending' and balance=0);
+
 drop policy if exists "clients submit own pending wallet requests" on public.wallet_transactions;
 create policy "clients submit own pending wallet requests" on public.wallet_transactions
 for insert to authenticated with check(
