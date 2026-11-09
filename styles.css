@@ -351,3 +351,14 @@ body *{font-family:"Roboto",Arial,sans-serif!important}
 .portal-secondary{width:100%;margin-top:10px;padding:11px;border:1px solid #3b506e;border-radius:7px;background:#14243a;color:#e8effa;font-weight:700}
 @media(max-width:800px){.ai-showcase{padding:48px 5vw}.ai-showcase-head{display:block}.ai-rotate-label{display:inline-block;margin-top:8px}.ai-feature-grid{grid-template-columns:1fr;min-height:190px}.ai-feature-card{min-height:180px}.ai-carousel-foot{font-size:8px;gap:8px}}
 @media(prefers-reduced-motion:reduce){.ai-feature-card.is-visible{animation:none;opacity:1;transform:none}.ai-progress i{transition:none}}
+
+/* Live Binance spot-market quote cards */
+.bb-crypto-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0 24px}
+.bb-crypto-quote{display:grid;gap:9px;padding:18px;border:1px solid #304766;border-radius:12px;background:linear-gradient(145deg,#14243a,#0c1728);min-width:0}
+.bb-crypto-quote small{font-size:10px;color:#9db4d4;letter-spacing:.12em}
+.bb-crypto-quote strong{font-size:clamp(19px,2vw,25px);color:#f3f7ff;overflow-wrap:anywhere}
+.bb-crypto-quote em{font-style:normal;font-size:13px;font-weight:800}
+.bb-crypto-quote em.positive{color:#51d6a0}
+.bb-crypto-quote em.negative{color:#ff7b86}
+.bb-crypto-quote span{font-size:10px;color:#91a4bd;line-height:1.5}
+@media(max-width:760px){.bb-crypto-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.bb-crypto-quote{padding:13px}}
