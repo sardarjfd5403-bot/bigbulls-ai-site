@@ -2,6 +2,8 @@
 alter table public.wallet_transactions
  add column if not exists account_id uuid references public.trading_accounts(id) on delete set null;
 
+alter table public.account_transfers add column if not exists currency text not null default 'USD';
+
 create index if not exists wallet_transactions_account_created_idx
  on public.wallet_transactions(account_id,created_at desc);
 
