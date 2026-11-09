@@ -12,6 +12,32 @@ create table if not exists public.profiles (
  created_at timestamptz not null default now(),
  updated_at timestamptz not null default now()
 );
+
+-- Compatibility: some Supabase projects already have a profiles table keyed by id.
+-- Add user_id and backfill it from id before creating policies that reference user_id.
+alter table public.profiles add column if not exists user_id uuid;
+do $
+begin
+ if exists (
+  select 1 from information_schema.columns
+  where table_schema='public' and table_name='profiles' and column_name='id' and udt_name='uuid'
+ ) then
+  execute 'update public.profiles set user_id = id where user_id is null';
+ end if;
+end;
+$;
+create unique index if not exists profiles_user_id_uidx on public.profiles(user_id);
+do $
+begin
+ if not exists (
+  select 1 from pg_constraint
+  where conrelid='public.profiles'::regclass and conname='profiles_user_id_auth_users_fkey'
+ ) then
+  alter table public.profiles add constraint profiles_user_id_auth_users_fkey
+   foreign key(user_id) references auth.users(id) on delete cascade;
+ end if;
+end;
+$;
 alter table public.profiles enable row level security;
 drop policy if exists "clients read own profile" on public.profiles;
 create policy "clients read own profile" on public.profiles for select to authenticated
