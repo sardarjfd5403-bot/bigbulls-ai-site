@@ -110,6 +110,25 @@ async function loadPageData(){
   if(box){const {data,error}=await sb.from("trading_accounts").select("*").eq("user_id",user.id).order("created_at",{ascending:false});box.innerHTML=error?"Trading accounts unavailable: "+esc(error.message):(data||[]).map(x=>'<div class="admin-row"><span><b>'+esc(x.account_type)+' · '+esc(x.platform)+'</b><small>'+esc(x.currency)+' · '+esc(x.status)+'</small></span><b>'+esc(x.id)+'</b></div>').join("")||"No trading accounts yet.";}
  }
 }
+async function loadWalletHistory(){
+ const box=document.getElementById('wallet-history-list');
+ if(!box||!sb||!user)return;
+ box.textContent='Loading wallet history…';
+ const {data,error}=await sb.from('wallet_transactions').select('id,kind,asset,network,amount_usd,status,tx_hash,created_at').eq('user_id',user.id).order('created_at',{ascending:false}).limit(50);
+ if(error){box.textContent='Wallet history unavailable: '+error.message;return;}
+ box.innerHTML='';
+ if(!data||!data.length){box.textContent='No wallet activity yet.';return;}
+ data.forEach(x=>{
+  const row=document.createElement('div');row.className='admin-row';
+  const info=document.createElement('span');
+  const heading=document.createElement('b');heading.textContent=x.kind+' · '+x.asset+' / '+x.network;
+  const detail=document.createElement('small');detail.textContent=new Date(x.created_at).toLocaleString()+(x.tx_hash?' · '+x.tx_hash:'');
+  info.append(heading,detail);
+  const amount=document.createElement('b');amount.textContent='$'+Number(x.amount_usd||0).toFixed(2);
+  const status=document.createElement('em');status.className='status-'+x.status;status.textContent=x.status;
+  row.append(info,amount,status);box.append(row);
+ });
+}
 function showSelectedWallet(wallets){const id=document.getElementById("deposit-asset")?.value,w=wallets.find(x=>String(x.id)===String(id)),box=document.getElementById("selected-wallet");if(!box||!w)return;box.innerHTML='<div class="wallet-address-card"><small>ADMIN CONTROLLED · '+esc(w.asset)+' / '+esc(w.network)+'</small><code>'+esc(w.address)+'</code><button type="button" data-copy-address="'+esc(w.address)+'">Copy address</button><p>'+esc(w.label||"Official deposit wallet")+'</p></div><form class="client-form" id="wallet-form"><label>Amount (USD equivalent)<input name="amount_usd" type="number" min="1" step=".01" required></label><label>Amount in crypto<input name="amount_crypto" required></label><label>Blockchain TXID<input name="tx_hash" required></label><button class="portal-primary">Submit for verification</button></form><div data-page-message></div><div class="notice">Only send the selected asset on the exact network. Admin must verify the blockchain transaction before approval.</div>';}
 async function submitHandler(e){
  const f=e.target;if(!(f instanceof HTMLFormElement))return;
