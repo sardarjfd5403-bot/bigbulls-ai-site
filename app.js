@@ -95,7 +95,7 @@ async function loadPageData(){
 
  }
  if(activePage==="accounts"){
-  const box=document.getElementById("my-trading-accounts");if(box){const {data,error}=await sb.from("trading_accounts").select("*").eq("user_id",user.id).order("created_at",{ascending:false});box.innerHTML=error?"Account service setup pending.":(data||[]).map(x=>'<div class="admin-row"><span><b>'+esc(x.account_type)+' · '+esc(x.platform)+'</b><small>'+esc(x.currency)+' · '+esc(x.status)+'</small></span><b>'+esc(x.id.slice(0,8))+'</b></div>').join("")||"No trading accounts yet.";}
+  const box=document.getElementById("my-trading-accounts");if(box){const {data,error}=await sb.from("trading_accounts").select("*").eq("user_id",user.id).order("created_at",{ascending:false});box.innerHTML=error?"Account service setup pending.":(data||[]).map(x=>'<div class="admin-row"><span><b>'+esc(x.account_type)+' · '+esc(x.platform)+'</b><small>'+esc(x.currency)+' · '+esc(x.status)+'</small></span><b>'+esc(x.id)+'</b></div>').join("")||"No trading accounts yet.";}
  }
 }
 async function loadWalletHistory(){const box=document.getElementById("wallet-history-list");if(!box)return;const {data,error}=await sb.from("wallet_transactions").select("kind,asset,network,amount_usd,status,created_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(30);box.innerHTML=error?"History unavailable.":(data||[]).map(x=>'<div class="admin-row">'+esc(x.kind)+' · '+esc(x.asset)+' / '+esc(x.network)+' · $'+Number(x.amount_usd).toFixed(2)+' · '+esc(x.status)+'</div>').join("")||"No wallet requests yet.";}
