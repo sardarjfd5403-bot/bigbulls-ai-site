@@ -42,7 +42,7 @@ function showApp(page){
  if(!user||!shell)return;activePage=pages.includes(page)?page:"dashboard";if(activePage==="admin"&&!isAdmin())activePage="dashboard";
  shell.hidden=false;document.body.classList.add("app-mode");
  const main=document.querySelector("main"),footer=document.querySelector("footer");if(main)main.setAttribute("hidden","");if(footer)footer.setAttribute("hidden","");
- closeModal();renderApp();
+ closeModal();renderApp();loadPageData();
 }
 function renderApp(){
  const meta=user.user_metadata||{},name=meta.full_name||user.email?.split("@")[0]||"Client";
@@ -100,6 +100,25 @@ function showSelectedWallet(wallets){
  const id=document.getElementById("deposit-asset")?.value,w=wallets.find(x=>String(x.id)===String(id)),box=document.getElementById("selected-wallet");if(!box||!w)return;
  box.innerHTML='<div class="wallet-address-card"><small>ADMIN RECEIVING ADDRESS · '+esc(w.asset)+' / '+esc(w.network)+'</small><code>'+esc(w.address)+'</code><button type="button" data-copy-address="'+esc(w.address)+'">Copy address</button><p>'+esc(w.label||"Official deposit wallet")+'</p></div>';
 }
+async function loadPageData(){
+ if(!sb||!user)return;
+ if(activePage==="wallet"){
+  const picker=document.getElementById("crypto-wallet-picker");
+  if(picker){
+   const {data,error}=await sb.from("crypto_wallets").select("id,asset,network,label,address").eq("active",true).order("asset");
+   if(error){picker.textContent="Wallet database setup required. Please contact admin.";return;}
+   const wallets=data||[];
+   picker.innerHTML=wallets.length?'<label>Choose crypto / network<select id="deposit-asset">'+wallets.map(w=>'<option value="'+esc(w.id)+'">'+esc(w.asset)+' · '+esc(w.network)+'</option>').join("")+'</select></label><div id="selected-wallet"></div>':'No deposit wallet is currently enabled by admin.';
+   const sel=document.getElementById("deposit-asset");if(sel){sel.addEventListener("change",()=>showSelectedWallet(wallets));showSelectedWallet(wallets);}
+  }
+ }
+ if(activePage==="admin"&&isAdmin()){
+  const [w,t]=await Promise.all([sb.from("crypto_wallets").select("*").order("asset"),sb.from("wallet_transactions").select("*").eq("status","pending").order("created_at")]);
+  const wl=document.getElementById("admin-wallet-list");if(wl)wl.innerHTML=w.error?"Run the Supabase SQL setup first.":(w.data||[]).map(x=>'<div class="admin-row">'+esc(x.asset)+' · '+esc(x.network)+'<small>'+esc(x.address)+'</small><button data-wallet-toggle="'+esc(x.id)+'" data-active="'+x.active+'">'+(x.active?"Disable":"Enable")+'</button></div>').join("")||"No wallets configured.";
+  const tl=document.getElementById("admin-transactions");if(tl)tl.innerHTML=t.error?"Wallet transaction table not ready.":(t.data||[]).map(x=>'<div class="admin-transaction"><b>'+esc(x.kind)+' · '+esc(x.asset)+' / '+esc(x.network)+'</b><small>Client '+esc(x.user_id)+' · '+esc(x.tx_hash||x.destination_address||"")+'</small><span>$'+Number(x.amount_usd).toFixed(2)+' · '+esc(x.amount_crypto)+'</span><button data-review="'+esc(x.id)+'" data-status="approved">Approve</button><button data-review="'+esc(x.id)+'" data-status="rejected">Reject</button></div>').join("")||"No pending requests.";
+ }
+}
+function showSelectedWallet(wallets){const id=document.getElementById("deposit-asset")?.value,w=wallets.find(x=>String(x.id)===String(id)),box=document.getElementById("selected-wallet");if(!box||!w)return;box.innerHTML='<div class="wallet-address-card"><small>ADMIN CONTROLLED · '+esc(w.asset)+' / '+esc(w.network)+'</small><code>'+esc(w.address)+'</code><button type="button" data-copy-address="'+esc(w.address)+'">Copy address</button><p>'+esc(w.label||"Official deposit wallet")+'</p></div><form class="client-form" id="wallet-form"><label>Amount (USD equivalent)<input name="amount_usd" type="number" min="1" step=".01" required></label><label>Amount in crypto<input name="amount_crypto" required></label><label>Blockchain TXID<input name="tx_hash" required></label><button class="portal-primary">Submit for verification</button></form><div data-page-message></div><div class="notice">Only send the selected asset on the exact network. Admin must verify the blockchain transaction before approval.</div>';}
 async function submitHandler(e){
  const f=e.target;if(!(f instanceof HTMLFormElement))return;
  if(f.id==="signup-form"||f.id==="login-form"){
