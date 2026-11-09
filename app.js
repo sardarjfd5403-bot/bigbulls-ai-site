@@ -230,5 +230,6 @@ async function clickHandler(e){
   if(action.dataset.action==="forgot"){const email=prompt("Registered email address:");if(!email)return;const {error}=await sb.auth.resetPasswordForEmail(email.trim(),{redirectTo:location.origin+location.pathname});if(error)alert(error.message);else alert("Password reset email requested. Check your inbox.");return;}
  }
  if(el.closest("[data-close]")||el.classList.contains("portal-close")||el===modal)closeModal();
+}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
