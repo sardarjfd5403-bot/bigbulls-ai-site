@@ -131,7 +131,7 @@ begin
  if not public.is_bigbulls_admin() then raise exception 'Admin permission required'; end if;
  if p_status not in ('approved','rejected') then raise exception 'Invalid review status'; end if;
  select * into v_tx from public.wallet_transactions where id=p_transaction_id for update;
- if not found or v_tx.status not in ('pending','processing') then raise exception 'Request not found or already reviewed'; end if;
+ if not found or v_tx.status<>'pending' then raise exception 'Request not found or already reviewed'; end if;
  if p_status='rejected' and length(trim(coalesce(p_admin_note,'')))<4 then
   raise exception 'Rejection reason is required (at least 4 characters)';
  end if;
