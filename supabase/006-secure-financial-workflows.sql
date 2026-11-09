@@ -111,6 +111,7 @@ drop policy if exists "clients submit own pending wallet requests" on public.wal
 create policy "clients submit own pending wallet requests" on public.wallet_transactions
 for insert to authenticated with check(
  user_id=auth.uid() and status='pending' and reviewed_by is null and reviewed_at is null
+ and otp_verified_at is null and completed_at is null and payout_reference is null and rejection_reason is null
  and account_id is not null and exists(
   select 1 from public.trading_accounts a where a.id=wallet_transactions.account_id
    and a.user_id=auth.uid() and a.archived_at is null and a.deleted_at is null
@@ -133,6 +134,9 @@ begin
  if not found or v_tx.status not in ('pending','processing') then raise exception 'Request not found or already reviewed'; end if;
  if p_status='rejected' and length(trim(coalesce(p_admin_note,'')))<4 then
   raise exception 'Rejection reason is required (at least 4 characters)';
+ end if;
+ if p_status='rejected' and v_tx.status='processing' then
+  raise exception 'Withdrawal is already approved for payout. Complete it after sending funds; do not reject it here.';
  end if;
  if v_tx.kind='withdrawal' and p_status='approved' then
   if v_tx.otp_verified_at is null then raise exception 'Client email OTP must be verified first'; end if;
