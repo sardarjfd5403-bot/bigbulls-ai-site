@@ -317,3 +317,6 @@ button,input,select,textarea{font-weight:500}
 .eyebrow,.ticker,.terminal-nav,.terminal-page-head small{
   font-family:"Roboto",Arial,sans-serif!important;
 }
+
+/* Keep custom component selectors from reintroducing mixed typefaces */
+body *{font-family:"Roboto",Arial,sans-serif!important}
