@@ -221,6 +221,10 @@ begin
   and not exists(select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='wallet_transactions') then
   alter publication supabase_realtime add table public.wallet_transactions;
  end if;
+ if exists(select 1 from pg_publication where pubname='supabase_realtime')
+  and not exists(select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='trading_accounts') then
+  alter publication supabase_realtime add table public.trading_accounts;
+ end if;
 exception when others then raise notice 'Realtime publication could not be updated: %',sqlerrm;
 end $$;
 
