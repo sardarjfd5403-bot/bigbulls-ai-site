@@ -279,3 +279,219 @@ body.app-mode .modal .portal-primary{
  .modal .form-two{grid-template-columns:1fr;gap:0}
  .bb-financial-toast{right:12px;bottom:12px}
 }
+
+
+/* PERSONAL AREA LIGHT XM-INSPIRED NAV + PAGE SYSTEM */
+body.app-mode{color-scheme:light!important;--bb-red:#e31e24;--bb-red-dark:#b9151b;--bb-red-soft:#fff0f0}
+body.app-mode .terminal,
+body.app-mode .terminal-main,
+body.app-mode .terminal-sidebar,
+body.app-mode .terminal-layout,
+body.app-mode .terminal-page-head,
+body.app-mode #client-page{background:#f5f5f5!important;color:#242424!important}
+body.app-mode .terminal{font-family:"Roboto",Arial,sans-serif!important}
+body.app-mode .terminal-head{
+ background:#fff!important;color:#222!important;border-bottom:1px solid #e5e5e5!important;
+ box-shadow:0 3px 16px #0000000b!important
+}
+body.app-mode .terminal-brand,body.app-mode .terminal-brand span{color:#222!important}
+body.app-mode .terminal-brand b{color:var(--bb-red)!important}
+body.app-mode .terminal-brand small{color:#777!important}
+body.app-mode .header-balance small{color:#777!important;font-weight:700}
+body.app-mode .header-balance b{color:#202124!important;font-weight:800}
+body.app-mode .header-balance em{color:#777!important}
+body.app-mode .header-icon-btn,body.app-mode .profile-trigger{
+ background:#fff!important;color:#333!important;border:1px solid #e3e3e3!important;border-radius:6px!important
+}
+body.app-mode .profile-trigger b{color:#222!important}
+body.app-mode .profile-trigger small{color:#777!important}
+body.app-mode .profile-avatar{background:#fff0f0!important;color:var(--bb-red)!important;border:1px solid #f0c5c6!important}
+body.app-mode .header-popover{
+ background:#fff!important;color:#242424!important;border:1px solid #e4e4e4!important;
+ box-shadow:0 14px 36px #00000018!important;border-radius:7px!important
+}
+body.app-mode .header-popover b,body.app-mode .header-popover p{color:#242424!important}
+body.app-mode .header-popover small{color:#686868!important}
+body.app-mode .header-popover button{background:#fff!important;color:#333!important;border-bottom:1px solid #eee!important}
+body.app-mode .header-popover button:hover{background:#fff0f0!important;color:var(--bb-red)!important}
+
+/* Sidebar: remove navy/black panels and make every label readable */
+body.app-mode .terminal-sidebar{
+ background:#fff!important;color:#343434!important;border-right:1px solid #e4e4e4!important;
+ box-shadow:2px 0 14px #00000005!important
+}
+body.app-mode .terminal-sidebar .side-group{background:transparent!important;border:0!important}
+body.app-mode .terminal-sidebar .side-group>small{
+ color:#777!important;font-size:10px!important;font-weight:800!important;
+ letter-spacing:.12em!important
+}
+body.app-mode .terminal-sidebar .side-group>button{
+ display:flex!important;align-items:center!important;gap:11px!important;
+ width:100%!important;min-height:49px!important;padding:9px 12px!important;
+ margin:3px 0!important;background:#fff!important;color:#3d3d3d!important;
+ border:1px solid transparent!important;border-radius:6px!important;
+ text-align:left!important;box-shadow:none!important
+}
+body.app-mode .terminal-sidebar .side-group>button b{color:#343434!important;font-weight:700!important}
+body.app-mode .terminal-sidebar .side-group>button em{color:#777!important;font-style:normal!important}
+body.app-mode .terminal-sidebar .side-group>button .side-icon{
+ color:#777!important;background:#f5f5f5!important;border-radius:5px!important;
+ min-width:30px!important;min-height:30px!important;display:grid!important;place-items:center!important
+}
+body.app-mode .terminal-sidebar .side-group>button:hover{
+ background:#fff5f5!important;border-color:#f4d0d1!important
+}
+body.app-mode .terminal-sidebar .side-group>button:hover b,
+body.app-mode .terminal-sidebar .side-group>button:hover .side-icon{color:var(--bb-red)!important}
+body.app-mode .terminal-sidebar .side-group>button.active{
+ background:#fff0f0!important;border:1px solid #f0c5c6!important;
+ color:#a9141a!important;box-shadow:inset 3px 0 var(--bb-red)!important
+}
+body.app-mode .terminal-sidebar .side-group>button.active b,
+body.app-mode .terminal-sidebar .side-group>button.active em,
+body.app-mode .terminal-sidebar .side-group>button.active .side-icon{color:#a9141a!important}
+body.app-mode .terminal-sidebar .side-group>button i{
+ color:#fff!important;background:var(--bb-red)!important;border-radius:3px!important;
+ font-style:normal!important
+}
+
+/* Page titles, section headings and common copy */
+body.app-mode .terminal-page-head{
+ background:transparent!important;border-bottom:1px solid #e5e5e5!important
+}
+body.app-mode .terminal-page-head small,
+body.app-mode .terminal .page-intro small,
+body.app-mode .terminal .accounts-kicker{color:var(--bb-red)!important;font-weight:800!important}
+body.app-mode .terminal-page-head h1,
+body.app-mode .terminal-page-head h2,
+body.app-mode .terminal-page-head h3,
+body.app-mode .terminal h1,body.app-mode .terminal h2,
+body.app-mode .terminal h3,body.app-mode .terminal h4,
+body.app-mode .terminal h5{color:#242424!important;font-family:"Roboto",Arial,sans-serif!important}
+body.app-mode .terminal p,body.app-mode .terminal .fine,
+body.app-mode .terminal .muted,body.app-mode .terminal small{color:#686868}
+body.app-mode .terminal .terminal-session{color:#5d5d5d!important}
+body.app-mode .terminal .terminal-session i{background:#24a36b!important}
+
+/* Standardise cards, expanded modules, market widgets and content panels */
+body.app-mode .terminal .client-panel,
+body.app-mode .terminal .client-stat,
+body.app-mode .terminal .service-tile,
+body.app-mode .terminal .bbx-section,
+body.app-mode .terminal .bbx-card,
+body.app-mode .terminal .bbx-metrics>div,
+body.app-mode .terminal .bbx-steps li,
+body.app-mode .terminal .bb-terminal-intro,
+body.app-mode .terminal .bb-watchlist,
+body.app-mode .terminal .bb-chart-panel,
+body.app-mode .terminal .bb-order-panel,
+body.app-mode .terminal .bb-terminal-features article,
+body.app-mode .terminal .signal-head,
+body.app-mode .terminal .bb-brain-summary article,
+body.app-mode .terminal .bb-backtest-panel,
+body.app-mode .terminal .learning-grid article,
+body.app-mode .terminal .market-strip,
+body.app-mode .terminal .market-table-wrap{
+ background:#fff!important;color:#242424!important;border:1px solid #e5e5e5!important;
+ border-radius:7px!important;box-shadow:0 5px 18px #00000008!important
+}
+body.app-mode .terminal .bbx-heading h3,
+body.app-mode .terminal .bbx-card h4,
+body.app-mode .terminal .bbx-metrics b,
+body.app-mode .terminal .bbx-steps strong,
+body.app-mode .terminal .bb-panel-title,
+body.app-mode .terminal .bb-panel-title b,
+body.app-mode .terminal .bb-chart-toolbar b,
+body.app-mode .terminal .bb-terminal-features b,
+body.app-mode .terminal .signal-head h3,
+body.app-mode .terminal .learning-grid h3{color:#242424!important}
+body.app-mode .terminal .bbx-heading small,
+body.app-mode .terminal .bbx-card>small,
+body.app-mode .terminal .bbx-metrics small{color:var(--bb-red)!important}
+body.app-mode .terminal .bbx-card>span,
+body.app-mode .terminal .bbx-steps li>b,
+body.app-mode .terminal .bbx-steps em{color:var(--bb-red)!important}
+body.app-mode .terminal .bbx-footnote,
+body.app-mode .terminal .bbx-toast{color:#555!important}
+body.app-mode .terminal .bbx-toast{background:#fff!important;border:1px solid #e5b7b8!important;border-left:4px solid var(--bb-red)!important}
+body.app-mode .terminal .bbx-action-row label{color:#444!important}
+body.app-mode .terminal .bbx-action-row select{
+ background:#fff!important;color:#242424!important;border:1px solid #d7d7d7!important;border-radius:5px!important
+}
+body.app-mode .terminal .bbx-action-row button{
+ background:var(--bb-red)!important;color:#fff!important;border-radius:5px!important
+}
+body.app-mode .terminal .bbx-state{background:#fff0f0!important;color:#a9141a!important;border-color:#efc2c3!important}
+body.app-mode .terminal .bbx-empty{background:#fafafa!important;color:#555!important;border-color:#ddd!important}
+body.app-mode .terminal .bbx-empty small{color:#777!important}
+
+/* Tabs, filters, tables and chart workspace controls */
+body.app-mode .terminal .wallet-actions,
+body.app-mode .terminal .bb-account-tabs,
+body.app-mode .terminal .bb-timeframes,
+body.app-mode .terminal .bb-bottom-tabs,
+body.app-mode .terminal .bb-watch-tabs{background:#f2f2f2!important;border-color:#e2e2e2!important}
+body.app-mode .terminal .wallet-action,
+body.app-mode .terminal .bb-account-tabs button,
+body.app-mode .terminal .bb-timeframes button,
+body.app-mode .terminal .bb-bottom-tabs button,
+body.app-mode .terminal .bb-watch-tabs button,
+body.app-mode .terminal .bb-chart-actions button{
+ background:#fff!important;color:#555!important;border:1px solid #e1e1e1!important;border-radius:5px!important
+}
+body.app-mode .terminal .wallet-action.active,
+body.app-mode .terminal .bb-account-tabs button.active,
+body.app-mode .terminal .bb-timeframes button.active,
+body.app-mode .terminal .bb-bottom-tabs button.active,
+body.app-mode .terminal .bb-watch-tabs button.active{
+ background:var(--bb-red)!important;color:#fff!important;border-color:var(--bb-red)!important
+}
+body.app-mode .terminal .bb-symbol-list button{
+ background:#fff!important;color:#333!important;border-bottom:1px solid #eee!important
+}
+body.app-mode .terminal .bb-symbol-list button b{color:#242424!important}
+body.app-mode .terminal .bb-symbol-list button small{color:#777!important}
+body.app-mode .terminal .bb-symbol-list button.active{background:#fff0f0!important;border-left:3px solid var(--bb-red)!important}
+body.app-mode .terminal .bb-symbol-list button.active b{color:#a9141a!important}
+body.app-mode .terminal .market-table th{background:#f4f4f4!important;color:#555!important}
+body.app-mode .terminal .market-table td{background:#fff!important;color:#333!important;border-color:#eee!important}
+body.app-mode .terminal .market-table td b{color:#222!important}
+body.app-mode .terminal .bb-timeframes button:hover,
+body.app-mode .terminal .bb-chart-actions button:hover{border-color:#e6a4a6!important;color:var(--bb-red)!important}
+
+/* Forms, account cards, status chips, notices and secondary actions */
+body.app-mode .terminal .client-form label,
+body.app-mode .terminal label{color:#444!important}
+body.app-mode .terminal input:not([type=checkbox]):not([type=radio]),
+body.app-mode .terminal select,body.app-mode .terminal textarea{
+ background:#fff!important;color:#242424!important;border:1px solid #d7d7d7!important
+}
+body.app-mode .terminal input::placeholder,
+body.app-mode .terminal textarea::placeholder{color:#929292!important}
+body.app-mode .terminal .portal-secondary,
+body.app-mode .terminal .portal-secondary:visited{
+ background:#fff!important;color:var(--bb-red)!important;border:1px solid #e4a5a7!important
+}
+body.app-mode .terminal .notice,
+body.app-mode .terminal .client-banner{
+ background:#fff5f5!important;color:#5d3b3c!important;border:1px solid #f0d0d1!important
+}
+body.app-mode .terminal .notice p,
+body.app-mode .terminal .client-banner p{color:#6b5555!important}
+body.app-mode .terminal .free-tag,
+body.app-mode .terminal .accounts-kicker,
+body.app-mode .terminal .feed-badge{color:var(--bb-red)!important}
+body.app-mode .terminal .client-status{background:#fff0f0!important;color:#a9141a!important;border-color:#efc4c5!important}
+body.app-mode .terminal .terminal-footer{
+ background:#fff!important;color:#555!important;border-top:1px solid #e5e5e5!important
+}
+body.app-mode .terminal .terminal-footer button{
+ background:var(--bb-red)!important;color:#fff!important;border:1px solid var(--bb-red)!important;border-radius:5px!important
+}
+@media(max-width:900px){
+ body.app-mode .terminal-sidebar{background:#fff!important}
+ body.app-mode .terminal-sidebar .side-group>button{min-height:45px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ body.app-mode .terminal *{scroll-behavior:auto!important;transition:none!important}
+}
