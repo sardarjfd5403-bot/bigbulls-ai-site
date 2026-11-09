@@ -504,3 +504,41 @@ body.app-mode .terminal #client-page .account-mode-demo :is(h3,h4,b,strong){colo
 body.app-mode .terminal #client-page .account-mode-demo :is(p,small,span,li){color:#d5e8c9!important}
 body.app-mode .terminal #client-page .account-mode-demo .account-number{color:#ffdf45!important}
 @media(max-width:760px){body.app-mode .terminal #client-page .accounts-page-intro{padding:21px 18px}body.app-mode .terminal #client-page .accounts-workspace>.client-panel,body.app-mode .terminal #client-page .account-transfer-panel{padding:17px!important}}
+
+/* Trading Accounts contrast hotfix — target the actual #client-page mount. */
+body.app-mode .terminal #client-page .accounts-page-intro,
+body.app-mode .terminal #client-page .account-create-panel,
+body.app-mode .terminal #client-page .account-list-panel,
+body.app-mode .terminal #client-page .account-transfer-panel{
+ background:linear-gradient(145deg,#171c25 0%,#0b111a 100%)!important;
+ color:#f5f7fb!important;border:1px solid #344153!important;border-radius:16px!important;
+ box-shadow:0 14px 36px #0005!important;
+}
+body.app-mode .terminal #client-page .accounts-page-intro{padding:26px 28px!important;margin-bottom:16px!important}
+body.app-mode .terminal #client-page .accounts-page-intro h3,
+body.app-mode .terminal #client-page .account-create-panel h3,
+body.app-mode .terminal #client-page .account-list-panel h3,
+body.app-mode .terminal #client-page .account-transfer-panel h3{color:#fff!important}
+body.app-mode .terminal #client-page .accounts-page-intro p,
+body.app-mode .terminal #client-page .account-security-note{color:#c3cedd!important}
+body.app-mode .terminal #client-page .accounts-kicker{color:#d7b86c!important;font-size:10px;font-weight:800;letter-spacing:.16em}
+body.app-mode .terminal #client-page .accounts-server-pills{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}
+body.app-mode .terminal #client-page .accounts-server-pills span{background:#ffffff0b!important;color:#f6f7f9!important;border:1px solid #ffffff25!important;border-radius:7px;padding:8px 11px;font-size:10px;font-weight:800}
+body.app-mode .terminal #client-page .accounts-workspace>.client-panel,
+body.app-mode .terminal #client-page .account-transfer-panel{padding:22px!important;margin:16px 0!important;background:linear-gradient(145deg,#171c25,#0b111a)!important}
+body.app-mode .terminal #client-page .account-list-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+body.app-mode .terminal #client-page .account-list-heading h3{margin:4px 0 14px}
+body.app-mode .terminal #client-page .accounts-workspace .client-form label,
+body.app-mode .terminal #client-page .account-transfer-panel .client-form label{color:#d3dbe6!important}
+body.app-mode .terminal #client-page .accounts-workspace .client-form input,
+body.app-mode .terminal #client-page .accounts-workspace .client-form select,
+body.app-mode .terminal #client-page .account-transfer-panel .client-form input{background:#080e16!important;color:#fff!important;border:1px solid #3a4a5e!important;border-radius:8px!important}
+body.app-mode .terminal #client-page .accounts-workspace .client-form input::placeholder{color:#8e9caf!important}
+body.app-mode .terminal #client-page .accounts-workspace .portal-primary,
+body.app-mode .terminal #client-page .account-transfer-panel .portal-primary{background:linear-gradient(110deg,#d2b66f,#94723a)!important;color:#10141a!important;border:0!important;border-radius:8px!important;font-weight:900}
+body.app-mode .terminal #client-page .account-list-panel .empty-state{background:#0a1018!important;border:1px dashed #455163!important;color:#d2dbe8!important;border-radius:10px!important}
+body.app-mode .terminal #client-page .account-mode-demo{background:linear-gradient(145deg,#103b2b,#10271e)!important;border-color:#54864a!important;color:#f4f7df!important}
+body.app-mode .terminal #client-page .account-mode-demo :is(h3,h4,b,strong){color:#fff3a5!important}
+body.app-mode .terminal #client-page .account-mode-demo :is(p,small,span,li){color:#d5e8c9!important}
+body.app-mode .terminal #client-page .account-mode-demo .account-number{color:#ffe34e!important}
+@media(max-width:680px){body.app-mode .terminal #client-page .accounts-page-intro{padding:20px!important}body.app-mode .terminal #client-page .accounts-workspace>.client-panel,body.app-mode .terminal #client-page .account-transfer-panel{padding:16px!important}}
