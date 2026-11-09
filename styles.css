@@ -462,3 +462,45 @@ body.app-mode .terminal :is(.client-panel,.learning-grid article,.signal-card,.s
 body.app-mode .terminal .client-panel a,
 body.app-mode .terminal .learning-grid article a,
 body.app-mode .terminal .signal-card a{color:#8fc0ff!important}
+
+
+/* BIGBULLS Trading Accounts — premium account-centre styling */
+body.app-mode .terminal #client-page .accounts-page-intro{
+  position:relative;overflow:hidden;padding:26px 28px;margin:0 0 18px;border:1px solid #3b414b!important;border-radius:16px;
+  background:radial-gradient(ellipse at 88% 0%,#30343b 0%,transparent 42%),linear-gradient(130deg,#090b0f 0%,#171b22 58%,#0c1016 100%)!important;
+  box-shadow:0 16px 38px #0003!important;color:#fff!important;
+}
+body.app-mode .terminal #client-page .accounts-page-intro:after{content:"";position:absolute;right:-36px;bottom:-86px;width:230px;height:230px;border:1px solid #ffffff12;border-radius:50%;box-shadow:0 0 0 24px #ffffff06,0 0 0 48px #ffffff04;pointer-events:none}
+body.app-mode .terminal #client-page .accounts-page-intro .accounts-kicker,
+body.app-mode .terminal #client-page .account-list-heading .accounts-kicker{display:block;color:#c5a96b!important;font-size:10px;font-weight:800;letter-spacing:.18em;margin-bottom:8px}
+body.app-mode .terminal #client-page .accounts-page-intro h3{color:#fff!important;font-size:clamp(22px,3vw,30px);letter-spacing:-.035em;margin:0 0 7px}
+body.app-mode .terminal #client-page .accounts-page-intro p{color:#c4cad3!important;max-width:620px;line-height:1.65;margin:0}
+body.app-mode .terminal #client-page .accounts-server-pills{display:flex;flex-wrap:wrap;gap:9px;margin-top:18px;position:relative;z-index:1}
+body.app-mode .terminal #client-page .accounts-server-pills span{padding:8px 12px;border:1px solid #ffffff22;border-radius:7px;background:#ffffff0b;color:#f2f4f7;font-size:10px;font-weight:800;letter-spacing:.09em}
+body.app-mode .terminal #client-page .accounts-workspace{gap:16px;align-items:stretch}
+body.app-mode .terminal #client-page .accounts-workspace>.client-panel,
+body.app-mode .terminal #client-page .account-transfer-panel{padding:22px!important;border-radius:14px!important;background:linear-gradient(145deg,#151a22,#0d1219)!important;border:1px solid #303b49!important;box-shadow:0 12px 28px #0002!important;color:#f4f6fa!important}
+body.app-mode .terminal #client-page .accounts-workspace>.client-panel h3,
+body.app-mode .terminal #client-page .account-transfer-panel h3{color:#fff!important;font-size:17px;letter-spacing:-.02em}
+body.app-mode .terminal #client-page .account-request-panel .free-tag{display:inline-flex;padding:6px 9px;border:1px solid #9c824b66;border-radius:5px;background:#b99a4b16;color:#dfc27d!important;font-size:9px;letter-spacing:.12em}
+body.app-mode .terminal #client-page .accounts-workspace .client-form{max-width:none}
+body.app-mode .terminal #client-page .accounts-workspace .client-form label,
+body.app-mode .terminal #client-page .account-transfer-panel .client-form label{color:#c2cad5!important}
+body.app-mode .terminal #client-page .accounts-workspace .client-form input,
+body.app-mode .terminal #client-page .accounts-workspace .client-form select,
+body.app-mode .terminal #client-page .account-transfer-panel .client-form input{background:#090e15!important;color:#f8fafc!important;border:1px solid #354253!important;border-radius:8px!important}
+body.app-mode .terminal #client-page .accounts-workspace .client-form input:focus,
+body.app-mode .terminal #client-page .accounts-workspace .client-form select:focus{border-color:#b99a58!important;outline:2px solid #b99a5826!important}
+body.app-mode .terminal #client-page .accounts-workspace .portal-primary,
+body.app-mode .terminal #client-page .account-transfer-panel .portal-primary{background:linear-gradient(105deg,#c4a45e,#92743c)!important;color:#101318!important;border:0!important;border-radius:8px!important;font-weight:900;letter-spacing:.02em}
+body.app-mode .terminal #client-page .account-list-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+body.app-mode .terminal #client-page .account-list-heading h3{margin:0 0 14px}
+body.app-mode .terminal #client-page .account-list-mark{display:grid;place-items:center;width:38px;height:38px;border:1px solid #b99a5866;border-radius:10px;color:#e4c77e;font-weight:900;letter-spacing:-.08em}
+body.app-mode .terminal #client-page .account-list-panel .empty-state{background:#0a1018!important;border:1px dashed #455163!important;color:#c4ccd7!important;border-radius:10px!important}
+body.app-mode .terminal #client-page .account-transfer-panel{margin-top:16px}
+/* Future Demo account cards use the separate emerald/yellow brand palette. */
+body.app-mode .terminal #client-page .account-mode-demo{background:linear-gradient(145deg,#0b3022,#10291f)!important;border-color:#477b42!important;color:#f5f4df!important}
+body.app-mode .terminal #client-page .account-mode-demo :is(h3,h4,b,strong){color:#fff4a8!important}
+body.app-mode .terminal #client-page .account-mode-demo :is(p,small,span,li){color:#d5e8c9!important}
+body.app-mode .terminal #client-page .account-mode-demo .account-number{color:#ffdf45!important}
+@media(max-width:760px){body.app-mode .terminal #client-page .accounts-page-intro{padding:21px 18px}body.app-mode .terminal #client-page .accounts-workspace>.client-panel,body.app-mode .terminal #client-page .account-transfer-panel{padding:17px!important}}
