@@ -4,7 +4,7 @@ const URL="https://ztiiyulusburxjkpcfxu.supabase.co";
 const KEY="sb_publishable_5hDwqvbcUHeSJdXFHf9ugw_VPYGN4J_";
 let client=null,busy=false,timer=null,lastPage=false;
 const $=id=>document.getElementById(id);
-const fmt=(v,d=5)=>Number.isFinite(Number(v))?Number(v).toFixed(d):"—";
+const fmt=(v,d=5)=>v===null||v===undefined||v===""?"—":Number.isFinite(Number(v))?Number(v).toFixed(d):"—";
 const safe=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function render(data){
  const signals=data.signals||[],tests=data.backtests||[];
