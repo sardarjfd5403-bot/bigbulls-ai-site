@@ -9,3 +9,6 @@ button{font:inherit;cursor:pointer}.head-actions{display:flex;gap:10px;align-ite
 
 /* Supabase authentication feedback */
 .auth-message{margin-top:14px}.auth-message.error{border-color:#a84d5a;background:#421b25;color:#ffd0d5}.account-email{overflow-wrap:anywhere;color:#f2c75c;font-weight:700}
+
+/* Fix mobile signup/login modal input interaction */
+#portal-modal{pointer-events:auto;z-index:9999}#portal-modal .modal{position:relative;z-index:10000;pointer-events:auto;touch-action:pan-y}#portal-body,#portal-body form,#portal-body label,#portal-body input{pointer-events:auto}#portal-body input{position:relative;z-index:2;min-height:46px;font-size:16px;line-height:1.4;touch-action:manipulation;-webkit-user-select:text;user-select:text}#portal-body label{position:relative;z-index:1}#portal-body button{position:relative;z-index:3;touch-action:manipulation}
