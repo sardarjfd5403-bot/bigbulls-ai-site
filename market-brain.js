@@ -14,7 +14,7 @@ function render(data){
  const direction=s.direction||"WAIT",cls=direction.toLowerCase(),reasons=(s.reasons||[]).map(x=>'<li>'+safe(x)+'</li>').join("");
  return '<article class="bb-brain-card"><div class="bb-brain-card-head"><div><small>'+safe(s.category)+' · '+safe(s.symbol)+'</small><h3>'+safe(s.name||s.symbol)+'</h3></div><span class="bb-brain-direction '+cls+'">'+safe(direction)+'</span></div><div class="bb-brain-price">'+fmt(s.price,s.digits||5)+'</div><div class="bb-brain-meta"><span>Bias '+safe(s.bias)+'</span><span>Confluence '+safe(s.score)+'/100</span><span>Data '+safe(s.data_status)+'</span></div><div class="bb-brain-meter"><i style="width:'+Math.max(0,Math.min(100,Number(s.score)||0))+'%"></i></div><div class="bb-brain-levels"><div><small>ENTRY ZONE</small><b>'+fmt(s.entry_low,s.digits)+' – '+fmt(s.entry_high,s.digits)+'</b></div><div><small>STOP LOSS</small><b>'+fmt(s.stop_loss,s.digits)+'</b></div><div><small>TAKE PROFIT</small><b>'+fmt(s.take_profit,s.digits)+'</b></div></div><ul class="bb-brain-reasons">'+reasons+'</ul><div class="bb-brain-meta">'+(s.timeframes||[]).map(x=>'<span>'+safe(x)+'</span>').join("")+'</div><p class="fine">Setup status: '+safe(s.setup_status)+' · '+safe(s.updated_at)+'</p></article>';
  }).join("")||'<div class="empty-state">No supported markets returned.</div>';
- $("bb-brain-backtests").innerHTML=tests.map(t=>'<div class="bb-backtest-item"><small>'+safe(t.symbol)+' · '+safe(t.strategy)+'</small><b>'+safe(t.trades)+' trades</b><small>Win rate '+safe(t.win_rate)+'% · Profit factor '+safe(t.profit_factor)+' · Max DD '+safe(t.max_drawdown)+'R</small></div>').join("")||'<div class="empty-state">Backtest data unavailable.</div>';
+ $("bb-brain-backtests").innerHTML=tests.map(t=>'<div class="bb-backtest-item"><small>'+safe(t.symbol)+' · '+safe(t.strategy)+'</small><b>'+safe(t.trades)+' trades</b><small>Win rate '+safe(t.win_rate)+'% · Profit factor '+safe(t.profit_factor)+' · Max DD '+safe(t.max_drawdown)+'R · Net '+safe(t.net_r)+'R</small></div>').join("")||'<div class="empty-state">Backtest data unavailable.</div>';
 }
 async function scan(){
  if(busy||!client||!$("bb-brain-signals"))return;busy=true;
@@ -34,7 +34,7 @@ function attach(){
  const page=$("bb-brain-signals");if(!page)return;
  if(!client&&window.supabase?.createClient)client=window.supabase.createClient(URL,KEY);
  if(!client)return;
- if(!page.dataset.ready){page.dataset.ready="true";$("bb-brain-refresh")?.addEventListener("click",scan);scan();if(timer)clearInterval(timer);timer=setInterval(()=>{if($("bb-brain-signals"))scan();},300000);}
+ if(!page.dataset.ready){page.dataset.ready="true";$("bb-brain-refresh")?.addEventListener("click",scan);scan();if(timer)clearInterval(timer);timer=setInterval(()=>{if($("bb-brain-signals"))scan();},900000);}
 }
 function init(){attach();new MutationObserver(attach).observe(document.body,{childList:true,subtree:true});}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
