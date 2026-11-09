@@ -1,51 +1,37 @@
 # Secure financial workflow deployment
 
-This feature is kept on the `feature/secure-financial-workflows` branch until it has been reviewed and tested. It is not active on the production branch yet.
+This feature is maintained on `feature/secure-financial-workflows` until the application changes have been reviewed and tested. A successful SQL migration does not itself deploy the website.
 
-## 1. Apply the database migration
+## 1. Database migrations
 
-After merging this branch, open the Supabase project SQL Editor and run the complete file:
+Run these files in order in the Supabase SQL Editor:
 
-`supabase/006-secure-financial-workflows.sql`
+1. `supabase/006-secure-financial-workflows.sql`
+2. `supabase/007-defer-withdrawal-otp.sql`
 
-The migration:
-- Adds invoice IDs, proof references and withdrawal verification timestamps.
-- Creates a private `payment-proofs` storage bucket.
-- Creates an immutable account balance ledger and OTP challenge table.
-- Revokes client transaction updates and account balance updates.
-- Adds Admin-only RPCs for approving deposits, marking payouts complete and adjusting balances.
-- Adds wallet transaction events to Realtime where the publication is available.
+Migration 006 creates the private payment-proof bucket, invoice and ledger fields, account balance ledger, Admin-only RPCs, client write restrictions and Realtime publication entries.
 
-Funding ledger amounts are currently enabled only for USD-denominated trading accounts. Non-USD account funding is blocked until a proper FX conversion source and rounding policy are configured.
+Migration 007 replaces the Admin review RPC for the temporary no-OTP withdrawal flow. It checks the account balance after subtracting other withdrawals already in `processing`, preventing multiple pending payouts from being approved against the same available funds.
 
-## 2. Configure email OTP delivery
+## 2. Withdrawal OTP is temporarily deferred
 
-The Edge Function is `supabase/functions/withdrawal-otp/index.ts`. It uses Resend to send a 6-digit OTP to the authenticated user's registered Supabase Auth email. Codes expire after 10 minutes, and request/attempt limits are enforced.
-
-1. Verify the sending domain in Resend and create an API key.
-2. Set the sender address to an address on that verified domain.
-3. From the repository root, install/use the Supabase CLI and link the project:
-   `supabase link --project-ref ztiiyulusburxjkpcfxu`
-4. Set secrets (never put these in browser JavaScript):
-   `supabase secrets set RESEND_API_KEY=YOUR_RESEND_API_KEY OTP_FROM_EMAIL="BIGBULLS Security <security@YOUR_VERIFIED_DOMAIN>"`
-5. Deploy:
-   `supabase functions deploy withdrawal-otp`
-
-The function validates the user's bearer token and uses the service-role key only inside the Edge Function runtime. Never add the service-role key to `app.js` or any public file.
+The client withdrawal flow currently submits a request directly to Admin review. Do not configure Resend secrets or deploy `supabase/functions/withdrawal-otp/index.ts` for this release. The Edge Function and OTP challenge table are retained for a later release when email OTP is re-enabled.
 
 ## 3. Admin role
 
-Admin permissions continue to rely on the existing `app_metadata.role = admin` claim and `public.is_bigbulls_admin()`. Do not assign this role through user-editable metadata or a client-side form.
+Admin permissions rely on the existing `app_metadata.role = admin` claim and `public.is_bigbulls_admin()`. Never assign this role through user-editable metadata or a client-side form.
 
-## 4. Withdrawal operating procedure
+## 4. Deposit and withdrawal operating procedure
 
-- Client submits the destination and amount.
-- The OTP must be verified before the request becomes eligible for Admin review.
-- Admin approves the request to move it to `processing`; this does not debit the account yet.
-- Admin sends the payout externally, then records the blockchain TXID/reference using the completion action.
-- The completion RPC atomically debits the account, writes the ledger entry and marks the invoice `completed`.
+- Clients submit requests; they cannot directly edit trading-account balances.
+- Admin verifies deposit TXID and proof before approving a deposit. Approval credits the linked USD account and writes a ledger entry.
+- Admin approves a withdrawal to move it to `processing`. Its amount is reserved against available balance, but the account is not debited yet.
+- Admin sends the payout externally, then records the blockchain TXID/reference. Completion atomically debits the account, writes the ledger entry and marks the invoice `completed`.
 - Rejection requires a reason and does not change the balance.
+- Funding is limited to USD-denominated accounts until a proper FX conversion source and rounding policy are configured.
 
-## 5. Important production checks
+## 5. Production gate
 
-Before accepting real customer funds, test deposits, failed OTP delivery, expired/incorrect OTPs, repeated requests, insufficient balance, rejected requests, payout completion and Admin balance adjustments in a non-production environment. Verify blockchain transfers independently. This website workflow is an internal ledger and manual review process; it is not a custodian, blockchain payment processor or live MT5 broker integration.
+Before accepting real customer funds, test in a non-production account: deposit submission, proof access controls, Admin approval and rejection, withdrawal submission, insufficient available balance, multiple processing withdrawals on one account, payout completion, ledger balances, realtime history updates and Admin balance adjustments. Verify blockchain transfers independently.
+
+This website workflow is an internal ledger and manual review process. It is not a custodian, blockchain payment processor or live MT5 broker integration. Do not advertise balances as broker-held funds or accept customer funds until the full test suite and applicable compliance checks are complete.
