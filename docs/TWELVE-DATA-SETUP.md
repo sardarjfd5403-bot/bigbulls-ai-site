@@ -4,7 +4,7 @@
 The repository contains a Supabase Edge Function proxy and a client-side market panel loader. The provider key is intentionally NOT stored in GitHub or browser code. The feed is not active until the Edge Function is deployed and its secret is configured.
 
 ## Free plan usage
-Twelve Data Basic currently lists 8 API credits/minute and 800 credits/day. A multi-symbol request consumes credits per symbol. This integration refreshes once every 15 minutes (4 symbols per request, approximately 384 symbol-credits/day if used continuously by one active client). Multiple clients calling independently can exceed the shared quota; before public launch, add server-side caching/rate limiting or use a paid/licensed data plan. Verify current plan terms and symbol availability in your Twelve Data dashboard.
+Twelve Data Basic currently lists 8 API credits/minute and 800 credits/day. A multi-symbol request consumes credits per symbol. The client requests data once per browser session. The Edge Function caches responses for 15 minutes per warm runtime isolate (4 symbol-credits per cache miss). This in-memory cache is not a global distributed cache; multiple Edge Function isolates can still make separate provider requests. Before high-volume public launch, add shared database caching and rate limiting or use a paid/licensed data plan. Verify current plan terms and symbol availability in your Twelve Data dashboard.
 
 ## Setup
 1. Create a free account at https://twelvedata.com/pricing and copy the API key from your dashboard.
