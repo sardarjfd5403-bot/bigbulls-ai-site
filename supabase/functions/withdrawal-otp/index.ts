@@ -44,6 +44,12 @@ Deno.serve(async (req) => {
     return json({ error: "Withdrawal request not found or not eligible" }, 404);
 
   if (body.action === "request") {
+    const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count: recentChallenges, error: rateError } = await admin.from("withdrawal_otp_challenges")
+      .select("id", { count: "exact", head: true }).eq("transaction_id", transactionId)
+      .eq("user_id", user.id).gte("created_at", since);
+    if (rateError) return json({ error: "Could not check OTP rate limit" }, 500);
+    if ((recentChallenges || 0) >= 3) return json({ error: "OTP limit reached. Try again in one hour." }, 429);
     if (!resendKey) return json({ error: "Email OTP delivery is not configured. Admin must add RESEND_API_KEY." }, 503);
     const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, "0");
     const otpHash = await sha256(`${transactionId}:${user.id}:${code}`);
