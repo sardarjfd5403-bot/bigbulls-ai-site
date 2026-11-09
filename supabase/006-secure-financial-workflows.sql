@@ -12,6 +12,7 @@ alter table public.wallet_transactions
 update public.wallet_transactions
 set invoice_id='BB-'||upper(substr(replace(id::text,'-',''),1,12))
 where invoice_id is null;
+alter table public.wallet_transactions alter column invoice_id set default ('BB-'||upper(substr(replace(gen_random_uuid()::text,'-',''),1,12)));
 alter table public.wallet_transactions alter column invoice_id set not null;
 create unique index if not exists wallet_transactions_invoice_unique on public.wallet_transactions(invoice_id);
 create index if not exists wallet_transactions_status_created_idx on public.wallet_transactions(status,created_at desc);
@@ -76,7 +77,22 @@ revoke all on public.withdrawal_otp_challenges from anon,authenticated;
 -- A client can submit requests, but cannot directly change a transaction or account balance.
 drop policy if exists "admins review wallet transactions" on public.wallet_transactions;
 revoke update on public.wallet_transactions from authenticated;
-revoke update(balance) on public.trading_accounts from authenticated;
+revoke update on public.trading_accounts from authenticated;
+grant update(account_type,platform,currency,status,account_mode,account_number,display_name,server_name,zero_balance_since,archived_at,deleted_at) on public.trading_accounts to authenticated;
+
+drop policy if exists "clients submit own pending wallet requests" on public.wallet_transactions;
+create policy "clients submit own pending wallet requests" on public.wallet_transactions
+for insert to authenticated with check(
+ user_id=auth.uid() and status='pending' and reviewed_by is null and reviewed_at is null
+ and account_id is not null and exists(
+  select 1 from public.trading_accounts a where a.id=wallet_transactions.account_id
+   and a.user_id=auth.uid() and a.archived_at is null and a.deleted_at is null
+ )
+ and ((kind='deposit' and tx_hash is not null and length(tx_hash)>10 and proof_path is not null and exists(
+  select 1 from public.crypto_wallets w where w.active=true and w.asset=wallet_transactions.asset
+   and w.network=wallet_transactions.network and w.address=wallet_transactions.destination_address
+ )) or (kind='withdrawal' and destination_address is not null and length(destination_address)>5))
+);
 
 create or replace function public.admin_review_wallet_transaction(
  p_transaction_id uuid,p_status text,p_admin_note text default null
@@ -164,6 +180,16 @@ revoke all on function public.admin_adjust_account_balance(uuid,numeric,text) fr
 grant execute on function public.admin_complete_withdrawal(uuid,text) to authenticated;
 grant execute on function public.admin_adjust_account_balance(uuid,numeric,text) to authenticated;
 grant execute on function public.admin_review_wallet_transaction(uuid,text,text) to authenticated;
+
+-- Enable database change events for client and Admin live transaction histories.
+do $
+begin
+ if exists(select 1 from pg_publication where pubname='supabase_realtime')
+  and not exists(select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='wallet_transactions') then
+  alter publication supabase_realtime add table public.wallet_transactions;
+ end if;
+exception when others then raise notice 'Realtime publication could not be updated: %',sqlerrm;
+end $;
 
 notify pgrst,'reload schema';
 commit;
