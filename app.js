@@ -19,10 +19,10 @@ function init(){
  }
 }
 function updateHeader(){
- const old=document.querySelector('header [data-open="login"]');if(!old)return;
+ const old=document.querySelector('header [data-open="login"],header [data-app-open="dashboard"]');if(!old)return;
  if(user){old.textContent="Client Area";old.setAttribute("data-app-open","dashboard");old.removeAttribute("data-open");}
  else if(old.hasAttribute("data-app-open")){old.textContent="Login";old.setAttribute("data-open","login");old.removeAttribute("data-app-open");}
- let buy=document.querySelector('header [data-open="buy"]');if(buy&&user)buy.textContent="Services";
+ let buy=document.querySelector('header [data-open="buy"],header [data-app-page="services"]');if(buy){if(user){buy.textContent="Services";buy.setAttribute("data-app-page","services");buy.removeAttribute("data-open");}else{buy.textContent="Buy Now";buy.setAttribute("data-open","buy");buy.removeAttribute("data-app-page");}}
 }
 function openModal(kind){
  if(kind==="buy"){body.innerHTML='<p class="eyebrow">BIGBULLS AI PACKAGE</p><h2>Echo System · $199</h2><div class="notice">Checkout is not live yet. Payment verification, license activation and private download delivery are not enabled. Do not send payment.</div><button class="portal-primary" data-close>Close</button>';showModal();return;}
