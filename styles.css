@@ -578,3 +578,10 @@ body.app-mode .terminal #client-page .account-mode-demo .account-number{color:#f
 .bb-account-tools .admin-row{color:#fff;border-bottom:1px solid #334155}
 .bb-account-tools .admin-row small{color:#cbd5e1}
 @media(max-width:600px){.bb-account-tabs button{flex:1;padding:11px 8px;font-size:12px}.account-financial-actions button{flex:1 1 42%}}
+
+/* Funding workflow modal and live status notifications */
+.bb-financial-toast{position:fixed;right:18px;bottom:18px;z-index:20000;display:grid;gap:5px;max-width:min(92vw,390px);padding:15px 18px;background:#102039;border:1px solid #d5a83d;border-radius:12px;color:#fff;box-shadow:0 14px 50px #0009}.bb-financial-toast b{color:#f3cd72;font-size:14px}.bb-financial-toast span,.bb-financial-toast small{font-size:12px;color:#d7e0ed;overflow-wrap:anywhere}.admin-client-block{padding:12px 0;border-bottom:1px solid #31435b}.admin-client-block .admin-row{gap:10px;flex-wrap:wrap}.admin-client-block button{background:#243752;border:1px solid #536782;color:#fff;border-radius:7px;padding:8px 10px;font-weight:700}
+
+
+/* Deposit wallet QR */
+.deposit-qr{width:212px;min-height:212px;margin:18px auto;padding:10px;display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid #d8deea;border-radius:12px;box-sizing:border-box;overflow:hidden}.deposit-qr img,.deposit-qr canvas{display:block;max-width:100%;height:auto!important}.deposit-qr.qr-unavailable{color:#7b2630;font-size:13px;text-align:center;line-height:1.5}
