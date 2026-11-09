@@ -1,8 +1,33 @@
-const modal=document.getElementById('portal-modal');
-const body=document.getElementById('portal-body');
-function openPortal(kind){modal.classList.add('show');if(kind==='buy'){body.innerHTML='<p class="eyebrow">SECURE CHECKOUT · PREVIEW</p><h2>Buy AI Echo System</h2><p class="muted">Full package · $199 USD · one-time payment</p><div class="steps"><b>1. Payment instructions</b><b>2. Submit transaction ID</b><b>3. Blockchain verification</b><b>4. License + private download</b></div><div class="wallet-box"><small>USDT · TRON (TRC20) RECEIVING ADDRESS</small><code id="wallet-address">TGHzwHhJ1XULyUmf6B8zf4djkyoeh6eiYY</code><button class="copy-wallet" onclick="copyWallet()">Copy wallet address</button></div><div class="notice">Payment submission and automatic blockchain verification are not active yet. This address is displayed for reference only. Please do not transfer funds until the official checkout and verification process is enabled.</div><button class="portal-primary" onclick="closePortal()">Got it</button>';}else if(kind==='signup'){body.innerHTML='<p class="eyebrow">CUSTOMER PORTAL</p><h2>Create account</h2><p class="muted">Account registration will be enabled with secure server-side authentication.</p><label>Email<input type="email" placeholder="you@example.com" disabled></label><label>Password<input type="password" placeholder="Create a strong password" disabled></label><label>Confirm password<input type="password" disabled></label><button class="portal-primary" disabled>Registration not active</button><p class="fine">2FA will be available during secure account setup. This preview does not store credentials.</p>';}else{body.innerHTML='<p class="eyebrow">CUSTOMER PORTAL</p><h2>Login</h2><p class="muted">Secure login and 2FA are being connected to the account backend.</p><label>Email<input type="email" placeholder="Registered email" disabled></label><label>Password<input type="password" placeholder="Password" disabled></label><label>Authenticator code<input inputmode="numeric" placeholder="6-digit 2FA code" disabled></label><button class="portal-primary" disabled>Login not active</button><p class="fine">Do not enter a real password or 2FA code in this preview.</p>';}}
-function closePortal(){modal.classList.remove('show');}
-document.addEventListener('click',e=>{const b=e.target.closest('[data-open]');if(b)openPortal(b.dataset.open);if(e.target.closest('[data-close]')||e.target.classList.contains('portal-close')||e.target===modal)closePortal();});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closePortal();});
-window.openPortal=openPortal;window.closePortal=closePortal;
-function copyWallet(){const a="TGHzwHhJ1XULyUmf6B8zf4djkyoeh6eiYY";if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(a).then(()=>alert("Wallet address copied")).catch(()=>alert(a));}else{alert(a);}}
+(function(){
+"use strict";
+function initPortal(){
+ const modal=document.getElementById("portal-modal");
+ const body=document.getElementById("portal-body");
+ if(!modal||!body){console.error("BIGBULLS portal elements missing");return;}
+ function closePortal(){modal.classList.remove("show");modal.setAttribute("aria-hidden","true");document.body.classList.remove("portal-open");}
+ function openPortal(kind){
+  let content="";
+  if(kind==="buy"){
+   content='<p class="eyebrow">PACKAGE & PAYMENT DETAILS · PREVIEW</p><h2>BIGBULLS AI Echo System</h2><p class="muted">Full package · <strong>$199 USD</strong> · one-time payment</p><div class="steps"><b>1. Review package price</b><b>2. Official payment checkout</b><b>3. Submit transaction ID</b><b>4. Payment verification</b><b>5. License + private download</b></div><div class="wallet-box"><small>USDT · TRON (TRC20) ADDRESS — REFERENCE ONLY</small><code id="wallet-address">TGHzwHhJ1XULyUmf6B8zf4djkyoeh6eiYY</code><button type="button" class="copy-wallet" id="copy-wallet">Copy wallet address</button></div><div class="notice"><strong>Checkout is not live.</strong> Payment submission, on-chain verification, account activation and automatic license/download delivery are not enabled yet. Do not transfer funds to this address until official checkout is activated.</div><button class="portal-primary" type="button" data-close>Close</button>';
+  }else if(kind==="signup"){
+   content='<p class="eyebrow">CUSTOMER PORTAL</p><h2>Create account</h2><p class="muted">Secure registration is being prepared.</p><label>Email<input type="email" placeholder="you@example.com" disabled></label><label>Password<input type="password" placeholder="Create a strong password" disabled></label><button class="portal-primary" disabled>Registration not active</button><p class="fine">Do not enter real credentials in this preview.</p>';
+  }else{
+   content='<p class="eyebrow">CUSTOMER PORTAL</p><h2>Login</h2><p class="muted">Secure login and 2FA are being prepared.</p><label>Email<input type="email" placeholder="Registered email" disabled></label><label>Password<input type="password" placeholder="Password" disabled></label><button class="portal-primary" disabled>Login not active</button><p class="fine">Do not enter real credentials in this preview.</p>';
+  }
+  body.innerHTML=content;modal.classList.add("show");modal.setAttribute("aria-hidden","false");document.body.classList.add("portal-open");
+ }
+ document.addEventListener("click",function(e){
+  const opener=e.target.closest("[data-open]");
+  if(opener){e.preventDefault();openPortal(opener.getAttribute("data-open"));return;}
+  if(e.target.closest("[data-close]")||e.target.classList.contains("portal-close")||e.target===modal){closePortal();return;}
+  if(e.target.closest("#copy-wallet")){
+   const address="TGHzwHhJ1XULyUmf6B8zf4djkyoeh6eiYY";
+   if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(address).then(()=>alert("Wallet address copied")).catch(()=>prompt("Copy wallet address:",address));}
+   else{prompt("Copy wallet address:",address);}
+  }
+ });
+ document.addEventListener("keydown",e=>{if(e.key==="Escape")closePortal();});
+ window.openPortal=openPortal;window.closePortal=closePortal;
+}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",initPortal);else initPortal();
+})();
