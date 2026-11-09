@@ -85,7 +85,7 @@ for insert to authenticated with check (
   and (
     (kind = 'deposit' and tx_hash is not null and exists (
       select 1 from public.crypto_wallets w
-      where w.active = true and w.asset = asset and w.network = network and w.address = destination_address
+      where w.active = true and w.asset = wallet_transactions.asset and w.network = wallet_transactions.network and w.address = wallet_transactions.destination_address
     ))
     or (kind = 'withdrawal' and destination_address is not null)
   )
