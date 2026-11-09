@@ -8,7 +8,7 @@ function init(){
  modal=document.getElementById("portal-modal");body=document.getElementById("portal-body");shell=document.getElementById("app-shell");
  if(!modal||!body){console.error("Login modal markup missing");return;}
  // Capture clicks early so navigation scripts or mobile wrappers cannot swallow auth actions.
- document.addEventListener("click",clickHandler,true);document.addEventListener("submit",submitHandler);
+ document.addEventListener("click",clickHandler,true);document.addEventListener("submit",submitHandler);startAICarousel();
  if(window.supabase&&window.supabase.createClient){sb=window.supabase.createClient(URL,KEY);}
  else console.error("Supabase SDK failed to load");
  document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();});
@@ -18,6 +18,14 @@ function init(){
   sb.auth.onAuthStateChange((_event,session)=>{user=session?session.user:null;updateHeader();if(user){showApp(activePage);}else{hideApp();}});
   sb.auth.getSession().then(({data})=>{user=data.session?data.session.user:null;updateHeader();if(user)showApp("dashboard");}).catch(console.error);
  }
+}
+function startAICarousel(){
+ const grid=document.getElementById("ai-feature-grid");if(!grid)return;
+ const cards=Array.from(grid.querySelectorAll(".ai-feature-card"));if(cards.length<4)return;
+ let start=0;
+ const count=document.getElementById("ai-feature-count"),bar=document.getElementById("ai-feature-progress");
+ const rotate=()=>{cards.forEach((card,i)=>card.classList.toggle("is-visible",i>=start&&i<start+3));if(count)count.textContent=String(start+1).padStart(2,"0")+"—"+String(Math.min(start+3,cards.length)).padStart(2,"0")+" / "+String(cards.length).padStart(2,"0");if(bar){bar.style.transition="none";bar.style.width="0%";requestAnimationFrame(()=>{bar.style.transition="width 4s linear";bar.style.width="100%";});}start=(start+3)%cards.length;};
+ rotate();if(!window.matchMedia("(prefers-reduced-motion: reduce)").matches){window.setInterval(rotate,4000);}
 }
 function updateHeader(){
  const login=document.querySelector('header button[data-open="login"],header button[data-action="logout"]');
