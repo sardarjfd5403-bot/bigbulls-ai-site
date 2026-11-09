@@ -420,3 +420,45 @@ body.app-mode .terminal .bb-brain-direction.buy{background:#124d3c!important;col
 body.app-mode .terminal .bb-brain-direction.sell{background:#5b2932!important;color:#ffd0d5!important}
 body.app-mode .terminal .bb-brain-toolbar b{color:#f4f7ff!important}
 body.app-mode .terminal .bb-brain-toolbar small{color:#bdcce0!important}
+
+
+/* Global dark-card readability pass across every client portal page */
+body.app-mode .terminal :is(
+  .client-panel,.learning-grid article,.signal-card,.service-card,
+  .wallet-address-card,.admin-transaction,.admin-row,.echo-details,
+  .package-functions,.bb-crypto-quote,.market-strip,.market-table-wrap,
+  .bb-backtest-panel,.bb-brain-card,.bb-brain-summary article,.bb-backtest-item,
+  .empty-state,.settings-tabs
+){
+  color:#f4f7ff!important;
+}
+body.app-mode .terminal :is(
+  .client-panel,.learning-grid article,.signal-card,.service-card,
+  .wallet-address-card,.admin-transaction,.admin-row,.echo-details,
+  .package-functions,.bb-crypto-quote,.market-strip,.market-table-wrap
+){
+  --card-readable-text:#f4f7ff;
+}
+body.app-mode .terminal :is(
+  .client-panel,.learning-grid article,.signal-card,.service-card,
+  .wallet-address-card,.admin-transaction,.echo-details,.package-functions
+) :is(h1,h2,h3,h4,h5,h6,b,strong,label,th,td){
+  color:#fff!important;
+}
+body.app-mode .terminal :is(
+  .client-panel,.learning-grid article,.signal-card,.service-card,
+  .wallet-address-card,.admin-transaction,.echo-details,.package-functions
+) :is(p,small,span,li,dt,dd,.fine,.muted){
+  color:#d0dced!important;
+}
+body.app-mode .terminal :is(.client-panel,.learning-grid article,.signal-card,.service-card)
+  :is(input,select,textarea){
+  color:#fff!important;
+  background:#0b1728!important;
+  border-color:#3b5576!important;
+}
+body.app-mode .terminal :is(.client-panel,.learning-grid article,.signal-card,.service-card)
+  :is(input,select,textarea)::placeholder{color:#aebfd5!important}
+body.app-mode .terminal .client-panel a,
+body.app-mode .terminal .learning-grid article a,
+body.app-mode .terminal .signal-card a{color:#8fc0ff!important}
