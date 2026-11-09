@@ -2,33 +2,24 @@
 -- Run AFTER 001-core-platform-schema.sql and 002-kyc-partner-workflows.sql.
 -- This migration does not provision a broker, process fiat payments, or create live trading accounts.
 
-create table if not exists public.profiles (
- user_id uuid primary key references auth.users(id) on delete cascade,
- full_name text,
- country text,
- phone text,
- account_type text not null default 'Individual',
- status text not null default 'active' check(status in ('active','restricted','closed')),
- created_at timestamptz not null default now(),
- updated_at timestamptz not null default now()
-);
+-- Existing project schema uses profiles.id as the Supabase Auth user UUID.
+-- Extend that table in place; do not introduce a second user_id key.
+alter table public.profiles add column if not exists country text;
+alter table public.profiles add column if not exists phone text;
+alter table public.profiles add column if not exists account_type text not null default 'Individual';
+alter table public.profiles add column if not exists status text not null default 'active';
+alter table public.profiles add column if not exists updated_at timestamptz not null default now();
 
--- Compatibility: some Supabase projects already have a profiles table keyed by id.
--- Add user_id and backfill it from id before creating policies that reference user_id.
-alter table public.profiles add column if not exists user_id uuid;
--- Existing profiles tables in this project use a UUID id column; preserve those user links.
-update public.profiles set user_id = id where user_id is null;
-create unique index if not exists profiles_user_id_uidx on public.profiles(user_id);
 alter table public.profiles enable row level security;
 drop policy if exists "clients read own profile" on public.profiles;
 create policy "clients read own profile" on public.profiles for select to authenticated
-using(user_id=auth.uid() or public.is_bigbulls_admin());
+using(id=auth.uid() or public.is_bigbulls_admin());
 drop policy if exists "clients insert own profile" on public.profiles;
 create policy "clients insert own profile" on public.profiles for insert to authenticated
-with check(user_id=auth.uid() and status='active');
+with check(id=auth.uid() and status='active');
 drop policy if exists "clients update own profile" on public.profiles;
 create policy "clients update own profile" on public.profiles for update to authenticated
-using(user_id=auth.uid()) with check(user_id=auth.uid() and status in ('active','restricted','closed'));
+using(id=auth.uid()) with check(id=auth.uid() and status in ('active','restricted','closed'));
 drop policy if exists "admins manage profiles" on public.profiles;
 create policy "admins manage profiles" on public.profiles for all to authenticated
 using(public.is_bigbulls_admin()) with check(public.is_bigbulls_admin());
@@ -37,11 +28,12 @@ create or replace function public.sync_auth_profile()
 returns trigger language plpgsql security definer set search_path=public
 as $$
 begin
- insert into public.profiles(user_id,full_name,country,phone,account_type)
+ insert into public.profiles(id,full_name,country,phone,account_type)
  values(new.id,new.raw_user_meta_data->>'full_name',new.raw_user_meta_data->>'country',
         new.raw_user_meta_data->>'phone',coalesce(new.raw_user_meta_data->>'account_type','Individual'))
- on conflict(user_id) do update set
-  full_name=excluded.full_name,country=excluded.country,phone=excluded.phone,
+ on conflict(id) do update set
+  full_name=coalesce(excluded.full_name,public.profiles.full_name),
+  country=excluded.country,phone=excluded.phone,
   account_type=excluded.account_type,updated_at=now();
  return new;
 end;
@@ -49,6 +41,12 @@ $$;
 drop trigger if exists bigbulls_auth_profile_sync on auth.users;
 create trigger bigbulls_auth_profile_sync after insert or update of raw_user_meta_data on auth.users
 for each row execute function public.sync_auth_profile();
+
+-- Backfill profile records for users who registered before this trigger existed.
+insert into public.profiles(id,full_name)
+select u.id,u.raw_user_meta_data->>'full_name'
+from auth.users u
+on conflict(id) do nothing;
 
 create table if not exists public.admin_audit_logs (
  id bigint generated always as identity primary key,
@@ -159,10 +157,5 @@ $$;
 revoke all on function public.admin_review_wallet_transaction(uuid,text,text) from public,anon;
 grant execute on function public.admin_review_wallet_transaction(uuid,text,text) to authenticated;
 
--- Seed profile rows for existing auth users without overwriting existing profiles.
-insert into public.profiles(user_id,full_name,country,phone,account_type)
-select id,raw_user_meta_data->>'full_name',raw_user_meta_data->>'country',
- raw_user_meta_data->>'phone',coalesce(raw_user_meta_data->>'account_type','Individual')
-from auth.users on conflict(user_id) do nothing;
 
 notify pgrst,'reload schema';
