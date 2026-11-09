@@ -48,6 +48,18 @@ create policy "clients read own account balance ledger" on public.account_balanc
 grant select on public.account_balance_ledger to authenticated;
 revoke insert,update,delete on public.account_balance_ledger from anon,authenticated;
 
+-- Private client payment proof storage. Admin reviews files through short-lived signed URLs.
+insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
+values('payment-proofs','payment-proofs',false,10485760,array['image/jpeg','image/png','image/webp','application/pdf'])
+on conflict(id) do update set public=false,file_size_limit=10485760,allowed_mime_types=excluded.allowed_mime_types;
+
+drop policy if exists "clients upload own payment proofs" on storage.objects;
+create policy "clients upload own payment proofs" on storage.objects
+for insert to authenticated with check(bucket_id='payment-proofs' and split_part(name,'/',1)=auth.uid()::text);
+drop policy if exists "clients read own payment proofs" on storage.objects;
+create policy "clients read own payment proofs" on storage.objects
+for select to authenticated using(bucket_id='payment-proofs' and (split_part(name,'/',1)=auth.uid()::text or public.is_bigbulls_admin()));
+
 create table if not exists public.withdrawal_otp_challenges(
  id uuid primary key default gen_random_uuid(),
  transaction_id uuid not null references public.wallet_transactions(id) on delete cascade,
