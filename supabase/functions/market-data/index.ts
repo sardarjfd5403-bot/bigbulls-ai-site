@@ -8,12 +8,17 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 const SYMBOLS = ["EUR/USD", "GBP/USD", "USD/JPY", "XAU/USD"];
+// Warm-isolate cache reduces repeated provider calls; deploy a shared DB cache before high-volume public launch.
+let cachedPayload: unknown = null;
+let cachedAt = 0;
+const CACHE_TTL_MS = 15 * 60 * 1000;
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json", "Cache-Control": "no-store" } });
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "POST required" }, 405);
+  if (cachedPayload && Date.now() - cachedAt < CACHE_TTL_MS) return json(cachedPayload);
   const apiKey = Deno.env.get("TWELVE_DATA_API_KEY");
   if (!apiKey) return json({ error: "Market data provider key is not configured on the server." }, 503);
 
@@ -38,7 +43,10 @@ serve(async (req: Request) => {
         rows.push({ symbol: block.meta.symbol, ...block.values });
       }
     }
-    return json({ provider: "Twelve Data", interval: "1min", fetched_at: new Date().toISOString(), quotes: rows, note: "Market data only; not broker execution pricing." });
+    const result = { provider: "Twelve Data", interval: "1min", fetched_at: new Date().toISOString(), quotes: rows, note: "Market data only; not broker execution pricing." };
+    cachedPayload = result;
+    cachedAt = Date.now();
+    return json(result);
   } catch (_error) {
     return json({ error: "Unable to reach market data provider." }, 502);
   }
