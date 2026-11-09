@@ -320,3 +320,34 @@ button,input,select,textarea{font-weight:500}
 
 /* Keep custom component selectors from reintroducing mixed typefaces */
 body *{font-family:"Roboto",Arial,sans-serif!important}
+
+/* BIGBULLS AI intelligence carousel and package payment */
+.ai-showcase{max-width:1500px;margin:30px auto 20px;padding:72px 7vw;background:linear-gradient(135deg,#0d192c,#0a1220 62%,#101b31);border-top:1px solid #304766;border-bottom:1px solid #304766;overflow:hidden}
+.ai-showcase-head{display:flex;align-items:flex-end;justify-content:space-between;gap:30px;margin-bottom:28px}
+.ai-showcase h2{font-size:clamp(30px,4vw,48px);line-height:1.12;margin:14px 0}
+.ai-showcase h2 em{color:var(--gold);font-style:normal}
+.ai-showcase-head p{max-width:650px;color:var(--muted)}
+.ai-rotate-label{white-space:nowrap;border:1px solid #304765;border-radius:30px;padding:10px 14px;color:#a9bad1;font-size:10px;letter-spacing:.12em}
+.ai-rotate-label b{color:var(--gold);margin-left:8px}
+.ai-live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#50d6a1;box-shadow:0 0 12px #50d6a1;margin-right:8px}
+.ai-feature-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;min-height:220px}
+.ai-feature-card{display:none;position:relative;min-height:205px;padding:24px;border:1px solid #2a405f;border-radius:14px;background:linear-gradient(145deg,#14243a,#0d1728);overflow:hidden;opacity:0;transform:translateY(12px)}
+.ai-feature-card.is-visible{display:block;animation:aiCardIn .65s ease forwards}
+.ai-feature-card small{font-size:10px;letter-spacing:.15em;color:#82aaff;font-weight:800}
+.ai-feature-card h3{font-size:20px;margin:22px 0 9px;color:#f3f7ff}
+.ai-feature-card p{max-width:360px;color:#aab8cc;font-size:13px;line-height:1.65}
+.ai-card-mark{position:absolute;right:18px;bottom:5px;color:#4d83d6;font-size:50px;opacity:.14}
+.ai-carousel-foot{display:flex;align-items:center;gap:16px;margin-top:22px;color:#8ea2bd;font-size:10px;letter-spacing:.1em}
+.ai-progress{height:3px;background:#263954;flex:1;border-radius:9px;overflow:hidden}
+.ai-progress i{display:block;width:0;height:100%;background:var(--gold);transition:width 4s linear}
+@keyframes aiCardIn{to{opacity:1;transform:translateY(0)}}
+.package-functions{margin:16px 0;padding:15px;border:1px solid #2e4563;border-radius:9px;background:#0d1a2c}
+.package-functions b{font-size:10px;letter-spacing:.15em;color:var(--gold)}
+.package-functions p{font-size:12px;color:#b8c7da;line-height:1.7;margin:8px 0 0}
+.wallet-address-card{margin:16px 0;padding:15px;background:#0b1728;border:1px solid #385274;border-radius:10px}
+.wallet-address-card small{display:block;color:#9db4d4;font-size:10px;letter-spacing:.1em;margin-bottom:9px}
+.wallet-address-card code{display:block;overflow-wrap:anywhere;color:#fff;font-size:13px;line-height:1.6}
+.wallet-address-card button{margin-top:12px;padding:9px 13px;border-radius:7px;border:1px solid #5c82b2;background:#172a43;color:#fff;font-weight:700}
+.portal-secondary{width:100%;margin-top:10px;padding:11px;border:1px solid #3b506e;border-radius:7px;background:#14243a;color:#e8effa;font-weight:700}
+@media(max-width:800px){.ai-showcase{padding:48px 5vw}.ai-showcase-head{display:block}.ai-rotate-label{display:inline-block;margin-top:8px}.ai-feature-grid{grid-template-columns:1fr;min-height:190px}.ai-feature-card{min-height:180px}.ai-carousel-foot{font-size:8px;gap:8px}}
+@media(prefers-reduced-motion:reduce){.ai-feature-card.is-visible{animation:none;opacity:1;transform:none}.ai-progress i{transition:none}}
