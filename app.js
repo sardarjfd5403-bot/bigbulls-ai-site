@@ -54,7 +54,7 @@ function esc(v){return String(v||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&l
 function hideApp(){shell.hidden=true;document.body.classList.remove("app-mode");document.querySelector("main")?.removeAttribute("hidden");document.querySelector("footer")?.removeAttribute("hidden");activePage="dashboard";updateHeader();}
 function isAdmin(){return user?.app_metadata?.role==="admin";}
 function showApp(page){
- if(!user||!shell)return;activePage=pages.includes(page)?page:"dashboard";if(activePage==="admin"&&!isAdmin())activePage="dashboard";
+ if(!user||!shell)return;activePage=pages.includes(page)?page:"dashboard";if(activePage==="accounts")window.bbAccountMode="real";if(activePage==="admin"&&!isAdmin())activePage="dashboard";
  shell.hidden=false;document.body.classList.add("app-mode");
  const main=document.querySelector("main"),footer=document.querySelector("footer");if(main)main.setAttribute("hidden","");if(footer)footer.setAttribute("hidden","");
  closeModal();renderApp();loadPageData();
