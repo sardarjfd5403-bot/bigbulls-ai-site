@@ -2,7 +2,7 @@
 "use strict";
 const URL="https://ztiiyulusburxjkpcfxu.supabase.co";
 const KEY="sb_publishable_5hDwqvbcUHeSJdXFHf9ugw_VPYGN4J_";
-let sb=null,modal,body,shell,user=null,activePage="dashboard",licenseActive=false;
+let sb=null,modal,body,shell,user=null,activePage="dashboard",licenseActive=false,financialChannel=null;
 const pages=["dashboard","terminal","accounts","wallet","market-analysis","signals","learning","services","portfolio","orders","license","echo-system","downloads","settings","support","verification","partner","admin"];
 function init(){
  modal=document.getElementById("portal-modal");body=document.getElementById("portal-body");shell=document.getElementById("app-shell");
@@ -53,8 +53,16 @@ function message(t,bad){let el=body.querySelector("[data-msg]");if(!el){el=docum
 function esc(v){return String(v||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function hideApp(){shell.hidden=true;document.body.classList.remove("app-mode");document.querySelector("main")?.removeAttribute("hidden");document.querySelector("footer")?.removeAttribute("hidden");activePage="dashboard";updateHeader();}
 function isAdmin(){return user?.app_metadata?.role==="admin";}
+function startFinancialRealtime(){
+ if(!sb||!user)return;
+ if(financialChannel){sb.removeChannel(financialChannel);financialChannel=null;}
+ const channel=sb.channel("bb-financial-"+user.id);
+ if(isAdmin())channel.on("postgres_changes",{event:"*",schema:"public",table:"wallet_transactions"},()=>{if(activePage==="admin")loadPageData();});
+ else channel.on("postgres_changes",{event:"*",schema:"public",table:"wallet_transactions",filter:"user_id=eq."+user.id},()=>{if(activePage==="accounts"){loadClientTradingAccounts();const tools=document.getElementById("bb-account-tools");if(tools?.dataset.accountTool==="transactions")showAccountTool(tools.dataset.accountId,"transactions");}});
+ financialChannel=channel.subscribe();
+}
 function showApp(page){
- if(!user||!shell)return;activePage=pages.includes(page)?page:"dashboard";if(activePage==="accounts")window.bbAccountMode="real";if(activePage==="admin"&&!isAdmin())activePage="dashboard";
+ if(!user||!shell)return;activePage=pages.includes(page)?page:"dashboard";startFinancialRealtime();if(activePage==="accounts")window.bbAccountMode="real";if(activePage==="admin"&&!isAdmin())activePage="dashboard";
  shell.hidden=false;document.body.classList.add("app-mode");
  const main=document.querySelector("main"),footer=document.querySelector("footer");if(main)main.setAttribute("hidden","");if(footer)footer.setAttribute("hidden","");
  closeModal();renderApp();loadPageData();
@@ -201,14 +209,14 @@ async function showAccountTool(id,action){
  if(action==="transactions"){
   box.innerHTML='<span class="accounts-kicker">TRANSACTION HISTORY</span><h3>'+heading+'</h3><p>Deposits, withdrawals and transfers for this account.</p><div id="bb-account-transactions">Loading…</div>';
   const [wallets,from,to]=await Promise.all([
-   sb.from("wallet_transactions").select("id,kind,asset,network,amount_usd,status,tx_hash,created_at").eq("account_id",id).order("created_at",{ascending:false}),
+   sb.from("wallet_transactions").select("id,kind,asset,network,amount_usd,status,tx_hash,invoice_id,rejection_reason,admin_note,destination_address,payout_reference,created_at,completed_at").eq("account_id",id).order("created_at",{ascending:false}),
    sb.from("account_transfers").select("id,from_account,to_account,amount_usd,status,created_at").eq("from_account",id).order("created_at",{ascending:false}),
    sb.from("account_transfers").select("id,from_account,to_account,amount_usd,status,created_at").eq("to_account",id).order("created_at",{ascending:false})
   ]);
   const list=document.getElementById("bb-account-transactions");if(!list)return;
   if(wallets.error||from.error||to.error){list.textContent="History unavailable: "+(wallets.error||from.error||to.error).message;return;}
-  const items=[...(wallets.data||[]).map(x=>({date:x.created_at,label:x.kind.toUpperCase()+" · "+x.asset+"/"+x.network,amount:"$"+Number(x.amount_usd).toFixed(2),status:x.status,ref:x.tx_hash||""})),...(from.data||[]).map(x=>({date:x.created_at,label:"TRANSFER OUT",amount:"$"+Number(x.amount_usd).toFixed(2),status:x.status,ref:"To "+x.to_account})),...(to.data||[]).map(x=>({date:x.created_at,label:"TRANSFER IN",amount:"$"+Number(x.amount_usd).toFixed(2),status:x.status,ref:"From "+x.from_account}))].sort((a,b)=>new Date(b.date)-new Date(a.date));
-  list.innerHTML=items.length?items.map(x=>'<div class="admin-row"><span><b>'+esc(x.label)+'</b><small>'+new Date(x.date).toLocaleString()+(x.ref?' · '+esc(x.ref):'')+'</small></span><b>'+esc(x.amount)+'</b><em>'+esc(x.status)+'</em></div>').join(""):'<div class="empty-state">No transactions recorded for this account.</div>';
+  const items=[...(wallets.data||[]).map(x=>({date:x.created_at,label:x.kind.toUpperCase()+" · "+x.asset+"/"+x.network,amount:"$"+Number(x.amount_usd).toFixed(2),status:x.status,ref:x.invoice_id||x.tx_hash||x.destination_address||"",note:x.rejection_reason||x.admin_note||x.payout_reference||""})),...(from.data||[]).map(x=>({date:x.created_at,label:"TRANSFER OUT",amount:"$"+Number(x.amount_usd).toFixed(2),status:x.status,ref:"To "+x.to_account})),...(to.data||[]).map(x=>({date:x.created_at,label:"TRANSFER IN",amount:"$"+Number(x.amount_usd).toFixed(2),status:x.status,ref:"From "+x.from_account}))].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  list.innerHTML=items.length?items.map(x=>'<div class="admin-row"><span><b>'+esc(x.label)+'</b><small>'+new Date(x.date).toLocaleString()+(x.ref?' · '+esc(x.ref):'')+(x.note?' · '+esc(x.note):'')+'</small></span><b>'+esc(x.amount)+'</b><em>'+esc(x.status)+'</em></div>').join(""):'<div class="empty-state">No transactions recorded for this account.</div>';
   box.scrollIntoView({behavior:"smooth",block:"start"});return;
  }
  if(action==="transfer"){
