@@ -559,3 +559,22 @@ body.app-mode .terminal #client-page .account-mode-demo .account-number{color:#f
 .bb-account-actions button{font-size:12px;padding:8px 12px}
 .bb-account-actions button.danger{border-color:#9f3b45;color:#fecaca}
 @media(max-width:600px){.bb-account-meta{grid-template-columns:1fr 1fr}.bb-account-card{padding:14px}}
+
+/* Account switching and per-account financial actions */
+.bb-account-tabs{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}
+.bb-account-tabs button{background:#111827;color:#f8fafc;border:1px solid #334155;border-radius:10px;padding:12px 20px;font-weight:800;letter-spacing:.04em;cursor:pointer}
+.bb-account-tabs button.active{background:#d5a83d;color:#111827;border-color:#d5a83d;box-shadow:0 5px 18px #d5a83d25}
+.account-financial-actions{margin:16px 0 10px}
+.account-financial-actions button{background:#17243a;border-color:#42536c;color:#fff}
+.account-financial-actions button:nth-child(4){background:#174b38;border-color:#26865c}
+.account-financial-actions button:nth-child(5){background:#58302e;border-color:#a65a50}
+.bb-account-tools{margin-top:20px;background:#101a2b;color:#f8fafc;border:1px solid #34445d;border-radius:14px;padding:20px;scroll-margin-top:20px}
+.bb-account-tools h3,.bb-account-tools p{color:#fff}
+.bb-account-tools .empty-state{color:#dce5f2}
+.bb-account-tools .wallet-address-card{background:#0a1220;border:1px solid #3b4e68;border-radius:12px;padding:16px;margin:12px 0}
+.bb-account-tools .wallet-address-card code{display:block;overflow-wrap:anywhere;color:#f8d77b;font-size:14px;margin:12px 0}
+.bb-account-tools .wallet-address-card button{background:#d5a83d;color:#111827;border:0;border-radius:8px;padding:8px 14px;font-weight:800}
+.bb-account-tools .client-form label{color:#e2e8f0}
+.bb-account-tools .admin-row{color:#fff;border-bottom:1px solid #334155}
+.bb-account-tools .admin-row small{color:#cbd5e1}
+@media(max-width:600px){.bb-account-tabs button{flex:1;padding:11px 8px;font-size:12px}.account-financial-actions button{flex:1 1 42%}}
