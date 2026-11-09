@@ -49,7 +49,11 @@ Deno.serve(async (req) => {
       .select("id", { count: "exact", head: true }).eq("transaction_id", transactionId)
       .eq("user_id", user.id).gte("created_at", since);
     if (rateError) return json({ error: "Could not check OTP rate limit" }, 500);
-    if ((recentChallenges || 0) >= 3) return json({ error: "OTP limit reached. Try again in one hour." }, 429);
+    if ((recentChallenges || 0) >= 3) return json({ error: "OTP limit reached for this withdrawal. Try again in one hour." }, 429);
+    const { count: userChallenges, error: userRateError } = await admin.from("withdrawal_otp_challenges")
+      .select("id", { count: "exact", head: true }).eq("user_id", user.id).gte("created_at", since);
+    if (userRateError) return json({ error: "Could not check account OTP rate limit" }, 500);
+    if ((userChallenges || 0) >= 6) return json({ error: "Account OTP limit reached. Try again in one hour." }, 429);
     if (!resendKey) return json({ error: "Email OTP delivery is not configured. Admin must add RESEND_API_KEY." }, 503);
     const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, "0");
     const otpHash = await sha256(`${transactionId}:${user.id}:${code}`);
