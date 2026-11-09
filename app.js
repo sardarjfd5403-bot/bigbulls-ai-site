@@ -63,12 +63,23 @@ function showFinancialNotice(row){
  if(row.rejection_reason){const reason=document.createElement("small");reason.textContent=row.rejection_reason;node.append(reason);}
  document.body.append(node);window.setTimeout(()=>node.remove(),9000);
 }
+function showAccountBalanceNotice(account){
+ const node=document.createElement("div");node.className="bb-financial-toast";
+ const heading=document.createElement("b");heading.textContent="Trading account balance updated";
+ const detail=document.createElement("span");detail.textContent="Account #"+account.account_number+" · "+account.currency+" "+Number(account.balance||0).toFixed(2);
+ node.append(heading,detail);document.body.append(node);window.setTimeout(()=>node.remove(),9000);
+}
 function startFinancialRealtime(){
  if(!sb||!user)return;
  if(financialChannel){sb.removeChannel(financialChannel);financialChannel=null;}
  const channel=sb.channel("bb-financial-"+user.id);
- if(isAdmin())channel.on("postgres_changes",{event:"UPDATE",schema:"public",table:"wallet_transactions"},()=>{if(activePage==="admin")loadPageData();});
- else channel.on("postgres_changes",{event:"UPDATE",schema:"public",table:"wallet_transactions",filter:"user_id=eq."+user.id},payload=>{showFinancialNotice(payload.new);if(activePage==="accounts"){loadClientTradingAccounts();const tools=document.getElementById("bb-account-tools");if(tools?.dataset.accountTool==="transactions")showAccountTool(tools.dataset.accountId,"transactions");}});
+ if(isAdmin()){
+  channel.on("postgres_changes",{event:"UPDATE",schema:"public",table:"wallet_transactions"},()=>{if(activePage==="admin")loadPageData();});
+  channel.on("postgres_changes",{event:"UPDATE",schema:"public",table:"trading_accounts"},()=>{if(activePage==="admin")loadPageData();});
+ }else{
+  channel.on("postgres_changes",{event:"UPDATE",schema:"public",table:"wallet_transactions",filter:"user_id=eq."+user.id},payload=>{showFinancialNotice(payload.new);if(activePage==="accounts"){loadClientTradingAccounts();const tools=document.getElementById("bb-account-tools");if(tools?.dataset.accountTool==="transactions")showAccountTool(tools.dataset.accountId,"transactions");}});
+  channel.on("postgres_changes",{event:"UPDATE",schema:"public",table:"trading_accounts",filter:"user_id=eq."+user.id},payload=>{if(activePage==="accounts")loadClientTradingAccounts();if(payload.new&&payload.old&&Number(payload.new.balance)!==Number(payload.old.balance))showAccountBalanceNotice(payload.new);});
+ }
  financialChannel=channel.subscribe();
 }
 function showApp(page){
