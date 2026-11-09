@@ -1,107 +1,67 @@
 (function(){
 "use strict";
-const SUPABASE_URL = "https://ztiiyulusburxjkpcfxu.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_5hDwqvbcUHeSJdXFHf9ugw_VPYGN4J_";
-let client = null;
-
-function initPortal(){
- const modal=document.getElementById("portal-modal");
- const body=document.getElementById("portal-body");
- if(!modal||!body){console.error("BIGBULLS portal elements missing");return;}
-
- if(window.supabase && typeof window.supabase.createClient==="function"){
-  client=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
- }else{
-  console.error("Supabase JS library did not load.");
- }
-
- function closePortal(){
-  modal.classList.remove("show");
-  modal.setAttribute("aria-hidden","true");
-  document.body.classList.remove("portal-open");
- }
- function showMessage(message,isError){
-  const box=body.querySelector("[data-auth-message]");
-  if(box){box.textContent=message;box.className="notice auth-message"+(isError?" error":"");}
- }
- function accountView(user){
-  body.innerHTML='<p class="eyebrow">CUSTOMER PORTAL</p><h2>You are signed in</h2><p class="muted">Account email</p><p id="account-email" class="account-email"></p><div class="notice">Your account is connected. Payment verification, lifetime license activation and private downloads will be enabled after the secure backend is completed.</div><button class="portal-primary" type="button" data-auth-action="logout">Log out</button>';
-  const email=body.querySelector("#account-email");
-  if(email) email.textContent=user.email||"Signed-in customer";
- }
- async function openPortal(kind){
-  if(kind==="buy"){
-   body.innerHTML='<p class="eyebrow">PACKAGE & PAYMENT DETAILS · PREVIEW</p><h2>BIGBULLS AI Echo System</h2><p class="muted">Full package · <strong>$199 USD</strong> · one-time payment</p><div class="steps"><b>1. Review package price</b><b>2. Official payment checkout</b><b>3. Submit transaction ID</b><b>4. Payment verification</b><b>5. License + private download</b></div><div class="wallet-box"><small>USDT · TRON (TRC20) ADDRESS — REFERENCE ONLY</small><code id="wallet-address">TGHzwHhJ1XULyUmf6B8zf4djkyoeh6eiYY</code><button type="button" class="copy-wallet" id="copy-wallet">Copy wallet address</button></div><div class="notice"><strong>Checkout is not live.</strong> Payment submission, on-chain verification, account activation and automatic license/download delivery are not enabled yet. Do not transfer funds to this address until official checkout is activated.</div><button class="portal-primary" type="button" data-close>Close</button>';
-  }else{
-   let session=null;
-   if(client){
-    try{const result=await client.auth.getSession();session=result.data.session;}catch(e){console.error(e);}
-   }
-   if(session&&session.user){accountView(session.user);}
-   else if(kind==="signup"){
-    body.innerHTML='<p class="eyebrow">CUSTOMER PORTAL</p><h2>Create account</h2><p class="muted">Register with your email address.</p><form id="signup-form"><label>Full name<input name="full_name" type="text" autocomplete="name" placeholder="Your full name" required></label><label>Email<input name="email" type="email" autocomplete="email" placeholder="you@example.com" required></label><label>Password<input name="password" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters" required></label><button class="portal-primary" type="submit">Create account</button></form><div data-auth-message aria-live="polite"></div><p class="fine">After registration, check your email for a verification link if email confirmation is enabled.</p><button class="copy-wallet" type="button" data-open="login">Already registered? Login</button>';
-   }else{
-    body.innerHTML='<p class="eyebrow">CUSTOMER PORTAL</p><h2>Login</h2><p class="muted">Sign in to your BIGBULLS customer account.</p><form id="login-form"><label>Email<input name="email" type="email" autocomplete="email" placeholder="Registered email" required></label><label>Password<input name="password" type="password" autocomplete="current-password" placeholder="Password" required></label><button class="portal-primary" type="submit">Login</button></form><div data-auth-message aria-live="polite"></div><p class="fine">Use the email and password you registered with.</p><button class="copy-wallet" type="button" data-open="signup">Create a new account</button>';
-   }
-  }
-  modal.classList.add("show");
-  modal.setAttribute("aria-hidden","false");
-  document.body.classList.add("portal-open");
-  requestAnimationFrame(()=>{const first=body.querySelector("input:not([disabled])");if(first){first.focus({preventScroll:true});}});
- }
- document.addEventListener("click",async function(e){
-  if(!(e.target instanceof Element))return;
-  const opener=e.target.closest("[data-open]");
-  if(opener){e.preventDefault();openPortal(opener.getAttribute("data-open"));return;}
-  if(e.target.closest("[data-close]")||e.target.classList.contains("portal-close")||e.target===modal){closePortal();return;}
-  if(e.target.closest("#copy-wallet")){
-   const address="TGHzwHhJ1XULyUmf6B8zf4djkyoeh6eiYY";
-   if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(address).then(()=>alert("Wallet address copied")).catch(()=>prompt("Copy wallet address:",address));}
-   else{prompt("Copy wallet address:",address);}
-  }
-  if(e.target.closest('[data-auth-action="logout"]')&&client){
-   const result=await client.auth.signOut();
-   if(result.error){showMessage(result.error.message,true);}
-   else{body.innerHTML='<p class="eyebrow">CUSTOMER PORTAL</p><h2>You are logged out</h2><p class="muted">Your session has ended.</p><button class="portal-primary" type="button" data-open="login">Login again</button>';}
-  }
- });
- document.addEventListener("submit",async function(e){
-  if(e.target.id!=="signup-form"&&e.target.id!=="login-form")return;
-  e.preventDefault();
-  if(!client){showMessage("Authentication service could not load. Refresh the page and try again.",true);return;}
-  const form=e.target;
-  const data=new FormData(form);
-  const email=String(data.get("email")||"").trim();
-  const password=String(data.get("password")||"");
-  const submit=form.querySelector('button[type="submit"]');
-  submit.disabled=true;submit.textContent="Please wait…";
-  try{
-   if(form.id==="signup-form"){
-    const fullName=String(data.get("full_name")||"").trim();
-    const result=await client.auth.signUp({
-     email,password,
-     options:{
-      emailRedirectTo:window.location.origin+window.location.pathname,
-      data:{full_name:fullName}
-     }
-    });
-    if(result.error)throw result.error;
-    if(result.data.session&&result.data.user){accountView(result.data.user);}
-    else{showMessage("Registration received. Check your email and open the verification link to activate your account.",false);form.reset();}
-   }else{
-    const result=await client.auth.signInWithPassword({email,password});
-    if(result.error)throw result.error;
-    accountView(result.data.user);
-   }
-  }catch(error){
-   showMessage(error.message||"Authentication failed. Please try again.",true);
-   submit.disabled=false;
-   submit.textContent=form.id==="signup-form"?"Create account":"Login";
-  }
- });
- document.addEventListener("keydown",e=>{if(e.key==="Escape")closePortal();});
- window.openPortal=openPortal;
- window.closePortal=closePortal;
+const SUPABASE_URL="https://ztiiyulusburxjkpcfxu.supabase.co";
+const SUPABASE_KEY="sb_publishable_5hDwqvbcUHeSJdXFHf9ugw_VPYGN4J_";
+let sb=null, modal, body, currentUser=null;
+function init(){
+ modal=document.getElementById("portal-modal");body=document.getElementById("portal-body");
+ if(!modal||!body){console.error("BIGBULLS portal markup missing");return;}
+ if(window.supabase&&typeof window.supabase.createClient==="function"){
+  sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  sb.auth.onAuthStateChange((_event,session)=>{currentUser=session&&session.user?session.user:null;});
+ }else console.error("Supabase SDK did not load");
+ document.addEventListener("click",handleClick);
+ document.addEventListener("submit",handleSubmit);
+ document.addEventListener("keydown",e=>{if(e.key==="Escape")close();});
+ window.openPortal=open;window.closePortal=close;
 }
-if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",initPortal);else initPortal();
+function show(){modal.classList.add("show");modal.setAttribute("aria-hidden","false");document.body.classList.add("portal-open");}
+function close(){if(!modal)return;modal.classList.remove("show");modal.setAttribute("aria-hidden","true");document.body.classList.remove("portal-open");}
+function msg(t,bad){let n=body.querySelector("[data-auth-message]");if(!n){n=document.createElement("div");n.setAttribute("data-auth-message","");body.appendChild(n);}n.className="notice auth-message"+(bad?" error":"");n.textContent=t;}
+function safe(v){return String(v||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+async function open(kind){
+ if(!modal)return;
+ if(kind==="buy"){if(typeof window.openPortalBuy==="function"){window.openPortalBuy();return;}buyView();show();return;}
+ if(!sb){body.innerHTML='<h2>Account service unavailable</h2><p class="muted">Authentication library could not load. Please refresh and try again.</p>';show();return;}
+ try{const {data}=await sb.auth.getSession();currentUser=data.session?data.session.user:null;}catch(e){console.error(e);}
+ if(currentUser){dashboardView();}else if(kind==="signup"){signupView();}else{loginView();}
+ show();
+}
+function signupView(){body.innerHTML='<p class="eyebrow">CUSTOMER PORTAL</p><h2>Create account</h2><p class="muted">Create your secure BIGBULLS customer account.</p><form id="bb-signup"><label>Full name<input name="full_name" autocomplete="name" required></label><label>Email<input name="email" type="email" autocomplete="email" required></label><label>Password<input name="password" type="password" minlength="8" autocomplete="new-password" required></label><button class="portal-primary" type="submit">Create account</button></form><div data-auth-message aria-live="polite"></div><p class="fine">Email verification may be required before login.</p><button class="copy-wallet" type="button" data-view="login">Already registered? Login</button>';}
+function loginView(){body.innerHTML='<p class="eyebrow">CUSTOMER PORTAL</p><h2>Login</h2><p class="muted">Sign in to your customer account.</p><form id="bb-login"><label>Email<input name="email" type="email" autocomplete="email" required></label><label>Password<input name="password" type="password" autocomplete="current-password" required></label><button class="portal-primary" type="submit">Login</button></form><div data-auth-message aria-live="polite"></div><button class="copy-wallet" type="button" data-action="forgot">Forgot password?</button><br><button class="copy-wallet" type="button" data-view="signup">Create a new account</button>';}
+function dashboardView(){
+ const u=currentUser||{}, meta=u.user_metadata||{}, name=meta.full_name||"Customer";
+ body.innerHTML='<p class="eyebrow">BIGBULLS CUSTOMER PORTAL</p><h2>Welcome, '+safe(name)+'</h2><p class="muted">Your account workspace</p><div class="cards portal-cards"><article><small>ACCOUNT</small><h3>Profile</h3><p id="portal-email"></p><button class="copy-wallet" type="button" data-view="profile">Edit profile</button></article><article><small>LICENSE</small><h3>Pending activation</h3><p>License will be issued only after payment verification.</p></article><article><small>DOWNLOADS</small><h3>Not available yet</h3><p>Private download access is waiting for verified license activation.</p></article><article><small>ECHO SYSTEM</small><h3>Not connected</h3><p>Live trading engine and broker integration are not deployed.</p></article><article><small>SECURITY</small><h3>Account security</h3><p>Password reset is available. Authenticator-app 2FA is not enabled yet.</p><button class="copy-wallet" type="button" data-action="forgot">Reset password</button></article><article><small>PAYMENT</small><h3>No verified order</h3><p>Checkout is not live. Do not transfer funds yet.</p></article></div><button class="portal-primary" type="button" data-action="logout">Log out</button>';
+ const e=body.querySelector("#portal-email");if(e)e.textContent=u.email||"";
+}
+function profileView(){const u=currentUser||{},meta=u.user_metadata||{};body.innerHTML='<p class="eyebrow">ACCOUNT SETTINGS</p><h2>Your profile</h2><form id="bb-profile"><label>Full name<input name="full_name" value="'+safe(meta.full_name||"")+'" required></label><label>Email<input value="'+safe(u.email||"")+'" disabled></label><button class="portal-primary" type="submit">Save profile</button></form><div data-auth-message aria-live="polite"></div><button class="copy-wallet" type="button" data-view="dashboard">Back to dashboard</button>';}
+function buyView(){body.innerHTML='<p class="eyebrow">PACKAGE & PAYMENT · PREVIEW</p><h2>BIGBULLS AI Echo System</h2><p class="muted">Full package · <strong>$199 USD</strong> · one-time proposed price</p><div class="notice"><strong>Checkout is not live.</strong> Payment verification, license activation and private downloads are not enabled. Do not transfer funds.</div><button class="portal-primary" type="button" data-close>Close</button>';}
+async function handleSubmit(e){
+ const f=e.target;if(!(f instanceof HTMLFormElement))return;
+ if(!["bb-signup","bb-login","bb-profile"].includes(f.id))return;
+ e.preventDefault();if(!sb){msg("Authentication service is unavailable. Refresh and try again.",true);return;}
+ const d=new FormData(f),b=f.querySelector('button[type="submit"]');b.disabled=true;b.textContent="Please wait…";
+ try{
+  if(f.id==="bb-signup"){
+   const {data,error}=await sb.auth.signUp({email:String(d.get("email")).trim(),password:String(d.get("password")),options:{emailRedirectTo:location.origin+location.pathname,data:{full_name:String(d.get("full_name")).trim()}}});
+   if(error)throw error;
+   if(data.session){currentUser=data.user;dashboardView();}else{msg("Registration submitted. Check your email and open the verification link before logging in.",false);f.reset();b.disabled=false;b.textContent="Create account";}
+  }else if(f.id==="bb-login"){
+   const {data,error}=await sb.auth.signInWithPassword({email:String(d.get("email")).trim(),password:String(d.get("password"))});if(error)throw error;currentUser=data.user;dashboardView();
+  }else{
+   const {data,error}=await sb.auth.updateUser({data:{full_name:String(d.get("full_name")).trim()}});if(error)throw error;currentUser=data.user;dashboardView();msg("Profile updated successfully.",false);
+  }
+ }catch(err){msg(err.message||"Request failed. Please try again.",true);b.disabled=false;b.textContent=f.id==="bb-signup"?"Create account":f.id==="bb-login"?"Login":"Save profile";}
+}
+async function handleClick(e){
+ const el=e.target instanceof Element?e.target:null;if(!el)return;
+ const trigger=el.closest("[data-open]");if(trigger){e.preventDefault();open(trigger.getAttribute("data-open"));return;}
+ const view=el.closest("[data-view]");if(view){e.preventDefault();if(view.dataset.view==="profile")profileView();else if(view.dataset.view==="dashboard")dashboardView();else if(view.dataset.view==="signup")signupView();else loginView();return;}
+ const action=el.closest("[data-action]");if(action){
+  if(action.dataset.action==="logout"){const {error}=await sb.auth.signOut();if(error)msg(error.message,true);else{currentUser=null;loginView();}return;}
+  if(action.dataset.action==="forgot"){const email=prompt("Enter your registered email address:");if(!email)return;const {error}=await sb.auth.resetPasswordForEmail(email.trim(),{redirectTo:location.origin+location.pathname});if(error)msg(error.message,true);else msg("Password reset email requested. Check your inbox.",false);return;}
+ }
+ if(el.closest("[data-close]")||el.classList.contains("portal-close")||el===modal)close();
+}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
