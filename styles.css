@@ -159,7 +159,7 @@ input,select,textarea{background:#0b100e!important;border-color:#343b33!importan
 /* BIGBULLS Global broker experience — XM-inspired structure, original brand */
 :root{color-scheme:light;--bg:#f5f7fb;--panel:#fff;--line:#e2e8f0;--text:#101b32;--muted:#66748b;--blue:#1268d6;--gold:#1268d6}
 body{background:#fff;color:#101b32;font-family:"DM Sans",Arial,sans-serif}
-.site-header,header{height:82px;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(18px,5vw,76px);border-bottom:1px solid #e7edf5;position:sticky;top:0;background:rgba(255,255,255,.97);backdrop-filter:blur(16px);z-index:50}
+.site-header{height:82px;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(18px,5vw,76px);border-bottom:1px solid #e7edf5;position:sticky;top:0;background:rgba(255,255,255,.97);backdrop-filter:blur(16px);z-index:50}
 .brand{color:#0a1b3b;display:flex;align-items:center;gap:12px;font-family:"Space Grotesk",sans-serif;font-size:15px;letter-spacing:.08em}.brand b{color:#1268d6}.brand small{color:#7b8799;font-size:9px;letter-spacing:.2em}.mark{width:40px;height:40px;border-radius:12px;background:#0b1e42;color:#fff;border:0}
 .main-nav{display:flex;align-items:center;gap:clamp(12px,2vw,28px);color:#34435b;font-size:13px;font-weight:700}.main-nav a:hover{color:#1268d6}
 .header-actions{display:flex;gap:10px;align-items:center}.navbtn{border:1px solid #d6dfeb;background:#fff;color:#102344;border-radius:6px;padding:10px 16px;font-weight:700}.nav-open{background:#1268d6;border-color:#1268d6;color:#fff}
