@@ -293,3 +293,27 @@ body.app-mode .terminal .bb-buy{background:#e8f7f0!important;color:#08734e!impor
 body.app-mode .terminal .bb-sell{background:#fff0f0!important;color:#b42332!important;border:1px solid #f0c7cb!important}
 body.app-mode .terminal .notice{background:#fff8e8!important;color:#805d18!important;border-color:#efd89e!important}
 body.app-mode .terminal .status-pending{color:#946b18!important}
+
+
+/* XM-inspired typography system: clean, readable Roboto across every page */
+:root{font-family:"Roboto",Arial,sans-serif}
+html,body,button,input,select,textarea,option,
+.site-header,.main-nav,.brand,.hero,.section,.risk,.workflow,
+.terminal,.terminal *,.modal,.modal *,.cards,.account-cards,
+.payment-cards,.partner-points,.market-table,.ticker,footer{
+  font-family:"Roboto",Arial,sans-serif!important;
+}
+h1,h2,h3,h4,h5,h6,
+.terminal h1,.terminal h2,.terminal h3,.terminal h4,
+.section h2,.section h3,.hero h1,.brand{
+  font-family:"Roboto",Arial,sans-serif!important;
+  font-weight:700;
+}
+h1,h2,.section h2,.workflow h2,.purchase h2{
+  letter-spacing:-.035em;
+}
+body{font-weight:400;letter-spacing:0}
+button,input,select,textarea{font-weight:500}
+.eyebrow,.ticker,.terminal-nav,.terminal-page-head small{
+  font-family:"Roboto",Arial,sans-serif!important;
+}
