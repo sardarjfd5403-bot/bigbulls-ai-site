@@ -898,3 +898,22 @@ body.app-mode .terminal .deposit-qr{background:#fff!important}
 #bb-client-dossier-panel .admin-row{gap:12px;flex-wrap:wrap}
 #bb-client-dossier-panel .fine{opacity:.72}
 @media(max-width:640px){#bb-client-dossier-panel .bb-dossier-search{display:grid}#bb-client-dossier-panel .bb-dossier-profile{display:block}}
+
+/* BIGBULLS SEO & growth control */
+#bb-seo-admin-panel{margin:22px 0;padding:22px;border:1px solid #263a56;border-radius:18px;background:linear-gradient(145deg,#101c30,#0b1423)}
+.bb-seo-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px}
+.bb-seo-head small{color:#f5c451;font-weight:800;letter-spacing:.12em}
+.bb-seo-head h3{margin:4px 0}
+.bb-seo-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:16px 0}
+.bb-seo-metric{padding:14px;border:1px solid #273a55;border-radius:12px;background:#0b1422}
+.bb-seo-metric small{display:block;color:#a8b6ca;font-size:11px}
+.bb-seo-metric b{display:block;font-size:24px;color:#f4f7fc;margin-top:4px}
+.bb-seo-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:14px 0}
+.bb-seo-grid>.client-panel{min-width:0}
+.bb-seo-toggle{display:flex;align-items:center;gap:10px;margin:12px 0;color:#e8edf7}
+.bb-seo-toggle small{display:block;color:#a5b1c4;font-size:11px}
+#bb-seo-admin-panel .client-panel{margin:12px 0}
+#bb-seo-admin-panel .admin-row{gap:12px;flex-wrap:wrap}
+#bb-seo-admin-panel textarea{width:100%;resize:vertical}
+#bb-seo-admin-panel .fine{color:#a5b1c4}
+@media(max-width:760px){.bb-seo-grid{grid-template-columns:1fr}.bb-seo-head{align-items:flex-start;flex-direction:column}}
