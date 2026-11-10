@@ -73,11 +73,11 @@ async function runBrain(){
   for(const s of data.signals||[]){
    if(s.direction!=="BUY"&&s.direction!=="SELL")continue;
    if(Number(s.score)<80||s.data_status!=="FRESH"||!s.stop_loss||!s.take_profit)continue;
-   const sym=String(s.symbol||"").replace("/","").toUpperCase();if(!["EURUSD","GBPUSD","XAUUSD"].includes(sym))continue;
-   if(state.positions.some(p=>p.symbol===sym)||state.history.some(p=>p.symbol===sym&&Date.now()-Date.parse(p.closedAt)<30*60*1000))continue;
-   const q=quote(sym);if(!Number.isFinite(q)||q<s.entry_low||q>s.entry_high)continue;
-   const riskBudget=state.balance*RISK,perUnit=Math.abs(q-Number(s.stop_loss))*contractSize(sym==="EURUSD"?"EUR/USD":sym==="GBPUSD"?"GBP/USD":"XAU/USD");if(!perUnit)continue;const qty=riskBudget/perUnit;
-   try{const p=place(s.direction,sym,Number(s.stop_loss),Number(s.take_profit),qty,"AI MARKET BRAIN · "+s.score+"/100");state.lastSignalAt=new Date().toISOString();notify("AI paper signal executed: "+p.side+" "+sym+" · score "+s.score+"/100",false);}catch(e){console.info("AI setup filtered:",e.message);}
+   const sym=String(s.symbol||"").replace("/","").toUpperCase();if(!["EURUSD","GBPUSD","XAUUSD"].includes(sym))continue;const instrument=sym==="EURUSD"?"EUR/USD":sym==="GBPUSD"?"GBP/USD":"XAU/USD";
+   if(state.positions.some(p=>p.symbol===instrument)||state.history.some(p=>p.symbol===instrument&&Date.now()-Date.parse(p.closedAt)<30*60*1000))continue;
+   const q=quote(instrument);if(!Number.isFinite(q)||q<s.entry_low||q>s.entry_high)continue;
+   const riskBudget=state.balance*RISK,perUnit=Math.abs(q-Number(s.stop_loss))*contractSize(instrument);if(!perUnit)continue;const qty=riskBudget/perUnit;
+   try{const p=place(s.direction,instrument,Number(s.stop_loss),Number(s.take_profit),qty,"AI MARKET BRAIN · "+s.score+"/100");state.lastSignalAt=new Date().toISOString();notify("AI paper signal executed: "+p.side+" "+sym+" · score "+s.score+"/100",false);}catch(e){console.info("AI setup filtered:",e.message);}
   }
   save();render();
  }catch(e){notify("AI automation paused: "+e.message,true);}
@@ -97,7 +97,7 @@ function attach(){
  render();fetchQuotes();if(timer)clearInterval(timer);timer=setInterval(fetchQuotes,15000);if(brainTimer)clearInterval(brainTimer);brainTimer=setInterval(runBrain,60000);
 }
 async function initUser(){
- try{if(window.supabase?.createClient){client=window.supabase.createClient(SB_URL,SB_KEY);const {data}=await client.auth.getUser();user=data?.user||null;if(user)await loadCloud();}}
+ try{if(window.supabase?.createClient){client=window.supabase.createClient(SB_URL,SB_KEY);client.auth.onAuthStateChange(async(_event,session)=>{user=session?.user||null;if(user){await loadCloud();attach();render();}else{state=blank();}});const {data}=await client.auth.getUser();user=data?.user||null;if(user)await loadCloud();}}
  catch(e){console.warn("Paper account init:",e.message);}
  attach();
 }
