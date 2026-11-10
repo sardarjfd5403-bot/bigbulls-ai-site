@@ -480,3 +480,136 @@ body .deposit-qr,body .deposit-qr canvas,body .deposit-qr img{background:#fff!im
  body.app-mode .terminal-sidebar{background:#0B1628!important}
  body.app-mode .terminal .client-panel,body.app-mode .terminal .bbx-section{padding:14px!important}
 }
+
+
+/* BIGBULLS ADMIN + PORTAL READABILITY REPAIR — 2026-11-11
+   The admin UI contains legacy inline/light surfaces. Normalize the actual
+   admin components, form controls, section headers and action buttons. */
+body.app-mode .terminal :is(.admin-section,.admin-section-head,.admin-section-header,
+.admin-block,.admin-block-head,.admin-card,.admin-panel,.admin-widget,
+.admin-client-block,.admin-form,.admin-form-card,.admin-table-wrap,
+.admin-queue,.admin-queue-head,.admin-toolbar,.admin-controls,
+.admin-content-card,.admin-setting,.admin-setting-row,.admin-summary,
+.admin-metric,.admin-stat,.admin-list,.admin-item,.admin-row,
+[id*="admin"] .section-head,[id*="admin"] .section-header,
+[id*="admin"] .admin-section,[id*="admin"] .admin-card,
+[id*="admin"] .admin-panel,[id*="admin"] .admin-block){
+  background:#101B2D!important;
+  background-image:none!important;
+  color:#F5F7FC!important;
+  border-color:#354B68!important;
+  box-shadow:none!important;
+}
+body.app-mode .terminal :is(.admin-section,.admin-section-head,.admin-section-header,
+.admin-block,.admin-block-head,.admin-card,.admin-panel,.admin-widget,
+.admin-client-block,.admin-form,.admin-form-card,.admin-table-wrap,
+.admin-queue,.admin-queue-head,.admin-toolbar,.admin-controls,
+.admin-content-card,.admin-setting,.admin-setting-row,.admin-summary,
+.admin-metric,.admin-stat,.admin-list,.admin-item,.admin-row,
+[id*="admin"] .section-head,[id*="admin"] .section-header,
+[id*="admin"] .admin-section,[id*="admin"] .admin-card,
+[id*="admin"] .admin-panel,[id*="admin"] .admin-block)
+:is(h1,h2,h3,h4,h5,h6,b,strong,label,legend,th){
+  color:#F5F7FC!important;
+}
+body.app-mode .terminal :is(.admin-section,.admin-section-head,.admin-section-header,
+.admin-block,.admin-block-head,.admin-card,.admin-panel,.admin-widget,
+.admin-client-block,.admin-form,.admin-form-card,.admin-table-wrap,
+.admin-queue,.admin-queue-head,.admin-toolbar,.admin-controls,
+.admin-content-card,.admin-setting,.admin-setting-row,.admin-summary,
+.admin-metric,.admin-stat,.admin-list,.admin-item,.admin-row,
+[id*="admin"] .section-head,[id*="admin"] .section-header,
+[id*="admin"] .admin-section,[id*="admin"] .admin-card,
+[id*="admin"] .admin-panel,[id*="admin"] .admin-block)
+:is(p,small,span,em,i,li,td,.muted,.hint,.description){
+  color:#B7C4D7!important;
+}
+/* Catch legacy inline white/grey surfaces inside admin without changing QR codes. */
+body.app-mode .terminal [style*="background:#fff"],
+body.app-mode .terminal [style*="background: #fff"],
+body.app-mode .terminal [style*="background-color:#fff"],
+body.app-mode .terminal [style*="background-color: #fff"],
+body.app-mode .terminal [style*="background:white"],
+body.app-mode .terminal [style*="background: white"],
+body.app-mode .terminal [style*="background-color:white"],
+body.app-mode .terminal [style*="background-color: white"],
+body.app-mode .terminal [style*="background:#fff"],
+body.app-mode .terminal [style*="background-color: rgb(255"]{
+  background:#101B2D!important;
+  background-image:none!important;
+  color:#F5F7FC!important;
+  border-color:#354B68!important;
+}
+body.app-mode .terminal input:not([type=checkbox]):not([type=radio]):not([type=file]),
+body.app-mode .terminal select,
+body.app-mode .terminal textarea,
+body.app-mode .terminal .admin-form input,
+body.app-mode .terminal .admin-form select,
+body.app-mode .terminal .admin-form textarea,
+body.app-mode .terminal [id*="admin"] input:not([type=checkbox]):not([type=radio]):not([type=file]),
+body.app-mode .terminal [id*="admin"] select,
+body.app-mode .terminal [id*="admin"] textarea{
+  background:#081321!important;
+  color:#F5F7FC!important;
+  border:1px solid #526985!important;
+  border-radius:8px!important;
+  box-shadow:none!important;
+  min-height:42px;
+}
+body.app-mode .terminal input::placeholder,
+body.app-mode .terminal textarea::placeholder{color:#AAB9CE!important;opacity:1!important}
+body.app-mode .terminal input:focus,
+body.app-mode .terminal select:focus,
+body.app-mode .terminal textarea:focus{
+  border-color:#FFDE02!important;
+  box-shadow:0 0 0 3px #FFDE0228!important;
+  outline:none!important;
+}
+/* Clear hierarchy for admin section bars and labels. */
+body.app-mode .terminal :is(.admin-section-title,.admin-section-heading,
+.admin-heading,.section-heading,.queue-heading,.panel-heading){
+  background:#0B1628!important;
+  color:#FFDE02!important;
+  border-color:#354B68!important;
+}
+body.app-mode .terminal :is(.admin-section-title,.admin-section-heading,
+.admin-heading,.section-heading,.queue-heading,.panel-heading) *{
+  color:inherit!important;
+}
+/* Button hierarchy: yellow primary, blue secondary, green success, red danger. */
+body.app-mode .terminal :is(button,.btn,.button,input[type=submit],input[type=button]){
+  background:#FFDE02!important;
+  color:#07101F!important;
+  border:1px solid #FFDE02!important;
+  text-shadow:none!important;
+  box-shadow:none!important;
+  font-weight:800!important;
+}
+body.app-mode .terminal :is(.secondary,.btn-secondary,.outline-button,.ghost-button,
+button[data-action="secondary"],button.secondary){
+  background:#14243A!important;color:#F5F7FC!important;border:1px solid #526985!important;
+}
+body.app-mode .terminal :is(.success,.btn-success,.approve,.verify,[data-action="approve"],[data-action="verify"]){
+  background:#087F62!important;color:#FFFFFF!important;border-color:#16A884!important;
+}
+body.app-mode .terminal :is(.danger,.btn-danger,.reject,.delete,[data-action="reject"],[data-action="delete"]){
+  background:#A92F3D!important;color:#FFFFFF!important;border-color:#D34B5A!important;
+}
+body.app-mode .terminal :is(.bb-buy,.buy-button,[data-side="buy"]){
+  background:#087F62!important;color:#FFFFFF!important;border-color:#16A884!important;
+}
+body.app-mode .terminal :is(.bb-sell,.sell-button,[data-side="sell"]){
+  background:#A92F3D!important;color:#FFFFFF!important;border-color:#D34B5A!important;
+}
+body.app-mode .terminal :is(table,thead,tbody,tr,th,td){background-color:transparent!important;color:#F5F7FC!important;border-color:#354B68!important}
+body.app-mode .terminal th{background:#0B1628!important;color:#FFDE02!important}
+body.app-mode .terminal td{color:#DCE6F3!important}
+body.app-mode .terminal :is(.loading,.loading-state,.queue-loading){color:#B7C4D7!important;background:#14243A!important}
+body.app-mode .terminal svg:not(.chart svg){fill:none!important}
+@media(max-width:760px){
+ body.app-mode .terminal .terminal-main,
+ body.app-mode .terminal .terminal-content,
+ body.app-mode .terminal .admin-content{min-width:0!important}
+ body.app-mode .terminal :is(.admin-section,.admin-card,.admin-panel,.admin-widget,.admin-form-card){padding:14px!important}
+ body.app-mode .terminal :is(input,select,textarea,button){font-size:14px!important}
+}
