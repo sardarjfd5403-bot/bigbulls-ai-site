@@ -1,655 +1,178 @@
-/* BIGBULLS FX MARKET — EXNESS-INSPIRED BRAND COLOR SYSTEM
-   Official Exness media-kit palette adapted for BIGBULLS UI:
-   Yellow #FFDE02, Midnight #070E20, Steel #47667B,
-   Pale Green #E1EBE5, Grey #6D6E73, Off-white #F5F5F5, White #FFFFFF.
-   Color-only skin; existing layout and component structure are preserved.
-*/
+/* BIGBULLS FX MARKET — unified professional UI palette
+   Single source of truth for visual colours. Layout, copy and page structure stay unchanged.
+   Palette: ink / slate / cyan / restrained amber with accessible semantic states. */
 :root{
- color-scheme:dark;
- --ex-yellow:#FFDE02;--ex-yellow-soft:#FFFCE6;--ex-midnight:#070E20;
- --ex-steel:#47667B;--ex-pale-green:#E1EBE5;--ex-grey:#6D6E73;
- --ex-offwhite:#F5F5F5;--ex-white:#FFFFFF;
- --bg:#070E20;--panel:#101B2D;--line:#47667B;--text:#FFFFFF;--muted:#E1EBE5;
- --primary:#FFDE02;--accent:#FFDE02;--success:#E1EBE5;--warning:#FFDE02;--danger:#FFDE02;
- --bb-bg:#070E20;--bb-panel:#101B2D;--bb-surface:#142238;--bb-primary:#FFDE02;
- --bb-accent:#FFDE02;--bb-muted:#E1EBE5;--bb-line:#47667B;--bb-success:#E1EBE5;
+  color-scheme:dark;
+  --bb-bg:#0B1220;
+  --bb-panel:#111C2E;
+  --bb-surface:#17263B;
+  --bb-raised:#1D3048;
+  --bb-line:#30445E;
+  --bb-text:#F4F7FB;
+  --bb-muted:#A9B8CA;
+  --bb-primary:#35C6D4;
+  --bb-primary-hover:#63D8E2;
+  --bb-primary-ink:#071A22;
+  --bb-accent:#F2B84B;
+  --bb-success:#2FC58D;
+  --bb-danger:#F06B75;
+  --bb-warning:#F2B84B;
+  --bb-info:#65A9F5;
+  --bg:var(--bb-bg);--panel:var(--bb-panel);--line:var(--bb-line);
+  --text:var(--bb-text);--muted:var(--bb-muted);
+  --primary:var(--bb-primary);--accent:var(--bb-accent);
+  --success:var(--bb-success);--danger:var(--bb-danger);
+  --portal-bg:var(--bb-bg);--portal-card:var(--bb-panel);
+  --portal-ink:var(--bb-text);--portal-muted:var(--bb-muted);
+  --portal-line:var(--bb-line);--portal-blue:var(--bb-primary);
+  --portal-blue-dark:#1596A7;--portal-blue-soft:#163747;
 }
-html,body{background:#070E20!important;color:#FFFFFF!important;color-scheme:dark!important}
-body{font-family:Roboto,Arial,sans-serif!important}
-body *{border-color:#47667B!important;outline-color:#FFDE02!important;text-shadow:none!important}
-body :before,body :after{border-color:#47667B!important}
-body p,body li,body small,body label,body td,body th,body span{color:inherit}
-h1,h2,h3,h4,h5,h6,strong,b,.title,.heading{color:#FFFFFF}
-a,a:visited{color:#FFDE02!important}
-a:hover,a:focus{color:#070E20!important;background-color:#FFDE02!important}
-header,nav,.navbar,.topbar,.site-header,.app-header,.terminal-header,.portal-header,.admin-header,
-footer,.site-footer,.mobile-nav,.mobile-menu,.bottom-nav,.mobile-header{
- background-color:#070E20!important;color:#FFFFFF!important;border-color:#47667B!important
+html{background:var(--bb-bg)!important;color-scheme:dark}
+body{background:var(--bb-bg)!important;color:var(--bb-text)!important;font-family:Inter,Roboto,Arial,sans-serif!important}
+body :is(h1,h2,h3,h4,h5,h6,strong,b,legend){color:var(--bb-text)}
+body :is(p,li,small,label,td,th,.muted,.hint,.description,.note){color:var(--bb-muted)}
+body a,body a:visited{color:var(--bb-primary)}
+body a:hover,body a:focus{color:var(--bb-primary-hover)}
+/* Shared page chrome */
+body :is(header,.site-header,.app-header,.terminal-header,.portal-header,.admin-header,.topbar,.navbar,footer,.site-footer,.mobile-header,.mobile-nav,.bottom-nav){
+  background:var(--bb-panel)!important;color:var(--bb-text)!important;border-color:var(--bb-line)!important;
 }
-main,.app-shell,.app-mode,.terminal,.terminal-main,.portal-main,.admin-main,.client-main,
-section,.section,.card,.panel,.modal,.modal-content,.modal-dialog,.dropdown-menu,.popover,.tooltip,
-.menu-panel,.sidebar,.admin-sidebar,.client-sidebar,.portal-sidebar,.terminal-sidebar,.app-sidebar,
-.dashboard-card,.stat-card,.metric-card,.widget,.table-wrap,.chart-card,.form-card,.settings-card,
-.bbx-section,.bb-paper-terminal,.course-card,.feature-card,.market-card,.auth-card,.login-card,
-.signup-card,.support-panel,.notification-panel,.card-body,.card-header,.card-footer,
-.dashboard,.content-panel,.settings-panel,.account-card,.order-card,.transaction-card{
- background-color:#101B2D!important;color:#FFFFFF!important;border-color:#47667B!important
-}
-body{background-color:#070E20!important}
-input,select,textarea,option,.form-control,.form-select,.search-input,.chat-input,
-input[type="date"],input[type="number"],input[type="email"],input[type="password"],input[type="text"]{
- background-color:#070E20!important;color:#FFFFFF!important;border:1px solid #47667B!important;
- caret-color:#FFDE02!important;accent-color:#FFDE02!important;box-shadow:none!important
-}
-input::placeholder,textarea::placeholder{color:#E1EBE5!important;opacity:.78}
-button,.btn,.button,.portal-primary,.admin-button,.primary-btn,.cta,.action-btn,
-.tab-button,.nav-link-button,.bb-paper-button,[role="button"],input[type="submit"],input[type="button"]{
- background-color:#FFDE02!important;color:#070E20!important;border:1px solid #FFDE02!important;
- box-shadow:none!important;font-weight:700
-}
-button:hover,.btn:hover,.button:hover,.portal-primary:hover,.admin-button:hover,.primary-btn:hover,
-.cta:hover,.action-btn:hover,[role="button"]:hover,input[type="submit"]:hover{
- background-color:#FFFCE6!important;color:#070E20!important;border-color:#FFFCE6!important
-}
-.btn.secondary,.btn-outline,.portal-secondary,.secondary-btn,.outline-button,.ghost-button,
-.tab-button[aria-selected="false"]{
- background-color:transparent!important;color:#FFFFFF!important;border-color:#47667B!important
-}
-button:disabled,.btn:disabled{background-color:#47667B!important;color:#F5F5F5!important;opacity:.65}
-.badge,.pill,.tag,.status-badge,.chip,.eyebrow,.free-tag,.lock-label,.market-feed-badge,
-.label,.nav-badge,.count-badge{
- background-color:#142238!important;color:#E1EBE5!important;border:1px solid #47667B!important
-}
-table,thead,tbody,tr,th,td{border-color:#47667B!important}
-table{background-color:#101B2D!important;color:#FFFFFF!important}
-th{background-color:#070E20!important;color:#E1EBE5!important}
-td{background-color:#101B2D!important;color:#FFFFFF!important}
-tr:hover td{background-color:#142238!important}
-svg,[class*="icon"],.icon{color:#FFDE02!important}
-svg{fill:currentColor!important}
-hr,.divider,.line,.border{border-color:#47667B!important}
-.progress,.progress-bar-track,.meter-track{background-color:#070E20!important;border-color:#47667B!important}
-.progress-bar,.meter-fill,.progress-fill{background-color:#FFDE02!important}
-.active,.is-active,.selected,[aria-current="page"],[aria-selected="true"]{border-color:#FFDE02!important}
-.nav a:hover,.sidebar a:hover,.menu a:hover,.nav button:hover,.sidebar button:hover,
-.nav a.active,.sidebar a.active,.menu a.active,.nav button.active,.sidebar button.active{
- background-color:#FFDE02!important;color:#070E20!important;border-color:#FFDE02!important
-}
-.alert,.notice,.info-box,.empty-state,.wallet-address-card,.admin-row,.admin-transaction,
-.account-row,.order-row,.transaction-row{background-color:#142238!important;border-color:#47667B!important;color:#FFFFFF!important}
-.success,.positive,.profit,.up,.text-success{color:#E1EBE5!important}
-.danger,.negative,.loss,.down,.text-danger,.text-red{color:#FFDE02!important}
-.modal-backdrop{background-color:rgba(7,14,32,.9)!important}
-.modal,.modal section,.modal-backdrop .modal{background-color:#101B2D!important;border:1px solid #47667B!important;color:#FFFFFF!important}
-.card-header,.card-footer,.section-heading,.admin-section-heading,.table-head{border-color:#47667B!important}
-::selection{background-color:#FFDE02!important;color:#070E20!important}
-*{scrollbar-color:#47667B #070E20!important}
-@media(max-width:760px){
- html,body,.app-shell,.app-mode,.terminal,.terminal-main,.portal-main,.admin-main,.client-main{
-  background-color:#070E20!important;color:#FFFFFF!important
- }
- .mobile-nav,.mobile-menu,.bottom-nav,.mobile-header{background-color:#070E20!important;border-color:#47667B!important}
-}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
-
-.bb-calendar-toolbar{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:16px}.bb-calendar-toolbar label{display:grid;gap:5px;font-size:12px;font-weight:700;color:var(--text,#fff)}.bb-calendar-toolbar select{min-width:145px;padding:10px;border:1px solid #47667b;border-radius:8px;background:#0b1725;color:#fff}.bb-calendar-toolbar #bb-calendar-status{font-size:12px;color:#8bbb92}.bb-calendar-table-wrap{overflow:auto}.bb-calendar-table{width:100%;border-collapse:collapse;min-width:780px}.bb-calendar-table th,.bb-calendar-table td{padding:11px 10px;border-bottom:1px solid rgba(139,187,146,.18);text-align:left;font-size:12px;white-space:nowrap}.bb-calendar-table th{color:#8bbb92;font-size:10px;text-transform:uppercase;letter-spacing:.06em}.bb-calendar-table td:nth-child(4){white-space:normal;min-width:190px}.bb-calendar-table td small{display:block;color:#9ba9b8;margin-top:3px}.bb-impact{display:inline-block;border-radius:20px;padding:4px 8px;font-size:10px;font-weight:900}.bb-impact.high{background:#51232a;color:#ffb1b7}.bb-impact.medium{background:#4a371a;color:#ffd58a}.bb-impact.low{background:#213d35;color:#a6e2c0}.bb-impact.holiday{background:#26354b;color:#c6d8f4}.bb-admin-demo-account{padding:14px;border:1px solid rgba(139,187,146,.25);border-radius:12px;margin:12px 0;background:#0b1725}.bb-admin-demo-head{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.bb-admin-demo-head small{display:block;color:#aab7c5;font-size:11px;margin-top:3px}.bb-admin-demo-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:12px 0}.bb-admin-demo-stats>div{padding:10px;border-radius:8px;background:#142238}.bb-admin-demo-stats small{display:block;color:#9ba9b8;font-size:10px}.bb-admin-demo-stats b{display:block;color:#fff;margin-top:5px;overflow-wrap:anywhere}.bb-admin-demo-trades{max-height:420px;overflow:auto;padding:8px 0}.bb-admin-demo-trades p{font-size:12px;padding:7px 0;border-bottom:1px solid rgba(139,187,146,.12);overflow-wrap:anywhere}.bb-admin-demo-account summary{cursor:pointer;font-weight:800;color:#8bbb92}@media(max-width:700px){.bb-admin-demo-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.bb-calendar-toolbar>*{width:100%}}
-
-.bb-brain-news{margin:12px 0;padding:12px;border:1px solid rgba(139,187,146,.22);border-radius:9px;background:#0a1523}.bb-brain-news>b{font-size:11px;color:#8bbb92;letter-spacing:.05em}.bb-brain-news p{font-size:12px;color:#d8e1ec;margin:8px 0 0}.bb-brain-news .bb-impact{margin-right:5px}
-
-.bb-brain-card{margin:14px 0;padding:16px;border:1px solid rgba(71,102,123,.65);border-radius:12px;background:#101b2d;color:#fff}.bb-brain-card-head{display:flex;justify-content:space-between;align-items:center;gap:12px}.bb-brain-card-head b{font-size:18px}.bb-brain-card-head small{display:block;color:#b9c6d7;margin-top:4px}.bb-direction{display:inline-flex;padding:7px 12px;border-radius:20px;font-size:11px;font-weight:900;background:#25364b;color:#fff}.bb-direction.buy{background:#1b493c;color:#a8e5c7}.bb-direction.sell{background:#522630;color:#ffb7bf}.bb-direction.wait{background:#4b3b1c;color:#ffe09b}.bb-brain-score{display:flex;align-items:center;gap:12px;margin:12px 0}.bb-brain-score b{font-size:24px;color:#ffde02}.bb-brain-score span,.bb-brain-card p{font-size:12px;color:#d5dfeb}.bb-brain-card details{margin-top:12px;border-top:1px solid #34475b;padding-top:10px}.bb-brain-card summary{cursor:pointer;color:#8bbb92;font-weight:800}.bb-brain-card li{font-size:12px;color:#d5dfeb;margin:5px 0}.bb-backtest-card{padding:14px;border:1px solid rgba(71,102,123,.6);border-radius:10px;background:#101b2d;margin:10px 0}.bb-backtest-card>b{color:#ffde02}.bb-backtest-card small{display:block;color:#aebdce;margin-top:5px;font-size:11px}.bb-backtest-metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:12px 0}.bb-backtest-metrics span{padding:9px;border-radius:7px;background:#142238;color:#aebdce;font-size:10px}.bb-backtest-metrics b{display:block;color:#fff;font-size:14px;margin-top:4px}@media(max-width:700px){.bb-backtest-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.bb-brain-card{padding:12px}}
-
-
-/* BIGBULLS GLOBAL CONTRAST FIX — 2026-11-11
-   One consistent midnight theme across public pages, personal area and admin.
-   Keep surfaces distinct; never pair pale text with white cards. */
-:root{
- --bb-bg:#070E20;--bb-panel:#101B2D;--bb-surface:#142238;
- --bb-card:#111E32;--bb-line:#354B68;--bb-text:#F5F7FC;
- --bb-muted:#B7C4D7;--bb-primary:#FFDE02;
- color-scheme:dark;
-}
-html,body{background:#070E20!important;color:#F5F7FC!important;color-scheme:dark!important}
-body,body.app-mode,.terminal,.terminal-main,.terminal-layout,.terminal-content,
-.client-layout,.client-content,.admin-layout,.admin-content,.admin-main,
-main{color:#F5F7FC!important}
+body :is(.brand,.brand b,.terminal-brand,.terminal-brand b){color:var(--bb-text)!important}
+body :is(.mark,.brand-mark,.logo-mark){background:var(--bb-primary)!important;color:var(--bb-primary-ink)!important;border-color:var(--bb-primary)!important;box-shadow:none!important}
+/* Content surfaces — one restrained elevation system */
 body :is(.card,.panel,.client-panel,.client-stat,.service-tile,.bbx-section,.bbx-card,
 .dashboard-card,.stat-card,.metric-card,.widget,.form-card,.settings-card,.table-wrap,
-.chart-card,.account-card,.order-card,.transaction-card,.seo-card,.seo-panel,
-.seo-metric,.seo-stat,.admin-card,.admin-panel,.admin-section,.admin-widget,
-[class*="seo-"],[class*="metric-card"],[class*="stat-card"]){
- background:#111E32!important;color:#F5F7FC!important;
- border:1px solid #354B68!important;box-shadow:0 8px 22px #0005!important;
+.chart-card,.account-card,.order-card,.transaction-card,.seo-card,.seo-panel,.seo-metric,
+.seo-stat,.admin-card,.admin-panel,.admin-section,.admin-widget,.content-panel,.settings-panel,
+.feature-card,.course-card,.market-card,.auth-card,.login-card,.signup-card,.support-panel,
+.notification-panel,.modal,.modal-content,.modal-dialog,.dropdown-menu,.popover,.tooltip,
+.menu-panel,.profile-menu,.header-popover){
+  background:var(--bb-panel)!important;color:var(--bb-text)!important;
+  border-color:var(--bb-line)!important;box-shadow:0 8px 24px rgba(0,0,0,.18)!important;
 }
-body :is(.card,.panel,.client-panel,.client-stat,.service-tile,.bbx-section,.bbx-card,
-.dashboard-card,.stat-card,.metric-card,.widget,.form-card,.settings-card,.seo-card,
-.seo-panel,.seo-metric,.seo-stat,.admin-card,.admin-panel,.admin-section,.admin-widget,
-[class*="seo-"]) :is(h1,h2,h3,h4,h5,h6,strong,b,label,th){color:#F5F7FC!important}
-body :is(.card,.panel,.client-panel,.client-stat,.service-tile,.bbx-section,.bbx-card,
-.dashboard-card,.stat-card,.metric-card,.widget,.form-card,.settings-card,.seo-card,
-.seo-panel,.seo-metric,.seo-stat,.admin-card,.admin-panel,.admin-section,.admin-widget,
-[class*="seo-"]) :is(p,small,span,td,li,.muted,.description,.hint){color:#B7C4D7!important}
-body :is(input,select,textarea,.form-control,.form-select){
- background:#081321!important;color:#F5F7FC!important;
- border:1px solid #526985!important;box-shadow:none!important;
+body :is(.card-header,.card-footer,.section-heading,.admin-section-heading,.table-head,.panel-heading){
+  background:var(--bb-surface)!important;color:var(--bb-text)!important;border-color:var(--bb-line)!important;
 }
-body :is(input,select,textarea,.form-control,.form-select)::placeholder{color:#AAB9CE!important;opacity:1!important}
-body :is(input,select,textarea,.form-control,.form-select):focus{
- border-color:#FFDE02!important;box-shadow:0 0 0 3px #FFDE0228!important;outline:0!important;
+body :is(.card,.panel,.client-panel,.admin-card,.admin-panel,.admin-widget,.modal,.dropdown-menu) :is(h1,h2,h3,h4,h5,h6,strong,b,label,legend,th){color:var(--bb-text)!important}
+body :is(.card,.panel,.client-panel,.admin-card,.admin-panel,.admin-widget,.modal,.dropdown-menu) :is(p,small,span,li,.muted,.hint,.description){color:var(--bb-muted)}
+/* App shell, terminal, navigation and menus */
+body.app-mode :is(.terminal,.terminal-main,.terminal-layout,.terminal-page,.terminal-content,.app-shell,.client-layout,.client-content,.admin-layout,.admin-content,.admin-main){
+  background:var(--bb-bg)!important;color:var(--bb-text)!important;
 }
-body :is(table,thead,tbody,tr,th,td){background-color:transparent!important;color:#F5F7FC!important;border-color:#354B68!important}
-body th{background:#0B1526!important;color:#FFDE02!important}
-body :is(.notice,.alert,.info-box,.empty-state,.status-box){
- background:#172941!important;color:#EAF0F8!important;border:1px solid #526985!important;
+body.app-mode .terminal :is(.terminal-head,.terminal-sidebar,.terminal-footer,.client-top){
+  background:var(--bb-panel)!important;color:var(--bb-text)!important;border-color:var(--bb-line)!important;
 }
-body :is(.btn,.button,.portal-primary,.admin-button,.primary-btn,input[type=submit]){
- background:#FFDE02!important;color:#07101F!important;border:1px solid #FFDE02!important;
-}
-body :is(.btn.secondary,.btn-outline,.portal-secondary,.secondary-btn,.outline-button,.ghost-button){
- background:#142238!important;color:#F5F7FC!important;border:1px solid #526985!important;
-}
-body :is(.side-group>button.active,.client-nav button.active,[aria-current=page]){
- background:#1C3150!important;color:#FFFFFF!important;border-color:#FFDE02!important;
-}
-body :is(.modal,.modal-content,.modal-dialog,.dropdown-menu,.popover,.tooltip,
-.header-popover,.profile-menu){
- background:#101B2D!important;color:#F5F7FC!important;border:1px solid #526985!important;
-}
-body :is(.modal,.modal-content,.modal-dialog,.dropdown-menu,.popover) :is(h1,h2,h3,h4,label,strong,b){color:#F5F7FC!important}
-body :is(.modal,.modal-content,.modal-dialog,.dropdown-menu,.popover) :is(p,small,span){color:#B7C4D7!important}
-::selection{background:#FFDE02!important;color:#07101F!important}
-@media(max-width:700px){
- body :is(.card,.panel,.client-panel,.client-stat,.service-tile,.bbx-section,.bbx-card,
- .seo-card,.seo-panel,.admin-card,.admin-panel,[class*="seo-"]){border-radius:12px!important}
-}
-
-
-/* BIGBULLS APP SHELL + ADMIN — definitive dark-surface override.
-   Overrides the earlier light-dashboard rules in ui-refresh.css/brand-theme.css. */
-body.app-mode .terminal,
-body.app-mode .terminal-main,
-body.app-mode .terminal-layout,
-body.app-mode .terminal-page,
-body.app-mode .terminal-content{background:#070E20!important;color:#F5F7FC!important}
-body.app-mode .terminal .terminal-head,
-body.app-mode .terminal .terminal-sidebar,
-body.app-mode .terminal .terminal-footer,
-body.app-mode .terminal .client-top{
- background:#0B1628!important;color:#F5F7FC!important;border-color:#354B68!important;
-}
-body.app-mode .terminal .terminal-sidebar{box-shadow:none!important}
-body.app-mode .terminal .terminal-sidebar .side-group>small{color:#AABBD0!important}
+body.app-mode .terminal .terminal-sidebar .side-group>small{color:var(--bb-muted)!important}
 body.app-mode .terminal .terminal-sidebar .side-group>button{
- background:transparent!important;color:#DCE6F3!important;border:1px solid transparent!important;
+  background:transparent!important;color:var(--bb-muted)!important;border:1px solid transparent!important;
 }
-body.app-mode .terminal .terminal-sidebar .side-group>button .side-copy b{color:#F5F7FC!important}
-body.app-mode .terminal .terminal-sidebar .side-group>button .side-copy em{color:#AABBD0!important}
+body.app-mode .terminal .terminal-sidebar .side-group>button .side-copy :is(b,em){color:inherit!important}
 body.app-mode .terminal .terminal-sidebar .side-group>button .side-icon{
- background:#172943!important;color:#FFDE02!important;border:1px solid #354B68!important;box-shadow:none!important;
+  background:var(--bb-surface)!important;color:var(--bb-primary)!important;border:1px solid var(--bb-line)!important;box-shadow:none!important;
 }
-body.app-mode .terminal .terminal-sidebar .side-group>button .side-icon svg{
- stroke:#FFDE02!important;fill:none!important;
-}
-body.app-mode .terminal .terminal-sidebar .side-group>button.active{
- background:#1A2E49!important;color:#FFFFFF!important;border:1px solid #FFDE02!important;
-}
-body.app-mode .terminal .terminal-sidebar .side-group>button.active .side-copy b{color:#FFFFFF!important}
-body.app-mode .terminal .terminal-head .terminal-brand,
-body.app-mode .terminal .terminal-head .terminal-brand b,
-body.app-mode .terminal .terminal-head .terminal-brand small{color:#F5F7FC!important}
-body.app-mode .terminal .terminal-head .header-balance,
-body.app-mode .terminal .terminal-head .profile-trigger{
- background:#14243A!important;color:#F5F7FC!important;border:1px solid #354B68!important;
-}
-body.app-mode .terminal .terminal-head .header-balance small,
-body.app-mode .terminal .terminal-head .profile-trigger small{color:#B7C4D7!important}
-body.app-mode .terminal .terminal-page-head h1,
-body.app-mode .terminal .terminal-page-head h2,
-body.app-mode .terminal .terminal-page-head h3{color:#F5F7FC!important}
-body.app-mode .terminal .admin-client-block,
-body.app-mode .terminal #bb-seo-admin-panel,
-body.app-mode .terminal #bb-seo-admin-panel .client-panel,
-body.app-mode .terminal #bb-seo-admin-panel section,
-body.app-mode .terminal #bb-seo-admin-panel .bb-seo-head,
-body.app-mode .terminal #bb-seo-admin-panel .bb-seo-metrics,
-body.app-mode .terminal #bb-seo-admin-panel .bb-seo-metric,
-body.app-mode .terminal #bb-seo-admin-panel #bb-seo-metrics,
-body.app-mode .terminal #bb-seo-admin-panel #bb-gsc-summary,
-body.app-mode .terminal #bb-seo-admin-panel .bb-seo-grid{
- background:#101E33!important;color:#F5F7FC!important;
- border-color:#354B68!important;box-shadow:none!important;
-}
-body.app-mode .terminal #bb-seo-admin-panel .client-panel{
- padding:20px!important;border:1px solid #354B68!important;border-radius:12px!important;
-}
-body.app-mode .terminal #bb-seo-admin-panel .bb-seo-head{
- display:flex!important;align-items:center!important;gap:12px!important;
- padding:18px!important;border:1px solid #354B68!important;border-radius:12px!important;
-}
-body.app-mode .terminal #bb-seo-admin-panel .bb-seo-head :is(small,h1,h2,h3,h4,p,strong,b,span),
-body.app-mode .terminal #bb-seo-admin-panel .client-panel :is(h1,h2,h3,h4,strong,b,label,th),
-body.app-mode .terminal #bb-seo-admin-panel .bb-seo-metric :is(*){
- color:#F5F7FC!important;
-}
-body.app-mode .terminal #bb-seo-admin-panel .client-panel :is(p,small,span,td,li),
-body.app-mode .terminal #bb-seo-admin-panel .bb-seo-head p{
- color:#B7C4D7!important;
-}
-body.app-mode .terminal #bb-seo-admin-panel .bb-seo-metrics{
- display:grid!important;grid-template-columns:repeat(auto-fit,minmax(135px,1fr))!important;gap:10px!important;
-}
-body.app-mode .terminal #bb-seo-admin-panel .bb-seo-metric{
- min-width:0!important;min-height:76px!important;padding:14px!important;
- background:#14243A!important;border:1px solid #405675!important;border-radius:10px!important;
- color:#F5F7FC!important;
-}
-body.app-mode .terminal #bb-seo-admin-panel .bb-seo-metric :is(small,span,label){color:#B7C4D7!important}
-body.app-mode .terminal #bb-seo-admin-panel .bb-seo-metric :is(b,strong){color:#FFFFFF!important}
-body.app-mode .terminal #bb-seo-admin-panel input,
-body.app-mode .terminal #bb-seo-admin-panel select,
-body.app-mode .terminal #bb-seo-admin-panel textarea{
- background:#081321!important;color:#F5F7FC!important;border:1px solid #526985!important;
-}
-body.app-mode .terminal #bb-seo-admin-panel input::placeholder,
-body.app-mode .terminal #bb-seo-admin-panel textarea::placeholder{color:#AAB9CE!important}
-body.app-mode .terminal #bb-seo-admin-panel .bb-seo-toggle,
-body.app-mode .terminal #bb-seo-admin-panel .bb-seo-toggle small{color:#D7E1EF!important}
-body.app-mode .terminal #bb-seo-admin-panel button,
-body.app-mode .terminal #bb-seo-admin-panel .portal-primary{
- background:#FFDE02!important;color:#07101F!important;border:1px solid #FFDE02!important;
-}
-body.app-mode .terminal #bb-seo-admin-panel .notice{
- background:#172941!important;color:#EAF0F8!important;border:1px solid #526985!important;
-}
-body.app-mode .terminal :is(.client-stat,.client-panel,.service-tile,.bbx-section,.bbx-card,
-.bb-account-card,.bb-account-tools,.bb-chart-panel,.bb-watchlist,.bb-order-panel){
- background:#111E32!important;color:#F5F7FC!important;border:1px solid #354B68!important;
- box-shadow:none!important;
-}
-body.app-mode .terminal :is(.client-stat,.client-panel,.service-tile,.bbx-section,.bbx-card) :is(h1,h2,h3,h4,b,strong){color:#F5F7FC!important}
-body.app-mode .terminal :is(.client-stat,.client-panel,.service-tile,.bbx-section,.bbx-card) :is(p,small,span,li,label){color:#B7C4D7!important}
-body.app-mode .terminal :is(input,select,textarea){background:#081321!important;color:#F5F7FC!important;border-color:#526985!important}
-@media(max-width:900px){
- body.app-mode .terminal .terminal-sidebar{background:#0B1628!important;border-color:#354B68!important}
-}
-
-
-/* Public website: same midnight identity as the signed-in workspace. */
-body:not(.app-mode) .site-header,
-body:not(.app-mode) footer,
-body:not(.app-mode) .ticker,
-body:not(.app-mode) .hero,
-body:not(.app-mode) .workflow,
-body:not(.app-mode) .purchase,
-body:not(.app-mode) .pricing,
-body:not(.app-mode) .engine,
-body:not(.app-mode) .ai-showcase{
- background:#070E20!important;color:#F5F7FC!important;border-color:#354B68!important;
-}
-body:not(.app-mode) .hero h1,
-body:not(.app-mode) .hero h1 em,
-body:not(.app-mode) .section h2,
-body:not(.app-mode) .workflow h2,
-body:not(.app-mode) .purchase h2,
-body:not(.app-mode) .pricing h2,
-body:not(.app-mode) .engine h2,
-body:not(.app-mode) .ai-showcase h2,
-body:not(.app-mode) .ai-feature-card h3,
-body:not(.app-mode) .cards h3,
-body:not(.app-mode) .feature-grid h3{color:#F5F7FC!important}
-body:not(.app-mode) .hero .lead,
-body:not(.app-mode) .hero .note,
-body:not(.app-mode) .workflow p,
-body:not(.app-mode) .purchase p,
-body:not(.app-mode) .engine p,
-body:not(.app-mode) .pricing p,
-body:not(.app-mode) .ai-showcase-head p,
-body:not(.app-mode) .ai-feature-card p,
-body:not(.app-mode) .cards article p,
-body:not(.app-mode) .feature-grid article p{color:#B7C4D7!important}
-body:not(.app-mode) .chart,
-body:not(.app-mode) .cards article,
-body:not(.app-mode) .account-cards article,
-body:not(.app-mode) .payment-cards article,
-body:not(.app-mode) .feature-grid article,
-body:not(.app-mode) .ai-feature-card,
-body:not(.app-mode) .pricecard,
-body:not(.app-mode) .price-card,
-body:not(.app-mode) .lockcard,
-body:not(.app-mode) .ai-rotate-label{
- background:#101E33!important;color:#F5F7FC!important;
- border:1px solid #354B68!important;box-shadow:0 8px 22px #0005!important;
-}
-body:not(.app-mode) .chart :is(small,p,span),
-body:not(.app-mode) .pricecard :is(p,small,li,span),
-body:not(.app-mode) .price-card :is(p,small,li,span),
-body:not(.app-mode) .lockcard :is(p,small,li,span){color:#B7C4D7!important}
-body:not(.app-mode) .site-header .main-nav,
-body:not(.app-mode) .site-header .main-nav a,
-body:not(.app-mode) .site-header .brand,
-body:not(.app-mode) .site-header .brand b,
-body:not(.app-mode) footer,
-body:not(.app-mode) footer a{color:#E7EEF8!important}
-body:not(.app-mode) .site-header .navbtn,
-body:not(.app-mode) .hero .btn:not(.gold){
- background:#14243A!important;color:#F5F7FC!important;border:1px solid #526985!important;
-}
-body:not(.app-mode) .site-header .nav-open,
-body:not(.app-mode) .hero .btn.gold,
-body:not(.app-mode) .portal-primary{
- background:#FFDE02!important;color:#07101F!important;border-color:#FFDE02!important;
-}
-body:not(.app-mode) .ticker span,
-body:not(.app-mode) .eyebrow,
-body:not(.app-mode) .ai-feature-card small,
-body:not(.app-mode) .cards small,
-body:not(.app-mode) .feature-grid small{color:#FFDE02!important}
-body:not(.app-mode) .workflow li,
-body:not(.app-mode) .workflow li strong,
-body:not(.app-mode) .workflow li small{color:#DCE6F3!important;border-color:#354B68!important}
-body:not(.app-mode) .site-header a:hover,
-body:not(.app-mode) .site-header button:hover{background:#1A2E49!important;color:#FFDE02!important}
-
-
-/* BIGBULLS — FINAL GLOBAL DARK THEME HARDENING
-   Applied after every legacy stylesheet so no page, modal, form or admin
-   widget can silently revert to low-contrast white surfaces. */
-:root{
- color-scheme:dark!important;
- --bb-bg:#070E20;--bb-panel:#101B2D;--bb-surface:#142238;
- --bb-card:#111E32;--bb-line:#354B68;--bb-text:#F5F7FC;
- --bb-muted:#B7C4D7;--bb-primary:#FFDE02;
-}
-html,body{background:#070E20!important;color:#F5F7FC!important;color-scheme:dark!important}
-body :is(.site-header,.main-nav,footer,.site-footer,.workflow,.purchase,.pricing,.engine,
-.ai-showcase,.ticker,.hero,.chart,.section,.risk){color:#F5F7FC!important}
-body :is(.hero,.chart,.ai-showcase,.workflow,.purchase,.pricing,.engine,.ticker,footer){
- background:#0B1628!important;border-color:#354B68!important;
-}
-body :is(.hero h1,.hero h2,.hero h3,.section h1,.section h2,.section h3,
-.workflow h1,.workflow h2,.purchase h1,.purchase h2,.pricing h1,.pricing h2,
-.ai-showcase h2,.ai-feature-card h3){color:#F5F7FC!important}
-body :is(.hero .lead,.hero .note,.section .lead,.cards p,.workflow p,.purchase p,
-.ai-showcase p,.ai-feature-card p,footer){color:#B7C4D7!important}
-body :is(.cards article,.account-cards article,.payment-cards article,.feature-grid article,
-.ai-feature-card,.pricecard,.lockcard,.price-card,.bbx-card,.bbx-section,
-.market-table-wrap,.market-live-head,.market-tabs,.chart,.lockcard,.pricecard){
- background:#111E32!important;color:#F5F7FC!important;
- border:1px solid #354B68!important;box-shadow:0 8px 22px #0005!important;
-}
-body :is(.cards article,.account-cards article,.payment-cards article,.feature-grid article,
-.ai-feature-card,.pricecard,.lockcard,.price-card,.bbx-card,.bbx-section)
-:is(h1,h2,h3,h4,h5,h6,b,strong,label){color:#F5F7FC!important}
-body :is(.cards article,.account-cards article,.payment-cards article,.feature-grid article,
-.ai-feature-card,.pricecard,.lockcard,.price-card,.bbx-card,.bbx-section)
-:is(p,small,span,li){color:#B7C4D7!important}
-body :is(input,select,textarea,.form-control,.form-select,.search-input){
- background:#081321!important;color:#F5F7FC!important;
- border:1px solid #526985!important;box-shadow:none!important;
-}
-body :is(input,select,textarea,.form-control,.form-select,.search-input)::placeholder{
- color:#AAB9CE!important;opacity:1!important;
-}
-body :is(input,select,textarea,.form-control,.form-select):focus{
- border-color:#FFDE02!important;box-shadow:0 0 0 3px #FFDE0228!important;outline:0!important;
-}
-body :is(.modal,.modal-content,.modal-dialog,.dropdown-menu,.popover,.tooltip,
-.header-popover,.profile-menu,.modal-backdrop .modal){
- background:#101B2D!important;color:#F5F7FC!important;
- border:1px solid #526985!important;box-shadow:0 24px 70px #0009!important;
-}
-body :is(.modal,.modal-content,.modal-dialog,.dropdown-menu,.popover)
-:is(h1,h2,h3,h4,h5,h6,b,strong,label,th){color:#F5F7FC!important}
-body :is(.modal,.modal-content,.modal-dialog,.dropdown-menu,.popover)
-:is(p,small,span,li,.muted,.fine){color:#B7C4D7!important}
-body :is(.modal,.modal-content,.modal-dialog) :is(input,select,textarea){
- background:#081321!important;color:#F5F7FC!important;border-color:#526985!important;
-}
-body.app-mode .terminal,
-body.app-mode .terminal-main,body.app-mode .terminal-layout,
-body.app-mode .terminal-content,body.app-mode .terminal-page,
-body.app-mode .terminal-sidebar,body.app-mode .terminal-head,
-body.app-mode .terminal-footer,body.app-mode .terminal-nav,
-body.app-mode .terminal .client-top,body.app-mode .terminal .client-content{
- background:#070E20!important;color:#F5F7FC!important;border-color:#354B68!important;
-}
-body.app-mode .terminal :is(.client-stat,.client-panel,.service-tile,.bbx-section,.bbx-card,
-.client-banner,.client-form,.admin-card,.admin-panel,.admin-section,.admin-widget,
-.admin-client-block,.dashboard-card,.stat-card,.metric-card,.widget,.form-card,
-.settings-card,.table-wrap,.chart-card,.account-card,.order-card,.transaction-card,
-.bb-seo-card,.bb-seo-panel,.bb-seo-metric,[class*="metric"],[class*="stat-card"]){
- background:#111E32!important;color:#F5F7FC!important;
- border:1px solid #354B68!important;box-shadow:0 8px 22px #0005!important;
-}
-body.app-mode .terminal :is(.client-stat,.client-panel,.service-tile,.bbx-section,.bbx-card,
-.client-banner,.admin-card,.admin-panel,.admin-section,.admin-widget,.dashboard-card,
-.stat-card,.metric-card,.widget,.form-card,.settings-card,.table-wrap,.chart-card,
-.account-card,.order-card,.transaction-card,[class*="metric"],[class*="stat-card"])
-:is(h1,h2,h3,h4,h5,h6,b,strong,label,th){color:#F5F7FC!important}
-body.app-mode .terminal :is(.client-stat,.client-panel,.service-tile,.bbx-section,.bbx-card,
-.client-banner,.admin-card,.admin-panel,.admin-section,.admin-widget,.dashboard-card,
-.stat-card,.metric-card,.widget,.form-card,.settings-card,.table-wrap,.chart-card,
-.account-card,.order-card,.transaction-card,[class*="metric"],[class*="stat-card"])
-:is(p,small,span,li,td,.muted,.hint,.description){color:#B7C4D7!important}
-body.app-mode .terminal :is(input,select,textarea,.form-control,.form-select){
- background:#081321!important;color:#F5F7FC!important;border:1px solid #526985!important;
-}
-body.app-mode .terminal :is(input,select,textarea,.form-control,.form-select)::placeholder{color:#AAB9CE!important}
-body.app-mode .terminal .terminal-sidebar .side-group>button{
- background:transparent!important;color:#DCE6F3!important;border-color:transparent!important;
-}
-body.app-mode .terminal .terminal-sidebar .side-group>button.active{
- background:#1A2E49!important;color:#fff!important;border:1px solid #FFDE02!important;
-}
-body.app-mode .terminal .terminal-sidebar .side-group>button .side-copy :is(b,em){color:#DCE6F3!important}
-body.app-mode .terminal .terminal-sidebar .side-group>button .side-icon{
- background:#172943!important;color:#FFDE02!important;border:1px solid #354B68!important;
+body.app-mode .terminal .terminal-sidebar .side-group>button .side-icon svg{stroke:var(--bb-primary)!important;fill:none!important}
+body.app-mode .terminal .terminal-sidebar .side-group>button:is(.active,[aria-current=page]){
+  background:var(--bb-surface)!important;color:var(--bb-text)!important;border-color:var(--bb-primary)!important;
 }
 body.app-mode .terminal .terminal-head :is(.header-balance,.profile-trigger,.profile-menu){
- background:#14243A!important;color:#F5F7FC!important;border-color:#354B68!important;
+  background:var(--bb-surface)!important;color:var(--bb-text)!important;border-color:var(--bb-line)!important;
 }
-body :is(button,.btn,.button,.portal-primary,.admin-button,.primary-btn,input[type=submit]){
- background:#FFDE02!important;color:#07101F!important;border:1px solid #FFDE02!important;
+body.app-mode .terminal .terminal-head :is(.header-balance small,.profile-trigger small){color:var(--bb-muted)!important}
+body.app-mode .terminal .terminal-page-head :is(h1,h2,h3){color:var(--bb-text)!important}
+/* Exact admin and portal content blocks */
+body.app-mode .terminal :is(.admin-section,.admin-section-head,.admin-section-header,.admin-block,
+.admin-block-head,.admin-card,.admin-panel,.admin-widget,.admin-client-block,.admin-form,
+.admin-form-card,.admin-table-wrap,.admin-queue,.admin-queue-head,.admin-toolbar,.admin-controls,
+.admin-content-card,.admin-setting,.admin-setting-row,.admin-summary,.admin-metric,.admin-stat,
+.admin-list,.admin-item,.admin-row,.admin-control-grid article,.client-panel){
+  background:var(--bb-panel)!important;background-image:none!important;color:var(--bb-text)!important;
+  border-color:var(--bb-line)!important;box-shadow:none!important;
 }
-body :is(.btn.secondary,.btn-outline,.portal-secondary,.secondary-btn,.outline-button,.ghost-button){
- background:#142238!important;color:#F5F7FC!important;border:1px solid #526985!important;
-}
-body :is(.bb-buy,.buy-button,[data-side="buy"]){background:#087F62!important;color:#fff!important;border-color:#16A884!important}
-body :is(.bb-sell,.sell-button,[data-side="sell"]){background:#315EFB!important;color:#fff!important;border-color:#5278ff!important}
-body .market-table-wrap,body .market-table,body .market-table td{background:#101B2D!important;color:#F5F7FC!important}
-body .market-table th{background:#0B1628!important;color:#FFDE02!important}
-body .market-table td{border-color:#354B68!important}
-body .market-table tr:hover td{background:#172941!important}
-body .market-tabs button{background:#142238!important;color:#DCE6F3!important;border-color:#526985!important}
-body .market-tabs button.active{background:#FFDE02!important;color:#07101F!important}
-body .market-feed-badge{background:#142238!important;color:#B7C4D7!important}
-body :is(.notice,.alert,.info-box,.empty-state,.status-box){
- background:#172941!important;color:#EAF0F8!important;border:1px solid #526985!important;
-}
-body table,body th,body td{border-color:#354B68!important}
-body th{background:#0B1628!important;color:#FFDE02!important}
-body td{color:#F5F7FC!important}
-body :is(.positive,.success,.profit,.up,.text-success){color:#62D6A5!important}
-body :is(.negative,.danger,.loss,.down,.text-danger){color:#FF858D!important}
-body a{color:#FFDE02!important}
-body a:hover,body a:focus{color:#FFDE02!important;background:transparent!important}
-body :is(.modal-backdrop){background:rgba(3,8,18,.86)!important;backdrop-filter:blur(7px)!important}
-body .deposit-qr,body .deposit-qr canvas,body .deposit-qr img{background:#fff!important}
-::selection{background:#FFDE02!important;color:#07101F!important}
-@media(max-width:700px){
- body.app-mode .terminal-main{background:#070E20!important}
- body.app-mode .terminal-sidebar{background:#0B1628!important}
- body.app-mode .terminal .client-panel,body.app-mode .terminal .bbx-section{padding:14px!important}
-}
-
-
-/* BIGBULLS ADMIN + PORTAL READABILITY REPAIR — 2026-11-11
-   The admin UI contains legacy inline/light surfaces. Normalize the actual
-   admin components, form controls, section headers and action buttons. */
-body.app-mode .terminal :is(.admin-section,.admin-section-head,.admin-section-header,
-.admin-block,.admin-block-head,.admin-card,.admin-panel,.admin-widget,
-.admin-client-block,.admin-form,.admin-form-card,.admin-table-wrap,
-.admin-queue,.admin-queue-head,.admin-toolbar,.admin-controls,
-.admin-content-card,.admin-setting,.admin-setting-row,.admin-summary,
-.admin-metric,.admin-stat,.admin-list,.admin-item,.admin-row,
-[id*="admin"] .section-head,[id*="admin"] .section-header,
-[id*="admin"] .admin-section,[id*="admin"] .admin-card,
-[id*="admin"] .admin-panel,[id*="admin"] .admin-block){
-  background:#101B2D!important;
-  background-image:none!important;
-  color:#F5F7FC!important;
-  border-color:#354B68!important;
-  box-shadow:none!important;
-}
-body.app-mode .terminal :is(.admin-section,.admin-section-head,.admin-section-header,
-.admin-block,.admin-block-head,.admin-card,.admin-panel,.admin-widget,
-.admin-client-block,.admin-form,.admin-form-card,.admin-table-wrap,
-.admin-queue,.admin-queue-head,.admin-toolbar,.admin-controls,
-.admin-content-card,.admin-setting,.admin-setting-row,.admin-summary,
-.admin-metric,.admin-stat,.admin-list,.admin-item,.admin-row,
-[id*="admin"] .section-head,[id*="admin"] .section-header,
-[id*="admin"] .admin-section,[id*="admin"] .admin-card,
-[id*="admin"] .admin-panel,[id*="admin"] .admin-block)
-:is(h1,h2,h3,h4,h5,h6,b,strong,label,legend,th){
-  color:#F5F7FC!important;
-}
-body.app-mode .terminal :is(.admin-section,.admin-section-head,.admin-section-header,
-.admin-block,.admin-block-head,.admin-card,.admin-panel,.admin-widget,
-.admin-client-block,.admin-form,.admin-form-card,.admin-table-wrap,
-.admin-queue,.admin-queue-head,.admin-toolbar,.admin-controls,
-.admin-content-card,.admin-setting,.admin-setting-row,.admin-summary,
-.admin-metric,.admin-stat,.admin-list,.admin-item,.admin-row,
-[id*="admin"] .section-head,[id*="admin"] .section-header,
-[id*="admin"] .admin-section,[id*="admin"] .admin-card,
-[id*="admin"] .admin-panel,[id*="admin"] .admin-block)
-:is(p,small,span,em,i,li,td,.muted,.hint,.description){
-  color:#B7C4D7!important;
-}
-/* Catch legacy inline white/grey surfaces inside admin without changing QR codes. */
-body.app-mode .terminal [style*="background:#fff"],
-body.app-mode .terminal [style*="background: #fff"],
-body.app-mode .terminal [style*="background-color:#fff"],
-body.app-mode .terminal [style*="background-color: #fff"],
-body.app-mode .terminal [style*="background:white"],
-body.app-mode .terminal [style*="background: white"],
-body.app-mode .terminal [style*="background-color:white"],
-body.app-mode .terminal [style*="background-color: white"],
-body.app-mode .terminal [style*="background:#fff"],
-body.app-mode .terminal [style*="background-color: rgb(255"]{
-  background:#101B2D!important;
-  background-image:none!important;
-  color:#F5F7FC!important;
-  border-color:#354B68!important;
-}
-body.app-mode .terminal input:not([type=checkbox]):not([type=radio]):not([type=file]),
-body.app-mode .terminal select,
-body.app-mode .terminal textarea,
-body.app-mode .terminal .admin-form input,
-body.app-mode .terminal .admin-form select,
-body.app-mode .terminal .admin-form textarea,
-body.app-mode .terminal [id*="admin"] input:not([type=checkbox]):not([type=radio]):not([type=file]),
-body.app-mode .terminal [id*="admin"] select,
-body.app-mode .terminal [id*="admin"] textarea{
-  background:#081321!important;
-  color:#F5F7FC!important;
-  border:1px solid #526985!important;
-  border-radius:8px!important;
-  box-shadow:none!important;
-  min-height:42px;
-}
-body.app-mode .terminal input::placeholder,
-body.app-mode .terminal textarea::placeholder{color:#AAB9CE!important;opacity:1!important}
-body.app-mode .terminal input:focus,
-body.app-mode .terminal select:focus,
-body.app-mode .terminal textarea:focus{
-  border-color:#FFDE02!important;
-  box-shadow:0 0 0 3px #FFDE0228!important;
-  outline:none!important;
-}
-/* Clear hierarchy for admin section bars and labels. */
-body.app-mode .terminal :is(.admin-section-title,.admin-section-heading,
-.admin-heading,.section-heading,.queue-heading,.panel-heading){
-  background:#0B1628!important;
-  color:#FFDE02!important;
-  border-color:#354B68!important;
-}
-body.app-mode .terminal :is(.admin-section-title,.admin-section-heading,
-.admin-heading,.section-heading,.queue-heading,.panel-heading) *{
-  color:inherit!important;
-}
-/* Button hierarchy: yellow primary, blue secondary, green success, red danger. */
-body.app-mode .terminal :is(button,.btn,.button,input[type=submit],input[type=button]){
-  background:#FFDE02!important;
-  color:#07101F!important;
-  border:1px solid #FFDE02!important;
-  text-shadow:none!important;
-  box-shadow:none!important;
-  font-weight:800!important;
-}
-body.app-mode .terminal :is(.secondary,.btn-secondary,.outline-button,.ghost-button,
-button[data-action="secondary"],button.secondary){
-  background:#14243A!important;color:#F5F7FC!important;border:1px solid #526985!important;
-}
-body.app-mode .terminal :is(.success,.btn-success,.approve,.verify,[data-action="approve"],[data-action="verify"]){
-  background:#087F62!important;color:#FFFFFF!important;border-color:#16A884!important;
-}
-body.app-mode .terminal :is(.danger,.btn-danger,.reject,.delete,[data-action="reject"],[data-action="delete"]){
-  background:#A92F3D!important;color:#FFFFFF!important;border-color:#D34B5A!important;
-}
-body.app-mode .terminal :is(.bb-buy,.buy-button,[data-side="buy"]){
-  background:#087F62!important;color:#FFFFFF!important;border-color:#16A884!important;
-}
-body.app-mode .terminal :is(.bb-sell,.sell-button,[data-side="sell"]){
-  background:#A92F3D!important;color:#FFFFFF!important;border-color:#D34B5A!important;
-}
-body.app-mode .terminal :is(table,thead,tbody,tr,th,td){background-color:transparent!important;color:#F5F7FC!important;border-color:#354B68!important}
-body.app-mode .terminal th{background:#0B1628!important;color:#FFDE02!important}
-body.app-mode .terminal td{color:#DCE6F3!important}
-body.app-mode .terminal :is(.loading,.loading-state,.queue-loading){color:#B7C4D7!important;background:#14243A!important}
-body.app-mode .terminal svg:not(.chart svg){fill:none!important}
-@media(max-width:760px){
- body.app-mode .terminal .terminal-main,
- body.app-mode .terminal .terminal-content,
- body.app-mode .terminal .admin-content{min-width:0!important}
- body.app-mode .terminal :is(.admin-section,.admin-card,.admin-panel,.admin-widget,.admin-form-card){padding:14px!important}
- body.app-mode .terminal :is(input,select,textarea,button){font-size:14px!important}
-}
-
-
-/* Exact admin markup selectors observed in app.js. */
 body.app-mode .terminal .admin-section-heading{
-  display:flex!important;align-items:center!important;justify-content:space-between!important;
-  gap:10px!important;flex-wrap:wrap!important;
-  background:#0B1628!important;color:#FFDE02!important;
-  border:1px solid #354B68!important;border-radius:10px!important;
-  padding:14px 16px!important;margin:18px 0 10px!important;
+  display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;flex-wrap:wrap!important;
+  background:var(--bb-surface)!important;color:var(--bb-primary)!important;border:1px solid var(--bb-line)!important;
+  border-radius:10px!important;padding:14px 16px!important;margin:18px 0 10px!important;
 }
-body.app-mode .terminal .admin-section-heading h3{
-  color:#F5F7FC!important;margin:0!important;font-size:15px!important;
+body.app-mode .terminal .admin-section-heading h3{color:var(--bb-text)!important;margin:0!important;font-size:15px!important}
+body.app-mode .terminal .admin-section-heading span{color:var(--bb-muted)!important;font-size:10px!important;letter-spacing:.08em!important}
+body.app-mode .terminal .admin-control-grid article :is(b,h3,h4){color:var(--bb-text)!important}
+body.app-mode .terminal .admin-control-grid article :is(p,small){color:var(--bb-muted)!important}
+body.app-mode .terminal .client-panel :is(h1,h2,h3,h4,b,strong,label){color:var(--bb-text)!important}
+body.app-mode .terminal .client-panel :is(p,small,span,li){color:var(--bb-muted)!important}
+/* Form controls */
+body :is(input,select,textarea,.form-control,.form-select,.search-input,.chat-input){
+  background:var(--bb-bg)!important;color:var(--bb-text)!important;border:1px solid #405773!important;
+  border-radius:8px!important;box-shadow:none!important;caret-color:var(--bb-primary);accent-color:var(--bb-primary);
 }
-body.app-mode .terminal .admin-section-heading span{
-  color:#B7C4D7!important;font-size:10px!important;letter-spacing:.08em!important;
+body :is(input,select,textarea,.form-control,.form-select)::placeholder{color:#91A3B9!important;opacity:1!important}
+body :is(input,select,textarea,.form-control,.form-select):focus{
+  border-color:var(--bb-primary)!important;box-shadow:0 0 0 3px rgba(53,198,212,.18)!important;outline:0!important;
 }
-body.app-mode .terminal .admin-control-grid article{
-  background:#111E32!important;color:#F5F7FC!important;
-  border:1px solid #354B68!important;border-radius:10px!important;
-  box-shadow:none!important;
+body.app-mode .terminal input[type=file],body.app-mode .terminal .client-panel input[type=file]{
+  background:var(--bb-surface)!important;color:var(--bb-text)!important;border:1px dashed #58708B!important;
 }
-body.app-mode .terminal .admin-control-grid article b{color:#F5F7FC!important}
-body.app-mode .terminal .admin-control-grid article p{color:#B7C4D7!important}
-body.app-mode .terminal .admin-control-grid article span{color:#FFDE02!important}
-body.app-mode .terminal .client-panel{
-  background:#101B2D!important;color:#F5F7FC!important;
-  border:1px solid #354B68!important;border-radius:10px!important;
+body input[type=file]::file-selector-button{
+  background:var(--bb-raised)!important;color:var(--bb-text)!important;border:1px solid var(--bb-line)!important;border-radius:6px!important;padding:8px 12px!important;
 }
-body.app-mode .terminal .client-panel :is(h1,h2,h3,h4,b,strong,label){color:#F5F7FC!important}
-body.app-mode .terminal .client-panel :is(p,small,span,li){color:#B7C4D7!important}
-body.app-mode .terminal .client-panel input[type=file]{
-  background:#081321!important;color:#DCE6F3!important;
-  border:1px dashed #526985!important;border-radius:8px!important;
-  padding:10px!important;
+/* Buttons: clear primary / secondary / semantic actions */
+body :is(button,.btn,.button,.portal-primary,.admin-button,.primary-btn,.cta,.action-btn,.navbtn,
+input[type=submit],input[type=button]){
+  background:var(--bb-primary)!important;color:var(--bb-primary-ink)!important;border:1px solid var(--bb-primary)!important;
+  border-radius:9px!important;box-shadow:none!important;font-weight:700!important;text-shadow:none!important;
 }
-body.app-mode .terminal .client-panel input[type=file]::file-selector-button{
-  background:#14243A!important;color:#F5F7FC!important;
-  border:1px solid #526985!important;border-radius:6px!important;
-  padding:8px 12px!important;margin-right:10px!important;
+body :is(button,.btn,.button,.portal-primary,.admin-button,.primary-btn,.cta,.action-btn,.navbtn):hover{
+  background:var(--bb-primary-hover)!important;color:var(--bb-primary-ink)!important;border-color:var(--bb-primary-hover)!important;
 }
+body :is(.secondary,.btn-secondary,.btn-outline,.portal-secondary,.secondary-btn,.outline-button,.ghost-button,
+.tab-button[aria-selected=false],button.secondary){
+  background:var(--bb-surface)!important;color:var(--bb-text)!important;border:1px solid var(--bb-line)!important;
+}
+body :is(.success,.btn-success,.approve,.verify,[data-action=approve],[data-action=verify],.bb-buy,.buy-button,[data-side=buy]){
+  background:#176B52!important;color:#F2FFF9!important;border-color:var(--bb-success)!important;
+}
+body :is(.danger,.btn-danger,.reject,.delete,[data-action=reject],[data-action=delete],.bb-sell,.sell-button,[data-side=sell]){
+  background:#7D2D3B!important;color:#FFF5F6!important;border-color:var(--bb-danger)!important;
+}
+body :is(button:disabled,.btn:disabled,input:disabled,select:disabled,textarea:disabled){background:#29394E!important;color:#91A3B9!important;border-color:#40536B!important;opacity:.72!important}
+/* Tags, badges, alerts and status */
+body :is(.badge,.pill,.tag,.status-badge,.chip,.eyebrow,.free-tag,.lock-label,.market-feed-badge,.label,.nav-badge,.count-badge){
+  background:var(--bb-surface)!important;color:var(--bb-muted)!important;border:1px solid var(--bb-line)!important;
+}
+body :is(.alert,.notice,.info-box,.empty-state,.status-box,.wallet-address-card,.admin-row,.admin-transaction,.account-row,.order-row,.transaction-row){
+  background:var(--bb-surface)!important;color:var(--bb-text)!important;border:1px solid var(--bb-line)!important;
+}
+body :is(.positive,.success,.profit,.up,.text-success){color:var(--bb-success)!important}
+body :is(.negative,.danger,.loss,.down,.text-danger,.text-red){color:var(--bb-danger)!important}
+body :is(.warning,.text-warning){color:var(--bb-warning)!important}
+body :is(.info,.text-info){color:var(--bb-info)!important}
+/* Tables, charts and data widgets */
+body :is(table,thead,tbody,tr,th,td){border-color:var(--bb-line)!important}
+body table{background:var(--bb-panel)!important;color:var(--bb-text)!important}
+body th{background:var(--bb-surface)!important;color:var(--bb-muted)!important}
+body td{background:transparent!important;color:var(--bb-text)!important}
+body tr:hover td{background:var(--bb-raised)!important}
+body svg,[class*=icon],.icon{color:var(--bb-primary)}
+body svg{fill:currentColor}
+body hr,body :is(.divider,.line,.border){border-color:var(--bb-line)!important}
+body :is(.progress,.progress-bar-track,.meter-track){background:var(--bb-surface)!important;border-color:var(--bb-line)!important}
+body :is(.progress-bar,.meter-fill,.progress-fill){background:var(--bb-primary)!important}
+body :is(.active,.is-active,.selected,[aria-current=page],[aria-selected=true]){border-color:var(--bb-primary)!important}
+body :is(.nav a:hover,.sidebar a:hover,.menu a:hover,.nav button:hover,.sidebar button:hover,
+.nav a.active,.sidebar a.active,.menu a.active,.nav button.active,.sidebar button.active){
+  background:var(--bb-surface)!important;color:var(--bb-text)!important;border-color:var(--bb-primary)!important;
+}
+body .market-tabs button{background:var(--bb-surface)!important;color:var(--bb-muted)!important;border-color:var(--bb-line)!important}
+body .market-tabs button.active{background:var(--bb-primary)!important;color:var(--bb-primary-ink)!important}
+body .market-table-wrap,body .market-table{background:var(--bb-panel)!important;color:var(--bb-text)!important}
+body .market-table th{background:var(--bb-surface)!important;color:var(--bb-muted)!important}
+body .market-table td{background:transparent!important;color:var(--bb-text)!important;border-color:var(--bb-line)!important}
+body .modal-backdrop{background:rgba(4,10,19,.82)!important;backdrop-filter:blur(6px)!important}
+body .deposit-qr,body .deposit-qr canvas,body .deposit-qr img{background:#FFFFFF!important}
+::selection{background:var(--bb-primary)!important;color:var(--bb-primary-ink)!important}
+*{scrollbar-color:#405773 var(--bb-bg)}
+@media(max-width:760px){
+  html,body,body.app-mode .terminal-main{background:var(--bb-bg)!important}
+  body.app-mode .terminal .client-panel,body.app-mode .terminal .bbx-section{padding:14px!important}
+  body.app-mode .terminal :is(input,select,textarea,button){font-size:14px}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
