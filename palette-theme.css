@@ -271,3 +271,80 @@ body.app-mode .terminal :is(input,select,textarea){background:#081321!important;
 @media(max-width:900px){
  body.app-mode .terminal .terminal-sidebar{background:#0B1628!important;border-color:#354B68!important}
 }
+
+
+/* Public website: same midnight identity as the signed-in workspace. */
+body:not(.app-mode) .site-header,
+body:not(.app-mode) footer,
+body:not(.app-mode) .ticker,
+body:not(.app-mode) .hero,
+body:not(.app-mode) .workflow,
+body:not(.app-mode) .purchase,
+body:not(.app-mode) .pricing,
+body:not(.app-mode) .engine,
+body:not(.app-mode) .ai-showcase{
+ background:#070E20!important;color:#F5F7FC!important;border-color:#354B68!important;
+}
+body:not(.app-mode) .hero h1,
+body:not(.app-mode) .hero h1 em,
+body:not(.app-mode) .section h2,
+body:not(.app-mode) .workflow h2,
+body:not(.app-mode) .purchase h2,
+body:not(.app-mode) .pricing h2,
+body:not(.app-mode) .engine h2,
+body:not(.app-mode) .ai-showcase h2,
+body:not(.app-mode) .ai-feature-card h3,
+body:not(.app-mode) .cards h3,
+body:not(.app-mode) .feature-grid h3{color:#F5F7FC!important}
+body:not(.app-mode) .hero .lead,
+body:not(.app-mode) .hero .note,
+body:not(.app-mode) .workflow p,
+body:not(.app-mode) .purchase p,
+body:not(.app-mode) .engine p,
+body:not(.app-mode) .pricing p,
+body:not(.app-mode) .ai-showcase-head p,
+body:not(.app-mode) .ai-feature-card p,
+body:not(.app-mode) .cards article p,
+body:not(.app-mode) .feature-grid article p{color:#B7C4D7!important}
+body:not(.app-mode) .chart,
+body:not(.app-mode) .cards article,
+body:not(.app-mode) .account-cards article,
+body:not(.app-mode) .payment-cards article,
+body:not(.app-mode) .feature-grid article,
+body:not(.app-mode) .ai-feature-card,
+body:not(.app-mode) .pricecard,
+body:not(.app-mode) .price-card,
+body:not(.app-mode) .lockcard,
+body:not(.app-mode) .ai-rotate-label{
+ background:#101E33!important;color:#F5F7FC!important;
+ border:1px solid #354B68!important;box-shadow:0 8px 22px #0005!important;
+}
+body:not(.app-mode) .chart :is(small,p,span),
+body:not(.app-mode) .pricecard :is(p,small,li,span),
+body:not(.app-mode) .price-card :is(p,small,li,span),
+body:not(.app-mode) .lockcard :is(p,small,li,span){color:#B7C4D7!important}
+body:not(.app-mode) .site-header .main-nav,
+body:not(.app-mode) .site-header .main-nav a,
+body:not(.app-mode) .site-header .brand,
+body:not(.app-mode) .site-header .brand b,
+body:not(.app-mode) footer,
+body:not(.app-mode) footer a{color:#E7EEF8!important}
+body:not(.app-mode) .site-header .navbtn,
+body:not(.app-mode) .hero .btn:not(.gold){
+ background:#14243A!important;color:#F5F7FC!important;border:1px solid #526985!important;
+}
+body:not(.app-mode) .site-header .nav-open,
+body:not(.app-mode) .hero .btn.gold,
+body:not(.app-mode) .portal-primary{
+ background:#FFDE02!important;color:#07101F!important;border-color:#FFDE02!important;
+}
+body:not(.app-mode) .ticker span,
+body:not(.app-mode) .eyebrow,
+body:not(.app-mode) .ai-feature-card small,
+body:not(.app-mode) .cards small,
+body:not(.app-mode) .feature-grid small{color:#FFDE02!important}
+body:not(.app-mode) .workflow li,
+body:not(.app-mode) .workflow li strong,
+body:not(.app-mode) .workflow li small{color:#DCE6F3!important;border-color:#354B68!important}
+body:not(.app-mode) .site-header a:hover,
+body:not(.app-mode) .site-header button:hover{background:#1A2E49!important;color:#FFDE02!important}
