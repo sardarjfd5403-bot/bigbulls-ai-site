@@ -1,16 +1,6 @@
 (function(){
 "use strict";
-const URL="https://ztiiyulusburxjkpcfx
- const courseOpen=el.closest("[data-course-open]");
- if(courseOpen){e.preventDefault();showApp("course-"+courseOpen.dataset.courseOpen);return;}
- const courseModule=el.closest("[data-course-module]");
- if(courseModule){const idx=Number(courseModule.dataset.courseModule);const route=activePage.replace("course-","");const course=Object.values(BB_COURSES).find(x=>x.id===route);if(course){document.querySelectorAll("[data-course-module]").forEach(x=>{x.classList.toggle("active",Number(x.dataset.courseModule)===idx);const icon=x.querySelector("i");if(icon)icon.textContent=Number(x.dataset.courseModule)===idx?"●":"○";});const view=document.getElementById("course-lesson-view");if(view)view.innerHTML=courseLessonView(course,idx);}return;}
- const courseNext=el.closest("[data-course-next]");
- if(courseNext){const route=activePage.replace("course-","");const course=Object.values(BB_COURSES).find(x=>x.id===route);const idx=Number(courseNext.dataset.courseNext)+1;if(course&&idx<course.modules.length){document.querySelector('[data-course-module="'+idx+'"]')?.click();}return;}
- const coursePrev=el.closest("[data-course-prev]");
- if(coursePrev){const route=activePage.replace("course-","");const course=Object.values(BB_COURSES).find(x=>x.id===route);const idx=Number(coursePrev.dataset.coursePrev)-1;if(course&&idx>=0){document.querySelector('[data-course-module="'+idx+'"]')?.click();}return;}
-
- const el=e.target instanceof Element?e.target:null;if(!el)return;u.supabase.co";
+const URL="https://ztiiyulusburxjkpcfxu.supabase.co";
 const KEY="sb_publishable_5hDwqvbcUHeSJdXFHf9ugw_VPYGN4J_";
 let sb=null,modal,body,shell,user=null,activePage="dashboard",licenseActive=false,financialChannel=null;
 const pages=["course-forex","course-smc","course-ict","course-vsa","dashboard","terminal","accounts","wallet","market-analysis","signals","learning","services","portfolio","orders","license","echo-system","downloads","profile","settings","support","verification","partner","economic-calendar","trading-central","admin"];
@@ -126,7 +116,6 @@ function renderApp(){
 function title(p){return ({dashboard:"Dashboard",terminal:"BIGBULLS PRO Trading Terminal",accounts:"Trading Accounts",wallet:"Wallet & Payments",profile:"My Profile",services:"Services","market-analysis":"Market Analysis",signals:"Live Signals",learning:"Learning Centre", "copy-trading":"Copy Trading",portfolio:"Portfolio",orders:"Orders",license:"License","echo-system":"Echo System",downloads:"Downloads",settings:"Settings",support:"Support",verification:"KYC Verification",partner:"IB / Partner Area","economic-calendar":"Economic Calendar","trading-central":"Trading Central",admin:"Admin Control Panel"})[p]||"Dashboard";}
 function stat(label,value,sub){return '<div class="client-stat"><small>'+label+'</small><b>'+value+'</b><span>'+sub+'</span></div>';}
 function tile(id,icon,heading,desc,tag){return '<button class="service-tile" data-page="'+id+'"><span>'+icon+'</span><b>'+heading+'</b><small>'+desc+'</small><i>'+tag+' →</i></button>';}
-
 const BB_COURSES={
  forex:{id:"forex",route:"course-forex",short:"FOREX",title:"BIGBULLS Forex Mastery",level:"Beginner → Advanced",intro:"Learn how the currency market works, how orders are executed and how to build a risk-first trading routine.",modules:[
  ["Forex market foundations","Understand currency pairs, base/quote currencies, majors, minors, crosses and why exchange rates move.","A currency pair compares two currencies. EUR/USD = 1.0850 means one euro is worth 1.0850 US dollars. If EUR/USD rises, EUR is strengthening relative to USD.","fx"],
@@ -195,6 +184,7 @@ function coursePage(key,index=0){
  return '<div class="course-page-top"><button class="course-back-btn" type="button" data-page="learning">← Learning Centre</button><span class="free-tag">FREE · SELF PACED</span></div><div class="course-hero"><div><span class="course-hero-kicker">BIGBULLS FX MARKET · STUDY MODULE</span><h1>'+course.title+'</h1><p>'+course.intro+'</p><div class="course-hero-tags"><span>'+course.level+'</span><span>'+course.modules.length+' modules</span><span>Chart labs + practice</span></div></div><div class="course-hero-mark">'+course.short+'</div></div><div class="course-workspace"><aside class="course-module-list"><div class="course-module-list-head"><b>COURSE CONTENT</b><small>'+course.modules.length+' LESSONS</small></div>'+course.modules.map((m,i)=>'<button type="button" data-course-module="'+i+'" class="'+(i===safeIndex?'active':'')+'"><span>'+String(i+1).padStart(2,'0')+'</span><b>'+m[0]+'</b><i>'+(i===safeIndex?'●':'○')+'</i></button>').join('')+'</aside><div id="course-lesson-view">'+courseLessonView(course,safeIndex)+'</div></div><div class="course-disclaimer">Educational material only. No setup guarantees a win. Validate every concept with historical data, realistic costs and risk controls.</div>';
 }
 
+
 function pageContent(p,name){
  if(p==="course-forex")return coursePage("forex");
  if(p==="course-smc")return coursePage("smc");
@@ -220,7 +210,7 @@ function pageContent(p,name){
 <li><b>Chart reading essentials</b><small>Candlesticks, timeframes, trend, support/resistance and basic market structure.</small></li>
 <li><b>Build a beginner trading plan</b><small>Choose one setup, define entry/exit rules, journal trades and practise on demo.</small></li>
 </ol></details></article>
-<article class="learning-course smc-course"><div class="course-top"><span class="course-index">02</span><span class="course-level">INTERMEDIATE → ADVANCED</span></div><div class="course-icon">SMC</div><h3>BIGBULLS Smart Money Concepts</h3><p>Institutional market structure concepts, liquidity, order blocks, fair value gaps, premium/discount and trade models.</p><div class="course-meta"><span>9 modules</span><span>Free course</span></div><button type="button" class="course-open-btn" data-course-open="forex">Open Forex course →</button><button type="button" class="course-open-btn" data-course-open="smc">Open SMC course →</button><details class="course-syllabus"><summary>Open course curriculum <b>＋</b></summary><ol>
+<article class="learning-course smc-course"><div class="course-top"><span class="course-index">02</span><span class="course-level">INTERMEDIATE → ADVANCED</span></div><div class="course-icon">SMC</div><h3>BIGBULLS Smart Money Concepts</h3><p>Institutional market structure concepts, liquidity, order blocks, fair value gaps, premium/discount and trade models.</p><div class="course-meta"><span>9 modules</span><span>Free course</span></div><button type="button" class="course-open-btn" data-course-open="smc">Open SMC course →</button><details class="course-syllabus"><summary>Open course curriculum <b>＋</b></summary><ol>
 <li><b>Market structure framework</b><small>Swing highs/lows, BOS, CHoCH and distinguishing continuation from reversal.</small></li>
 <li><b>Liquidity fundamentals</b><small>Buy-side and sell-side liquidity, equal highs/lows, stops and liquidity pools.</small></li>
 <li><b>Liquidity sweeps and inducement</b><small>Identify stop runs, false breaks and the context needed before considering a reversal.</small></li>
@@ -231,7 +221,7 @@ function pageContent(p,name){
 <li><b>Multi-timeframe alignment</b><small>Higher-timeframe bias, lower-timeframe confirmation and avoiding conflicting signals.</small></li>
 <li><b>SMC trade model and review</b><small>Build a repeatable checklist, define invalidation, risk, target and journal evidence.</small></li>
 </ol></details></article>
-<article class="learning-course ict-course"><div class="course-top"><span class="course-index">03</span><span class="course-level">INTERMEDIATE → ADVANCED</span></div><div class="course-icon">ICT</div><h3>BIGBULLS ICT Trading Blueprint</h3><p>Time and price concepts, dealing ranges, kill zones, PD arrays, liquidity delivery and structured ICT-style models.</p><div class="course-meta"><span>9 modules</span><span>Free course</span></div><button type="button" class="course-open-btn" data-course-open="forex">Open Forex course →</button><button type="button" class="course-open-btn" data-course-open="ict">Open ICT course →</button><details class="course-syllabus"><summary>Open course curriculum <b>＋</b></summary><ol>
+<article class="learning-course ict-course"><div class="course-top"><span class="course-index">03</span><span class="course-level">INTERMEDIATE → ADVANCED</span></div><div class="course-icon">ICT</div><h3>BIGBULLS ICT Trading Blueprint</h3><p>Time and price concepts, dealing ranges, kill zones, PD arrays, liquidity delivery and structured ICT-style models.</p><div class="course-meta"><span>9 modules</span><span>Free course</span></div><button type="button" class="course-open-btn" data-course-open="ict">Open ICT course →</button><details class="course-syllabus"><summary>Open course curriculum <b>＋</b></summary><ol>
 <li><b>ICT methodology overview</b><small>Core terminology, time-and-price framework and how to test concepts objectively.</small></li>
 <li><b>Liquidity and draw on liquidity</b><small>External/internal range liquidity, previous highs/lows and likely liquidity objectives.</small></li>
 <li><b>Dealing range and PD arrays</b><small>Premium/discount, FVG, order blocks, breakers and mitigation blocks in context.</small></li>
@@ -242,7 +232,7 @@ function pageContent(p,name){
 <li><b>Silver Bullet and session setups</b><small>Understand the model rules, time filters, prerequisites and when to stand aside.</small></li>
 <li><b>Backtest and execution discipline</b><small>Record screenshots, sample size, spread, slippage, win rate and expectancy without curve fitting.</small></li>
 </ol></details></article>
-<article class="learning-course vsa-course"><div class="course-top"><span class="course-index">04</span><span class="course-level">BEGINNER → ADVANCED</span></div><div class="course-icon">VSA</div><h3>BIGBULLS Volume Spread Analysis</h3><p>Read volume, candle spread and close location to study supply, demand, effort versus result and market context.</p><div class="course-meta"><span>9 modules</span><span>Free course</span></div><button type="button" class="course-open-btn" data-course-open="forex">Open Forex course →</button><button type="button" class="course-open-btn" data-course-open="vsa">Open VSA course →</button><details class="course-syllabus"><summary>Open course curriculum <b>＋</b></summary><ol>
+<article class="learning-course vsa-course"><div class="course-top"><span class="course-index">04</span><span class="course-level">BEGINNER → ADVANCED</span></div><div class="course-icon">VSA</div><h3>BIGBULLS Volume Spread Analysis</h3><p>Read volume, candle spread and close location to study supply, demand, effort versus result and market context.</p><div class="course-meta"><span>9 modules</span><span>Free course</span></div><button type="button" class="course-open-btn" data-course-open="vsa">Open VSA course →</button><details class="course-syllabus"><summary>Open course curriculum <b>＋</b></summary><ol>
 <li><b>VSA foundations</b><small>Volume, candle range, close position and the effort-versus-result principle.</small></li>
 <li><b>Volume and spread relationship</b><small>Compare current activity with recent bars and interpret wide/narrow spreads.</small></li>
 <li><b>Professional activity clues</b><small>Study stopping volume, buying/selling climax and high-volume tests with context.</small></li>
@@ -502,6 +492,16 @@ async function submitHandler(e){
  }
 }
 async function clickHandler(e){
+ const el=e.target instanceof Element?e.target:null;if(!el)return;
+
+ const courseOpen=el.closest("[data-course-open]");
+ if(courseOpen){e.preventDefault();showApp("course-"+courseOpen.dataset.courseOpen);return;}
+ const courseModule=el.closest("[data-course-module]");
+ if(courseModule){const idx=Number(courseModule.dataset.courseModule);const course=BB_COURSES[activePage.replace("course-","")];if(course){document.querySelectorAll("[data-course-module]").forEach(x=>{x.classList.toggle("active",Number(x.dataset.courseModule)===idx);const icon=x.querySelector("i");if(icon)icon.textContent=Number(x.dataset.courseModule)===idx?"●":"○";});const view=document.getElementById("course-lesson-view");if(view)view.innerHTML=courseLessonView(course,idx);}return;}
+ const courseNext=el.closest("[data-course-next]");
+ if(courseNext){const course=BB_COURSES[activePage.replace("course-","")],idx=Number(courseNext.dataset.courseNext)+1;if(course&&idx<course.modules.length)document.querySelector('[data-course-module="'+idx+'"]')?.click();return;}
+ const coursePrev=el.closest("[data-course-prev]");
+ if(coursePrev){const course=BB_COURSES[activePage.replace("course-","")],idx=Number(coursePrev.dataset.coursePrev)-1;if(course&&idx>=0)document.querySelector('[data-course-module="'+idx+'"]')?.click();return;}
 
  const notificationToggle=el.closest("[data-notification-toggle]");if(notificationToggle){const panel=document.getElementById("client-notification-panel");if(panel){panel.hidden=!panel.hidden;notificationToggle.setAttribute("aria-expanded",String(!panel.hidden));}const menu=document.getElementById("client-profile-menu");if(menu)menu.hidden=true;return;}
  const profileToggle=el.closest("[data-profile-toggle]");if(profileToggle){const menu=document.getElementById("client-profile-menu");if(menu){menu.hidden=!menu.hidden;profileToggle.setAttribute("aria-expanded",String(!menu.hidden));}const panel=document.getElementById("client-notification-panel");if(panel)panel.hidden=true;return;}
