@@ -107,6 +107,13 @@ Deno.serve(async (req: Request) => {
           readiness: checks,
           missing_requirements: missing,
           halt_reason: settings.halt_reason || null,
+          risk_limits: {
+            max_risk_per_trade_pct: Number(settings.max_risk_per_trade_pct || 1),
+            max_daily_loss_pct: Number(settings.max_daily_loss_pct || 3),
+            max_aggregate_risk_pct: Number(settings.max_aggregate_risk_pct || 3),
+            max_open_positions: Number(settings.max_open_positions || 5),
+            max_leverage: Number(settings.max_leverage || 100)
+          },
         },
         totals: { accounts: accounts.count || 0, orders: orders.count || 0, open_positions: positions.count || 0 },
       });
