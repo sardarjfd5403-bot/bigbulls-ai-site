@@ -10,9 +10,9 @@
   --bb-line:#30445E;
   --bb-text:#F4F7FB;
   --bb-muted:#A9B8CA;
-  --bb-primary:#35C6D4;
-  --bb-primary-hover:#63D8E2;
-  --bb-primary-ink:#071A22;
+  --bb-primary:#2563EB;
+  --bb-primary-hover:#3B82F6;
+  --bb-primary-ink:#FFFFFF;
   --bb-accent:#F2B84B;
   --bb-success:#2FC58D;
   --bb-danger:#F06B75;
@@ -176,3 +176,60 @@ body .deposit-qr,body .deposit-qr canvas,body .deposit-qr img{background:#FFFFFF
   body.app-mode .terminal :is(input,select,textarea,button){font-size:14px}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+
+
+/* FINAL CONTRAST FIX — white type on every blue/nav surface */
+body.app-mode .terminal-sidebar .side-group>button .side-copy b,
+body.app-mode .terminal-sidebar .side-group>button .side-copy em,
+body.app-mode .terminal-sidebar .side-group>button:hover .side-copy b,
+body.app-mode .terminal-sidebar .side-group>button:hover .side-copy em,
+body.app-mode .terminal-sidebar .side-group>button.active .side-copy b,
+body.app-mode .terminal-sidebar .side-group>button.active .side-copy em{
+  color:#F8FAFC!important;
+}
+body.app-mode .terminal-sidebar .side-group>button{
+  color:#DCE7F5!important;
+}
+body.app-mode .terminal-sidebar .side-group>button.active,
+body.app-mode .terminal-sidebar .side-group>button:hover{
+  background:#173B70!important;
+  border-color:#3B82F6!important;
+  color:#FFFFFF!important;
+  box-shadow:inset 3px 0 #60A5FA!important;
+}
+body.app-mode .terminal-nav{
+  background:#111C2E!important;
+  border-color:#30445E!important;
+}
+body.app-mode .terminal-nav button,
+body.app-mode .terminal-nav button.active,
+body.app-mode .terminal-nav button:hover,
+body.app-mode .terminal-nav button:focus{
+  color:#F8FAFC!important;
+}
+body.app-mode .terminal-nav button.active,
+body.app-mode .terminal-nav button:hover{
+  background:#173B70!important;
+  border-bottom-color:#60A5FA!important;
+}
+body.app-mode .terminal-nav i{color:#BFDBFE!important}
+body.app-mode .terminal-head-right button,
+body.app-mode .terminal-footer button,
+body.app-mode .terminal .client-banner button,
+body.app-mode .terminal .portal-primary,
+body.app-mode .terminal button.primary,
+body.app-mode .terminal .btn-primary,
+body.app-mode .terminal .navbtn,
+body.app-mode .terminal .nav-open,
+body:not(.app-mode) .site-header .navbtn,
+body:not(.app-mode) .site-header .nav-open{
+  background:#2563EB!important;
+  border-color:#3B82F6!important;
+  color:#FFFFFF!important;
+}
+body.app-mode .terminal :is(button,.btn,.button,.portal-primary,.admin-button,.primary-btn,.cta,.action-btn,.navbtn):is(:hover,:focus){
+  color:#FFFFFF!important;
+}
+body :is(.btn-primary,.button-primary,.primary-btn,.nav-open,.navbtn.blue,.blue-button){
+  background:#2563EB!important;border-color:#3B82F6!important;color:#FFFFFF!important;
+}
