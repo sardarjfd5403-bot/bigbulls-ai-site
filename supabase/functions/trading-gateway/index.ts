@@ -111,19 +111,31 @@ Deno.serve(async (req: Request) => {
       if(accountErr) throw accountErr;
       if(!account || account.status!=="approved" || account.archived_at || account.deleted_at)
         return json({error:"Trading account is not active."},403);
-      const {data: cfg,error: cfgErr}=await admin.from("bb_execution_settings").select("demo_execution_enabled,global_halt").eq("singleton",true).single();
+      const {data: cfg,error: cfgErr}=await admin.from("bb_execution_settings").select("demo_execution_enabled,global_halt,max_risk_per_trade_pct,max_open_positions,max_aggregate_risk_pct").eq("singleton",true).single();
       if(cfgErr) throw cfgErr;
       if(cfg.global_halt===true || (account.account_mode==="demo" && cfg.demo_execution_enabled!==true))
         return json({error:"Execution is currently halted."},423);
       const isMarket=orderType==="MARKET";
+      const sl=body.stop_loss==null?0:Number(body.stop_loss);
+      const tp=body.take_profit==null?0:Number(body.take_profit);
+      if(!(sl>0) || (side==="BUY" && sl>=referencePrice) || (side==="SELL" && sl<=referencePrice) ||
+         (tp>0 && ((side==="BUY" && tp<=referencePrice) || (side==="SELL" && tp>=referencePrice))))
+        return json({error:"Valid stop-loss and directionally correct take-profit are required."},400);
+      const contractSize=/^XAU|^XAG/.test(symbol)?100:(/^[A-Z]{6}$/.test(symbol)?100000:1);
+      const riskAmount=Math.abs(referencePrice-sl)*quantity*contractSize;
+      const riskCap=Number(account.balance||0)*Number(cfg.max_risk_per_trade_pct||1)/100;
+      if(riskAmount>riskCap) return json({error:"Order rejected by server risk limit.",risk_amount:riskAmount,max_risk:riskCap},400);
+      const {count:openCount,error:openErr}=await admin.from("bb_trade_positions").select("id",{count:"exact",head:true}).eq("account_id",account.id).eq("status","OPEN");
+      if(openErr) throw openErr;
+      if((openCount||0)>=Number(cfg.max_open_positions||5)) return json({error:"Maximum open positions reached."},409);
       const now=new Date().toISOString();
       const orderInsert={
         account_id:account.id,user_id:user.id,account_mode:account.account_mode,
         symbol,side,order_type:orderType,quantity,requested_price:referencePrice,
         stop_price:body.stop_price==null?null:Number(body.stop_price),
         limit_price:body.limit_price==null?null:Number(body.limit_price),
-        stop_loss:body.stop_loss==null?null:Number(body.stop_loss),
-        take_profit:body.take_profit==null?null:Number(body.take_profit),
+        stop_loss:sl,
+        take_profit:tp||null,
         trailing_distance:body.trailing_distance==null?0:Number(body.trailing_distance),
         status:isMarket?"RECEIVED":"PENDING",created_at:now,updated_at:now
       };
