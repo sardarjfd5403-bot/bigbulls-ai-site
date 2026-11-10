@@ -1,132 +1,130 @@
-/* BIGBULLS FX MARKET — XM-inspired clarity, original BigBulls identity.
-   One unified visual system. Existing page structure and content are preserved. */
-:root{
- --bb-bg:#080D17;--bb-panel:#101827;--bb-card:#141F30;--bb-raised:#1B2A40;
- --bb-border:#2D3B50;--bb-text:#F8FAFC;--bb-muted:#B7C3D2;
- --bb-blue:#2563EB;--bb-blue-hover:#3B82F6;--bb-blue-soft:#17386D;
- --bb-green:#15966B;--bb-red:#C94350;--bb-amber:#E6AD43;
- --bg:var(--bb-bg);--panel:var(--bb-panel);--line:var(--bb-border);
- --text:var(--bb-text);--muted:var(--bb-muted);--primary:var(--bb-blue);
- --accent:var(--bb-amber);--success:var(--bb-green);--danger:var(--bb-red);
- --portal-bg:var(--bb-bg);--portal-card:var(--bb-panel);--portal-ink:var(--bb-text);
- --portal-muted:var(--bb-muted);--portal-line:var(--bb-border);--portal-blue:var(--bb-blue);
- color-scheme:dark;
+/* BIGBULLS FX MARKET — Global Trading Interface System
+   Clean replacement of the previous theme override. */
+:root {
+  --bg-deep-navy:#0b132b;
+  --bg-charcoal:#111827;
+  --bg-pure-white:#ffffff;
+  --bg-off-white:#f9fafb;
+  --bg-soft-grey:#f3f4f6;
+  --btn-primary-bg:#0052cc;
+  --btn-primary-hover:#004eeb;
+  --btn-primary-text:#ffffff;
+  --btn-gold-bg:#f59e0b;
+  --btn-gold-hover:#d97706;
+  --btn-gold-text:#0b132b;
+  --btn-success-bg:#10b981;
+  --btn-success-hover:#059669;
+  --btn-success-text:#ffffff;
+  --nav-header-bg-dark:#0b132b;
+  --nav-header-bg-light:#ffffff;
+  --nav-link-dark-bg:#ffffff;
+  --nav-link-light-bg:#1f2937;
+  --nav-link-hover-accent:#f59e0b;
+  --dropdown-bg:#ffffff;
+  --dropdown-border:#e2e8f0;
+  --dropdown-item-hover:#f0f4ff;
+  --card-light-bg:#ffffff;
+  --card-light-border:#e2e8f0;
+  --card-dark-bg:#1e293b;
+  --card-dark-border:#334155;
+  --card-shadow:0 4px 6px -1px rgba(0,0,0,.10),0 2px 4px -1px rgba(0,0,0,.06);
+  --market-up-green:#16a34a;
+  --market-down-red:#dc2626;
+  --status-info-blue:#3b82f6;
+  --status-warning-amber:#f59e0b;
+  --text-heading-light:#111827;
+  --text-body-light:#4b5563;
+  --text-heading-dark:#ffffff;
+  --text-body-dark:#9ca3af;
+  --text-accent-gold:#f59e0b;
+  --text-accent-blue:#0052cc;
+  --bg:var(--bg-off-white);
+  --text:var(--text-body-light);
+  --heading:var(--text-heading-light);
+  --primary:var(--btn-primary-bg);
+  --accent:var(--btn-gold-bg);
+  color-scheme:light;
 }
-html{background:var(--bb-bg)!important;color-scheme:dark}
-body{background:var(--bb-bg)!important;color:var(--bb-text)!important;font-family:Roboto,Arial,sans-serif!important}
-body :is(h1,h2,h3,h4,h5,h6,strong,b,legend){color:var(--bb-text)}
-body :is(p,li,small,label,td,th,.muted,.hint,.description,.note){color:var(--bb-muted)}
-body a,body a:visited{color:#75A7FF} body a:hover{color:#B5D0FF}
-/* Navigation and page chrome */
+*{box-sizing:border-box}
+html{background:var(--bg-off-white);color-scheme:light;scroll-behavior:smooth}
+body{margin:0;background:var(--bg-off-white);color:var(--text-body-light);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body :is(h1,h2,h3,h4,h5,h6,strong,b,legend){color:var(--text-heading-light)}
+body :is(p,li,small,label,td,th,.muted,.hint,.description,.note){color:var(--text-body-light)}
+a{color:var(--text-accent-blue)}
+a:hover{color:var(--btn-primary-hover)}
+/* Brand header, navigation and footer */
 body :is(header,.site-header,.app-header,.terminal-header,.portal-header,.admin-header,.topbar,.navbar,footer,.site-footer,.mobile-header,.mobile-nav,.bottom-nav){
- background:#0D1522!important;color:#F8FAFC!important;border-color:var(--bb-border)!important;
+  background:var(--nav-header-bg-dark);color:#fff;border-color:#263653
 }
-body :is(.brand,.brand b,.terminal-brand,.terminal-brand b){color:#FFFFFF!important}
-body :is(.mark,.brand-mark,.logo-mark){background:var(--bb-blue)!important;color:#FFFFFF!important;border-color:var(--bb-blue)!important}
-body.app-mode :is(.terminal,.terminal-main,.terminal-layout,.terminal-page,.terminal-content,.app-shell,.client-layout,.client-content,.admin-layout,.admin-content,.admin-main){
- background:var(--bb-bg)!important;color:#F8FAFC!important;
+body :is(header,.site-header,.app-header,.terminal-header,.portal-header,.admin-header,.topbar,.navbar,footer,.site-footer) :is(a,p,span,small,strong,b,button){color:#fff}
+body :is(.brand,.brand b,.terminal-brand,.terminal-brand b){color:#fff!important}
+body :is(.main-nav a,header nav a,nav a){color:var(--nav-link-dark-bg);text-decoration:none}
+body :is(.main-nav a,header nav a,nav a):hover{color:var(--nav-link-hover-accent)}
+body :is(.mark,.brand-mark,.logo-mark){background:var(--btn-primary-bg);color:#fff;border-color:var(--btn-primary-bg)}
+/* Hero and dark feature sections */
+body :is(.hero,.chart,.terminal,.terminal-main,.terminal-layout,.terminal-page,.terminal-content,.app-shell,.client-layout,.client-content,.admin-layout,.admin-content,.admin-main,.risk){
+  background:var(--bg-deep-navy);color:#fff
 }
-body.app-mode .terminal :is(.terminal-head,.terminal-sidebar,.terminal-footer,.client-top,.terminal-nav){
- background:#0D1522!important;color:#F8FAFC!important;border-color:var(--bb-border)!important;
+body :is(.hero,.chart,.terminal,.terminal-main,.terminal-layout,.terminal-page,.terminal-content,.app-shell,.client-layout,.client-content,.admin-layout,.admin-content,.admin-main,.risk) :is(h1,h2,h3,h4,h5,h6,strong,b){color:#fff}
+body :is(.hero,.chart,.terminal,.terminal-main,.terminal-layout,.terminal-page,.terminal-content,.app-shell,.client-layout,.client-content,.admin-layout,.admin-content,.admin-main,.risk) :is(p,li,small,label){color:var(--text-body-dark)}
+body :is(.section,.content-section,.light-section,.learning-section){background:var(--bg-off-white);color:var(--text-body-light)}
+/* Cards and containers */
+body :is(.card,.panel,.client-panel,.client-stat,.service-tile,.bbx-section,.bbx-card,.dashboard-card,.stat-card,.metric-card,.widget,.form-card,.settings-card,.table-wrap,.chart-card,.account-card,.order-card,.transaction-card,.seo-card,.seo-panel,.seo-metric,.seo-stat,.admin-card,.admin-panel,.admin-section,.admin-widget,.content-panel,.settings-panel,.feature-card,.course-card,.market-card,.auth-card,.login-card,.signup-card,.support-panel,.notification-panel,.modal,.modal-content,.modal-dialog,.dropdown-menu,.popover,.menu-panel,.profile-menu,.header-popover,.cards article,.learning-course,.insight-card,.trading-card){
+  background:var(--card-light-bg);color:var(--text-body-light);border:1px solid var(--card-light-border);box-shadow:var(--card-shadow);border-radius:8px
 }
-body.app-mode .terminal .terminal-sidebar .side-group>small{color:#9EADBF!important}
-body.app-mode .terminal .terminal-sidebar .side-group>button{
- background:transparent!important;color:#DCE5F1!important;border:1px solid transparent!important;
-}
-body.app-mode .terminal .terminal-sidebar .side-group>button *{color:inherit!important}
-body.app-mode .terminal .terminal-sidebar .side-group>button .side-icon{
- background:#17243A!important;color:#A9C7FF!important;border:1px solid #344763!important;box-shadow:none!important;
-}
-body.app-mode .terminal .terminal-sidebar .side-group>button.active,
-body.app-mode .terminal .terminal-sidebar .side-group>button:hover,
-body.app-mode .terminal .terminal-sidebar .side-group>button[aria-current=page]{
- background:#17386D!important;color:#FFFFFF!important;border-color:#4C85F5!important;
- box-shadow:inset 3px 0 #80AFFF!important;
-}
-body.app-mode .terminal .terminal-sidebar .side-group>button.active *,
-body.app-mode .terminal .terminal-sidebar .side-group>button:hover *{color:#FFFFFF!important}
-body.app-mode .terminal .terminal-nav button,
-body.app-mode .terminal .terminal-nav button *{color:#F8FAFC!important}
-body.app-mode .terminal .terminal-nav button.active,
-body.app-mode .terminal .terminal-nav button:hover{background:#17386D!important;color:#FFFFFF!important;border-color:#4C85F5!important}
-body.app-mode .terminal .terminal-page-head :is(h1,h2,h3){color:#FFFFFF!important}
-/* Clear, restrained content cards */
-body :is(.card,.panel,.client-panel,.client-stat,.service-tile,.bbx-section,.bbx-card,.dashboard-card,.stat-card,.metric-card,.widget,.form-card,.settings-card,.table-wrap,.chart-card,.account-card,.order-card,.transaction-card,.seo-card,.seo-panel,.seo-metric,.seo-stat,.admin-card,.admin-panel,.admin-section,.admin-widget,.content-panel,.settings-panel,.feature-card,.course-card,.market-card,.auth-card,.login-card,.signup-card,.support-panel,.notification-panel,.modal,.modal-content,.modal-dialog,.dropdown-menu,.popover,.menu-panel,.profile-menu,.header-popover){
- background:var(--bb-panel)!important;color:#F8FAFC!important;border:1px solid var(--bb-border)!important;
- box-shadow:0 10px 28px rgba(0,0,0,.20)!important;
-}
-body :is(.card-header,.card-footer,.section-heading,.admin-section-heading,.table-head,.panel-heading){
- background:#172338!important;color:#FFFFFF!important;border-color:var(--bb-border)!important;
-}
-body :is(.card,.panel,.client-panel,.admin-card,.admin-panel,.admin-widget,.modal,.dropdown-menu) :is(h1,h2,h3,h4,h5,h6,strong,b,label,legend,th){color:#FFFFFF!important}
-body :is(.card,.panel,.client-panel,.admin-card,.admin-panel,.admin-widget,.modal,.dropdown-menu) :is(p,small,span,li,.muted,.hint,.description){color:#B7C3D2}
-/* Admin controls */
-body.app-mode .terminal :is(.admin-section,.admin-section-head,.admin-section-header,.admin-block,.admin-block-head,.admin-card,.admin-panel,.admin-widget,.admin-client-block,.admin-form,.admin-form-card,.admin-table-wrap,.admin-queue,.admin-queue-head,.admin-toolbar,.admin-controls,.admin-content-card,.admin-setting,.admin-setting-row,.admin-summary,.admin-metric,.admin-stat,.admin-list,.admin-item,.admin-row,.admin-control-grid article,.client-panel){
- background:var(--bb-panel)!important;background-image:none!important;color:#F8FAFC!important;border-color:var(--bb-border)!important;box-shadow:none!important;
-}
-body.app-mode .terminal .admin-section-heading{
- background:#172338!important;color:#FFFFFF!important;border:1px solid var(--bb-border)!important;border-radius:10px!important;padding:14px 16px!important;
-}
-body.app-mode .terminal .admin-section-heading h3{color:#FFFFFF!important}
-body.app-mode .terminal .admin-section-heading span{color:#B7C3D2!important}
-/* Inputs */
+body :is(.card,.panel,.client-panel,.admin-card,.admin-panel,.admin-widget,.modal,.dropdown-menu,.cards article,.learning-course,.insight-card,.trading-card) :is(h1,h2,h3,h4,h5,h6,strong,b,label,legend,th){color:var(--text-heading-light)}
+body :is(.card,.panel,.client-panel,.admin-card,.admin-panel,.admin-widget,.modal,.dropdown-menu,.cards article,.learning-course,.insight-card,.trading-card) :is(p,small,span,li,.muted,.hint,.description){color:var(--text-body-light)}
+body :is(.card-dark,.dark-card,.terminal-card,.dashboard-dark-card){background:var(--card-dark-bg);color:#fff;border:1px solid var(--card-dark-border)}
+/* Forms */
 body :is(input,select,textarea,.form-control,.form-select,.search-input,.chat-input){
- background:#0B1320!important;color:#FFFFFF!important;border:1px solid #465873!important;border-radius:8px!important;box-shadow:none!important;caret-color:#75A7FF;accent-color:#3B82F6;
+  background:#fff;color:var(--text-heading-light);border:1px solid #cbd5e1;border-radius:6px;box-shadow:none;caret-color:var(--btn-primary-bg);accent-color:var(--btn-primary-bg)
 }
-body :is(input,select,textarea,.form-control,.form-select)::placeholder{color:#AAB8CA!important;opacity:1!important}
-body :is(input,select,textarea,.form-control,.form-select):focus{border-color:#6EA0FF!important;box-shadow:0 0 0 3px rgba(59,130,246,.20)!important;outline:0!important}
-body input[type=file]::file-selector-button{background:#26364D!important;color:#FFFFFF!important;border:1px solid #526783!important;border-radius:6px!important;padding:8px 12px!important}
-/* Button hierarchy — never dark text on blue */
+body :is(input,select,textarea,.form-control,.form-select)::placeholder{color:#6b7280;opacity:1}
+body :is(input,select,textarea,.form-control,.form-select):focus{border-color:var(--status-info-blue);box-shadow:0 0 0 3px rgba(59,130,246,.16);outline:0}
+body input[type=file]::file-selector-button{background:var(--bg-soft-grey);color:var(--text-heading-light);border:1px solid var(--card-light-border);border-radius:4px;padding:8px 12px}
+/* Buttons: blue login, gold conversion CTA, green success */
 body :is(button,.btn,.button,.portal-primary,.admin-button,.primary-btn,.cta,.action-btn,.navbtn,input[type=submit],input[type=button]){
- background:#2563EB!important;color:#FFFFFF!important;border:1px solid #3B82F6!important;border-radius:8px!important;
- box-shadow:none!important;font-weight:700!important;text-shadow:none!important;
+  background:var(--btn-primary-bg);color:var(--btn-primary-text);border:1px solid var(--btn-primary-bg);border-radius:4px;font-weight:700;text-shadow:none;cursor:pointer
 }
-body :is(button,.btn,.button,.portal-primary,.admin-button,.primary-btn,.cta,.action-btn,.navbtn,input[type=submit],input[type=button]):hover,
-body :is(button,.btn,.button,.portal-primary,.admin-button,.primary-btn,.cta,.action-btn,.navbtn):focus{
- background:#3B82F6!important;color:#FFFFFF!important;border-color:#75A7FF!important;
+body :is(button,.btn,.button,.portal-primary,.admin-button,.primary-btn,.cta,.action-btn,.navbtn,input[type=submit],input[type=button]):hover{
+  background:var(--btn-primary-hover);color:#fff;border-color:var(--btn-primary-hover)
 }
-body :is(.secondary,.btn-secondary,.btn-outline,.portal-secondary,.secondary-btn,.outline-button,.ghost-button,button.secondary){
- background:#1B2A40!important;color:#FFFFFF!important;border:1px solid #526783!important;
+body :is(.btn-account-open,.btn-gold,.gold,.nav-open,.open-account,.register-btn,.claim-bonus,.btn-register,.btn-cta){
+  background:var(--btn-gold-bg);color:var(--btn-gold-text);border-color:var(--btn-gold-bg)
+}
+body :is(.btn-account-open,.btn-gold,.gold,.nav-open,.open-account,.register-btn,.claim-bonus,.btn-register,.btn-cta):hover{
+  background:var(--btn-gold-hover);color:var(--btn-gold-text);border-color:var(--btn-gold-hover)
 }
 body :is(.success,.btn-success,.approve,.verify,[data-action=approve],[data-action=verify],.bb-buy,.buy-button,[data-side=buy]){
- background:#146B50!important;color:#FFFFFF!important;border-color:#2FC58D!important;
+  background:var(--btn-success-bg);color:var(--btn-success-text);border-color:var(--btn-success-bg)
 }
-body :is(.danger,.btn-danger,.reject,.delete,[data-action=reject],[data-action=delete],.bb-sell,.sell-button,[data-side=sell]){
- background:#8A303C!important;color:#FFFFFF!important;border-color:#F06B75!important;
-}
-body :is(button:disabled,.btn:disabled,input:disabled,select:disabled,textarea:disabled){
- background:#29384C!important;color:#C0CAD7!important;border-color:#40536B!important;opacity:.8!important;
-}
-/* Stats, tables, tags and status */
-body :is(.badge,.pill,.tag,.status-badge,.chip,.eyebrow,.free-tag,.lock-label,.market-feed-badge,.nav-badge,.count-badge){
- background:#1B2A40!important;color:#D8E5F7!important;border:1px solid #40536B!important;
-}
-body :is(.alert,.notice,.info-box,.empty-state,.status-box,.wallet-address-card,.admin-transaction,.account-row,.order-row,.transaction-row){
- background:#172338!important;color:#FFFFFF!important;border:1px solid var(--bb-border)!important;
-}
-body :is(.positive,.success,.profit,.up,.text-success){color:#39D6A0!important}
-body :is(.negative,.danger,.loss,.down,.text-danger,.text-red){color:#FF8790!important}
-body :is(.warning,.text-warning){color:#F5C66B!important}
-body :is(table,thead,tbody,tr,th,td){border-color:var(--bb-border)!important}
-body table{background:var(--bb-panel)!important;color:#FFFFFF!important}
-body th{background:#172338!important;color:#DCE5F1!important}
-body td{background:transparent!important;color:#F1F5F9!important}
-body tr:hover td{background:#1B2A40!important}
-body hr,body :is(.divider,.line,.border){border-color:var(--bb-border)!important}
-body :is(.progress,.progress-bar-track,.meter-track){background:#26364D!important;border-color:#40536B!important}
-body :is(.progress-bar,.meter-fill,.progress-fill){background:#3B82F6!important}
-body .market-tabs button{background:#1B2A40!important;color:#E2EAF5!important;border-color:#40536B!important}
-body .market-tabs button.active{background:#2563EB!important;color:#FFFFFF!important}
-body .market-table-wrap,body .market-table{background:var(--bb-panel)!important;color:#FFFFFF!important}
-body .market-table th{background:#172338!important;color:#DCE5F1!important}
-body .market-table td{background:transparent!important;color:#F1F5F9!important}
-body .modal-backdrop{background:rgba(2,6,13,.84)!important;backdrop-filter:blur(6px)!important}
-body .deposit-qr,body .deposit-qr canvas,body .deposit-qr img{background:#FFFFFF!important}
-::selection{background:#2563EB!important;color:#FFFFFF!important}
-*{scrollbar-color:#40536B #080D17}
-@media(max-width:760px){
- html,body,body.app-mode .terminal-main{background:#080D17!important}
- body.app-mode .terminal .client-panel,body.app-mode .terminal .bbx-section{padding:14px!important}
- body.app-mode .terminal :is(input,select,textarea,button){font-size:14px}
-}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+body :is(.success,.btn-success,.approve,.verify,[data-action=approve],[data-action=verify],.bb-buy,.buy-button,[data-side=buy]):hover{background:var(--btn-success-hover);color:#fff}
+body :is(.danger,.btn-danger,.reject,.delete,[data-action=reject],[data-action=delete],.bb-sell,.sell-button,[data-side=sell]){background:var(--market-down-red);color:#fff;border-color:var(--market-down-red)}
+body :is(button:disabled,.btn:disabled,input:disabled,select:disabled,textarea:disabled){background:#e5e7eb;color:#6b7280;border-color:#d1d5db;opacity:.8}
+/* Trading states, dropdowns, tables and alerts */
+body :is(.trade-buy-trend,.positive,.profit,.up,.text-success){color:var(--market-up-green)!important;font-weight:600}
+body :is(.trade-sell-trend,.negative,.loss,.down,.text-danger,.text-red){color:var(--market-down-red)!important;font-weight:600}
+body :is(.warning,.text-warning){color:#b45309}
+body :is(.badge,.pill,.tag,.status-badge,.chip,.eyebrow,.free-tag,.lock-label,.market-feed-badge,.nav-badge,.count-badge){background:var(--bg-soft-grey);color:var(--text-heading-light);border:1px solid var(--card-light-border)}
+body :is(.alert,.notice,.info-box,.empty-state,.status-box,.wallet-address-card,.admin-transaction,.account-row,.order-row,.transaction-row){background:#fff;color:var(--text-body-light);border:1px solid var(--card-light-border)}
+body :is(.dropdown-menu,.popover,.menu-panel,.profile-menu,.header-popover){background:var(--dropdown-bg);border:1px solid var(--dropdown-border)}
+body :is(.dropdown-menu,.popover,.menu-panel,.profile-menu,.header-popover) a{color:var(--text-heading-light)}
+body :is(.dropdown-menu,.popover,.menu-panel,.profile-menu,.header-popover) a:hover{background:var(--dropdown-item-hover);color:var(--text-accent-blue)}
+body :is(table,thead,tbody,tr,th,td){border-color:var(--card-light-border)}
+body table{background:#fff;color:var(--text-body-light)}
+body th{background:var(--bg-soft-grey);color:var(--text-heading-light)}
+body td{background:#fff;color:var(--text-body-light)}
+body tr:hover td{background:#f8fbff}
+body hr,body :is(.divider,.line,.border){border-color:var(--card-light-border)}
+body :is(.progress,.progress-bar-track,.meter-track){background:#e5e7eb;border-color:#d1d5db}
+body :is(.progress-bar,.meter-fill,.progress-fill){background:var(--btn-primary-bg)}
+body .market-tabs button{background:var(--bg-soft-grey);color:var(--text-heading-light);border-color:var(--card-light-border)}
+body .market-tabs button.active{background:var(--btn-primary-bg);color:#fff}
+body .market-table-wrap,body .market-table{background:#fff;color:var(--text-body-light)}
+body .market-table th{background:var(--bg-soft-grey);color:var(--text-heading-light)}
+body .market-table td{background:#fff;color:var(--text-body-light)}
+body .modal-backdrop{background:rgba(11,19,43,.72);backdrop-filter:blur(4px)}
+body .deposit-qr,body .deposit-qr canvas,body .deposit-qr img{background:#fff}
+::selection{background:var(--btn-primary-bg);color:#fff}
+@media(max-width:760px){body :is(input,select,textarea,button){font-size:14px}body :is(.card,.panel,.trading-card){padding:16px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
