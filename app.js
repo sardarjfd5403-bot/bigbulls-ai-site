@@ -2,7 +2,7 @@
 "use strict";
 const URL="https://ztiiyulusburxjkpcfxu.supabase.co";
 const KEY="sb_publishable_5hDwqvbcUHeSJdXFHf9ugw_VPYGN4J_";
-let sb=null,modal,body,shell,user=null,activePage="dashboard",licenseActive=false,financialChannel=null,calendarEvents=[];
+let sb=null,modal,body,shell,user=null,activePage="dashboard",licenseActive=false,financialChannel=null,calendarEvents=[],calendarRefreshTimer=null;
 const pages=["course-forex","course-smc","course-ict","course-vsa","dashboard","terminal","accounts","wallet","market-analysis","signals","learning","services","portfolio","orders","license","echo-system","downloads","profile","settings","support","verification","partner","economic-calendar","trading-central","admin"];
 function init(){
  modal=document.getElementById("portal-modal");body=document.getElementById("portal-body");shell=document.getElementById("app-shell");
@@ -310,7 +310,7 @@ async function loadPageData(){
   if(error||!data||data.error){if(status)status.textContent="Calendar feed unavailable";box.innerHTML='<div class="notice error">'+esc(error?.message||data?.error||"Calendar provider unavailable")+"</div>";return;}
   calendarEvents=data.events||[];if(status)status.textContent=calendarEvents.length+" events · Source updated "+new Date(data.generated_at).toLocaleString();
   const renderCalendar=()=>{const impact=document.getElementById("bb-calendar-impact")?.value||"all",currency=document.getElementById("bb-calendar-currency")?.value||"ALL";const rows=calendarEvents.filter(e=>(impact==="all"||e.impact===impact)&&(currency==="ALL"||e.currency===currency)).sort((x,y)=>x.timestamp-y.timestamp);box.innerHTML=rows.length?'<div class="bb-calendar-table-wrap"><table class="bb-calendar-table"><thead><tr><th>Time (local)</th><th>Currency</th><th>Impact</th><th>Event</th><th>Previous</th><th>Forecast</th><th>Actual</th><th>Status</th></tr></thead><tbody>'+rows.map(e=>'<tr><td>'+new Date(e.time).toLocaleString()+'</td><td><b>'+esc(e.currency)+'</b></td><td><span class="bb-impact '+esc(e.impact)+'">'+esc(e.impact.toUpperCase())+'</span></td><td>'+esc(e.title)+'<small>'+esc(e.confidence)+' · '+esc(e.period||"")+'</small></td><td>'+esc(e.previous||"—")+'</td><td>'+esc(e.forecast||"—")+'</td><td>'+esc(e.actual||"—")+'</td><td>'+esc(e.status)+'</td></tr>').join("")+'</tbody></table></div>':'<div class="empty-state">No events match these filters.</div>';};
-  document.getElementById("bb-calendar-impact").onchange=renderCalendar;document.getElementById("bb-calendar-currency").onchange=renderCalendar;document.getElementById("bb-calendar-refresh").onclick=()=>loadPageData();renderCalendar();return;
+  document.getElementById("bb-calendar-impact").onchange=renderCalendar;document.getElementById("bb-calendar-currency").onchange=renderCalendar;document.getElementById("bb-calendar-refresh").onclick=()=>loadPageData();renderCalendar();if(calendarRefreshTimer)clearInterval(calendarRefreshTimer);calendarRefreshTimer=setInterval(()=>{if(activePage==="economic-calendar")loadPageData();},15*60*1000);return;
  }
  if(activePage==="wallet"){
   const picker=document.getElementById("crypto-wallet-picker");
