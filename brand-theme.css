@@ -713,3 +713,77 @@ body.app-mode .terminal label,body.app-mode .terminal input,
 body.app-mode .terminal select,body.app-mode .terminal textarea{color:#080808!important;font-weight:600}
 body.app-mode .terminal button,body:not(.app-mode) button{font-weight:800}
 /* Keep deliberate dark hero, trading and course panels untouched. */
+
+
+/* BIGBULLS AI ECHO — refined blue / violet intelligence visual system */
+:root{
+ --bb-red:#557cf5;--bb-red-dark:#3f63d8;--bb-red-soft:#edf2ff;
+ --brand-red:#557cf5;--bb-line:#dce4f2;
+}
+body:not(.app-mode) .brand b,
+body:not(.app-mode) .main-nav a:hover,
+body:not(.app-mode) .eyebrow,
+body:not(.app-mode) .section .eyebrow,
+body:not(.app-mode) .cards small,
+body:not(.app-mode) .account-cards article>span,
+body:not(.app-mode) .payment-cards article small,
+body:not(.app-mode) .feature-grid small,
+body:not(.app-mode) .ai-feature-card small,
+body:not(.app-mode) .pricecard small,
+body:not(.app-mode) .price-card>small{color:#557cf5!important}
+body:not(.app-mode) .mark,
+body:not(.app-mode) .nav-open,
+body:not(.app-mode) .btn.gold,
+body:not(.app-mode) .account-cards .btn.gold,
+body:not(.app-mode) .pricecard .btn.gold{
+ background:#557cf5!important;border-color:#557cf5!important;color:#fff!important
+}
+body:not(.app-mode) .hero{
+ background:radial-gradient(ellipse at 80% 15%,#253d72 0%,transparent 42%),linear-gradient(115deg,#091326 0%,#101d37 58%,#18294b 100%)!important;
+}
+body:not(.app-mode) .hero .eyebrow{color:#9dbbff!important}
+body:not(.app-mode) .hero h1 em{color:#9dbbff!important}
+body:not(.app-mode) .hero .btn.gold{background:#557cf5!important;border-color:#557cf5!important}
+body:not(.app-mode) .chart{border-color:#34496e!important;box-shadow:0 28px 75px #07112666!important}
+body:not(.app-mode) .chart svg path[stroke="#ef343b"]{stroke:#8ba9ff!important}
+body:not(.app-mode) .chart svg rect[fill="#e31e24"],
+body:not(.app-mode) .chart svg rect[fill="#ef6f79"]{fill:#738fcf!important}
+body:not(.app-mode) .chart svg path[stroke="#ff777c"]{stroke:#9bb5f3!important}
+body:not(.app-mode) .ticker span{color:#557cf5!important}
+body:not(.app-mode) .ai-showcase{
+ padding:86px 7vw!important;
+ background:radial-gradient(ellipse at 10% 0%,#e8efff 0%,transparent 42%),linear-gradient(135deg,#f7f9ff,#eef2fa)!important;
+ border-block:1px solid #dce5f5!important;
+}
+body:not(.app-mode) .ai-showcase h2 em{color:#557cf5!important}
+body:not(.app-mode) .ai-feature-grid{gap:18px!important}
+body:not(.app-mode) .ai-feature-card{
+ border:1px solid #dce5f5!important;border-top:3px solid #6d8ff0!important;
+ border-radius:16px!important;background:linear-gradient(145deg,#fff,#f7f9ff)!important;
+ box-shadow:0 12px 34px #1d37600d!important;
+ transition:transform .35s ease,box-shadow .35s ease,border-color .35s ease!important;
+}
+body:not(.app-mode) .ai-feature-card:nth-child(3n+2){background:linear-gradient(145deg,#fff,#f1f5ff)!important}
+body:not(.app-mode) .ai-feature-card.is-visible{animation:echoCardEnter .65s cubic-bezier(.2,.75,.25,1) both!important}
+body:not(.app-mode) .ai-feature-card:hover{transform:translateY(-7px)!important;box-shadow:0 18px 38px #36599a1c!important;border-color:#a9bdf1!important}
+body:not(.app-mode) .ai-feature-card h3{color:#101a2d!important}
+body:not(.app-mode) .ai-feature-card p{color:#4d5a70!important}
+body:not(.app-mode) .ai-feature-card small{color:#557cf5!important}
+body:not(.app-mode) .ai-card-mark{color:#557cf5!important;opacity:.18!important}
+body:not(.app-mode) .ai-live-dot{background:#5e83ef!important;box-shadow:0 0 12px #5e83ef66!important}
+body:not(.app-mode) .ai-rotate-label b{color:#557cf5!important}
+body:not(.app-mode) .ai-progress i{background:linear-gradient(90deg,#557cf5,#9a83ed)!important}
+body:not(.app-mode) .workflow li>b,
+body:not(.app-mode) .workflow li em{color:#9dbbff!important}
+body:not(.app-mode) .status{color:#557cf5!important}
+@keyframes echoCardEnter{
+ from{opacity:0;transform:translateY(18px) scale(.985);filter:blur(2px)}
+ to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}
+}
+@media(max-width:800px){
+ body:not(.app-mode) .ai-showcase{padding:52px 20px!important}
+ body:not(.app-mode) .ai-feature-card{min-height:190px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ body:not(.app-mode) .ai-feature-card.is-visible{animation:none!important}
+}
