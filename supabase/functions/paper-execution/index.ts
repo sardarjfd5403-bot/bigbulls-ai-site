@@ -190,6 +190,8 @@ Deno.serve(async (req: Request) => {
       if (!["BUY","SELL"].includes(side) || quantity <= 0) return json({ error: "Invalid side or quantity." }, 400);
       const mid = await quoteFor(normalized, url, anon);
       const c = costs(normalized, side, quantity, mid);
+      const trailingDistance = body.trailing_distance == null ? 0 : num(body.trailing_distance);
+      if (trailingDistance < 0 || trailingDistance >= mid) return json({ error: "Trailing-stop distance must be positive and smaller than the current price." }, 400);
       if ((side === "BUY" && sl >= c.fill) || (side === "SELL" && sl <= c.fill)) return json({ error: "Stop loss must be beyond the current market price." }, 400);
       if (tp != null && ((side === "BUY" && tp <= c.fill) || (side === "SELL" && tp >= c.fill))) return json({ error: "Take profit must be beyond the current market price." }, 400);
       const { data, error } = await admin.rpc("bb_paper_open_position", {
@@ -199,7 +201,6 @@ Deno.serve(async (req: Request) => {
           source: source.slice(0,80) }
       });
       if (error) throw error;
-      const trailingDistance = Math.max(0, Number(body.trailing_distance || 0));
       if (trailingDistance > 0 && data.trade?.id) {
         const { error: trailingError } = await admin.from("bb_paper_execution_trades")
           .update({ trailing_distance: trailingDistance }).eq("id", data.trade.id).eq("paper_account_id", ledger.id);
