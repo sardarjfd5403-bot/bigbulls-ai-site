@@ -64,7 +64,7 @@ async function fetchQuotes(){
   const r=await fetch(CRYPTO_API+"?symbols="+encodeURIComponent(JSON.stringify(CRYPTO)),{cache:"no-store"});if(!r.ok)throw Error("Binance HTTP "+r.status);(await r.json()).forEach(x=>quotes[x.symbol]=Number(x.price));
  }catch(e){console.warn("Crypto quotes:",e.message);}
  if(client){try{const {data,error}=await client.functions.invoke("market-data",{body:{}});if(error)throw error;(data?.quotes||[]).forEach(x=>{const s=String(x.symbol||"").replace("/","").toUpperCase();const p=Number(x.close);if(Number.isFinite(p)&&p>0)quotes[s]=p;});}catch(e){console.warn("FX/metals feed:",e.message);}}
- const n=$("bb-paper-feed");if(n)n.textContent="BINANCE CRYPTO + TWELVE DATA FX/GOLD · "+new Date().toLocaleTimeString();markPositions();render();
+ const n=$("bb-paper-feed");if(n)n.textContent="BINANCE CRYPTO + TWELVE DATA FX/GOLD · "+new Date().toLocaleTimeString();markPositions();render();if(state.positions.length)persist();
 }
 function render(){
  if(!$("bb-paper-terminal"))return;const accountSelect=$("bb-demo-account");if(accountSelect){accountSelect.innerHTML=demoAccounts.length?demoAccounts.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.display_name||("MT5 Demo #"+x.account_number))+"</option>").join(""):'<option value="">Personal Demo Account · not linked to a portal account</option>';accountSelect.value=activeAccountId||"";accountSelect.disabled=demoAccounts.length<2;}const floating=state.positions.reduce((n,p)=>n+pnl(p),0),equity=state.balance+floating,day=state.dailyRealized+floating,locked=day<=-START*DAILY||state.emergencyStop;
