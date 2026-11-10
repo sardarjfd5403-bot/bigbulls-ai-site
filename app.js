@@ -1,6 +1,16 @@
 (function(){
 "use strict";
-const URL="https://ztiiyulusburxjkpcfxu.supabase.co";
+const URL="https://ztiiyulusburxjkpcfx
+ const courseOpen=el.closest("[data-course-open]");
+ if(courseOpen){e.preventDefault();showApp("course-"+courseOpen.dataset.courseOpen);return;}
+ const courseModule=el.closest("[data-course-module]");
+ if(courseModule){const idx=Number(courseModule.dataset.courseModule);const route=activePage.replace("course-","");const course=Object.values(BB_COURSES).find(x=>x.id===route);if(course){document.querySelectorAll("[data-course-module]").forEach(x=>{x.classList.toggle("active",Number(x.dataset.courseModule)===idx);const icon=x.querySelector("i");if(icon)icon.textContent=Number(x.dataset.courseModule)===idx?"●":"○";});const view=document.getElementById("course-lesson-view");if(view)view.innerHTML=courseLessonView(course,idx);}return;}
+ const courseNext=el.closest("[data-course-next]");
+ if(courseNext){const route=activePage.replace("course-","");const course=Object.values(BB_COURSES).find(x=>x.id===route);const idx=Number(courseNext.dataset.courseNext)+1;if(course&&idx<course.modules.length){document.querySelector('[data-course-module="'+idx+'"]')?.click();}return;}
+ const coursePrev=el.closest("[data-course-prev]");
+ if(coursePrev){const route=activePage.replace("course-","");const course=Object.values(BB_COURSES).find(x=>x.id===route);const idx=Number(coursePrev.dataset.coursePrev)-1;if(course&&idx>=0){document.querySelector('[data-course-module="'+idx+'"]')?.click();}return;}
+
+ const el=e.target instanceof Element?e.target:null;if(!el)return;u.supabase.co";
 const KEY="sb_publishable_5hDwqvbcUHeSJdXFHf9ugw_VPYGN4J_";
 let sb=null,modal,body,shell,user=null,activePage="dashboard",licenseActive=false,financialChannel=null;
 const pages=["course-forex","course-smc","course-ict","course-vsa","dashboard","terminal","accounts","wallet","market-analysis","signals","learning","services","portfolio","orders","license","echo-system","downloads","profile","settings","support","verification","partner","economic-calendar","trading-central","admin"];
@@ -493,16 +503,6 @@ async function submitHandler(e){
 }
 async function clickHandler(e){
 
- const courseOpen=el.closest("[data-course-open]");
- if(courseOpen){e.preventDefault();showApp("course-"+courseOpen.dataset.courseOpen);return;}
- const courseModule=el.closest("[data-course-module]");
- if(courseModule){const idx=Number(courseModule.dataset.courseModule);const route=activePage.replace("course-","");const course=Object.values(BB_COURSES).find(x=>x.id===route);if(course){document.querySelectorAll("[data-course-module]").forEach(x=>{x.classList.toggle("active",Number(x.dataset.courseModule)===idx);const icon=x.querySelector("i");if(icon)icon.textContent=Number(x.dataset.courseModule)===idx?"●":"○";});const view=document.getElementById("course-lesson-view");if(view)view.innerHTML=courseLessonView(course,idx);}return;}
- const courseNext=el.closest("[data-course-next]");
- if(courseNext){const route=activePage.replace("course-","");const course=Object.values(BB_COURSES).find(x=>x.id===route);const idx=Number(courseNext.dataset.courseNext)+1;if(course&&idx<course.modules.length){document.querySelector('[data-course-module="'+idx+'"]')?.click();}return;}
- const coursePrev=el.closest("[data-course-prev]");
- if(coursePrev){const route=activePage.replace("course-","");const course=Object.values(BB_COURSES).find(x=>x.id===route);const idx=Number(coursePrev.dataset.coursePrev)-1;if(course&&idx>=0){document.querySelector('[data-course-module="'+idx+'"]')?.click();}return;}
-
- const el=e.target instanceof Element?e.target:null;if(!el)return;
  const notificationToggle=el.closest("[data-notification-toggle]");if(notificationToggle){const panel=document.getElementById("client-notification-panel");if(panel){panel.hidden=!panel.hidden;notificationToggle.setAttribute("aria-expanded",String(!panel.hidden));}const menu=document.getElementById("client-profile-menu");if(menu)menu.hidden=true;return;}
  const profileToggle=el.closest("[data-profile-toggle]");if(profileToggle){const menu=document.getElementById("client-profile-menu");if(menu){menu.hidden=!menu.hidden;profileToggle.setAttribute("aria-expanded",String(!menu.hidden));}const panel=document.getElementById("client-notification-panel");if(panel)panel.hidden=true;return;}
  const accountMode=el.closest("[data-account-mode]");
