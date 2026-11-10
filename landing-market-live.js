@@ -59,7 +59,7 @@
   async function loadTwelveData() {
     const response = await fetch(EDGE_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY },
+      headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY },
       body: "{}",
       cache: "no-store"
     });
