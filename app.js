@@ -8,7 +8,7 @@ function init(){
  modal=document.getElementById("portal-modal");body=document.getElementById("portal-body");shell=document.getElementById("app-shell");
  if(!modal||!body){console.error("Login modal markup missing");return;}
  // Capture clicks early so navigation scripts or mobile wrappers cannot swallow auth actions.
- document.addEventListener("click",clickHandler,true);document.addEventListener("submit",submitHandler);startAICarousel();
+ document.addEventListener("click",clickHandler,true);document.addEventListener("submit",submitHandler);startAICarousel();startTraderVoices();
  if(window.supabase&&window.supabase.createClient){sb=window.supabase.createClient(URL,KEY);}
  else console.error("Supabase SDK failed to load");
  document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();});
@@ -18,6 +18,15 @@ function init(){
   sb.auth.onAuthStateChange((_event,session)=>{user=session?session.user:null;updateHeader();if(user){showApp(activePage);}else{hideApp();}});
   sb.auth.getSession().then(({data})=>{user=data.session?data.session.user:null;updateHeader();if(user)showApp("dashboard");}).catch(console.error);
  }
+}
+
+function startTraderVoices(){
+ const stage=document.getElementById("bb-voice-stage");if(!stage)return;
+ const cards=Array.from(stage.querySelectorAll(".voice-card"));if(cards.length<2)return;
+ const count=document.getElementById("bb-voice-count"),bar=document.getElementById("bb-voice-progress");
+ let active=0;
+ const show=()=>{cards.forEach((card,i)=>card.classList.toggle("is-active",i===active));if(count)count.textContent=String(active+1).padStart(2,"0")+" / "+String(cards.length).padStart(2,"0");if(bar){bar.style.transition="none";bar.style.width="0%";requestAnimationFrame(()=>{bar.style.transition="width 5s linear";bar.style.width="100%";});}active=(active+1)%cards.length;};
+ show();if(!window.matchMedia("(prefers-reduced-motion: reduce)").matches)window.setInterval(show,5000);
 }
 function startAICarousel(){
  const grid=document.getElementById("ai-feature-grid");if(!grid)return;
