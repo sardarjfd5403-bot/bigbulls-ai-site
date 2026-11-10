@@ -111,7 +111,7 @@ async function fetchQuotes(){
   const r=await fetch(CRYPTO_API+"?symbols="+encodeURIComponent(JSON.stringify(CRYPTO)),{cache:"no-store"});if(!r.ok)throw Error("Binance HTTP "+r.status);(await r.json()).forEach(x=>quotes[x.symbol]=Number(x.price));
  }catch(e){console.warn("Crypto quotes:",e.message);}
  if(client){try{const {data,error}=await client.functions.invoke("market-data",{body:{}});if(error)throw error;(data?.quotes||[]).forEach(x=>{const s=String(x.symbol||"").replace("/","").toUpperCase();const p=Number(x.close);if(Number.isFinite(p)&&p>0)quotes[s]=p;});}catch(e){console.warn("FX/metals feed:",e.message);}}
- if(activeAccountId&&client){try{await syncPaper("refresh");}catch(e){notify("Server ledger refresh failed: "+e.message,true);}}
+ if((activeAccountId||activeMode==="demo")&&client){try{await syncPaper("refresh");}catch(e){notify("Server ledger refresh failed: "+e.message,true);}}
  const n=$("bb-paper-feed");if(n)n.textContent="BINANCE CRYPTO + TWELVE DATA FX/GOLD · "+new Date().toLocaleTimeString();markPositions();render();
 }
 function render(){
