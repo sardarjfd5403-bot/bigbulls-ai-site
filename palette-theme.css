@@ -161,3 +161,113 @@ body :is(.modal,.modal-content,.modal-dialog,.dropdown-menu,.popover) :is(p,smal
  body :is(.card,.panel,.client-panel,.client-stat,.service-tile,.bbx-section,.bbx-card,
  .seo-card,.seo-panel,.admin-card,.admin-panel,[class*="seo-"]){border-radius:12px!important}
 }
+
+
+/* BIGBULLS APP SHELL + ADMIN — definitive dark-surface override.
+   Overrides the earlier light-dashboard rules in ui-refresh.css/brand-theme.css. */
+body.app-mode .terminal,
+body.app-mode .terminal-main,
+body.app-mode .terminal-layout,
+body.app-mode .terminal-page,
+body.app-mode .terminal-content{background:#070E20!important;color:#F5F7FC!important}
+body.app-mode .terminal .terminal-head,
+body.app-mode .terminal .terminal-sidebar,
+body.app-mode .terminal .terminal-footer,
+body.app-mode .terminal .client-top{
+ background:#0B1628!important;color:#F5F7FC!important;border-color:#354B68!important;
+}
+body.app-mode .terminal .terminal-sidebar{box-shadow:none!important}
+body.app-mode .terminal .terminal-sidebar .side-group>small{color:#AABBD0!important}
+body.app-mode .terminal .terminal-sidebar .side-group>button{
+ background:transparent!important;color:#DCE6F3!important;border:1px solid transparent!important;
+}
+body.app-mode .terminal .terminal-sidebar .side-group>button .side-copy b{color:#F5F7FC!important}
+body.app-mode .terminal .terminal-sidebar .side-group>button .side-copy em{color:#AABBD0!important}
+body.app-mode .terminal .terminal-sidebar .side-group>button .side-icon{
+ background:#172943!important;color:#FFDE02!important;border:1px solid #354B68!important;box-shadow:none!important;
+}
+body.app-mode .terminal .terminal-sidebar .side-group>button .side-icon svg{
+ stroke:#FFDE02!important;fill:none!important;
+}
+body.app-mode .terminal .terminal-sidebar .side-group>button.active{
+ background:#1A2E49!important;color:#FFFFFF!important;border:1px solid #FFDE02!important;
+}
+body.app-mode .terminal .terminal-sidebar .side-group>button.active .side-copy b{color:#FFFFFF!important}
+body.app-mode .terminal .terminal-head .terminal-brand,
+body.app-mode .terminal .terminal-head .terminal-brand b,
+body.app-mode .terminal .terminal-head .terminal-brand small{color:#F5F7FC!important}
+body.app-mode .terminal .terminal-head .header-balance,
+body.app-mode .terminal .terminal-head .profile-trigger{
+ background:#14243A!important;color:#F5F7FC!important;border:1px solid #354B68!important;
+}
+body.app-mode .terminal .terminal-head .header-balance small,
+body.app-mode .terminal .terminal-head .profile-trigger small{color:#B7C4D7!important}
+body.app-mode .terminal .terminal-page-head h1,
+body.app-mode .terminal .terminal-page-head h2,
+body.app-mode .terminal .terminal-page-head h3{color:#F5F7FC!important}
+body.app-mode .terminal .admin-client-block,
+body.app-mode .terminal #bb-seo-admin-panel,
+body.app-mode .terminal #bb-seo-admin-panel .client-panel,
+body.app-mode .terminal #bb-seo-admin-panel section,
+body.app-mode .terminal #bb-seo-admin-panel .bb-seo-head,
+body.app-mode .terminal #bb-seo-admin-panel .bb-seo-metrics,
+body.app-mode .terminal #bb-seo-admin-panel .bb-seo-metric,
+body.app-mode .terminal #bb-seo-admin-panel #bb-seo-metrics,
+body.app-mode .terminal #bb-seo-admin-panel #bb-gsc-summary,
+body.app-mode .terminal #bb-seo-admin-panel .bb-seo-grid{
+ background:#101E33!important;color:#F5F7FC!important;
+ border-color:#354B68!important;box-shadow:none!important;
+}
+body.app-mode .terminal #bb-seo-admin-panel .client-panel{
+ padding:20px!important;border:1px solid #354B68!important;border-radius:12px!important;
+}
+body.app-mode .terminal #bb-seo-admin-panel .bb-seo-head{
+ display:flex!important;align-items:center!important;gap:12px!important;
+ padding:18px!important;border:1px solid #354B68!important;border-radius:12px!important;
+}
+body.app-mode .terminal #bb-seo-admin-panel .bb-seo-head :is(small,h1,h2,h3,h4,p,strong,b,span),
+body.app-mode .terminal #bb-seo-admin-panel .client-panel :is(h1,h2,h3,h4,strong,b,label,th),
+body.app-mode .terminal #bb-seo-admin-panel .bb-seo-metric :is(*){
+ color:#F5F7FC!important;
+}
+body.app-mode .terminal #bb-seo-admin-panel .client-panel :is(p,small,span,td,li),
+body.app-mode .terminal #bb-seo-admin-panel .bb-seo-head p{
+ color:#B7C4D7!important;
+}
+body.app-mode .terminal #bb-seo-admin-panel .bb-seo-metrics{
+ display:grid!important;grid-template-columns:repeat(auto-fit,minmax(135px,1fr))!important;gap:10px!important;
+}
+body.app-mode .terminal #bb-seo-admin-panel .bb-seo-metric{
+ min-width:0!important;min-height:76px!important;padding:14px!important;
+ background:#14243A!important;border:1px solid #405675!important;border-radius:10px!important;
+ color:#F5F7FC!important;
+}
+body.app-mode .terminal #bb-seo-admin-panel .bb-seo-metric :is(small,span,label){color:#B7C4D7!important}
+body.app-mode .terminal #bb-seo-admin-panel .bb-seo-metric :is(b,strong){color:#FFFFFF!important}
+body.app-mode .terminal #bb-seo-admin-panel input,
+body.app-mode .terminal #bb-seo-admin-panel select,
+body.app-mode .terminal #bb-seo-admin-panel textarea{
+ background:#081321!important;color:#F5F7FC!important;border:1px solid #526985!important;
+}
+body.app-mode .terminal #bb-seo-admin-panel input::placeholder,
+body.app-mode .terminal #bb-seo-admin-panel textarea::placeholder{color:#AAB9CE!important}
+body.app-mode .terminal #bb-seo-admin-panel .bb-seo-toggle,
+body.app-mode .terminal #bb-seo-admin-panel .bb-seo-toggle small{color:#D7E1EF!important}
+body.app-mode .terminal #bb-seo-admin-panel button,
+body.app-mode .terminal #bb-seo-admin-panel .portal-primary{
+ background:#FFDE02!important;color:#07101F!important;border:1px solid #FFDE02!important;
+}
+body.app-mode .terminal #bb-seo-admin-panel .notice{
+ background:#172941!important;color:#EAF0F8!important;border:1px solid #526985!important;
+}
+body.app-mode .terminal :is(.client-stat,.client-panel,.service-tile,.bbx-section,.bbx-card,
+.bb-account-card,.bb-account-tools,.bb-chart-panel,.bb-watchlist,.bb-order-panel){
+ background:#111E32!important;color:#F5F7FC!important;border:1px solid #354B68!important;
+ box-shadow:none!important;
+}
+body.app-mode .terminal :is(.client-stat,.client-panel,.service-tile,.bbx-section,.bbx-card) :is(h1,h2,h3,h4,b,strong){color:#F5F7FC!important}
+body.app-mode .terminal :is(.client-stat,.client-panel,.service-tile,.bbx-section,.bbx-card) :is(p,small,span,li,label){color:#B7C4D7!important}
+body.app-mode .terminal :is(input,select,textarea){background:#081321!important;color:#F5F7FC!important;border-color:#526985!important}
+@media(max-width:900px){
+ body.app-mode .terminal .terminal-sidebar{background:#0B1628!important;border-color:#354B68!important}
+}
