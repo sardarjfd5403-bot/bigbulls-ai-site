@@ -24,3 +24,13 @@
 .bb-paper-auto,.bb-paper-stop{width:100%;margin-top:8px;padding:11px;border:1px solid #5c7594;border-radius:8px;background:#243b59;color:#fff;font-weight:900;cursor:pointer}.bb-paper-auto.active-auto{background:#176a48;border-color:#2fa879}.bb-paper-stop{background:#8d2330;border-color:#d44b58}#bb-paper-cloud{font-size:11px;color:#c5cfdd;margin-top:5px;text-align:right}
 
 .bb-history-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0}.bb-history-toolbar button,.bb-history-options button{background:#ffde02;color:#07101e;border:0;border-radius:7px;padding:9px 13px;font-weight:800;cursor:pointer}.bb-history-toolbar select,.bb-history-options input{background:#08111d;color:#fff;border:1px solid #52647b;border-radius:7px;padding:9px}.bb-history-toolbar span{font-size:12px;color:#b9c6d7}.bb-history-options{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:12px;background:#0a1523;border:1px solid #2a3a50;border-radius:9px}.bb-history-options[hidden]{display:none}.bb-history-options label{font-size:12px;color:#d9e1ec}.bb-history-options #bb-history-custom{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* BIGBULLS terminal order-management controls */
+.bb-paper-ticket select,.bb-paper-ticket input{font:inherit}
+.bb-paper-ticket #bb-paper-order-type{border-color:#2a835f}
+#bb-paper-pending button,[data-paper-modify]{border:1px solid #2a835f;background:#12544f;color:#fff;border-radius:6px;padding:6px 9px;font-weight:800;cursor:pointer}
+#bb-paper-pending button:hover,[data-paper-modify]:hover{filter:brightness(1.15)}
+.bb-paper-terminal h4{margin-top:16px}
+.bb-paper-terminal .bb-paper-table-scroll{border:1px solid #263d3a;border-radius:8px}
+.bb-paper-terminal th{position:sticky;top:0;background:#092328}
+@media(max-width:560px){.bb-paper-ticket label{font-size:11px}.bb-paper-ticket input,.bb-paper-ticket select{font-size:14px}.bb-paper-terminal table{font-size:11px}}
