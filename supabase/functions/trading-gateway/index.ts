@@ -220,7 +220,7 @@ Deno.serve(async (req: Request) => {
       const lookup = String(body.lookup || "").trim();
       if (!lookup || lookup.length > 80) return json({ error: "Enter a valid client dossier number or trading account number." }, 400);
       let userId: string | null = null;
-      if (/^\\d+$/.test(lookup)) {
+      if (/^\d+$/.test(lookup)) {
         const dossier = await admin.from("bb_client_dossiers").select("user_id,dossier_number,folder_status,created_at").eq("dossier_number", Number(lookup)).maybeSingle();
         if (dossier.error) throw dossier.error;
         if (dossier.data) userId = dossier.data.user_id;
