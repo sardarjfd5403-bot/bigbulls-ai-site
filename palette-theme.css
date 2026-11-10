@@ -454,7 +454,7 @@ body :is(.btn.secondary,.btn-outline,.portal-secondary,.secondary-btn,.outline-b
  background:#142238!important;color:#F5F7FC!important;border:1px solid #526985!important;
 }
 body :is(.bb-buy,.buy-button,[data-side="buy"]){background:#087F62!important;color:#fff!important;border-color:#16A884!important}
-body :is(.bb-sell,.sell-button,[data-side="sell"]){background:#315EF B!important;color:#fff!important;border-color:#5278ff!important}
+body :is(.bb-sell,.sell-button,[data-side="sell"]){background:#315EFB!important;color:#fff!important;border-color:#5278ff!important}
 body .market-table-wrap,body .market-table,body .market-table td{background:#101B2D!important;color:#F5F7FC!important}
 body .market-table th{background:#0B1628!important;color:#FFDE02!important}
 body .market-table td{border-color:#354B68!important}
