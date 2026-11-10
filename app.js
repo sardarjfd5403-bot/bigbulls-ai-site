@@ -2,7 +2,7 @@
 "use strict";
 const URL="https://ztiiyulusburxjkpcfxu.supabase.co";
 const KEY="sb_publishable_5hDwqvbcUHeSJdXFHf9ugw_VPYGN4J_";
-let sb=null,modal,body,shell,user=null,activePage="dashboard",licenseActive=false,financialChannel=null,calendarEvents=[],calendarRefreshTimer=null;
+let sb=null,modal,body,shell,user=null,activePage="dashboard",licenseActive=false,financialChannel=null,calendarEvents=[],calendarRefreshTimer=null,brainRefreshTimer=null;
 const pages=["course-forex","course-smc","course-ict","course-vsa","dashboard","terminal","accounts","wallet","market-analysis","signals","learning","services","portfolio","orders","license","echo-system","downloads","profile","settings","support","verification","partner","economic-calendar","trading-central","admin"];
 function init(){
  modal=document.getElementById("portal-modal");body=document.getElementById("portal-body");shell=document.getElementById("app-shell");
@@ -303,6 +303,28 @@ async function renderWalletTransfer(){
 }
 async function loadPageData(){
  if(!sb||!user)return;
+ if(activePage==="signals"){
+  const box=document.getElementById("bb-brain-signals");if(!box)return;
+  const status=document.getElementById("bb-brain-status"),summary=document.getElementById("bb-brain-summary"),backtests=document.getElementById("bb-brain-backtests");
+  if(status)status.textContent="RUNNING MULTI-TIMEFRAME + NEWS ANALYSIS";
+  const {data,error}=await sb.functions.invoke("market-brain",{body:{}});
+  if(error||!data||data.error){if(status)status.textContent="ENGINE UNAVAILABLE";box.innerHTML='<div class="notice error">'+esc(error?.message||data?.error||"Market Brain unavailable")+'</div>';return;}
+  const signals=Array.isArray(data.signals)?data.signals:[];
+  const active=signals.filter(x=>x.direction==="BUY"||x.direction==="SELL").length;
+  if(status)status.textContent="ENGINE ACTIVE · NEWS "+String(data.news_status||"UNKNOWN").toUpperCase()+" · "+signals.length+" MARKETS";
+  if(summary)summary.innerHTML='<article><small>ENGINE</small><b>ACTIVE</b></article><article><small>MARKETS SCANNED</small><b>'+signals.length+'</b></article><article><small>ACTIVE SETUPS</small><b>'+active+'</b></article><article><small>LAST SCAN</small><b>'+new Date(data.generated_at||Date.now()).toLocaleTimeString()+'</b></article>';
+  box.innerHTML=signals.map(s=>{
+   const news=Array.isArray(s.news_context)?s.news_context:[],reasons=Array.isArray(s.reasons)?s.reasons:[],frames=Array.isArray(s.timeframes)?s.timeframes:[];
+   const newsHtml=news.length?'<div class="bb-brain-news"><b>ECONOMIC NEWS · '+esc(String(s.news_bias||"NEUTRAL"))+' BIAS · '+esc(String(s.news_status||"UNKNOWN"))+'</b>'+news.map(n=>'<p><span class="bb-impact '+esc(n.impact)+'">'+esc(String(n.impact||"").toUpperCase())+'</span> <b>'+esc(n.currency)+'</b> '+esc(n.title)+' · '+esc(n.surprise||"PENDING")+' · Actual '+esc(n.actual||"—")+' / Forecast '+esc(n.forecast||"—")+'</p>').join("")+'</div>':'<div class="bb-brain-news"><b>ECONOMIC NEWS · '+esc(String(s.news_bias||"NEUTRAL"))+' BIAS</b><p>No relevant release in the one-hour analysis window.</p></div>';
+   const entry=s.entry_low!==null&&s.entry_low!==undefined?'<p>Entry zone: '+Number(s.entry_low).toFixed(s.digits||4)+' – '+Number(s.entry_high).toFixed(s.digits||4)+'</p><p>Stop loss: '+Number(s.stop_loss).toFixed(s.digits||4)+' · Take profit: '+Number(s.take_profit).toFixed(s.digits||4)+'</p>':'<p>No entry levels · waiting for confirmation / news safety window.</p>';
+   return '<article class="bb-brain-card"><div class="bb-brain-card-head"><div><b>'+esc(s.symbol)+'</b><small>'+esc(s.category||"Market")+' · '+esc(s.data_status||"UNKNOWN")+' · '+esc(s.updated_at||"")+'</small></div><span class="bb-direction '+esc(String(s.direction||"WAIT").toLowerCase())+'">'+esc(s.direction||"WAIT")+'</span></div><div class="bb-brain-score"><b>'+Number(s.score||0)+'/100</b><span>'+esc(s.setup_status||"")+'</span></div><p>Bias: '+esc(s.bias||"MIXED")+' · Price: '+Number(s.price||0).toFixed(s.digits||4)+' · Timeframes: '+esc(frames.join(" / "))+'</p>'+entry+newsHtml+'<details><summary>Analysis reasons</summary><ul>'+reasons.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul><p>'+esc(s.vsa||"")+'</p></details></article>';
+  }).join("")||'<div class="empty-state">No market signals returned.</div>';
+  if(backtests){const rows=Array.isArray(data.backtests)?data.backtests:[];backtests.innerHTML=rows.map(x=>'<article class="bb-backtest-card"><b>'+esc(x.symbol)+'</b><small>'+esc(x.strategy)+'</small><div class="bb-backtest-metrics"><span>Trades <b>'+Number(x.trades||0)+'</b></span><span>Win rate <b>'+Number(x.win_rate||0).toFixed(1)+'%</b></span><span>Profit factor <b>'+esc(x.profit_factor)+'</b></span><span>Net R <b>'+Number(x.net_r||0).toFixed(2)+'</b></span><span>Max DD <b>'+Number(x.max_drawdown||0).toFixed(2)+'R</b></span></div><small>'+esc(x.cost_model||"Historical simulation only")+'</small></article>').join("")||'<div class="empty-state">No backtest results available.</div>';}
+  const refresh=document.getElementById("bb-brain-refresh");if(refresh)refresh.onclick=()=>loadPageData();
+  if(brainRefreshTimer)clearInterval(brainRefreshTimer);
+  brainRefreshTimer=setInterval(()=>{if(activePage==="signals"&&document.getElementById("bb-brain-signals"))loadPageData();},5*60*1000);
+  return;
+ }
  if(activePage==="economic-calendar"){
   const box=document.getElementById("bb-calendar-events");if(!box)return;
   const status=document.getElementById("bb-calendar-status");if(status)status.textContent="Refreshing live event feed…";
