@@ -657,3 +657,59 @@ body.app-mode .terminal .terminal-footer button{
  #portal-modal #portal-body h2{font-size:24px!important;padding-right:28px!important}
  #portal-modal #portal-body .form-two{grid-template-columns:1fr!important;gap:0!important}
 }
+
+
+/* SITE-WIDE LEGIBILITY PASS — stronger black typography on light surfaces */
+:root{--bb-ink:#080808;--bb-muted:#3f3f3f;--bb-text-strong:#050505;--bb-text-body:#242424}
+body{color:#090909!important}
+body:not(.app-mode) .site-header,body:not(.app-mode) .ticker,
+body:not(.app-mode) .cards article,body:not(.app-mode) .account-cards article,
+body:not(.app-mode) .payment-cards article,body:not(.app-mode) .feature-grid article,
+body:not(.app-mode) .ai-feature-card,body:not(.app-mode) .pricecard,
+body:not(.app-mode) .price-card,body:not(.app-mode) .lockcard,
+body:not(.app-mode) .bbx-card,body:not(.app-mode) .ai-showcase{color:#080808!important}
+body:not(.app-mode) .cards article h1,body:not(.app-mode) .cards article h2,
+body:not(.app-mode) .cards article h3,body:not(.app-mode) .cards article h4,
+body:not(.app-mode) .account-cards article h1,body:not(.app-mode) .account-cards article h2,
+body:not(.app-mode) .account-cards article h3,body:not(.app-mode) .account-cards article h4,
+body:not(.app-mode) .payment-cards article h1,body:not(.app-mode) .payment-cards article h2,
+body:not(.app-mode) .payment-cards article h3,body:not(.app-mode) .payment-cards article h4,
+body:not(.app-mode) .feature-grid article h1,body:not(.app-mode) .feature-grid article h2,
+body:not(.app-mode) .feature-grid article h3,body:not(.app-mode) .feature-grid article h4,
+body:not(.app-mode) .ai-feature-card h1,body:not(.app-mode) .ai-feature-card h2,
+body:not(.app-mode) .ai-feature-card h3,body:not(.app-mode) .ai-feature-card h4,
+body:not(.app-mode) .pricecard h1,body:not(.app-mode) .pricecard h2,
+body:not(.app-mode) .pricecard h3,body:not(.app-mode) .pricecard h4,
+body:not(.app-mode) .price-card h1,body:not(.app-mode) .price-card h2,
+body:not(.app-mode) .price-card h3,body:not(.app-mode) .price-card h4,
+body:not(.app-mode) .section h1,body:not(.app-mode) .section h2,
+body:not(.app-mode) .section h3,body:not(.app-mode) .section h4{
+ color:#050505!important;font-weight:900!important}
+body:not(.app-mode) .cards article p,body:not(.app-mode) .account-cards article p,
+body:not(.app-mode) .payment-cards article p,body:not(.app-mode) .feature-grid article p,
+body:not(.app-mode) .ai-feature-card p,body:not(.app-mode) .pricecard p,
+body:not(.app-mode) .price-card p,body:not(.app-mode) .section .lead,
+body:not(.app-mode) .ai-showcase-head p{color:#303030!important;font-weight:500}
+body:not(.app-mode) .cards article small,body:not(.app-mode) .account-cards article>span,
+body:not(.app-mode) .payment-cards article small,body:not(.app-mode) .feature-grid small,
+body:not(.app-mode) .ai-feature-card small{color:#a20e18!important;font-weight:900!important}
+body:not(.app-mode) .site-header .main-nav,body:not(.app-mode) .site-header .main-nav a,
+body:not(.app-mode) .site-header .navbtn,body:not(.app-mode) .ticker{color:#111!important;font-weight:700}
+body:not(.app-mode) input,body:not(.app-mode) select,body:not(.app-mode) textarea{color:#080808!important;font-weight:600}
+body.app-mode .terminal,body.app-mode .terminal-main,body.app-mode .terminal-page-head,
+body.app-mode .terminal .client-stat,body.app-mode .terminal .client-panel,
+body.app-mode .terminal .service-tile,body.app-mode .terminal .bb-account-card,
+body.app-mode .terminal .bb-account-tools{color:#080808!important}
+body.app-mode .terminal .client-stat b,body.app-mode .terminal .client-panel h1,
+body.app-mode .terminal .client-panel h2,body.app-mode .terminal .client-panel h3,
+body.app-mode .terminal .client-panel h4,body.app-mode .terminal .service-tile b,
+body.app-mode .terminal-page-head h1,body.app-mode .terminal-page-head h2,
+body.app-mode .terminal-page-head h3{color:#050505!important;font-weight:900!important}
+body.app-mode .terminal .client-stat small,body.app-mode .terminal .client-stat span,
+body.app-mode .terminal .client-panel p,body.app-mode .terminal .service-tile p,
+body.app-mode .terminal .bb-account-card p,body.app-mode .terminal .bb-account-tools p{
+ color:#303030!important;font-weight:500}
+body.app-mode .terminal label,body.app-mode .terminal input,
+body.app-mode .terminal select,body.app-mode .terminal textarea{color:#080808!important;font-weight:600}
+body.app-mode .terminal button,body:not(.app-mode) button{font-weight:800}
+/* Keep deliberate dark hero, trading and course panels untouched. */
