@@ -89,6 +89,37 @@ Deno.serve(async (req: Request) => {
     const adapterReady = Deno.env.get("LIVE_EXECUTION_ADAPTER_READY") === "true";
     const liveEffective = settings.live_execution_enabled === true && missing.length === 0 && adapterReady && settings.global_halt !== true;
 
+    if (action === "client_dossier") {
+      const lookup = String(body.lookup || "").trim();
+      if (!lookup || lookup.length > 80) return json({ error: "Enter a valid client dossier number or trading account number." }, 400);
+      let userId: string | null = null;
+      if (/^\\d+$/.test(lookup)) {
+        const dossier = await admin.from("bb_client_dossiers").select("user_id,dossier_number,folder_status,created_at").eq("dossier_number", Number(lookup)).maybeSingle();
+        if (dossier.error) throw dossier.error;
+        if (dossier.data) userId = dossier.data.user_id;
+        if (!userId) {
+          const account = await admin.from("trading_accounts").select("user_id").eq("account_number", Number(lookup)).is("deleted_at", null).limit(1).maybeSingle();
+          if (account.error) throw account.error;
+          userId = account.data?.user_id || null;
+        }
+      }
+      if (!userId) return json({ error: "No client dossier found for that ID." }, 404);
+      const [dossier, profile, accounts, transactions, paymentSubmissions, orders, positions, fills, audit] = await Promise.all([
+        admin.from("bb_client_dossiers").select("dossier_number,folder_status,created_at,updated_at").eq("user_id", userId).maybeSingle(),
+        admin.from("profiles").select("id,full_name,email,country,phone,account_type,status,created_at").eq("id", userId).maybeSingle(),
+        admin.from("trading_accounts").select("id,account_mode,account_number,display_name,account_type,currency,balance,status,requested_leverage,created_at,archived_at,deleted_at").eq("user_id", userId).order("created_at", { ascending: false }),
+        admin.from("wallet_transactions").select("id,account_id,kind,asset,network,amount_crypto,amount_usd,tx_hash,status,admin_note,created_at,completed_at,rejection_reason").eq("user_id", userId).order("created_at", { ascending: false }).limit(250),
+        admin.from("payment_submissions").select("id,txid,status,submitted_at").eq("user_id", userId).order("submitted_at", { ascending: false }).limit(100),
+        admin.from("bb_trade_orders").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(500),
+        admin.from("bb_trade_positions").select("*").eq("user_id", userId).order("opened_at", { ascending: false }).limit(500),
+        admin.from("bb_trade_fills").select("*").eq("user_id", userId).order("filled_at", { ascending: false }).limit(500),
+        admin.from("bb_trade_audit_events").select("id,account_id,account_mode,event_type,entity_type,entity_id,details,created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(500)
+      ]);
+      const failure = [dossier,profile,accounts,transactions,paymentSubmissions,orders,positions,fills,audit].find(x => x.error);
+      if (failure?.error) throw failure.error;
+      return json({ dossier: dossier.data, profile: profile.data, accounts: accounts.data || [], wallet_transactions: transactions.data || [], payment_submissions: paymentSubmissions.data || [], orders: orders.data || [], positions: positions.data || [], fills: fills.data || [], audit_events: audit.data || [] });
+    }
+
     if (action === "execution_status" || action === "admin_status") {
       const [accounts, orders, positions] = await Promise.all([
         admin.from("trading_accounts").select("id,account_mode,status", { count: "exact", head: true }),
