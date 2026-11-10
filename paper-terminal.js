@@ -52,6 +52,7 @@ function processPendingOrders(){
  state.pendingOrders=keep;if(changed)save();
 }
 function markPositions(){
+ processPendingOrders();
  const today=new Date().toISOString().slice(0,10);if(state.day!==today){state.day=today;state.dailyRealized=0;}
  let changed=false;state.positions.slice().forEach(p=>{const q=quote(p.symbol);if(!Number.isFinite(q))return;if(p.trailingDistance>0){if(p.side==="BUY"){const next=q-p.trailingDistance;if(next>p.sl&&q>p.entry)p.sl=next;}else{const next=q+p.trailingDistance;if(next<p.sl&&q<p.entry)p.sl=next;}}const sl=p.side==="BUY"?q<=p.sl:q>=p.sl,tp=p.tp>0&&(p.side==="BUY"?q>=p.tp:q<=p.tp);if(sl||tp){closePosition(p.id,q,sl?"STOP LOSS":"TAKE PROFIT");changed=true;}});if(changed)save();
 }
