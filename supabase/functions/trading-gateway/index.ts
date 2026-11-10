@@ -50,7 +50,23 @@ Deno.serve(async (req: Request) => {
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return json({ accounts: data || [], active_modes: ["demo", "real"], generated_at: new Date().toISOString() });
+      const { data: control, error: controlError } = await admin.from("bb_execution_settings").select("demo_execution_enabled,live_execution_enabled,global_halt,halt_reason,live_readiness").eq("singleton", true).single();
+      if (controlError) throw controlError;
+      const checks = control.live_readiness || {};
+      const missing = LIVE_CHECKS.filter(key => checks[key] !== true);
+      const adapterReady = Deno.env.get("LIVE_EXECUTION_ADAPTER_READY") === "true";
+      return json({
+        accounts: data || [],
+        active_modes: ["demo", "real"],
+        execution: {
+          demo_enabled: control.demo_execution_enabled === true && control.global_halt !== true,
+          global_halt: control.global_halt === true,
+          live_effective: control.live_execution_enabled === true && missing.length === 0 && adapterReady && control.global_halt !== true,
+          live_status: control.live_execution_enabled === true && missing.length === 0 && adapterReady && control.global_halt !== true ? "ENABLED" : "LOCKED",
+          halt_reason: control.halt_reason || null
+        },
+        generated_at: new Date().toISOString()
+      });
     }
 
     const { data: isAdmin, error: adminError } = await authClient.rpc("is_bigbulls_admin");
