@@ -22,7 +22,7 @@ const allowed = new Set(["EURUSD","GBPUSD","USDJPY","XAUUSD","BTCUSDT","ETHUSDT"
 async function quoteFor(symbol: string, supabaseUrl: string, anon: string): Promise<number> {
   const s = normalize(symbol);
   if (s.endsWith("USDT")) {
-    const r = await fetch("https://api.binance.com/api/v3/ticker/price?symbol=" + encodeURIComponent(s), { signal: AbortSignal.timeout(8000) });
+    const r = await fetch("https://data-api.binance.vision/api/v3/ticker/price?symbol=" + encodeURIComponent(s), { signal: AbortSignal.timeout(8000) });
     if (!r.ok) throw new Error("Crypto quote provider unavailable (" + r.status + ").");
     const d = await r.json();
     const p = Number(d.price);
