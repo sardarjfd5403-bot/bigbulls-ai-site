@@ -1,6 +1,6 @@
 // BIGBULLS AI Market Brain — research, confluence and historical simulation only.
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-const cors={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type","Access-Control-Allow-Methods":"POST, OPTIONS"};
+const cors={"Access-Control-Allow-Origin":"https://bigbullsglobalmarket.is-an.ai","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type","Access-Control-Allow-Methods":"POST, OPTIONS","Vary":"Origin","X-Content-Type-Options":"nosniff"};
 const SYMBOLS=[{symbol:"EUR/USD",name:"EURUSD",category:"FOREX",digits:5},{symbol:"GBP/USD",name:"GBPUSD",category:"FOREX",digits:5},{symbol:"USD/JPY",name:"USDJPY",category:"FOREX",digits:3},{symbol:"XAU/USD",name:"XAUUSD",category:"GOLD",digits:2}];
 const json=(v:unknown,status=200)=>new Response(JSON.stringify(v),{status,headers:{...cors,"Content-Type":"application/json","Cache-Control":"no-store"}});
 type Bar={datetime:string,open:number,high:number,low:number,close:number,volume:number|null};
