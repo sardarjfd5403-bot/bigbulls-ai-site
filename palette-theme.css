@@ -128,3 +128,135 @@ body .deposit-qr,body .deposit-qr canvas,body .deposit-qr img{background:#fff}
 ::selection{background:var(--btn-primary-bg);color:#fff}
 @media(max-width:760px){body :is(input,select,textarea,button){font-size:14px}body :is(.card,.panel,.trading-card){padding:16px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+
+/* FINAL SITE-WIDE LEGIBILITY PASS — navigation, bars, cards, borders and every text layer */
+:root{
+  --bb-ink:#111827;
+  --bb-body:#273449;
+  --bb-muted:#475569;
+  --bb-line:#b8c5d6;
+  --bb-line-strong:#8798ad;
+  --bb-focus:#2563eb;
+}
+html,body{ -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+body{font-size:16px;line-height:1.6}
+body :is(h1,h2,h3,h4,h5,h6){font-weight:800;letter-spacing:-.015em}
+body :is(p,li,label,small,span,td,th,dt,dd,legend){text-shadow:none}
+body :is(p,li,label,td,th,dt,dd){line-height:1.6}
+body :is(small,.muted,.hint,.description,.note,.fine,.subtext,.helper-text,.form-hint){color:#475569!important}
+body :is(input,select,textarea){font-size:15px!important;font-weight:600!important;min-height:42px}
+body :is(button,.btn,.button,.navbtn,.action-btn,input[type=submit]){font-size:14px!important;font-weight:800!important;letter-spacing:.01em}
+body :is(a,button,input,select,textarea,[tabindex]):focus-visible{outline:3px solid #60a5fa!important;outline-offset:3px!important}
+
+/* Strong, consistent outlines for every card, panel, tile, table and widget */
+body :is(.card,.panel,.client-panel,.client-stat,.service-tile,.bbx-section,.bbx-card,.dashboard-card,.stat-card,.metric-card,.widget,.form-card,.settings-card,.table-wrap,.chart-card,.account-card,.order-card,.transaction-card,.seo-card,.seo-panel,.seo-metric,.seo-stat,.admin-card,.admin-panel,.admin-section,.admin-widget,.content-panel,.settings-panel,.feature-card,.course-card,.market-card,.auth-card,.login-card,.signup-card,.support-panel,.notification-panel,.modal,.modal-content,.modal-dialog,.dropdown-menu,.popover,.menu-panel,.profile-menu,.header-popover,.cards article,.learning-course,.insight-card,.trading-card,.feature-grid article,.pricecard,.price-card,.lockcard,.ai-feature-card,.dash-preview,.dash-stats>div,.payment-cards article){
+  border:1.5px solid #b8c5d6!important;
+  box-shadow:0 5px 16px rgba(15,23,42,.10)!important;
+}
+body :is(.card,.panel,.client-panel,.client-stat,.service-tile,.bbx-section,.bbx-card,.dashboard-card,.stat-card,.metric-card,.widget,.form-card,.settings-card,.table-wrap,.chart-card,.account-card,.order-card,.transaction-card,.seo-card,.seo-panel,.seo-metric,.seo-stat,.admin-card,.admin-panel,.admin-section,.admin-widget,.content-panel,.settings-panel,.feature-card,.course-card,.market-card,.auth-card,.login-card,.signup-card,.support-panel,.notification-panel,.cards article,.learning-course,.insight-card,.trading-card,.feature-grid article,.pricecard,.price-card,.lockcard,.ai-feature-card,.payment-cards article) :is(h1,h2,h3,h4,h5,h6,strong,b,label,legend){
+  color:#111827!important;font-weight:800!important
+}
+body :is(.card,.panel,.client-panel,.client-stat,.service-tile,.bbx-section,.bbx-card,.dashboard-card,.stat-card,.metric-card,.widget,.form-card,.settings-card,.table-wrap,.chart-card,.account-card,.order-card,.transaction-card,.seo-card,.seo-panel,.seo-metric,.seo-stat,.admin-card,.admin-panel,.admin-section,.admin-widget,.content-panel,.settings-panel,.feature-card,.course-card,.market-card,.auth-card,.login-card,.signup-card,.support-panel,.notification-panel,.cards article,.learning-course,.insight-card,.trading-card,.feature-grid article,.pricecard,.price-card,.lockcard,.ai-feature-card,.payment-cards article) :is(p,li,small,span,label,td,dd,.muted,.hint,.description,.note){
+  color:#334155!important;font-weight:500
+}
+
+/* Top bars and primary navigation */
+body :is(header,.site-header,.app-header,.terminal-header,.portal-header,.admin-header,.topbar,.navbar,.terminal-head,.app-topbar,.mobile-header){
+  background:#0b132b!important;color:#fff!important;border-bottom:2px solid #52627d!important;
+  box-shadow:0 4px 16px rgba(11,19,43,.20)!important
+}
+body :is(header,.site-header,.app-header,.terminal-header,.portal-header,.admin-header,.topbar,.navbar,.terminal-head,.app-topbar,.mobile-header) :is(a,span,small,strong,b,button,label){
+  color:#fff!important;font-weight:700!important
+}
+body :is(.main-nav,header nav,.navbar nav){gap:clamp(12px,1.8vw,28px)}
+body :is(.main-nav a,header nav a,nav a,.nav-link){
+  color:#fff!important;font-size:14px!important;font-weight:750!important;
+  text-decoration:none!important;text-underline-offset:5px
+}
+body :is(.main-nav a,header nav a,nav a,.nav-link):hover,
+body :is(.main-nav a,header nav a,nav a,.nav-link).active{
+  color:#fbbf24!important;text-decoration:underline!important
+}
+body :is(.ticker,.market-ticker,.market-strip,.announcement-bar,.status-bar){
+  border-block:1.5px solid #8798ad!important;font-weight:750!important
+}
+
+/* Dashboard sidebar: dark rail, readable labels, unmistakable active item */
+body.app-mode :is(.terminal-sidebar,.sidebar,.app-sidebar,.dashboard-sidebar,.side-nav){
+  background:#111d33!important;color:#f8fafc!important;
+  border-right:2px solid #52627d!important;box-shadow:5px 0 18px rgba(15,23,42,.12)!important
+}
+body.app-mode :is(.terminal-sidebar,.sidebar,.app-sidebar,.dashboard-sidebar,.side-nav) :is(a,button,span,b,strong,small,label){
+  color:#eaf0fa!important;font-weight:700!important
+}
+body.app-mode .terminal-sidebar .side-group>small,
+body.app-mode :is(.sidebar,.app-sidebar,.dashboard-sidebar,.side-nav) .side-group>small{
+  color:#b9c9df!important;font-size:11px!important;font-weight:900!important;letter-spacing:.10em!important
+}
+body.app-mode :is(.terminal-sidebar,.sidebar,.app-sidebar,.dashboard-sidebar,.side-nav) :is(a,button){
+  border:1px solid #435574!important;border-radius:9px!important
+}
+body.app-mode :is(.terminal-sidebar,.sidebar,.app-sidebar,.dashboard-sidebar,.side-nav) :is(a,button):hover{
+  background:#243653!important;border-color:#8eabda!important;color:#fff!important
+}
+body.app-mode :is(.terminal-sidebar,.sidebar,.app-sidebar,.dashboard-sidebar,.side-nav) :is(a,button).active,
+body.app-mode .terminal-sidebar .side-group>button.active{
+  background:#244a86!important;border:2px solid #8eb7ff!important;color:#fff!important;
+  box-shadow:inset 4px 0 #fbbf24,0 3px 10px rgba(0,0,0,.18)!important
+}
+body.app-mode .terminal-sidebar .side-group>button .side-copy b{color:#fff!important;font-size:13px!important;font-weight:850!important}
+body.app-mode .terminal-sidebar .side-group>button .side-copy em{color:#c5d4e8!important;font-size:11px!important}
+body.app-mode .terminal-sidebar .side-group>button .side-icon{
+  border:1.5px solid #8da8d1!important;background:#eaf1ff!important;color:#244a86!important
+}
+
+/* Client workspace surfaces and their inner typography */
+body.app-mode .terminal,
+body.app-mode .terminal-main,
+body.app-mode .terminal-content,
+body.app-mode .client-layout,
+body.app-mode .client-content{
+  background:#f4f7fc!important;color:#1e293b!important
+}
+body.app-mode .terminal :is(.client-stat,.client-panel,.service-tile,.bbx-section,.bbx-card,.bb-account-card,.bb-account-tools,.dashboard-card,.stat-card,.metric-card,.widget,.table-wrap,.chart-card,.settings-panel,.content-panel,.admin-card,.admin-panel){
+  background:#fff!important;color:#263449!important;border:1.5px solid #b8c5d6!important;
+  box-shadow:0 5px 18px rgba(15,23,42,.09)!important
+}
+body.app-mode .terminal :is(h1,h2,h3,h4,h5,h6,strong,b,th,legend){color:#111827!important;font-weight:850!important}
+body.app-mode .terminal :is(p,li,small,label,span,td,.muted,.hint,.description,.note){color:#334155!important}
+body.app-mode .terminal :is(.client-stat b,.metric-value,.stat-value){color:#111827!important;font-size:17px!important;font-weight:900!important}
+body.app-mode .terminal :is(.client-stat small,.client-stat span,.bbx-footnote,.service-tile small){color:#475569!important;font-weight:600!important}
+
+/* Inputs, dropdowns, tables, dividers and chart controls */
+body :is(input,select,textarea,.form-control,.form-select,.search-input,.chat-input){
+  border:1.5px solid #94a3b8!important;color:#111827!important;background:#fff!important;
+  font-weight:600!important
+}
+body :is(input,select,textarea,.form-control,.form-select):focus{
+  border:2px solid #2563eb!important;box-shadow:0 0 0 3px rgba(37,99,235,.18)!important
+}
+body :is(.dropdown-menu,.popover,.menu-panel,.profile-menu,.header-popover){
+  background:#fff!important;border:1.5px solid #94a3b8!important;box-shadow:0 12px 30px rgba(15,23,42,.18)!important
+}
+body :is(.dropdown-menu,.popover,.menu-panel,.profile-menu,.header-popover) :is(a,button,span,b,small){
+  color:#1e293b!important;font-weight:650!important
+}
+body :is(table,th,td){border:1px solid #b8c5d6!important}
+body th{font-weight:850!important}
+body hr,body :is(.divider,.line,.border,.separator){border-color:#a7b5c8!important;opacity:1!important}
+body :is(.market-tabs button,.tab,.tab-button,[role=tab]){
+  border:1.5px solid #a7b5c8!important;font-weight:800!important
+}
+body :is(.market-tabs button.active,.tab.active,.tab-button.active,[role=tab][aria-selected=true]){
+  border:2px solid #1d4ed8!important;box-shadow:inset 0 -3px #1d4ed8!important
+}
+body :is(.badge,.pill,.tag,.status-badge,.chip,.eyebrow,.free-tag,.lock-label,.market-feed-badge,.nav-badge,.count-badge){
+  border:1.5px solid #9aaac0!important;font-weight:800!important
+}
+body :is(.progress,.progress-bar-track,.meter-track){border:1px solid #94a3b8!important}
+@media(max-width:760px){
+ body{font-size:15px}
+ body :is(p,li,small,label,td,th){line-height:1.55}
+ body.app-mode .terminal-sidebar :is(a,button){border:1.5px solid #526783!important}
+}
