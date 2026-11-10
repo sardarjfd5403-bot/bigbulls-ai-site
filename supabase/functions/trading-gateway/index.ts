@@ -77,6 +77,21 @@ Deno.serve(async (req: Request) => {
     }
 
 
+
+    if (action === "account_activity") {
+      const accountId=String(body.account_id||"");
+      const {data:account,error:aErr}=await admin.from("trading_accounts").select("id,account_mode,balance,currency,status").eq("id",accountId).eq("user_id",user.id).maybeSingle();
+      if(aErr) throw aErr;
+      if(!account) return json({error:"Account not found."},404);
+      const [orders,positions,fills]=await Promise.all([
+        admin.from("bb_trade_orders").select("*").eq("account_id",accountId).order("created_at",{ascending:false}).limit(300),
+        admin.from("bb_trade_positions").select("*").eq("account_id",accountId).order("opened_at",{ascending:false}).limit(300),
+        admin.from("bb_trade_fills").select("*").eq("account_id",accountId).order("filled_at",{ascending:false}).limit(500)
+      ]);
+      if(orders.error||positions.error||fills.error) throw orders.error||positions.error||fills.error;
+      return json({account,orders:orders.data||[],positions:positions.data||[],fills:fills.data||[],execution_model:"SERVER_SIMULATION"});
+    }
+
     if (action === "place_order") {
       const accountId = String(body.account_id || "");
       const symbol = String(body.symbol || "").trim().toUpperCase();
