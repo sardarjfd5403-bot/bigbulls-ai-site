@@ -147,8 +147,12 @@ alter table public.licenses
   add column if not exists download_path text;
 
 drop policy if exists "admins manage licenses" on public.licenses;
-create policy "admins manage licenses" on public.licenses
-  for all to authenticated
+drop policy if exists "admins read licenses" on public.licenses;
+drop policy if exists "admins update licenses" on public.licenses;
+create policy "admins read licenses" on public.licenses
+  for select to authenticated using ((select public.is_bigbulls_admin()));
+create policy "admins update licenses" on public.licenses
+  for update to authenticated
   using ((select public.is_bigbulls_admin()))
   with check ((select public.is_bigbulls_admin()));
 
@@ -236,8 +240,17 @@ on conflict(id) do update
 set public=false,file_size_limit=104857600,allowed_mime_types=excluded.allowed_mime_types;
 
 drop policy if exists "admins manage product downloads" on storage.objects;
-create policy "admins manage product downloads"
-on storage.objects for all to authenticated
+drop policy if exists "admins read product downloads" on storage.objects;
+drop policy if exists "admins upload product downloads" on storage.objects;
+drop policy if exists "admins replace product downloads" on storage.objects;
+create policy "admins read product downloads"
+on storage.objects for select to authenticated
+using (bucket_id='product-downloads' and (select public.is_bigbulls_admin()));
+create policy "admins upload product downloads"
+on storage.objects for insert to authenticated
+with check (bucket_id='product-downloads' and (select public.is_bigbulls_admin()));
+create policy "admins replace product downloads"
+on storage.objects for update to authenticated
 using (bucket_id='product-downloads' and (select public.is_bigbulls_admin()))
 with check (bucket_id='product-downloads' and (select public.is_bigbulls_admin()));
 
