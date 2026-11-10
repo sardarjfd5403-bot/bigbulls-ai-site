@@ -750,3 +750,38 @@ body.app-mode .terminal .client-form textarea{background:#fff!important;color:#2
 body.app-mode .terminal .deposit-qr{background:#fff!important}
 @media(max-width:800px){.ai-feature-grid{grid-template-columns:1fr!important}.ai-feature-card{min-height:185px!important}.ai-showcase{padding:45px 20px!important}}
 @media(prefers-reduced-motion:reduce){.ai-feature-card.is-visible{animation:none!important;opacity:1!important;transform:none!important}}
+
+
+/* BIGBULLS Learning Centre — professional free course catalogue */
+.learning-grid-pro{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:18px!important;align-items:start}
+.learning-grid-pro .learning-course{
+ position:relative;padding:22px!important;background:linear-gradient(150deg,#18283d,#111b2b)!important;
+ border:1px solid #344b68!important;border-radius:12px!important;
+ box-shadow:0 12px 28px rgba(4,12,24,.18)!important;overflow:hidden
+}
+.learning-grid-pro .learning-course:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:#d7ad52}
+.learning-grid-pro .course-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.learning-grid-pro .course-index{color:#f0cb72!important;font-size:25px!important;font-weight:900}
+.learning-grid-pro .course-level{color:#b9c8da!important;font-size:9px!important;font-weight:800;letter-spacing:.1em}
+.learning-grid-pro .course-icon{display:grid;place-items:center;width:52px;height:52px;margin:16px 0 12px;border:1px solid #6d5b36;border-radius:10px;background:#2c2a25;color:#f1cc72;font-size:13px;font-weight:900;letter-spacing:.04em}
+.learning-grid-pro .learning-course h3{color:#fff!important;font-size:19px!important;font-weight:800!important;margin:7px 0 9px}
+.learning-grid-pro .learning-course p{color:#c1cede!important;font-size:12px!important;line-height:1.7!important;min-height:58px}
+.learning-grid-pro .course-meta{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+.learning-grid-pro .course-meta span,.learning-badges span{padding:6px 9px;border:1px solid #465a72;border-radius:30px;color:#dce5ef;font-size:9px;font-weight:700}
+.learning-grid-pro .course-meta span:last-child{color:#9fe0bd;border-color:#376a55}
+.learning-grid-pro .course-syllabus{margin-top:14px;border-top:1px solid #3a4d64}
+.learning-grid-pro .course-syllabus summary{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 0 3px;color:#f0cb72;font-size:12px;font-weight:800;cursor:pointer;list-style:none}
+.learning-grid-pro .course-syllabus summary::-webkit-details-marker{display:none}
+.learning-grid-pro .course-syllabus summary b{font-size:18px}
+.learning-grid-pro .course-syllabus[open] summary b{transform:rotate(45deg)}
+.learning-grid-pro .course-syllabus ol{margin:12px 0 0;padding:0;list-style:none;counter-reset:lesson}
+.learning-grid-pro .course-syllabus li{counter-increment:lesson;position:relative;padding:12px 10px 12px 39px;border-top:1px solid #30435a;color:#eef3f8;font-size:11px;line-height:1.5}
+.learning-grid-pro .course-syllabus li:before{content:counter(lesson,decimal-leading-zero);position:absolute;left:4px;top:13px;color:#f0cb72;font-size:10px;font-weight:900}
+.learning-grid-pro .course-syllabus li b{display:block;color:#fff;font-size:11px}
+.learning-grid-pro .course-syllabus li small{display:block;margin-top:4px;color:#b3c1d1;font-size:10px;line-height:1.6}
+.learning-note{margin-top:20px!important;padding:20px!important}
+.learning-note p{color:var(--portal-muted);font-size:12px;line-height:1.7}
+.learning-badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.learning-badges span{background:#f5f6f7;color:#424a54;border-color:#d7dce2}
+@media(max-width:900px){.learning-grid-pro{grid-template-columns:1fr!important}}
+@media(min-width:901px) and (max-width:1180px){.learning-grid-pro{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
