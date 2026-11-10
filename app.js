@@ -691,6 +691,19 @@ async function renderDepositQr(node,address){if(!node)return;node.innerHTML="";n
 function showSelectedWallet(wallets){const id=document.getElementById("deposit-asset")?.value,w=wallets.find(x=>String(x.id)===String(id)),box=document.getElementById("selected-wallet");if(!box||!w)return;box.innerHTML='<div class="wallet-address-card"><small>ADMIN CONTROLLED · '+esc(w.asset)+' / '+esc(w.network)+'</small><div class="deposit-qr" id="deposit-wallet-qr" aria-label="Deposit wallet QR code"></div><code>'+esc(w.address)+'</code><button type="button" data-copy-address="'+esc(w.address)+'">Copy address</button><p>'+esc(w.label||"Official deposit wallet")+'</p></div><form class="client-form" id="wallet-form"><label>Amount (USD equivalent)<input name="amount_usd" type="number" min="1" step=".01" required></label><label>Amount in crypto<input name="amount_crypto" required></label><label>Blockchain TXID<input name="tx_hash" required></label><button class="portal-primary">Submit for verification</button></form><div data-page-message></div><div class="notice">Only send the selected asset on the exact network. Admin must verify the blockchain transaction before approval.</div>';renderDepositQr(document.getElementById("deposit-wallet-qr"),w.address);}
 async function submitHandler(e){
  const f=e.target;if(!(f instanceof HTMLFormElement))return;
+ if(f.id==="mfa-verify-form"){
+  e.preventDefault();const d=new FormData(f),code=String(d.get("code")||"").trim(),button=f.querySelector("button[type=submit]"),out=f.querySelector("[data-page-message]");
+  if(!/^\d{6,8}$/.test(code)){if(out)out.textContent="Enter the current authenticator code.";return;}
+  button.disabled=true;
+  try{
+   const {error}=await sb.auth.mfa.verify({factorId:f.dataset.factorId,challengeId:f.dataset.challengeId,code});
+   if(error)throw error;
+   const {data:aal}=await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+   if(aal?.currentLevel!=="aal2")throw new Error("2FA verification did not reach the required security level.");
+   alert("Authenticator 2FA verified. Your client platform is now unlocked.");showApp("dashboard");
+  }catch(err){if(out)out.textContent=err.message||"Authenticator verification failed.";button.disabled=false;}
+  return;
+ }
  if(f.id==="signup-form"||f.id==="login-form"){
   e.preventDefault();const d=new FormData(f),b=f.querySelector("button[type=submit]");b.disabled=true;b.textContent="Please wait…";
   try{if(f.id==="signup-form"){const {data,error}=await sb.auth.signUp({email:String(d.get("email")).trim(),password:String(d.get("password")),options:{emailRedirectTo:location.origin+location.pathname,data:{full_name:String(d.get("full_name")).trim(),country:String(d.get("country")||""),phone:String(d.get("phone")||""),account_type:String(d.get("account_type")||"Individual"),referral_code:String(d.get("referral_code")||"")}}});if(error)throw error;if(data.session){user=data.user;showApp("dashboard");}else{message("Registration submitted. Check your email and verify your address, then log in.",false);b.disabled=false;b.textContent="Create account";}}
@@ -785,6 +798,17 @@ async function submitHandler(e){
 }
 async function clickHandler(e){
  const el=e.target instanceof Element?e.target:null;if(!el)return;
+ const enroll=el.closest("[data-mfa-enroll]");
+ if(enroll){
+  const host=document.getElementById("mfa-control");enroll.disabled=true;
+  try{
+   const {data,error}=await sb.auth.mfa.enroll({factorType:"totp",friendlyName:"BIGBULLS Client Authenticator"});
+   if(error)throw error;
+   const challenge=await sb.auth.mfa.challenge({factorId:data.id});if(challenge.error)throw challenge.error;
+   host.innerHTML='<h3>Scan authenticator QR code</h3><p>Scan with Google Authenticator, Microsoft Authenticator or another TOTP app. Keep the secret private.</p><img alt="Authenticator QR code" style="width:190px;max-width:100%;background:#fff;padding:10px;border-radius:12px" src="'+esc(data.totp.qr_code)+'"><p>Manual setup key: <code>'+esc(data.totp.secret)+'</code></p><form id="mfa-verify-form" data-factor-id="'+esc(data.id)+'" data-challenge-id="'+esc(challenge.data.id)+'" class="client-form"><label>Authenticator code<input name="code" inputmode="numeric" autocomplete="one-time-code" minlength="6" maxlength="8" required></label><button class="portal-primary" type="submit">Verify and enable 2FA</button><div data-page-message></div></form>';
+  }catch(err){host.innerHTML='<div class="notice error">'+esc(err.message||"Unable to start authenticator setup.")+'</div>';}
+  return;
+ }
 
  const courseOpen=el.closest("[data-course-open]");
  if(courseOpen){e.preventDefault();showApp("course-"+courseOpen.dataset.courseOpen);return;}
