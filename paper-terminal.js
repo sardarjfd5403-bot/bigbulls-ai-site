@@ -35,7 +35,7 @@ function closePosition(id,price,reason){
 function render(){
  const root=$("bb-paper-terminal");if(!root)return;
  const floating=state.positions.reduce((n,p)=>n+pnl(p),0),equity=state.balance+floating;
- const riskToday=Math.max(0,-state.dailyRealized),locked=riskToday>=START_BALANCE*MAX_DAILY_LOSS;
+ const dailyPnl=state.dailyRealized+floating,locked=dailyPnl<=-START_BALANCE*MAX_DAILY_LOSS;
  $("bb-paper-summary").innerHTML='<div><small>VIRTUAL BALANCE</small><b>'+money(state.balance)+'</b></div><div><small>EQUITY</small><b>'+money(equity)+'</b></div><div><small>OPEN P/L</small><b class="'+(floating>=0?"positive":"negative")+'">'+money(floating)+'</b></div><div><small>DAILY REALISED</small><b class="'+(state.dailyRealized>=0?"positive":"negative")+'">'+money(state.dailyRealized)+'</b></div>';
  $("bb-paper-lock").textContent=locked?"DAILY LOSS LIMIT REACHED — NEW ORDERS BLOCKED":"RISK LIMITS ACTIVE · 1% PER TRADE · 3% DAILY LOSS";
  $("bb-paper-lock").className=locked?"bb-paper-alert danger":"bb-paper-alert";
@@ -63,9 +63,11 @@ function execute(side){
   if(!Number.isFinite(sl)||sl<=0||(side==="BUY"?sl>=price:sl<=price))throw Error("Valid stop-loss zaroori hai; BUY mein SL entry se neeche aur SELL mein upar ho.");
   if(tp>0&&(side==="BUY"?tp<=price:tp>=price))throw Error("Take-profit direction ghalat hai.");
   if(state.positions.length>=MAX_OPEN)throw Error("Maximum 5 open positions allowed.");
-  if(Math.max(0,-state.dailyRealized)>=START_BALANCE*MAX_DAILY_LOSS)throw Error("Daily loss limit reached.");
-  const risk=Math.abs(price-sl)*qty,limit=state.balance*MAX_RISK;
+  const floating=state.positions.reduce((n,p)=>n+pnl(p),0),dailyPnl=state.dailyRealized+floating;
+  if(dailyPnl<=-START_BALANCE*MAX_DAILY_LOSS)throw Error("Daily loss limit reached.");
+  const risk=Math.abs(price-sl)*qty,limit=state.balance*MAX_RISK,totalOpenRisk=state.positions.reduce((n,p)=>n+p.risk,0);
   if(risk>limit)throw Error("Risk "+money(risk)+" hai; per-trade limit "+money(limit)+" (1%) hai. Quantity kam karein ya SL adjust karein.");
+  if(totalOpenRisk+risk>state.balance*.03)throw Error("Total open trade risk 3% account cap se zyada ho jayega.");
   const p={id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),symbol,side,quantity:qty,entry:price,sl,tp,openedAt:new Date().toISOString(),risk};
   state.positions.unshift(p);save();render();notify(side+" paper order executed at "+fmt(price)+". Virtual only.",false);
  }catch(e){notify(e.message,true);}finally{busy=false;}
