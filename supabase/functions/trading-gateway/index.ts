@@ -76,6 +76,82 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+
+    if (action === "place_order") {
+      const accountId = String(body.account_id || "");
+      const symbol = String(body.symbol || "").trim().toUpperCase();
+      const side = String(body.side || "").toUpperCase();
+      const orderType = String(body.order_type || "MARKET").toUpperCase();
+      const quantity = Number(body.quantity);
+      const referencePrice = Number(body.reference_price);
+      const allowedTypes = ["MARKET","BUY_LIMIT","SELL_LIMIT","BUY_STOP","SELL_STOP"];
+      if (!accountId || !/^[A-Z0-9._-]{3,24}$/.test(symbol) || !["BUY","SELL"].includes(side) ||
+          !allowedTypes.includes(orderType) || !(quantity > 0 && quantity <= 1000000) ||
+          !(referencePrice > 0 && Number.isFinite(referencePrice))) {
+        return json({error:"Invalid order parameters. A positive reference price is required for server-side simulated matching."},400);
+      }
+      const {data: account,error: accountErr}=await admin.from("trading_accounts")
+        .select("id,user_id,account_mode,balance,status,archived_at,deleted_at,currency")
+        .eq("id",accountId).eq("user_id",user.id).maybeSingle();
+      if(accountErr) throw accountErr;
+      if(!account || account.status!=="approved" || account.archived_at || account.deleted_at)
+        return json({error:"Trading account is not active."},403);
+      const {data: cfg,error: cfgErr}=await admin.from("bb_execution_settings").select("demo_execution_enabled,global_halt").eq("singleton",true).single();
+      if(cfgErr) throw cfgErr;
+      if(cfg.global_halt===true || (account.account_mode==="demo" && cfg.demo_execution_enabled!==true))
+        return json({error:"Execution is currently halted."},423);
+      const isMarket=orderType==="MARKET";
+      const now=new Date().toISOString();
+      const orderInsert={
+        account_id:account.id,user_id:user.id,account_mode:account.account_mode,
+        symbol,side,order_type:orderType,quantity,requested_price:referencePrice,
+        stop_price:body.stop_price==null?null:Number(body.stop_price),
+        limit_price:body.limit_price==null?null:Number(body.limit_price),
+        stop_loss:body.stop_loss==null?null:Number(body.stop_loss),
+        take_profit:body.take_profit==null?null:Number(body.take_profit),
+        trailing_distance:body.trailing_distance==null?0:Number(body.trailing_distance),
+        status:isMarket?"RECEIVED":"PENDING",created_at:now,updated_at:now
+      };
+      const {data:order,error:orderErr}=await admin.from("bb_trade_orders").insert(orderInsert).select("*").single();
+      if(orderErr) throw orderErr;
+      let position=null,fill=null;
+      if(isMarket){
+        const {data:p,error:pErr}=await admin.from("bb_trade_positions").insert({
+          account_id:account.id,user_id:user.id,account_mode:account.account_mode,order_id:order.id,
+          symbol,side,quantity,entry_price:referencePrice,mark_price:referencePrice,
+          stop_loss:orderInsert.stop_loss,take_profit:orderInsert.take_profit,
+          trailing_distance:orderInsert.trailing_distance,status:"OPEN",unrealized_pnl:0,realized_pnl:0
+        }).select("*").single();
+        if(pErr) throw pErr;
+        position=p;
+        const {data:fl,error:flErr}=await admin.from("bb_trade_fills").insert({
+          order_id:order.id,position_id:p.id,account_id:account.id,user_id:user.id,
+          account_mode:account.account_mode,symbol,side,quantity,fill_price:referencePrice,
+          spread_cost:0,commission:0,slippage:0
+        }).select("*").single();
+        if(flErr) throw flErr;
+        fill=fl;
+        const {error:upErr}=await admin.from("bb_trade_orders").update({status:"FILLED",updated_at:new Date().toISOString()}).eq("id",order.id);
+        if(upErr) throw upErr;
+      }
+      let forwarding=null;
+      if(account.account_mode==="real"){
+        const {data:q,error:qErr}=await admin.from("bb_manual_forward_queue").insert({
+          order_id:order.id,account_id:account.id,user_id:user.id,account_mode:"real",
+          symbol,side,quantity,reference_price:referencePrice,status:"AWAITING_ADMIN"
+        }).select("*").single();
+        if(qErr) throw qErr;
+        forwarding=q;
+      }
+      await admin.from("bb_trade_audit_events").insert({
+        account_id:account.id,user_id:user.id,actor_user_id:user.id,account_mode:account.account_mode,
+        event_type:isMarket?"SIMULATED_ORDER_FILLED":"SIMULATED_ORDER_PENDING",
+        entity_type:"order",entity_id:order.id,
+        details:{execution_model:"SERVER_SIMULATION",reference_price:referencePrice,manual_forward_required:account.account_mode==="real"}
+      });
+      return json({success:true,execution_model:"SERVER_SIMULATION",order,position,fill,manual_forward:forwarding});
+    }
+
     const { data: isAdmin, error: adminError } = await authClient.rpc("is_bigbulls_admin");
     if (adminError) throw adminError;
     if (isAdmin !== true) return json({ error: "Administrator permission required." }, 403);
@@ -88,6 +164,30 @@ Deno.serve(async (req: Request) => {
     const missing = LIVE_CHECKS.filter(key => readiness[key] !== true);
     const adapterReady = Deno.env.get("LIVE_EXECUTION_ADAPTER_READY") === "true";
     const liveEffective = settings.live_execution_enabled === true && missing.length === 0 && adapterReady && settings.global_halt !== true;
+
+
+    if (action === "manual_forward_queue") {
+      const {data,error}=await admin.from("bb_manual_forward_queue").select("*").order("created_at",{ascending:false}).limit(300);
+      if(error) throw error;
+      return json({queue:data||[]});
+    }
+    if (action === "mark_order_forwarded") {
+      const queueId=String(body.queue_id||"");
+      const externalReference=String(body.external_reference||"").slice(0,160);
+      if(!queueId) return json({error:"queue_id required"},400);
+      const {data,error}=await admin.from("bb_manual_forward_queue").update({
+        status:"FORWARDED",admin_note:String(body.admin_note||"").slice(0,500),
+        external_reference:externalReference||null,forwarded_at:new Date().toISOString(),updated_at:new Date().toISOString()
+      }).eq("id",queueId).eq("status","AWAITING_ADMIN").select("*").maybeSingle();
+      if(error) throw error;
+      if(!data) return json({error:"Queue item not found or already processed."},409);
+      await admin.from("bb_trade_audit_events").insert({
+        account_id:data.account_id,user_id:data.user_id,actor_user_id:user.id,account_mode:"real",
+        event_type:"MANUAL_LIQUIDITY_FORWARD_RECORDED",entity_type:"order",entity_id:data.order_id,
+        details:{queue_id:queueId,external_reference:externalReference||null}
+      });
+      return json({success:true,queue_item:data});
+    }
 
     if (action === "client_dossier") {
       const lookup = String(body.lookup || "").trim();
