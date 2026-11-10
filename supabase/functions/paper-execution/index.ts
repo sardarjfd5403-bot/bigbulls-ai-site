@@ -135,7 +135,18 @@ Deno.serve(async (req: Request) => {
         const mid = prices[t.symbol];
         if (!(mid > 0)) continue;
         const side = t.side;
-        const hitSl = side === "BUY" ? mid <= Number(t.stop_loss) : mid >= Number(t.stop_loss);
+        let stopLoss = Number(t.stop_loss);
+        const trailing = Number(t.trailing_distance || 0);
+        if (trailing > 0) {
+          if (side === "BUY" && mid > Number(t.entry_price)) stopLoss = Math.max(stopLoss, mid - trailing);
+          if (side === "SELL" && mid < Number(t.entry_price)) stopLoss = Math.min(stopLoss, mid + trailing);
+          if (stopLoss !== Number(t.stop_loss)) {
+            const { error } = await admin.from("bb_paper_execution_trades").update({ stop_loss: stopLoss })
+              .eq("id", t.id).eq("paper_account_id", ledger.id).eq("status", "OPEN");
+            if (error) throw error;
+          }
+        }
+        const hitSl = side === "BUY" ? mid <= stopLoss : mid >= stopLoss;
         const hitTp = t.take_profit != null && Number(t.take_profit) > 0 &&
           (side === "BUY" ? mid >= Number(t.take_profit) : mid <= Number(t.take_profit));
         if (hitSl || hitTp) {
@@ -188,6 +199,12 @@ Deno.serve(async (req: Request) => {
           source: source.slice(0,80) }
       });
       if (error) throw error;
+      const trailingDistance = Math.max(0, Number(body.trailing_distance || 0));
+      if (trailingDistance > 0 && data.trade?.id) {
+        const { error: trailingError } = await admin.from("bb_paper_execution_trades")
+          .update({ trailing_distance: trailingDistance }).eq("id", data.trade.id).eq("paper_account_id", ledger.id);
+        if (trailingError) throw trailingError;
+      }
       return json({ success: true, ...data, quote: mid, execution: { mode: "PAPER", broker_routing: false } });
     }
 
