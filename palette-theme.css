@@ -613,3 +613,43 @@ body.app-mode .terminal svg:not(.chart svg){fill:none!important}
  body.app-mode .terminal :is(.admin-section,.admin-card,.admin-panel,.admin-widget,.admin-form-card){padding:14px!important}
  body.app-mode .terminal :is(input,select,textarea,button){font-size:14px!important}
 }
+
+
+/* Exact admin markup selectors observed in app.js. */
+body.app-mode .terminal .admin-section-heading{
+  display:flex!important;align-items:center!important;justify-content:space-between!important;
+  gap:10px!important;flex-wrap:wrap!important;
+  background:#0B1628!important;color:#FFDE02!important;
+  border:1px solid #354B68!important;border-radius:10px!important;
+  padding:14px 16px!important;margin:18px 0 10px!important;
+}
+body.app-mode .terminal .admin-section-heading h3{
+  color:#F5F7FC!important;margin:0!important;font-size:15px!important;
+}
+body.app-mode .terminal .admin-section-heading span{
+  color:#B7C4D7!important;font-size:10px!important;letter-spacing:.08em!important;
+}
+body.app-mode .terminal .admin-control-grid article{
+  background:#111E32!important;color:#F5F7FC!important;
+  border:1px solid #354B68!important;border-radius:10px!important;
+  box-shadow:none!important;
+}
+body.app-mode .terminal .admin-control-grid article b{color:#F5F7FC!important}
+body.app-mode .terminal .admin-control-grid article p{color:#B7C4D7!important}
+body.app-mode .terminal .admin-control-grid article span{color:#FFDE02!important}
+body.app-mode .terminal .client-panel{
+  background:#101B2D!important;color:#F5F7FC!important;
+  border:1px solid #354B68!important;border-radius:10px!important;
+}
+body.app-mode .terminal .client-panel :is(h1,h2,h3,h4,b,strong,label){color:#F5F7FC!important}
+body.app-mode .terminal .client-panel :is(p,small,span,li){color:#B7C4D7!important}
+body.app-mode .terminal .client-panel input[type=file]{
+  background:#081321!important;color:#DCE6F3!important;
+  border:1px dashed #526985!important;border-radius:8px!important;
+  padding:10px!important;
+}
+body.app-mode .terminal .client-panel input[type=file]::file-selector-button{
+  background:#14243A!important;color:#F5F7FC!important;
+  border:1px solid #526985!important;border-radius:6px!important;
+  padding:8px 12px!important;margin-right:10px!important;
+}
