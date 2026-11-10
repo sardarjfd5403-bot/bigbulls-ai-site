@@ -15,7 +15,7 @@ function pnl(p){const q=quote(p.symbol);return Number.isFinite(q)?(p.side==="BUY
 function saveLocal(){try{localStorage.setItem("bb-paper-cache:"+user.id,JSON.stringify(state));}catch(_){}}
 function persist(){
  if(!user||!client)return;clearTimeout(saveTimer);saveTimer=setTimeout(async()=>{
-  try{const {error}=await client.from("bb_paper_accounts").upsert({user_id:user.id,account_state:state,updated_at:new Date().toISOString()},{onConflict:"user_id"});if(error)throw error;const n=$("bb-paper-cloud");if(n)n.textContent="CLOUD SYNCED · "+new Date().toLocaleTimeString();}
+  try{const {error}=await client.from("bb_paper_accounts").upsert({user_id:user.id,account_state:{...state,lastQuotes:quotes,lastQuoteAt:new Date().toISOString()},updated_at:new Date().toISOString()},{onConflict:"user_id"});if(error)throw error;const n=$("bb-paper-cloud");if(n)n.textContent="CLOUD SYNCED · "+new Date().toLocaleTimeString();}
   catch(e){const n=$("bb-paper-cloud");if(n)n.textContent="CLOUD SYNC PENDING · Apply Supabase migration 009";console.warn("Paper cloud sync:",e.message);}
  },350);
 }
