@@ -6,7 +6,7 @@ const CRYPTO=["BTCUSDT","ETHUSDT","BNBUSDT","SOLUSDT","XRPUSDT","DOGEUSDT"];
 const FX=["EUR/USD","GBP/USD","XAU/USD"];
 const ALL=[...CRYPTO,...FX],START=10000;
 let RISK=.01,DAILY=.03,AGGREGATE=.03,MAX_OPEN=5;
-let quotes={},timer=null,brainTimer=null,observer=null,client=null,user=null,busy=false,saveTimer=null,scanBusy=false,historyRange="1d",historySymbol="ALL",historyFrom="",historyTo="",demoAccounts=[],realAccounts=[],activeAccountId=null,activeMode="demo",activeAccount=null,executionState={demo_enabled:false,live_effective:false,global_halt:true},legacyMode=true;
+let quotes={},timer=null,brainTimer=null,observer=null,client=null,user=null,busy=false,saveTimer=null,scanBusy=false,historyRange="1d",historySymbol="ALL",historyFrom="",historyTo="",demoAccounts=[],realAccounts=[],activeAccountId=null,activePaperAccountId=null,activeMode="demo",activeAccount=null,executionState={demo_enabled:false,live_effective:false,global_halt:true},legacyMode=true;
 const $=id=>document.getElementById(id),money=n=>"$"+Number(n||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}),fmt=n=>Number(n).toLocaleString("en-US",{maximumFractionDigits:6}),esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function blank(){return{balance:START,positions:[],pendingOrders:[],history:[],day:new Date().toISOString().slice(0,10),dailyRealized:0,autoEnabled:false,emergencyStop:false,lastSignalAt:null};}
 let state=blank();
@@ -22,13 +22,13 @@ function persist(){
 }
 function save(){if(activeAccountId)return;if(activeMode!=="demo")return;saveLocal();persist();}
 async function paperApi(action,extra={}){
- if(!client||!activeAccountId)throw new Error("Select an approved trading account first.");
- const {data,error}=await client.functions.invoke("paper-execution",{body:{action,account_id:activeAccountId,...extra}});
+ if(!client||(!activeAccountId&&activeMode!=="demo"))throw new Error("Select an approved trading account first.");
+ const {data,error}=await client.functions.invoke("paper-execution",{body:{action,account_id:activeAccountId,account_mode:activeMode,paper_account_id:activePaperAccountId,...extra}});
  if(error)throw error;if(!data||data.error)throw new Error(data?.error||"Paper execution service unavailable.");return data;
 }
 function mapPaperTrade(t){return{id:t.id,symbol:t.symbol,side:t.side,quantity:Number(t.quantity),entry:Number(t.entry_price),exit:t.exit_price==null?null:Number(t.exit_price),sl:Number(t.stop_loss),tp:Number(t.take_profit||0),risk:Number(t.risk_amount||0),source:t.source||"MANUAL",pnl:Number(t.realized_pnl||0),openedAt:t.opened_at,closedAt:t.closed_at,reason:t.close_reason||"CLOSED",mark:Number(t.mark_price||t.entry_price),executionMode:t.execution_mode||"PAPER"};}
 async function syncPaper(action="status"){
- const d=await paperApi(action),trades=d.trades||[];
+ const d=await paperApi(action),trades=d.trades||[];activePaperAccountId=d.ledger.id;
  state={...blank(),balance:Number(d.ledger.virtual_balance||0),dailyRealized:Number(d.ledger.daily_realized||0),day:d.ledger.current_day,emergencyStop:d.ledger.emergency_stop===true,autoEnabled:d.ledger.auto_enabled===true,positions:trades.filter(t=>t.status==="OPEN").map(mapPaperTrade),history:trades.filter(t=>t.status==="CLOSED").map(mapPaperTrade),pendingOrders:[]};
  executionState={...executionState,paper_enabled:true,paper_mode:true,global_halt:false};
  const n=$("bb-paper-cloud");if(n)n.textContent="SERVER LEDGER SYNCED · "+new Date().toLocaleTimeString();return d;
@@ -51,9 +51,7 @@ async function loadCloud(){
    legacyMode=false;await syncPaper("status");render();return;
   }
   if(activeMode==="real"){state=blank();legacyMode=false;render();const n=$("bb-paper-cloud");if(n)n.textContent="NO APPROVED REAL ACCOUNT";return;}
-  legacyMode=true;activeAccount=null;
-  const {data,error}=await client.from("bb_paper_accounts").select("account_state").eq("user_id",user.id).maybeSingle();if(error)throw error;
-  if(data?.account_state)state={...blank(),...data.account_state};else{try{const old=JSON.parse(localStorage.getItem("bb-paper-account-v1:"+user.id)||"null");if(old)state={...blank(),...old};}catch(_){}save();}
+  legacyMode=false;activeAccount=null;activeAccountId=null;await syncPaper("status");render();
  }catch(e){
   const n=$("bb-paper-cloud");if(n)n.textContent="ACCOUNT GATEWAY ERROR · "+e.message;
   state=blank();activeAccount=null;activeAccountId=null;executionState={demo_enabled:false,live_effective:false,global_halt:true};console.warn("Trading account gateway:",e.message);
@@ -131,7 +129,7 @@ function render(){
 function notify(s,bad){const n=$("bb-paper-message");if(n){n.textContent=s;n.className=bad?"bb-paper-alert danger":"bb-paper-alert";}}
 async function manual(requestedSide){
  try{
-  if(!activeAccountId)throw new Error("No approved trading account is selected.");
+  if(!activeAccountId&&activeMode!=="demo")throw new Error("No approved trading account is selected.");
   const type=$("bb-paper-order-type").value;if(type!=="MARKET")throw new Error("Server pending-order processing is not enabled yet. Use Market Execution for this test build.");
   const symbol=$("bb-paper-symbol").value,sl=Number($("bb-paper-sl").value),tp=Number($("bb-paper-tp").value||0)||null,qty=Number($("bb-paper-quantity").value);
   const result=await paperApi("open",{symbol,side:requestedSide,quantity:qty,stop_loss:sl,take_profit:tp,source:"MANUAL"});
@@ -139,7 +137,7 @@ async function manual(requestedSide){
  }catch(e){notify(e.message,true);}
 }
 async function runBrain(){
- if(!activeAccountId||(activeMode==="demo"&&!executionState.demo_enabled)||!executionState.paper_enabled||scanBusy||!state.autoEnabled||state.emergencyStop||!client)return;scanBusy=true;
+ if((!activeAccountId&&activeMode!=="demo")||(activeMode==="demo"&&!executionState.demo_enabled)||!executionState.paper_enabled||scanBusy||!state.autoEnabled||state.emergencyStop||!client)return;scanBusy=true;
  try{
   const {data,error}=await client.functions.invoke("market-brain",{body:{}});if(error)throw error;if(!data||data.error)throw Error(data?.error||"Market Brain unavailable");
   for(const s of data.signals||[]){
