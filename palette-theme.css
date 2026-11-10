@@ -1,0 +1,97 @@
+/* BIGBULLS FX MARKET — exact Color Hunt palette
+   Palette: #092328 · #12544F · #2A835F · #8BBB92
+   Loaded last so the same theme covers public pages, client portal, admin UI and modals.
+*/
+:root{
+  color-scheme:dark;
+  --bb-palette-deep:#092328;
+  --bb-palette-teal:#12544F;
+  --bb-palette-green:#2A835F;
+  --bb-palette-sage:#8BBB92;
+  --bg:#092328;
+  --panel:#12544F;
+  --line:#2A835F;
+  --text:#8BBB92;
+  --muted:#8BBB92;
+  --blue:#2A835F;
+  --gold:#8BBB92;
+  --bb-red:#2A835F;
+  --bb-red-dark:#12544F;
+  --bb-red-soft:#12544F;
+  --bb-blue:#2A835F;
+  --bb-blue-deep:#12544F;
+  --bb-blue-soft:#12544F;
+  --bb-teal:#2A835F;
+  --bb-teal-soft:#12544F;
+  --bb-violet:#2A835F;
+  --bb-ink:#092328;
+  --bb-charcoal:#12544F;
+  --bb-muted:#8BBB92;
+  --bb-line:#2A835F;
+  --bb-bg:#092328;
+  --bb-panel:#12544F;
+  --bb-surface:#12544F;
+  --bb-primary:#2A835F;
+  --bb-accent:#8BBB92;
+  --bb-success:#8BBB92;
+  --bb-warning:#8BBB92;
+  --bb-danger:#2A835F;
+}
+html,body{background:#092328!important;color:#8BBB92!important;font-family:Roboto,Arial,sans-serif!important}
+body,*{scrollbar-color:#2A835F #092328}
+::selection{background:#2A835F;color:#092328}
+a{color:#8BBB92}
+a:hover{color:#8BBB92}
+hr,.divider,.line,.border,.card,.panel,.box,.surface{border-color:#2A835F}
+header,nav,.navbar,.topbar,.site-header,.app-header,.terminal-header,.portal-header,.admin-header{background:#092328!important;border-color:#2A835F!important;color:#8BBB92!important}
+footer,.site-footer{background:#092328!important;border-color:#2A835F!important;color:#8BBB92!important}
+section,.section,.card,.panel,.modal,.modal-content,.modal-dialog,.dropdown-menu,.popover,.tooltip,.menu-panel,.sidebar,.admin-sidebar,.client-sidebar,.portal-sidebar,.terminal-sidebar,.app-sidebar,.dashboard-card,.stat-card,.metric-card,.widget,.table-wrap,.chart-card,.form-card,.settings-card,.bbx-section,.bb-paper-terminal,.course-card,.feature-card,.market-card,.auth-card,.login-card,.signup-card,.support-panel,.notification-panel{
+  background-color:#12544F!important;
+  border-color:#2A835F!important;
+  color:#8BBB92!important;
+}
+input,select,textarea,option,.form-control,.form-select,.search-input,.chat-input{
+  background:#092328!important;color:#8BBB92!important;border:1px solid #2A835F!important;
+  caret-color:#8BBB92!important;accent-color:#2A835F!important;
+}
+input::placeholder,textarea::placeholder{color:#8BBB92!important;opacity:.75}
+button,.btn,.button,.portal-primary,.admin-button,.primary-btn,.cta,.action-btn,.tab-button,.nav-link-button,.bb-paper-button{
+  background:#2A835F!important;border:1px solid #8BBB92!important;color:#092328!important;
+  box-shadow:none!important;
+}
+button:hover,.btn:hover,.button:hover,.portal-primary:hover,.admin-button:hover,.primary-btn:hover,.cta:hover,.action-btn:hover{
+  background:#8BBB92!important;border-color:#8BBB92!important;color:#092328!important;
+}
+.btn.secondary,.btn-outline,.portal-secondary,.secondary-btn,.outline-button,.ghost-button,.tab-button[aria-selected="false"]{
+  background:#12544F!important;color:#8BBB92!important;border-color:#2A835F!important;
+}
+button:disabled,.btn:disabled{background:#12544F!important;color:#8BBB92!important;opacity:.55}
+.badge,.pill,.tag,.status-badge,.chip,.eyebrow,.free-tag,.lock-label,.market-feed-badge{
+  background:#12544F!important;color:#8BBB92!important;border:1px solid #2A835F!important;
+}
+table,thead,tbody,tr,th,td{border-color:#2A835F!important}
+th{background:#092328!important;color:#8BBB92!important}
+td{background:#12544F!important;color:#8BBB92!important}
+tr:hover td{background:#2A835F!important;color:#8BBB92!important}
+svg,[class*="icon"],.icon{color:#8BBB92}
+svg{fill:currentColor}
+hr{border-color:#2A835F!important}
+.progress,.progress-bar-track,.meter-track{background:#092328!important;border-color:#2A835F!important}
+.progress-bar,.meter-fill,.progress-fill{background:#2A835F!important}
+.active,.is-active,.selected,[aria-current="page"],[aria-selected="true"]{border-color:#8BBB92!important}
+.nav a:hover,.sidebar a:hover,.menu a:hover,.nav button:hover,.sidebar button:hover{background:#2A835F!important;color:#8BBB92!important}
+.nav a.active,.sidebar a.active,.menu a.active,.nav button.active,.sidebar button.active{background:#2A835F!important;color:#8BBB92!important;border-color:#8BBB92!important}
+.alert,.notice,.info-box,.empty-state,.wallet-address-card,.admin-row,.admin-transaction,.account-card,.order-card,.transaction-card{
+  background:#092328!important;border-color:#2A835F!important;color:#8BBB92!important;
+}
+.success,.positive,.profit,.up,.text-success{color:#8BBB92!important}
+.danger,.negative,.loss,.down,.text-danger,.text-red{color:#2A835F!important}
+.modal-backdrop{background:rgba(9,35,40,.88)!important}
+.modal,.modal section,.modal-backdrop .modal{background:#12544F!important;border:1px solid #2A835F!important;color:#8BBB92!important}
+hr,.card-header,.card-footer,.section-heading,.admin-section-heading,.table-head{border-color:#2A835F!important}
+@media(max-width:760px){
+  body,html{background:#092328!important}
+  .app-shell,.app-mode,.terminal,.terminal-main,.portal-main,.admin-main,.client-main{background:#092328!important;color:#8BBB92!important}
+  .mobile-nav,.mobile-menu,.bottom-nav,.mobile-header{background:#092328!important;border-color:#2A835F!important}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
