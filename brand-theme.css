@@ -657,3 +657,60 @@ body.app-mode .terminal .terminal-footer button{
  #portal-modal #portal-body h2{font-size:24px!important;padding-right:28px!important}
  #portal-modal #portal-body .form-two{grid-template-columns:1fr!important;gap:0!important}
 }
+
+/* REQUESTED FINISH: pure white sidebar, black labels, red client page boxes */
+body.app-mode .terminal-sidebar,
+body.app-mode .terminal-sidebar *{
+ color:#171717!important;
+}
+body.app-mode .terminal-sidebar{
+ background:#fff!important;
+ border-right:1px solid #e3e3e3!important;
+}
+body.app-mode .terminal-sidebar .side-group>small{color:#555!important}
+body.app-mode .terminal-sidebar .side-group>button{
+ background:#fff!important;color:#171717!important;
+ border:1px solid #ededed!important;border-radius:6px!important;
+}
+body.app-mode .terminal-sidebar .side-group>button b,
+body.app-mode .terminal-sidebar .side-group>button em{color:#171717!important}
+body.app-mode .terminal-sidebar .side-group>button .side-icon{
+ background:#fff0f0!important;color:#e31e24!important;
+}
+body.app-mode .terminal-sidebar .side-group>button.active{
+ background:#e31e24!important;color:#fff!important;
+ border-color:#e31e24!important;box-shadow:inset 3px 0 #a9141a!important;
+}
+body.app-mode .terminal-sidebar .side-group>button.active b,
+body.app-mode .terminal-sidebar .side-group>button.active em,
+body.app-mode .terminal-sidebar .side-group>button.active .side-icon{
+ color:#fff!important;background:transparent!important;
+}
+body.app-mode #client-page .client-panel,
+body.app-mode #client-page .client-stat,
+body.app-mode #client-page .service-tile,
+body.app-mode #client-page .bbx-section,
+body.app-mode #client-page .bbx-card,
+body.app-mode #client-page .bbx-metrics>div,
+body.app-mode #client-page .bbx-steps li,
+body.app-mode #client-page .bb-watchlist,
+body.app-mode #client-page .bb-chart-panel,
+body.app-mode #client-page .bb-order-panel,
+body.app-mode #client-page .learning-grid article,
+body.app-mode #client-page .market-table-wrap{
+ border:1px solid #e31e24!important;
+ border-top:3px solid #e31e24!important;
+ background:#fff!important;color:#171717!important;
+ box-shadow:0 5px 18px rgba(227,30,36,.08)!important;
+}
+body.app-mode #client-page .terminal-page-head h1,
+body.app-mode #client-page .terminal-page-head h2,
+body.app-mode #client-page .bbx-heading h3,
+body.app-mode #client-page .bb-panel-title,
+body.app-mode #client-page .client-panel h3,
+body.app-mode #client-page .service-tile b{
+ color:#c71920!important;
+}
+body.app-mode #client-page .client-panel p,
+body.app-mode #client-page .client-stat small,
+body.app-mode #client-page .service-tile small{color:#444!important}
