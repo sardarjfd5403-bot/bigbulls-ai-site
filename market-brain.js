@@ -39,4 +39,3 @@ function attach(){
 function init(){attach();new MutationObserver(attach).observe(document.body,{childList:true,subtree:true});}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
-.bb-brain-news{margin:12px 0;padding:12px;border:1px solid rgba(139,187,146,.22);border-radius:9px;background:#0a1523}.bb-brain-news>b{font-size:11px;color:#8bbb92;letter-spacing:.05em}.bb-brain-news p{font-size:12px;color:#d8e1ec;margin:8px 0 0}.bb-brain-news .bb-impact{margin-right:5px}
