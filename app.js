@@ -376,6 +376,26 @@ async function loadPageData(){
    };
   }
   if(clientBox){
+   let forwardPanel=document.getElementById("bb-manual-forward-queue");
+   if(!forwardPanel){forwardPanel=document.createElement("section");forwardPanel.id="bb-manual-forward-queue";forwardPanel.className="admin-client-block";clientBox.parentElement.insertBefore(forwardPanel,clientBox);}
+   const loadForwardQueue=async()=>{
+    forwardPanel.innerHTML='<h3>Real Account · Manual Liquidity Forwarding</h3><p>Orders are simulated in BIGBULLS first. Forward externally only after review; record the external reference here.</p><button type="button" id="bb-forward-refresh">Refresh queue</button><div id="bb-forward-items">Loading queue…</div>';
+    const result=await sb.functions.invoke("trading-gateway",{body:{action:"manual_forward_queue"}});
+    const host=forwardPanel.querySelector("#bb-forward-items");
+    if(result.error||!result.data?.queue){host.textContent=result.data?.error||result.error?.message||"Queue unavailable.";return;}
+    const items=result.data.queue.filter(x=>x.status==="AWAITING_ADMIN");
+    host.innerHTML=items.length?items.map(x=>'<div class="admin-row"><span><b>'+esc(x.symbol)+' · '+esc(x.side)+' · '+esc(x.quantity)+'</b><small>'+esc(x.account_mode)+' · '+esc(x.reference_price)+' · '+new Date(x.created_at).toLocaleString()+' · '+esc(x.order_id)+'</small></span><button type="button" data-forward-id="'+esc(x.id)+'">Mark forwarded</button></div>').join(""):'<p>No orders awaiting forwarding.</p>';
+    host.querySelectorAll("[data-forward-id]").forEach(btn=>btn.onclick=async()=>{
+     const ref=window.prompt("External broker/liquidity reference (optional):","");if(ref===null)return;
+     btn.disabled=true;const done=await sb.functions.invoke("trading-gateway",{body:{action:"mark_order_forwarded",queue_id:btn.dataset.forwardId,external_reference:ref}});
+     if(done.error||!done.data?.success){btn.disabled=false;window.alert(done.data?.error||done.error?.message||"Could not update queue.");return;}
+     await loadForwardQueue();
+    });
+    forwardPanel.querySelector("#bb-forward-refresh").onclick=loadForwardQueue;
+   };
+   await loadForwardQueue();
+  }
+  if(clientBox){
    let executionPanel=document.getElementById("bb-execution-admin-status");
    if(!executionPanel){executionPanel=document.createElement("section");executionPanel.id="bb-execution-admin-status";executionPanel.className="admin-client-block";clientBox.parentElement.insertBefore(executionPanel,clientBox);}
    const {data:executionData,error:executionError}=await sb.functions.invoke("trading-gateway",{body:{action:"admin_status"}});
