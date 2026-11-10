@@ -26,7 +26,7 @@ async function paperApi(action,extra={}){
  const {data,error}=await client.functions.invoke("paper-execution",{body:{action,account_id:activeAccountId,account_mode:activeMode,paper_account_id:activePaperAccountId,...extra}});
  if(error)throw error;if(!data||data.error)throw new Error(data?.error||"Paper execution service unavailable.");return data;
 }
-function mapPaperTrade(t){return{id:t.id,symbol:t.symbol,side:t.side,quantity:Number(t.quantity),entry:Number(t.entry_price),exit:t.exit_price==null?null:Number(t.exit_price),sl:Number(t.stop_loss),tp:Number(t.take_profit||0),risk:Number(t.risk_amount||0),source:t.source||"MANUAL",pnl:Number(t.realized_pnl||0),openedAt:t.opened_at,closedAt:t.closed_at,reason:t.close_reason||"CLOSED",mark:Number(t.mark_price||t.entry_price),executionMode:t.execution_mode||"PAPER"};}
+function mapPaperTrade(t){return{id:t.id,symbol:t.symbol,side:t.side,quantity:Number(t.quantity),entry:Number(t.entry_price),exit:t.exit_price==null?null:Number(t.exit_price),sl:Number(t.stop_loss),tp:Number(t.take_profit||0),risk:Number(t.risk_amount||0),source:t.source||"MANUAL",pnl:Number(t.realized_pnl||0),openedAt:t.opened_at,closedAt:t.closed_at,reason:t.close_reason||"CLOSED",mark:Number(t.mark_price||t.entry_price),trailingDistance:Number(t.trailing_distance||0),executionMode:t.execution_mode||"PAPER"};}
 async function syncPaper(action="status"){
  const d=await paperApi(action),trades=d.trades||[];activePaperAccountId=d.ledger.id;
  state={...blank(),balance:Number(d.ledger.virtual_balance||0),dailyRealized:Number(d.ledger.daily_realized||0),day:d.ledger.current_day,emergencyStop:d.ledger.emergency_stop===true,autoEnabled:d.ledger.auto_enabled===true,positions:trades.filter(t=>t.status==="OPEN").map(mapPaperTrade),history:trades.filter(t=>t.status==="CLOSED").map(mapPaperTrade),pendingOrders:[]};
@@ -131,8 +131,8 @@ async function manual(requestedSide){
  try{
   if(!activeAccountId&&activeMode!=="demo")throw new Error("No approved trading account is selected.");
   const type=$("bb-paper-order-type").value;if(type!=="MARKET")throw new Error("Server pending-order processing is not enabled yet. Use Market Execution for this test build.");
-  const symbol=$("bb-paper-symbol").value,sl=Number($("bb-paper-sl").value),tp=Number($("bb-paper-tp").value||0)||null,qty=Number($("bb-paper-quantity").value);
-  const result=await paperApi("open",{symbol,side:requestedSide,quantity:qty,stop_loss:sl,take_profit:tp,source:"MANUAL"});
+  const symbol=$("bb-paper-symbol").value,sl=Number($("bb-paper-sl").value),tp=Number($("bb-paper-tp").value||0)||null,qty=Number($("bb-paper-quantity").value),trailing=Number($("bb-paper-trailing").value||0);
+  const result=await paperApi("open",{symbol,side:requestedSide,quantity:qty,stop_loss:sl,take_profit:tp,trailing_distance:trailing,source:"MANUAL"});
   await syncPaper("status");render();notify(requestedSide+" paper order filled at "+fmt(result.trade?.entry_price||result.quote)+" · "+(activeMode==="real"?"Real account test ledger":"Demo account"),false);
  }catch(e){notify(e.message,true);}
 }
