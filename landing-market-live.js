@@ -7,7 +7,7 @@
     { symbol: "EURUSD", provider: "EUR/USD", market: "Forex", decimals: 5 },
     { symbol: "GBPUSD", provider: "GBP/USD", market: "Forex", decimals: 5 },
     { symbol: "XAUUSD", provider: "XAU/USD", market: "Gold", decimals: 2 },
-    { symbol: "BTCUSD", provider: "BINANCE", market: "Crypto", decimals: 2 },
+    { symbol: "BTCUSDT", provider: "BINANCE", market: "Crypto", decimals: 2 },
     { symbol: "NAS100", provider: "NDX", market: "Index", decimals: 2 }
   ];
   const tableBody = () => document.querySelector("#live-market-table tbody");
@@ -72,7 +72,7 @@
     if (!response.ok) throw new Error("Binance quote unavailable");
     const q = await response.json();
     return {
-      symbol: "BTCUSD", market: "Crypto", price: Number(q.lastPrice),
+      symbol: "BTCUSDT", market: "Crypto", price: Number(q.lastPrice),
       change: Number(q.priceChangePercent), decimals: 2, source: "BINANCE SPOT",
       live: true, marketOpen: true
     };
@@ -86,7 +86,7 @@
       const twelve = twelveResult.status === "fulfilled" ? twelveResult.value : [];
       const bySymbol = new Map(twelve.map(q => [String(q.symbol || "").toUpperCase().replace("/", ""), q]));
       const rows = WATCH.map(item => {
-        if (item.symbol === "BTCUSD") {
+        if (item.symbol === "BTCUSDT") {
           return btcResult.status === "fulfilled" ? btcResult.value : {
             ...item, price: NaN, change: NaN, source: "BINANCE", live: false
           };
