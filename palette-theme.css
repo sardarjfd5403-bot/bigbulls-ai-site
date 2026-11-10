@@ -1,37 +1,30 @@
-/* BIGBULLS FX MARKET — STRICT FOUR-COLOR THEME
-   Only approved colors: #092328 #12544F #2A835F #8BBB92
-   This is a color-only override; layout, spacing and component structure stay unchanged.
+/* BIGBULLS FX MARKET — EXNESS-INSPIRED BRAND COLOR SYSTEM
+   Official Exness media-kit palette adapted for BIGBULLS UI:
+   Yellow #FFDE02, Midnight #070E20, Steel #47667B,
+   Pale Green #E1EBE5, Grey #6D6E73, Off-white #F5F5F5, White #FFFFFF.
+   Color-only skin; existing layout and component structure are preserved.
 */
 :root{
-  color-scheme:dark;
-  --bb-palette-deep:#092328;
-  --bb-palette-teal:#12544F;
-  --bb-palette-green:#2A835F;
-  --bb-palette-sage:#8BBB92;
-  --bg:#092328;--panel:#12544F;--line:#2A835F;--text:#8BBB92;--muted:#8BBB92;
-  --blue:#2A835F;--gold:#8BBB92;--bb-red:#2A835F;--bb-red-dark:#12544F;--bb-red-soft:#12544F;
-  --bb-blue:#2A835F;--bb-blue-deep:#12544F;--bb-blue-soft:#12544F;--bb-teal:#2A835F;
-  --bb-teal-soft:#12544F;--bb-violet:#2A835F;--bb-ink:#092328;--bb-charcoal:#12544F;
-  --bb-muted:#8BBB92;--bb-line:#2A835F;--bb-bg:#092328;--bb-panel:#12544F;
-  --bb-surface:#12544F;--bb-primary:#2A835F;--bb-accent:#8BBB92;
-  --bb-success:#8BBB92;--bb-warning:#8BBB92;--bb-danger:#2A835F;
-  --primary:#2A835F;--secondary:#12544F;--accent:#8BBB92;
+ color-scheme:dark;
+ --ex-yellow:#FFDE02;--ex-yellow-soft:#FFFCE6;--ex-midnight:#070E20;
+ --ex-steel:#47667B;--ex-pale-green:#E1EBE5;--ex-grey:#6D6E73;
+ --ex-offwhite:#F5F5F5;--ex-white:#FFFFFF;
+ --bg:#070E20;--panel:#101B2D;--line:#47667B;--text:#FFFFFF;--muted:#E1EBE5;
+ --primary:#FFDE02;--accent:#FFDE02;--success:#E1EBE5;--warning:#FFDE02;--danger:#FFDE02;
+ --bb-bg:#070E20;--bb-panel:#101B2D;--bb-surface:#142238;--bb-primary:#FFDE02;
+ --bb-accent:#FFDE02;--bb-muted:#E1EBE5;--bb-line:#47667B;--bb-success:#E1EBE5;
 }
-html,body{background:#092328!important;color:#8BBB92!important;color-scheme:dark!important}
+html,body{background:#070E20!important;color:#FFFFFF!important;color-scheme:dark!important}
 body{font-family:Roboto,Arial,sans-serif!important}
-body *{
-  color:#8BBB92!important;
-  border-color:#2A835F!important;
-  outline-color:#8BBB92!important;
-  background-image:none!important;
-  text-shadow:none!important;
-}
-body :before,body :after{border-color:#2A835F!important;box-shadow:none!important}
-a,a:visited{color:#8BBB92!important}
-a:hover,a:focus{color:#8BBB92!important;background-color:#2A835F!important}
+body *{border-color:#47667B!important;outline-color:#FFDE02!important;text-shadow:none!important}
+body :before,body :after{border-color:#47667B!important}
+body p,body li,body small,body label,body td,body th,body span{color:inherit}
+h1,h2,h3,h4,h5,h6,strong,b,.title,.heading{color:#FFFFFF}
+a,a:visited{color:#FFDE02!important}
+a:hover,a:focus{color:#070E20!important;background-color:#FFDE02!important}
 header,nav,.navbar,.topbar,.site-header,.app-header,.terminal-header,.portal-header,.admin-header,
 footer,.site-footer,.mobile-nav,.mobile-menu,.bottom-nav,.mobile-header{
-  background-color:#092328!important;color:#8BBB92!important;border-color:#2A835F!important
+ background-color:#070E20!important;color:#FFFFFF!important;border-color:#47667B!important
 }
 main,.app-shell,.app-mode,.terminal,.terminal-main,.portal-main,.admin-main,.client-main,
 section,.section,.card,.panel,.modal,.modal-content,.modal-dialog,.dropdown-menu,.popover,.tooltip,
@@ -40,61 +33,61 @@ section,.section,.card,.panel,.modal,.modal-content,.modal-dialog,.dropdown-menu
 .bbx-section,.bb-paper-terminal,.course-card,.feature-card,.market-card,.auth-card,.login-card,
 .signup-card,.support-panel,.notification-panel,.card-body,.card-header,.card-footer,
 .dashboard,.content-panel,.settings-panel,.account-card,.order-card,.transaction-card{
-  background-color:#12544F!important;color:#8BBB92!important;border-color:#2A835F!important
+ background-color:#101B2D!important;color:#FFFFFF!important;border-color:#47667B!important
 }
-body{background-color:#092328!important}
+body{background-color:#070E20!important}
 input,select,textarea,option,.form-control,.form-select,.search-input,.chat-input,
 input[type="date"],input[type="number"],input[type="email"],input[type="password"],input[type="text"]{
-  background-color:#092328!important;color:#8BBB92!important;border:1px solid #2A835F!important;
-  caret-color:#8BBB92!important;accent-color:#2A835F!important;box-shadow:none!important
+ background-color:#070E20!important;color:#FFFFFF!important;border:1px solid #47667B!important;
+ caret-color:#FFDE02!important;accent-color:#FFDE02!important;box-shadow:none!important
 }
-input::placeholder,textarea::placeholder{color:#8BBB92!important;opacity:.75}
+input::placeholder,textarea::placeholder{color:#E1EBE5!important;opacity:.78}
 button,.btn,.button,.portal-primary,.admin-button,.primary-btn,.cta,.action-btn,
 .tab-button,.nav-link-button,.bb-paper-button,[role="button"],input[type="submit"],input[type="button"]{
-  background-color:#2A835F!important;color:#092328!important;border:1px solid #8BBB92!important;
-  box-shadow:none!important
+ background-color:#FFDE02!important;color:#070E20!important;border:1px solid #FFDE02!important;
+ box-shadow:none!important;font-weight:700
 }
 button:hover,.btn:hover,.button:hover,.portal-primary:hover,.admin-button:hover,.primary-btn:hover,
 .cta:hover,.action-btn:hover,[role="button"]:hover,input[type="submit"]:hover{
-  background-color:#8BBB92!important;color:#092328!important;border-color:#8BBB92!important
+ background-color:#FFFCE6!important;color:#070E20!important;border-color:#FFFCE6!important
 }
 .btn.secondary,.btn-outline,.portal-secondary,.secondary-btn,.outline-button,.ghost-button,
 .tab-button[aria-selected="false"]{
-  background-color:#12544F!important;color:#8BBB92!important;border-color:#2A835F!important
+ background-color:transparent!important;color:#FFFFFF!important;border-color:#47667B!important
 }
-button:disabled,.btn:disabled{background-color:#12544F!important;color:#8BBB92!important;opacity:.65}
+button:disabled,.btn:disabled{background-color:#47667B!important;color:#F5F5F5!important;opacity:.65}
 .badge,.pill,.tag,.status-badge,.chip,.eyebrow,.free-tag,.lock-label,.market-feed-badge,
 .label,.nav-badge,.count-badge{
-  background-color:#12544F!important;color:#8BBB92!important;border:1px solid #2A835F!important
+ background-color:#142238!important;color:#E1EBE5!important;border:1px solid #47667B!important
 }
-table,thead,tbody,tr,th,td{border-color:#2A835F!important}
-table{background-color:#12544F!important}
-th{background-color:#092328!important;color:#8BBB92!important}
-td{background-color:#12544F!important;color:#8BBB92!important}
-tr:hover td{background-color:#2A835F!important;color:#8BBB92!important}
-svg,[class*="icon"],.icon{color:#8BBB92!important}
-svg{fill:currentColor!important;stroke:currentColor}
-hr,.divider,.line,.border{border-color:#2A835F!important}
-.progress,.progress-bar-track,.meter-track{background-color:#092328!important;border-color:#2A835F!important}
-.progress-bar,.meter-fill,.progress-fill{background-color:#2A835F!important}
-.active,.is-active,.selected,[aria-current="page"],[aria-selected="true"]{border-color:#8BBB92!important}
+table,thead,tbody,tr,th,td{border-color:#47667B!important}
+table{background-color:#101B2D!important;color:#FFFFFF!important}
+th{background-color:#070E20!important;color:#E1EBE5!important}
+td{background-color:#101B2D!important;color:#FFFFFF!important}
+tr:hover td{background-color:#142238!important}
+svg,[class*="icon"],.icon{color:#FFDE02!important}
+svg{fill:currentColor!important}
+hr,.divider,.line,.border{border-color:#47667B!important}
+.progress,.progress-bar-track,.meter-track{background-color:#070E20!important;border-color:#47667B!important}
+.progress-bar,.meter-fill,.progress-fill{background-color:#FFDE02!important}
+.active,.is-active,.selected,[aria-current="page"],[aria-selected="true"]{border-color:#FFDE02!important}
 .nav a:hover,.sidebar a:hover,.menu a:hover,.nav button:hover,.sidebar button:hover,
 .nav a.active,.sidebar a.active,.menu a.active,.nav button.active,.sidebar button.active{
-  background-color:#2A835F!important;color:#092328!important;border-color:#8BBB92!important
+ background-color:#FFDE02!important;color:#070E20!important;border-color:#FFDE02!important
 }
 .alert,.notice,.info-box,.empty-state,.wallet-address-card,.admin-row,.admin-transaction,
-.account-row,.order-row,.transaction-row{background-color:#092328!important;border-color:#2A835F!important;color:#8BBB92!important}
-.success,.positive,.profit,.up,.text-success{color:#8BBB92!important}
-.danger,.negative,.loss,.down,.text-danger,.text-red{color:#2A835F!important}
-.modal-backdrop{background-color:rgba(9,35,40,.88)!important}
-.modal,.modal section,.modal-backdrop .modal{background-color:#12544F!important;border:1px solid #2A835F!important;color:#8BBB92!important}
-.card-header,.card-footer,.section-heading,.admin-section-heading,.table-head{border-color:#2A835F!important}
-::selection{background-color:#2A835F!important;color:#092328!important}
-*{scrollbar-color:#2A835F #092328!important}
+.account-row,.order-row,.transaction-row{background-color:#142238!important;border-color:#47667B!important;color:#FFFFFF!important}
+.success,.positive,.profit,.up,.text-success{color:#E1EBE5!important}
+.danger,.negative,.loss,.down,.text-danger,.text-red{color:#FFDE02!important}
+.modal-backdrop{background-color:rgba(7,14,32,.9)!important}
+.modal,.modal section,.modal-backdrop .modal{background-color:#101B2D!important;border:1px solid #47667B!important;color:#FFFFFF!important}
+.card-header,.card-footer,.section-heading,.admin-section-heading,.table-head{border-color:#47667B!important}
+::selection{background-color:#FFDE02!important;color:#070E20!important}
+*{scrollbar-color:#47667B #070E20!important}
 @media(max-width:760px){
  html,body,.app-shell,.app-mode,.terminal,.terminal-main,.portal-main,.admin-main,.client-main{
-   background-color:#092328!important;color:#8BBB92!important
+  background-color:#070E20!important;color:#FFFFFF!important
  }
- .mobile-nav,.mobile-menu,.bottom-nav,.mobile-header{background-color:#092328!important;border-color:#2A835F!important}
+ .mobile-nav,.mobile-menu,.bottom-nav,.mobile-header{background-color:#070E20!important;border-color:#47667B!important}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
