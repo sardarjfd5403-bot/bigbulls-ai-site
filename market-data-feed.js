@@ -2,7 +2,7 @@
 "use strict";
 const URL="https://ztiiyulusburxjkpcfxu.supabase.co";
 const KEY="sb_publishable_5hDwqvbcUHeSJdXFHf9ugw_VPYGN4J_";
-let api=null,observer=null,loaded=false;
+let api=null,observer=null,timer=null;
 const names={"EUR/USD":"EURUSD","GBP/USD":"GBPUSD","USD/JPY":"USDJPY","XAU/USD":"XAUUSD","NDX":"NAS100"};
 function render(grid,rows,updated){
  grid.innerHTML=rows.map(q=>{
@@ -28,8 +28,8 @@ function attach(){
  const grid=document.getElementById("bb-fx-market-grid");if(!grid)return;
  if(!api&&window.supabase?.createClient)api=window.supabase.createClient(URL,KEY);
  if(!api)return;
- if(!grid.dataset.feedAttached){grid.dataset.feedAttached="true";if(!loaded){loaded=true;refresh();}}
+ if(!grid.dataset.feedAttached){grid.dataset.feedAttached="true";refresh();}
 }
-function init(){attach();observer=new MutationObserver(attach);observer.observe(document.body,{childList:true,subtree:true});}
+function init(){attach();observer=new MutationObserver(attach);observer.observe(document.body,{childList:true,subtree:true});if(timer)clearInterval(timer);timer=setInterval(()=>{if(document.getElementById("bb-fx-market-grid"))refresh();},60000);}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
