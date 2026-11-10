@@ -6,7 +6,7 @@ const CRYPTO=["BTCUSDT","ETHUSDT","BNBUSDT","SOLUSDT","XRPUSDT","DOGEUSDT"];
 const FX=["EUR/USD","GBP/USD","XAU/USD"];
 const ALL=[...CRYPTO,...FX],START=10000;
 let RISK=.01,DAILY=.03,AGGREGATE=.03,MAX_OPEN=5;
-let quotes={},timer=null,brainTimer=null,observer=null,client=null,user=null,busy=false,saveTimer=null,scanBusy=false,historyRange="1d",historySymbol="ALL",historyFrom="",historyTo="",demoAccounts=[],realAccounts=[],activeAccountId=null,activeMode="demo",activeAccount=null,executionState={demo_enabled:true,live_effective:false,global_halt:false},legacyMode=true;
+let quotes={},timer=null,brainTimer=null,observer=null,client=null,user=null,busy=false,saveTimer=null,scanBusy=false,historyRange="1d",historySymbol="ALL",historyFrom="",historyTo="",demoAccounts=[],realAccounts=[],activeAccountId=null,activeMode="demo",activeAccount=null,executionState={demo_enabled:false,live_effective:false,global_halt:true},legacyMode=true;
 const $=id=>document.getElementById(id),money=n=>"$"+Number(n||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}),fmt=n=>Number(n).toLocaleString("en-US",{maximumFractionDigits:6}),esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function blank(){return{balance:START,positions:[],pendingOrders:[],history:[],day:new Date().toISOString().slice(0,10),dailyRealized:0,autoEnabled:false,emergencyStop:false,lastSignalAt:null};}
 let state=blank();
@@ -48,7 +48,7 @@ async function loadCloud(){
   if(data?.account_state)state={...blank(),...data.account_state};else{try{const old=JSON.parse(localStorage.getItem("bb-paper-account-v1:"+user.id)||"null");if(old)state={...blank(),...old};}catch(_){}save();}
  }catch(e){
   const n=$("bb-paper-cloud");if(n)n.textContent="ACCOUNT GATEWAY ERROR · "+e.message;
-  state=blank();activeAccount=null;activeAccountId=null;console.warn("Trading account gateway:",e.message);
+  state=blank();activeAccount=null;activeAccountId=null;executionState={demo_enabled:false,live_effective:false,global_halt:true};console.warn("Trading account gateway:",e.message);
  }
 }
 async function switchAccountMode(mode){
