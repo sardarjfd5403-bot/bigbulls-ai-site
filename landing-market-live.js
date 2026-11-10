@@ -35,7 +35,7 @@
         : "—";
       const changeClass = !Number.isFinite(change) ? "neutral" : change >= 0 ? "positive" : "negative";
       const priceText = Number.isFinite(Number(row.price)) ? fmt(row.price, row.decimals) : "Unavailable";
-      const marketState = row.marketOpen === false ? "Market closed" : row.live ? "Live" : "Connecting";
+      const marketState = row.marketOpen === false ? "Market closed" : row.live ? "Connected" : "Connecting";
       return '<tr data-market="' + row.market + '">' +
         '<td><b class="market-symbol">' + row.symbol + '</b><small class="market-source">' + row.source + '</small></td>' +
         '<td><span class="market-type">' + row.market + '</span></td>' +
@@ -102,7 +102,7 @@
       });
       paint(rows);
       const good = rows.filter(r => r.live).length;
-      setStatus(good === rows.length ? "LIVE MARKET FEED" : good ? "PARTIAL MARKET FEED" : "FEED CONNECTION REQUIRED", good ? "live" : "error");
+      setStatus(good === rows.length ? "MARKET FEED CONNECTED" : good ? "PARTIAL FEED CONNECTION" : "FEED CONNECTION REQUIRED", good ? "live" : "error");
       if (timeEl()) timeEl().textContent = "Updated " + new Date().toLocaleTimeString();
       if (twelveResult.status === "rejected" && btcResult.status === "rejected") {
         setStatus("Market feed unavailable · retrying", "error");
