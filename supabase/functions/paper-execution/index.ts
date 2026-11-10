@@ -113,10 +113,9 @@ Deno.serve(async (req: Request) => {
       return json({ error: "Paper execution is currently disabled by the administrator.", code: "EXECUTION_HALTED" }, 423);
     }
 
-    const { error: ledgerError } = await admin.from("bb_paper_execution_accounts")
-      .upsert({ account_id: accountId, user_id: user.id, account_mode: mode },
-        { onConflict: "user_id,account_mode,account_id", ignoreDuplicates: true });
-    if (ledgerError) throw ledgerError;
+    const { error: ledgerInsertError } = await admin.from("bb_paper_execution_accounts")
+      .insert({ account_id: accountId, user_id: user.id, account_mode: mode });
+    if (ledgerInsertError && ledgerInsertError.code !== "23505") throw ledgerInsertError;
     let ledgerQuery = admin.from("bb_paper_execution_accounts").select("*").eq("user_id", user.id).eq("account_mode", mode);
     ledgerQuery = accountId ? ledgerQuery.eq("account_id", accountId) : ledgerQuery.is("account_id", null);
     const { data: ledger, error: readLedgerError } = await ledgerQuery.single();
