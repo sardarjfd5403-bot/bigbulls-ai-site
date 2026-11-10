@@ -73,18 +73,37 @@ Deno.serve(async (req: Request) => {
     const admin = createClient(url, service, { auth: { persistSession: false, autoRefreshToken: false } });
     const body = await req.json().catch(() => ({}));
     const action = String(body.action || "status");
-    const accountId = String(body.account_id || "");
-    if (!accountId) return json({ error: "account_id is required." }, 400);
-
-    const { data: account, error: accountError } = await auth.from("trading_accounts")
-      .select("id,user_id,account_mode,status,balance,currency,archived_at,deleted_at")
-      .eq("id", accountId).eq("user_id", user.id).maybeSingle();
-    if (accountError) throw accountError;
-    if (!account || account.status !== "approved" || account.archived_at || account.deleted_at) {
-      return json({ error: "Approved account not found or account access is restricted." }, 403);
-    }
-    const mode = account.account_mode;
+    const accountId = body.account_id ? String(body.account_id) : null;
+    let account: any = null;
+    const mode = String(body.account_mode || (accountId ? "" : "demo"));
     if (!["demo","real"].includes(mode)) return json({ error: "Unsupported account mode." }, 400);
+    if (accountId) {
+      const { data, error } = await auth.from("trading_accounts")
+        .select("id,user_id,account_mode,status,currency,archived_at,deleted_at")
+        .eq("id", accountId).eq("user_id", user.id).maybeSingle();
+      if (error) throw error;
+      account = data;
+      if (!account || account.account_mode !== mode || account.status !== "approved" || account.archived_at || account.deleted_at) {
+        return json({ error: "Approved account not found or account access is restricted." }, 403);
+      }
+    } else if (mode !== "demo") {
+      return json({ error: "A linked approved Real account is required." }, 400);
+    }
+    if (mode === "real") {
+      const { data: isAdmin, error: adminCheckError } = await auth.rpc("is_bigbulls_admin");
+      if (adminCheckError) throw adminCheckError;
+      if (isAdmin !== true) {
+        const [{ data: aal, error: aalError }, { data: kyc, error: kycError }] = await Promise.all([
+          auth.auth.mfa.getAuthenticatorAssuranceLevel(),
+          auth.from("kyc_submissions").select("status").eq("user_id", user.id).eq("status", "approved").maybeSingle()
+        ]);
+        if (aalError) throw aalError;
+        if (kycError) throw kycError;
+        if (aal?.currentLevel !== "aal2" || !kyc) {
+          return json({ error: "Real-account test execution requires approved KYC and an AAL2-authenticated session.", code: "KYC_AAL2_REQUIRED" }, 403);
+        }
+      }
+    }
 
     const { data: settings, error: settingsError } = await admin.from("bb_execution_settings")
       .select("paper_execution_enabled,demo_execution_enabled,global_halt,max_risk_per_trade_pct,max_daily_loss_pct,max_aggregate_risk_pct,max_open_positions")
@@ -94,17 +113,18 @@ Deno.serve(async (req: Request) => {
       return json({ error: "Paper execution is currently disabled by the administrator.", code: "EXECUTION_HALTED" }, 423);
     }
 
-    const { data: ledgerRow, error: ledgerError } = await admin.from("bb_paper_execution_accounts")
-      .upsert({ account_id: accountId, user_id: user.id, account_mode: mode }, { onConflict: "account_id", ignoreDuplicates: true })
-      .select("account_id").maybeSingle();
+    const { error: ledgerError } = await admin.from("bb_paper_execution_accounts")
+      .upsert({ account_id: accountId, user_id: user.id, account_mode: mode },
+        { onConflict: "user_id,account_mode,account_id", ignoreDuplicates: true });
     if (ledgerError) throw ledgerError;
-    const { data: ledger, error: readLedgerError } = await admin.from("bb_paper_execution_accounts")
-      .select("*").eq("account_id", accountId).eq("user_id", user.id).single();
+    let ledgerQuery = admin.from("bb_paper_execution_accounts").select("*").eq("user_id", user.id).eq("account_mode", mode);
+    ledgerQuery = accountId ? ledgerQuery.eq("account_id", accountId) : ledgerQuery.is("account_id", null);
+    const { data: ledger, error: readLedgerError } = await ledgerQuery.single();
     if (readLedgerError) throw readLedgerError;
 
     if (action === "status" || action === "refresh") {
       const { data: trades, error: tradesError } = await admin.from("bb_paper_execution_trades")
-        .select("*").eq("account_id", accountId).eq("user_id", user.id).order("opened_at", { ascending: false }).limit(500);
+        .select("*").eq("paper_account_id", ledger.id).eq("user_id", user.id).order("opened_at", { ascending: false }).limit(500);
       if (tradesError) throw tradesError;
       const open = (trades || []).filter((t: any) => t.status === "OPEN");
       const prices: Record<string, number> = {};
@@ -121,7 +141,7 @@ Deno.serve(async (req: Request) => {
         if (hitSl || hitTp) {
           const c = costs(t.symbol, side === "BUY" ? "SELL" : "BUY", Number(t.quantity), mid);
           const { error } = await admin.rpc("bb_paper_close_position", {
-            p: { user_id: user.id, account_id: accountId, trade_id: t.id, exit_price: c.fill,
+            p: { user_id: user.id, paper_account_id: ledger.id, trade_id: t.id, exit_price: c.fill,
               spread_cost: c.spread_cost, commission: c.commission, slippage: c.slippage,
               reason: hitSl ? "STOP LOSS" : "TAKE PROFIT" }
           });
@@ -130,16 +150,16 @@ Deno.serve(async (req: Request) => {
           const floating = (side === "BUY" ? mid - Number(t.entry_price) : Number(t.entry_price) - mid) *
             Number(t.quantity) * contract(normalize(t.symbol));
           const { error } = await admin.from("bb_paper_execution_trades").update({ mark_price: mid, unrealized_pnl: floating })
-            .eq("id", t.id).eq("account_id", accountId).eq("status", "OPEN");
+            .eq("id", t.id).eq("paper_account_id", ledger.id).eq("status", "OPEN");
           if (error) throw error;
         }
       }
       const [{ data: freshLedger, error: freshLedgerError }, { data: freshTrades, error: freshTradesError }] = await Promise.all([
-        admin.from("bb_paper_execution_accounts").select("*").eq("account_id", accountId).single(),
-        admin.from("bb_paper_execution_trades").select("*").eq("account_id", accountId).eq("user_id", user.id).order("opened_at", { ascending: false }).limit(500)
+        admin.from("bb_paper_execution_accounts").select("*").eq("id", ledger.id).single(),
+        admin.from("bb_paper_execution_trades").select("*").eq("paper_account_id", ledger.id).eq("user_id", user.id).order("opened_at", { ascending: false }).limit(500)
       ]);
       if (freshLedgerError || freshTradesError) throw freshLedgerError || freshTradesError;
-      return json({ account: { id: account.id, account_mode: mode, currency: account.currency },
+      return json({ account: { id: accountId, account_mode: mode, currency: account?.currency || "USD" },
         execution: { mode: "PAPER", label: "Paper execution · testing only", broker_routing: false, paper_enabled: true },
         ledger: freshLedger, trades: freshTrades || [], prices, generated_at: new Date().toISOString() });
     }
@@ -162,7 +182,7 @@ Deno.serve(async (req: Request) => {
       if ((side === "BUY" && sl >= c.fill) || (side === "SELL" && sl <= c.fill)) return json({ error: "Stop loss must be beyond the current market price." }, 400);
       if (tp != null && ((side === "BUY" && tp <= c.fill) || (side === "SELL" && tp >= c.fill))) return json({ error: "Take profit must be beyond the current market price." }, 400);
       const { data, error } = await admin.rpc("bb_paper_open_position", {
-        p: { user_id: user.id, account_id: accountId, account_mode: mode, symbol: normalized,
+        p: { user_id: user.id, account_id: accountId, paper_account_id: ledger.id, account_mode: mode, symbol: normalized,
           side, quantity, fill_price: c.fill, stop_loss: sl, take_profit: tp,
           spread_cost: c.spread_cost, commission: c.commission, slippage: c.slippage,
           source: source.slice(0,80) }
@@ -174,13 +194,13 @@ Deno.serve(async (req: Request) => {
     if (action === "close") {
       const tradeId = String(body.trade_id || "");
       const { data: trade, error: tradeError } = await auth.from("bb_paper_execution_trades")
-        .select("id,symbol,side,quantity").eq("id", tradeId).eq("account_id", accountId).eq("status","OPEN").maybeSingle();
+        .select("id,symbol,side,quantity").eq("id", tradeId).eq("paper_account_id", ledger.id).eq("status","OPEN").maybeSingle();
       if (tradeError) throw tradeError;
       if (!trade) return json({ error: "Open paper position not found." }, 404);
       const mid = await quoteFor(trade.symbol, url, anon);
       const c = costs(trade.symbol, trade.side === "BUY" ? "SELL" : "BUY", Number(trade.quantity), mid);
       const { data, error } = await admin.rpc("bb_paper_close_position", {
-        p: { user_id: user.id, account_id: accountId, trade_id: trade.id, exit_price: c.fill,
+        p: { user_id: user.id, paper_account_id: ledger.id, trade_id: trade.id, exit_price: c.fill,
           spread_cost: c.spread_cost, commission: c.commission, slippage: c.slippage,
           reason: String(body.reason || "MANUAL CLOSE").slice(0,100) }
       });
@@ -192,21 +212,21 @@ Deno.serve(async (req: Request) => {
       const enabled = body.enabled === true;
       const { error } = await admin.from("bb_paper_execution_accounts")
         .update({ auto_enabled: enabled, emergency_stop: enabled ? false : ledger.emergency_stop, updated_at: new Date().toISOString() })
-        .eq("account_id", accountId).eq("user_id", user.id);
+        .eq("id", ledger.id).eq("user_id", user.id);
       if (error) throw error;
       return json({ success: true, auto_enabled: enabled, execution_mode: "PAPER" });
     }
     if (action === "stop") {
       const { error } = await admin.from("bb_paper_execution_accounts")
         .update({ auto_enabled: false, emergency_stop: true, updated_at: new Date().toISOString() })
-        .eq("account_id", accountId).eq("user_id", user.id);
+        .eq("id", ledger.id).eq("user_id", user.id);
       if (error) throw error;
       return json({ success: true, emergency_stop: true, auto_enabled: false });
     }
     if (action === "modify") {
       const tradeId = String(body.trade_id || "");
       const { data: trade, error: tradeError } = await auth.from("bb_paper_execution_trades")
-        .select("id,side,mark_price,entry_price").eq("id", tradeId).eq("account_id", accountId).eq("status","OPEN").maybeSingle();
+        .select("id,side,mark_price,entry_price").eq("id", tradeId).eq("paper_account_id", ledger.id).eq("status","OPEN").maybeSingle();
       if (tradeError) throw tradeError;
       if (!trade) return json({ error: "Open paper position not found." }, 404);
       const sl = num(body.stop_loss);
@@ -215,7 +235,7 @@ Deno.serve(async (req: Request) => {
       if ((trade.side === "BUY" && sl >= current) || (trade.side === "SELL" && sl <= current)) return json({ error: "Invalid stop loss." }, 400);
       if (tp != null && ((trade.side === "BUY" && tp <= current) || (trade.side === "SELL" && tp >= current))) return json({ error: "Invalid take profit." }, 400);
       const { error } = await admin.from("bb_paper_execution_trades").update({ stop_loss: sl, take_profit: tp })
-        .eq("id", tradeId).eq("account_id", accountId).eq("status","OPEN");
+        .eq("id", tradeId).eq("paper_account_id", ledger.id).eq("status","OPEN");
       if (error) throw error;
       return json({ success: true });
     }
