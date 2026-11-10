@@ -141,7 +141,8 @@ Deno.serve(async (req: Request) => {
         impressions: sum.impressions + Number(row.impressions || 0),
         weightedPosition: sum.weightedPosition + Number(row.average_position || 0) * Number(row.impressions || 0)
       }), { clicks: 0, impressions: 0, weightedPosition: 0 });
-\n      const eventRows = events.data || [];
+
+      const eventRows = events.data || [];
       const uniqueSessions = new Set(eventRows.filter((e: any) => e.event_name === "page_view" && e.session_id).map((e: any) => e.session_id)).size;
       const pageViews = new Map<string, number>();
       for (const e of eventRows) if (e.event_name === "page_view") pageViews.set(e.path, (pageViews.get(e.path) || 0) + 1);
@@ -152,7 +153,8 @@ Deno.serve(async (req: Request) => {
         clients: { total_registrations: registrations, registrations_24h: today[0] },
         finance: { deposit_requests: deposits, withdrawal_requests: withdrawals, deposit_requests_24h: today[1], withdrawal_requests_24h: today[2], source: "wallet_transactions" },
         trading: { pending_orders: pendingOrders, filled_orders: executedOrders, pending_orders_24h: today[3], filled_orders_24h: today[4], active_positions: activeTraders, source: "bb_trade_orders / bb_trade_positions" },
-        integrations: { gemini_model_configured: !!Deno.env.get("GEMINI_API_KEY"), openai_model_configured: !!Deno.env.get("OPENAI_API_KEY"), google_service_account_configured: !!Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON"), search_console_connected: settings.data?.google_search_console_connected === true },\n        search_console: { connected: settings.data?.google_search_console_connected === true, last_sync_date: latestGscDate, clicks_28d: gscTotals.clicks, impressions_28d: gscTotals.impressions, ctr_28d: gscTotals.impressions ? gscTotals.clicks / gscTotals.impressions : 0, average_position_28d: gscTotals.impressions ? gscTotals.weightedPosition / gscTotals.impressions : null, top_queries: gscQueries.sort((a: any,b: any) => b.clicks-a.clicks).slice(0,10), top_pages: gscPages.sort((a: any,b: any) => b.clicks-a.clicks).slice(0,10) },
+        integrations: { gemini_model_configured: !!Deno.env.get("GEMINI_API_KEY"), openai_model_configured: !!Deno.env.get("OPENAI_API_KEY"), google_service_account_configured: !!Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON"), search_console_connected: settings.data?.google_search_console_connected === true },
+        search_console: { connected: settings.data?.google_search_console_connected === true, last_sync_date: latestGscDate, clicks_28d: gscTotals.clicks, impressions_28d: gscTotals.impressions, ctr_28d: gscTotals.impressions ? gscTotals.clicks / gscTotals.impressions : 0, average_position_28d: gscTotals.impressions ? gscTotals.weightedPosition / gscTotals.impressions : null, top_queries: gscQueries.sort((a: any,b: any) => b.clicks-a.clicks).slice(0,10), top_pages: gscPages.sort((a: any,b: any) => b.clicks-a.clicks).slice(0,10) },
         seo: { settings: settings.data, keywords: keywords.data || [], pages: pages.data || [], cards: cards.data || [] },
         note: "Counts are read from recorded Supabase rows. Traffic tracking begins after the tracker is deployed; search impressions and keyword rankings require Google Search Console connection."
       };
