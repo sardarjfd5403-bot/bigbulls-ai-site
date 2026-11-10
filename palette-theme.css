@@ -97,3 +97,67 @@ hr,.divider,.line,.border{border-color:#47667B!important}
 .bb-brain-news{margin:12px 0;padding:12px;border:1px solid rgba(139,187,146,.22);border-radius:9px;background:#0a1523}.bb-brain-news>b{font-size:11px;color:#8bbb92;letter-spacing:.05em}.bb-brain-news p{font-size:12px;color:#d8e1ec;margin:8px 0 0}.bb-brain-news .bb-impact{margin-right:5px}
 
 .bb-brain-card{margin:14px 0;padding:16px;border:1px solid rgba(71,102,123,.65);border-radius:12px;background:#101b2d;color:#fff}.bb-brain-card-head{display:flex;justify-content:space-between;align-items:center;gap:12px}.bb-brain-card-head b{font-size:18px}.bb-brain-card-head small{display:block;color:#b9c6d7;margin-top:4px}.bb-direction{display:inline-flex;padding:7px 12px;border-radius:20px;font-size:11px;font-weight:900;background:#25364b;color:#fff}.bb-direction.buy{background:#1b493c;color:#a8e5c7}.bb-direction.sell{background:#522630;color:#ffb7bf}.bb-direction.wait{background:#4b3b1c;color:#ffe09b}.bb-brain-score{display:flex;align-items:center;gap:12px;margin:12px 0}.bb-brain-score b{font-size:24px;color:#ffde02}.bb-brain-score span,.bb-brain-card p{font-size:12px;color:#d5dfeb}.bb-brain-card details{margin-top:12px;border-top:1px solid #34475b;padding-top:10px}.bb-brain-card summary{cursor:pointer;color:#8bbb92;font-weight:800}.bb-brain-card li{font-size:12px;color:#d5dfeb;margin:5px 0}.bb-backtest-card{padding:14px;border:1px solid rgba(71,102,123,.6);border-radius:10px;background:#101b2d;margin:10px 0}.bb-backtest-card>b{color:#ffde02}.bb-backtest-card small{display:block;color:#aebdce;margin-top:5px;font-size:11px}.bb-backtest-metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:12px 0}.bb-backtest-metrics span{padding:9px;border-radius:7px;background:#142238;color:#aebdce;font-size:10px}.bb-backtest-metrics b{display:block;color:#fff;font-size:14px;margin-top:4px}@media(max-width:700px){.bb-backtest-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.bb-brain-card{padding:12px}}
+
+
+/* BIGBULLS GLOBAL CONTRAST FIX — 2026-11-11
+   One consistent midnight theme across public pages, personal area and admin.
+   Keep surfaces distinct; never pair pale text with white cards. */
+:root{
+ --bb-bg:#070E20;--bb-panel:#101B2D;--bb-surface:#142238;
+ --bb-card:#111E32;--bb-line:#354B68;--bb-text:#F5F7FC;
+ --bb-muted:#B7C4D7;--bb-primary:#FFDE02;
+ color-scheme:dark;
+}
+html,body{background:#070E20!important;color:#F5F7FC!important;color-scheme:dark!important}
+body,body.app-mode,.terminal,.terminal-main,.terminal-layout,.terminal-content,
+.client-layout,.client-content,.admin-layout,.admin-content,.admin-main,
+main{color:#F5F7FC!important}
+body :is(.card,.panel,.client-panel,.client-stat,.service-tile,.bbx-section,.bbx-card,
+.dashboard-card,.stat-card,.metric-card,.widget,.form-card,.settings-card,.table-wrap,
+.chart-card,.account-card,.order-card,.transaction-card,.seo-card,.seo-panel,
+.seo-metric,.seo-stat,.admin-card,.admin-panel,.admin-section,.admin-widget,
+[class*="seo-"],[class*="metric-card"],[class*="stat-card"]){
+ background:#111E32!important;color:#F5F7FC!important;
+ border:1px solid #354B68!important;box-shadow:0 8px 22px #0005!important;
+}
+body :is(.card,.panel,.client-panel,.client-stat,.service-tile,.bbx-section,.bbx-card,
+.dashboard-card,.stat-card,.metric-card,.widget,.form-card,.settings-card,.seo-card,
+.seo-panel,.seo-metric,.seo-stat,.admin-card,.admin-panel,.admin-section,.admin-widget,
+[class*="seo-"]) :is(h1,h2,h3,h4,h5,h6,strong,b,label,th){color:#F5F7FC!important}
+body :is(.card,.panel,.client-panel,.client-stat,.service-tile,.bbx-section,.bbx-card,
+.dashboard-card,.stat-card,.metric-card,.widget,.form-card,.settings-card,.seo-card,
+.seo-panel,.seo-metric,.seo-stat,.admin-card,.admin-panel,.admin-section,.admin-widget,
+[class*="seo-"]) :is(p,small,span,td,li,.muted,.description,.hint){color:#B7C4D7!important}
+body :is(input,select,textarea,.form-control,.form-select){
+ background:#081321!important;color:#F5F7FC!important;
+ border:1px solid #526985!important;box-shadow:none!important;
+}
+body :is(input,select,textarea,.form-control,.form-select)::placeholder{color:#AAB9CE!important;opacity:1!important}
+body :is(input,select,textarea,.form-control,.form-select):focus{
+ border-color:#FFDE02!important;box-shadow:0 0 0 3px #FFDE0228!important;outline:0!important;
+}
+body :is(table,thead,tbody,tr,th,td){background-color:transparent!important;color:#F5F7FC!important;border-color:#354B68!important}
+body th{background:#0B1526!important;color:#FFDE02!important}
+body :is(.notice,.alert,.info-box,.empty-state,.status-box){
+ background:#172941!important;color:#EAF0F8!important;border:1px solid #526985!important;
+}
+body :is(.btn,.button,.portal-primary,.admin-button,.primary-btn,input[type=submit]){
+ background:#FFDE02!important;color:#07101F!important;border:1px solid #FFDE02!important;
+}
+body :is(.btn.secondary,.btn-outline,.portal-secondary,.secondary-btn,.outline-button,.ghost-button){
+ background:#142238!important;color:#F5F7FC!important;border:1px solid #526985!important;
+}
+body :is(.side-group>button.active,.client-nav button.active,[aria-current=page]){
+ background:#1C3150!important;color:#FFFFFF!important;border-color:#FFDE02!important;
+}
+body :is(.modal,.modal-content,.modal-dialog,.dropdown-menu,.popover,.tooltip,
+.header-popover,.profile-menu){
+ background:#101B2D!important;color:#F5F7FC!important;border:1px solid #526985!important;
+}
+body :is(.modal,.modal-content,.modal-dialog,.dropdown-menu,.popover) :is(h1,h2,h3,h4,label,strong,b){color:#F5F7FC!important}
+body :is(.modal,.modal-content,.modal-dialog,.dropdown-menu,.popover) :is(p,small,span){color:#B7C4D7!important}
+::selection{background:#FFDE02!important;color:#07101F!important}
+@media(max-width:700px){
+ body :is(.card,.panel,.client-panel,.client-stat,.service-tile,.bbx-section,.bbx-card,
+ .seo-card,.seo-panel,.admin-card,.admin-panel,[class*="seo-"]){border-radius:12px!important}
+}
