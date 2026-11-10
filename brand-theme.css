@@ -657,3 +657,73 @@ body.app-mode .terminal .terminal-footer button{
  #portal-modal #portal-body h2{font-size:24px!important;padding-right:28px!important}
  #portal-modal #portal-body .form-two{grid-template-columns:1fr!important;gap:0!important}
 }
+
+
+/* SITE-WIDE SURFACE & TEXT CONTRAST REFINEMENT */
+:root{
+ --bb-bg:#f0f1f3;
+ --bb-card:#f7f7f8;
+ --bb-line:#d4d6da;
+}
+/* Reduce harsh pure-white areas while keeping the page calm and readable */
+body{background:#f0f1f3!important;color:#202124!important}
+.site-header,.ticker{background:#f4f5f6!important;border-color:#d8dade!important}
+.section{background:transparent!important}
+.ai-showcase{background:#e9ebee!important;border-color:#d5d8dc!important}
+.ai-rotate-label{background:#f5f6f7!important;border-color:#d2d5d9!important;color:#333!important}
+/* Cards and content boxes should read as separate surfaces */
+.cards article,.account-cards article,.payment-cards article,.feature-grid article,
+.ai-feature-card,.pricecard,.price-card,.bbx-card,.lockcard{
+ background:#f7f7f8!important;
+ color:#202124!important;
+ border:1px solid #cfd2d7!important;
+ box-shadow:0 5px 18px rgba(20,24,30,.09)!important;
+}
+.cards article:hover,.account-cards article:hover,.payment-cards article:hover,.feature-grid article:hover{
+ border-color:#e31e24!important;
+ box-shadow:0 10px 24px rgba(20,24,30,.13)!important;
+}
+.cards h3,.account-cards h3,.payment-cards h3,.feature-grid h3,
+.ai-feature-card h3,.pricecard h3{color:#17191c!important}
+.cards p,.account-cards p,.payment-cards p,.feature-grid p,
+.ai-feature-card p,.section .lead{color:#454a51!important}
+.cards small,.account-cards article>span,.payment-cards article small,
+.feature-grid small,.ai-feature-card small{color:#c71920!important}
+/* Personal Area: soften the canvas, but keep panels clearly outlined */
+body.app-mode,body.app-mode .terminal,body.app-mode .terminal-main{
+ background:#eef0f2!important;color:#202124!important;
+}
+body.app-mode .terminal-head,body.app-mode .terminal-nav,
+body.app-mode .terminal-footer,body.app-mode .terminal-sidebar{
+ background:#f4f5f6!important;border-color:#d4d7db!important;
+}
+body.app-mode .terminal .client-stat,body.app-mode .terminal .client-panel,
+body.app-mode .terminal .service-tile,body.app-mode .terminal .bbx-card,
+body.app-mode .terminal .bb-account-card,body.app-mode .terminal .bb-account-tools{
+ background:#f7f7f8!important;
+ border:1px solid #cdd1d6!important;
+ box-shadow:0 5px 18px rgba(20,24,30,.08)!important;
+}
+body.app-mode .terminal .client-stat b,body.app-mode .terminal .service-tile b,
+body.app-mode .terminal .client-panel h3,body.app-mode .terminal-page-head h2,
+body.app-mode .terminal h1,body.app-mode .terminal h2,
+body.app-mode .terminal h3,body.app-mode .terminal h4{color:#191b1f!important}
+body.app-mode .terminal .client-stat small,body.app-mode .terminal .client-stat span,
+body.app-mode .terminal .service-tile small,body.app-mode .terminal .client-panel p,
+body.app-mode .terminal label{color:#454a51!important}
+/* Modal surfaces use a very light grey; form fields remain white for clarity */
+#portal-modal .modal,#portal-modal #portal-body{
+ background:#f4f5f6!important;color:#202124!important;
+}
+#portal-modal #portal-body .wallet-address-card,
+#portal-modal #portal-body .wallet-box,
+#portal-modal #portal-body .empty-state,
+#portal-modal #portal-body .trust span{
+ background:#eceef0!important;border-color:#d2d5d9!important;
+}
+#portal-modal #portal-body input:not([type=checkbox]):not([type=radio]):not([type=hidden]),
+#portal-modal #portal-body select,#portal-modal #portal-body textarea{
+ background:#fff!important;color:#202124!important;border-color:#c8ccd1!important;
+}
+#portal-modal #portal-body p,#portal-modal #portal-body .fine,
+#portal-modal #portal-body .muted{color:#4b5057!important}
