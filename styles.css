@@ -889,3 +889,12 @@ body.app-mode .terminal .deposit-qr{background:#fff!important}
 .course-disclaimer{border:1px solid #e2b4bc!important;background:#fff2f3!important;color:#7a2839!important}
 @media(max-width:900px){.course-module-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.course-module-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.course-module-card{min-height:210px;padding:11px}.module-3d-emblem{width:62px;height:62px}.course-module-heading h2{font-size:19px}.course-module-heading p{max-width:240px;font-size:10px}.course-hero-premium{padding:17px}.course-hero-premium .course-hero-mark{flex-basis:72px;width:72px;height:72px;font-size:16px}.course-hero-premium:after{right:20px}}
+
+/* BIGBULLS private client dossier */
+#bb-client-dossier-panel .bb-dossier-search{display:flex;gap:12px;flex-wrap:wrap;margin:16px 0}
+#bb-client-dossier-panel .bb-dossier-search input{flex:1;min-width:220px;background:rgba(9,35,40,.55);border:1px solid rgba(139,187,146,.35);border-radius:10px;padding:13px 15px;color:inherit}
+#bb-client-dossier-panel .bb-dossier-profile{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;padding:16px;border:1px solid rgba(139,187,146,.25);border-radius:14px;margin:18px 0;background:rgba(18,84,79,.14)}
+#bb-client-dossier-panel h4{margin:22px 0 8px;color:var(--text-primary,#d9e8df)}
+#bb-client-dossier-panel .admin-row{gap:12px;flex-wrap:wrap}
+#bb-client-dossier-panel .fine{opacity:.72}
+@media(max-width:640px){#bb-client-dossier-panel .bb-dossier-search{display:grid}#bb-client-dossier-panel .bb-dossier-profile{display:block}}

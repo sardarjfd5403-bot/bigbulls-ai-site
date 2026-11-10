@@ -1,0 +1,28 @@
+name: Validate BIGBULLS trading terminal
+
+on:
+  pull_request:
+    paths:
+      - "app.js"
+      - "paper-terminal.js"
+      - ".github/workflows/validate-trading-terminal.yml"
+  push:
+    branches:
+      - main
+      - "feature/**"
+    paths:
+      - "app.js"
+      - "paper-terminal.js"
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check JavaScript syntax
+        run: |
+          node --check app.js
+          node --check paper-terminal.js
