@@ -350,6 +350,18 @@ async function loadPageData(){
   const {data:commissionRows,error:commissionRowsError}=await sb.from("partner_commission_ledger").select("*").order("created_at",{ascending:false}).limit(100);
   const clientBox=document.getElementById("admin-client-accounts");
   if(clientBox){
+   let executionPanel=document.getElementById("bb-execution-admin-status");
+   if(!executionPanel){executionPanel=document.createElement("section");executionPanel.id="bb-execution-admin-status";executionPanel.className="admin-client-block";clientBox.parentElement.insertBefore(executionPanel,clientBox);}
+   const {data:executionData,error:executionError}=await sb.functions.invoke("trading-gateway",{body:{action:"admin_status"}});
+   if(executionError||!executionData?.execution){executionPanel.innerHTML='<b>Execution controls unavailable</b><p>'+esc(executionError?.message||"Trading gateway is unavailable.")+'</p>';}
+   else{
+    const ex=executionData.execution,checks=Object.entries(ex.readiness||{}).map(([k,v])=>'<div class="bb-exec-check"><span>'+esc(k.replaceAll("_"," "))+'</span><b class="'+(v?"ready":"blocked")+'">'+(v?"VERIFIED":"NOT VERIFIED")+'</b></div>').join("");
+    executionPanel.innerHTML='<div class="bb-exec-admin-head"><div><small>BIGBULLS SERVER CONTROL</small><h3>Execution & Risk Control</h3></div><span class="bb-exec-status '+(ex.global_halt?"blocked":"ready")+'">'+(ex.global_halt?"GLOBAL HALT ACTIVE":"SERVER ONLINE")+'</span></div><div class="bb-exec-admin-grid"><div><small>Demo engine</small><b>'+(ex.demo_enabled?"AVAILABLE":"HALTED")+'</b></div><div><small>Live execution</small><b class="blocked">'+(ex.live_effective?"ENABLED":"LOCKED")+'</b></div><div><small>Trading accounts</small><b>'+Number(executionData.totals?.accounts||0)+'</b></div><div><small>Open positions</small><b>'+Number(executionData.totals?.open_positions||0)+'</b></div><div><small>Recorded orders</small><b>'+Number(executionData.totals?.orders||0)+'</b></div></div><h4>Live execution readiness</h4><div class="bb-exec-checks">'+checks+'<div class="bb-exec-check"><span>Execution adapter configured</span><b class="'+(ex.adapter_ready?"ready":"blocked")+'">'+(ex.adapter_ready?"READY":"NOT CONFIGURED")+'</b></div></div><p class="bb-exec-warning">Live execution stays locked until every verification and a real execution adapter are configured. A BIGBULLS server alone does not create external liquidity, settlement or regulatory authorization.</p><button type="button" id="bb-exec-halt-toggle" class="bb-exec-halt">'+(ex.global_halt?"Resume Demo engine":"Emergency halt all execution")+'</button>';
+    const haltButton=executionPanel.querySelector("#bb-exec-halt-toggle");
+    if(haltButton)haltButton.onclick=async()=>{const enabled=!ex.global_halt;const reason=enabled?(window.prompt("Reason for emergency halt","Administrator emergency stop")||"Administrator emergency stop"):"Administrator resumed Demo execution";if(enabled&&!reason)return;haltButton.disabled=true;const result=await sb.functions.invoke("trading-gateway",{body:{action:"set_global_halt",enabled,reason}});if(result.error){haltButton.disabled=false;alert(result.error.message);return;}await loadPageData();};
+   }
+  }
+  if(clientBox){
    if(profiles.error||allAccounts.error)clientBox.textContent="Client list unavailable: "+(profiles.error||allAccounts.error).message;
    else{
     const accs=allAccounts.data||[];
