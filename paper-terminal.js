@@ -39,8 +39,8 @@ async function switchDemoAccount(accountId){
  if(!accountId||accountId===activeAccountId)return;activeAccountId=accountId;localStorage.setItem("bb-mt5-active:"+user.id,accountId);state=blank();await loadCloud();render();notify("Demo account switched.",false);
 }
 function closePosition(id,price,reason){
- const i=state.positions.findIndex(p=>p.id===id);if(i<0)return;const p=state.positions.splice(i,1)[0],result=(p.side==="BUY"?price-p.entry:p.entry-price)*p.quantity;
- state.balance+=result;state.dailyRealized+=result;state.history.unshift({...p,exit:price,pnl:result*contractSize(p.symbol),reason,closedAt:new Date().toISOString()});state.history=state.history.slice(0,2000);
+ const i=state.positions.findIndex(p=>p.id===id);if(i<0)return;const p=state.positions.splice(i,1)[0],result=(p.side==="BUY"?price-p.entry:p.entry-price)*p.quantity*contractSize(p.symbol);
+ state.balance+=result;state.dailyRealized+=result;state.history.unshift({...p,exit:price,pnl:result,reason,closedAt:new Date().toISOString()});state.history=state.history.slice(0,2000);
 }
 function markPositions(){
  const today=new Date().toISOString().slice(0,10);if(state.day!==today){state.day=today;state.dailyRealized=0;}
