@@ -63,7 +63,14 @@ Deno.serve(async (req: Request) => {
           global_halt: control.global_halt === true,
           live_effective: control.live_execution_enabled === true && missing.length === 0 && adapterReady && control.global_halt !== true,
           live_status: control.live_execution_enabled === true && missing.length === 0 && adapterReady && control.global_halt !== true ? "ENABLED" : "LOCKED",
-          halt_reason: control.halt_reason || null
+          halt_reason: control.halt_reason || null,
+          risk_limits: {
+            max_risk_per_trade_pct: Number(control.max_risk_per_trade_pct || 1),
+            max_daily_loss_pct: Number(control.max_daily_loss_pct || 3),
+            max_aggregate_risk_pct: Number(control.max_aggregate_risk_pct || 3),
+            max_open_positions: Number(control.max_open_positions || 5),
+            max_leverage: Number(control.max_leverage || 100)
+          }
         },
         generated_at: new Date().toISOString()
       });
@@ -103,6 +110,32 @@ Deno.serve(async (req: Request) => {
         },
         totals: { accounts: accounts.count || 0, orders: orders.count || 0, open_positions: positions.count || 0 },
       });
+    }
+
+    if (action === "set_global_risk") {
+      const risk = {
+        max_risk_per_trade_pct: Number(body.max_risk_per_trade_pct),
+        max_daily_loss_pct: Number(body.max_daily_loss_pct),
+        max_aggregate_risk_pct: Number(body.max_aggregate_risk_pct),
+        max_open_positions: Number(body.max_open_positions),
+        max_leverage: Number(body.max_leverage)
+      };
+      if (!(risk.max_risk_per_trade_pct > 0 && risk.max_risk_per_trade_pct <= 5 &&
+            risk.max_daily_loss_pct > 0 && risk.max_daily_loss_pct <= 10 &&
+            risk.max_aggregate_risk_pct >= risk.max_risk_per_trade_pct && risk.max_aggregate_risk_pct <= 15 &&
+            Number.isInteger(risk.max_open_positions) && risk.max_open_positions >= 1 && risk.max_open_positions <= 100 &&
+            Number.isInteger(risk.max_leverage) && risk.max_leverage >= 1 && risk.max_leverage <= 2000)) {
+        return json({ error: "Risk settings are outside allowed server limits." }, 400);
+      }
+      const { error } = await admin.from("bb_execution_settings").update({
+        ...risk, updated_at: new Date().toISOString(), updated_by: user.id
+      }).eq("singleton", true);
+      if (error) throw error;
+      await admin.from("bb_trade_audit_events").insert({
+        actor_user_id: user.id, event_type: "GLOBAL_RISK_LIMITS_UPDATED",
+        entity_type: "execution_settings", details: risk
+      });
+      return json({ success: true, risk_limits: risk });
     }
 
     if (action === "set_global_halt") {
