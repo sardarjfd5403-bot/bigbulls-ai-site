@@ -125,7 +125,19 @@ function render(){
  $("bb-paper-symbol").value=ALL.includes($("bb-paper-symbol").value)?$("bb-paper-symbol").value:CRYPTO[0];$("bb-paper-price").textContent=Number.isFinite(quote($("bb-paper-symbol").value))?fmt(quote($("bb-paper-symbol").value)):"Quote unavailable";
 }
 function notify(s,bad){const n=$("bb-paper-message");if(n){n.textContent=s;n.className=bad?"bb-paper-alert danger":"bb-paper-alert";}}
-function manual(requestedSide){if(activeMode!=="demo"){notify("Real-money execution is disabled on this server. Switch to Demo to place simulated orders.",true);return;}if(!executionState.demo_enabled){notify("Demo execution is halted by the server administrator.",true);return;}try{const symbol=$("bb-paper-symbol").value,sl=Number($("bb-paper-sl").value),tp=Number($("bb-paper-tp").value||0),qty=Number($("bb-paper-quantity").value),type=$("bb-paper-order-type").value,trail=Number($("bb-paper-trailing").value||0),side=type==="MARKET"?requestedSide:(type.startsWith("SELL")?"SELL":"BUY");if(type==="MARKET"){const p=place(side,symbol,sl,tp,qty,"MANUAL",undefined,trail);render();notify(side+" demo order filled at "+fmt(p.entry),false);}else{const o=placePending(side,symbol,type,Number($("bb-paper-entry").value),Number($("bb-paper-stop-trigger").value),Number($("bb-paper-limit-price").value),sl,tp,qty,trail);render();notify(type+" pending order placed · "+fmt(o.entryPrice),false);}}catch(e){notify(e.message,true);}}
+async function manual(requestedSide){
+ if(activeMode!=="demo"){notify("Real-money execution is disabled on this server. Switch to Demo to place simulated orders.",true);return;}
+ try{
+  const {data:gate,error:gateError}=await client.functions.invoke("trading-gateway",{body:{action:"accounts"}});
+  if(gateError||!gate?.execution)throw gateError||new Error(gate?.error||"Server execution status unavailable.");
+  executionState=gate.execution;
+  const limits=executionState.risk_limits||{};RISK=Number(limits.max_risk_per_trade_pct??1)/100;DAILY=Number(limits.max_daily_loss_pct??3)/100;AGGREGATE=Number(limits.max_aggregate_risk_pct??3)/100;MAX_OPEN=Number(limits.max_open_positions??5);
+  if(!executionState.demo_enabled)throw Error("Demo execution is halted by the server administrator.");
+  const symbol=$("bb-paper-symbol").value,sl=Number($("bb-paper-sl").value),tp=Number($("bb-paper-tp").value||0),qty=Number($("bb-paper-quantity").value),type=$("bb-paper-order-type").value,trail=Number($("bb-paper-trailing").value||0),side=type==="MARKET"?requestedSide:(type.startsWith("SELL")?"SELL":"BUY");
+  if(type==="MARKET"){const p=place(side,symbol,sl,tp,qty,"MANUAL",undefined,trail);render();notify(side+" demo order filled at "+fmt(p.entry),false);}
+  else{const o=placePending(side,symbol,type,Number($("bb-paper-entry").value),Number($("bb-paper-stop-trigger").value),Number($("bb-paper-limit-price").value),sl,tp,qty,trail);render();notify(type+" pending order placed · "+fmt(o.entryPrice),false);}
+ }catch(e){notify(e.message,true);}
+}
 async function runBrain(){
  if(activeMode!=="demo"||!executionState.demo_enabled||scanBusy||!state.autoEnabled||state.emergencyStop||!client)return;scanBusy=true;
  try{
