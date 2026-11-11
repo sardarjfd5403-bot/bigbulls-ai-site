@@ -361,3 +361,70 @@ body :is(input,select,textarea,.form-control,.form-select)::placeholder{color:#4
 body :is(.market-tabs button.active,.tab.active,.tab-button.active,[role=tab][aria-selected=true]){
   color:#fff!important;background:#174ea6!important;border:2px solid #0b2e65!important;
 }
+
+
+/* FINAL TEXT-FIRST ACCESSIBILITY TUNING — subdued surfaces, stronger typography */
+body :is(button,.btn,.button,.navbtn,.action-btn,.portal-primary,.admin-button,.primary-btn,.cta,.tab,.tab-button,[role=tab],input[type=button],input[type=submit]){
+  color:#111827!important;
+  background-color:rgba(100,116,139,.10)!important;
+  border:1px solid rgba(100,116,139,.24)!important;
+  box-shadow:none!important;
+  text-shadow:none!important;
+  font-weight:750!important;
+}
+body :is(button,.btn,.button,.navbtn,.action-btn,.portal-primary,.admin-button,.primary-btn,.cta,.tab,.tab-button,[role=tab],input[type=button],input[type=submit]) :is(svg,i,.icon){
+  color:currentColor!important;stroke:currentColor!important;
+}
+body :is(button,.btn,.button,.navbtn,.action-btn,.portal-primary,.admin-button,.primary-btn,.cta,.tab,.tab-button,[role=tab],input[type=button],input[type=submit]):hover{
+  color:#0b132b!important;background-color:rgba(71,85,105,.16)!important;border-color:rgba(71,85,105,.34)!important;
+}
+body :is(.gold,.btn.gold,.btn-gold,.nav-open,.open-account,.register-btn,.btn-register,.btn-cta,.claim-bonus,.btn-account-open){
+  color:#111827!important;background:rgba(234,179,8,.13)!important;border:1px solid rgba(161,98,7,.25)!important;
+}
+body :is(.gold,.btn.gold,.btn-gold,.nav-open,.open-account,.register-btn,.btn-register,.btn-cta,.claim-bonus,.btn-account-open):hover{
+  color:#111827!important;background:rgba(234,179,8,.20)!important;border-color:rgba(161,98,7,.34)!important;
+}
+body :is(.success,.btn-success,.approve,.verify,[data-action=approve],[data-action=verify],.bb-buy,.buy-button,[data-side=buy]){
+  color:#14532d!important;background:rgba(22,101,52,.10)!important;border:1px solid rgba(22,101,52,.22)!important;
+}
+body :is(.danger,.btn-danger,.reject,.delete,[data-action=reject],[data-action=delete],.bb-sell,.sell-button,[data-side=sell]){
+  color:#7f1d1d!important;background:rgba(153,27,27,.09)!important;border:1px solid rgba(153,27,27,.22)!important;
+}
+body :is(.site-header,.app-header,.terminal-header,.portal-header,.admin-header,.topbar,.navbar,.terminal-head,.app-topbar,.mobile-header){
+  border-color:rgba(148,163,184,.20)!important;
+}
+body :is(.terminal-head-right,.header-actions,.header-balance,.equity,.equity-value,.balance-chip,.account-equity,.topbar-equity){
+  background:rgba(148,163,184,.10)!important;border:1px solid rgba(148,163,184,.22)!important;box-shadow:none!important;
+}
+body :is(.terminal-head-right,.header-actions) button{
+  color:#fff!important;background:rgba(255,255,255,.09)!important;border:1px solid rgba(255,255,255,.20)!important;
+}
+body.app-mode :is(.terminal-sidebar,.sidebar,.app-sidebar,.dashboard-sidebar,.side-nav) :is(a,button){
+  color:#111827!important;background:rgba(100,116,139,.07)!important;border:1px solid rgba(100,116,139,.16)!important;
+}
+body.app-mode :is(.terminal-sidebar,.sidebar,.app-sidebar,.dashboard-sidebar,.side-nav) :is(a,button) :is(svg,i,.side-icon){
+  color:#174ea6!important;stroke:#174ea6!important;
+}
+body.app-mode :is(.terminal-sidebar,.sidebar,.app-sidebar,.dashboard-sidebar,.side-nav) :is(a,button).active,
+body.app-mode :is(.terminal-sidebar,.sidebar,.app-sidebar,.dashboard-sidebar,.side-nav) :is(a,button)[aria-current]{
+  background:rgba(23,78,166,.12)!important;color:#123d82!important;border:1px solid rgba(23,78,166,.22)!important;
+}
+body.app-mode :is(.terminal-sidebar,.sidebar,.app-sidebar,.dashboard-sidebar,.side-nav) :is(a,button).active :is(svg,i,.side-icon),
+body.app-mode :is(.terminal-sidebar,.sidebar,.app-sidebar,.dashboard-sidebar,.side-nav) :is(a,button)[aria-current] :is(svg,i,.side-icon){
+  color:#123d82!important;stroke:#123d82!important;
+}
+body :is(.dropdown-menu,.popover,.menu-panel,.profile-menu,.header-popover) a:hover{
+  background:rgba(100,116,139,.10)!important;color:#0b2e65!important;
+}
+body :is(.card,.panel,.client-panel,.client-stat,.service-tile,.bbx-section,.bbx-card,.dashboard-card,.stat-card,.metric-card,.widget,.form-card,.settings-card,.table-wrap,.chart-card,.account-card,.order-card,.transaction-card,.seo-card,.seo-panel,.seo-metric,.seo-stat,.admin-card,.admin-panel,.admin-section,.admin-widget,.content-panel,.settings-panel,.feature-card,.course-card,.market-card,.auth-card,.login-card,.signup-card,.support-panel,.notification-panel,.modal,.modal-content,.modal-dialog,.dropdown-menu,.popover,.menu-panel,.profile-menu,.header-popover,.cards article,.learning-course,.insight-card,.trading-card,.feature-grid article,.pricecard,.price-card,.lockcard,.ai-feature-card,.payment-cards article){
+  border-color:rgba(100,116,139,.18)!important;box-shadow:none!important;
+}
+body :is(.dark-card,.card-dark,.terminal-card,.dashboard-dark-card,.bbx-section,.bbx-card) :is(.muted,.hint,.description,.note,.fine){
+  color:#e2e8f0!important;opacity:1!important;
+}
+body :is(.dropdown-menu,.popover,.menu-panel,.profile-menu,.header-popover) :is(a,button,span,b,small,svg,i){
+  color:#111827!important;stroke:currentColor!important;
+}
+body :is(.dark-card,.card-dark,.terminal-card,.dashboard-dark-card) :is(h1,h2,h3,h4,h5,h6,p,li,small,label,span,b,strong){
+  color:#fff!important;opacity:1!important;
+}
