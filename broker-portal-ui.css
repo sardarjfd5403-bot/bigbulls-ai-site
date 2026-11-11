@@ -1,6 +1,7 @@
 /* Reference-accurate BigbullsGlobal Market client dashboard */
 :root{color-scheme:light;--brand-blue:#0066ff;--brand-blue-hover:#0052cc;--brand-ink:#181c25;--brand-muted:#64748b;--brand-bg:#f8f9fa;--brand-border:#e5e7eb;--brand-purple:#f5f0ff;--brand-purple-border:#e4d5ff}
 body.app-mode{background:var(--brand-bg)!important;color:var(--brand-ink)!important;font-family:Inter,Arial,sans-serif!important}
+body.app-mode>.site-header{display:none!important}
 body.app-mode #app-shell{display:block!important;min-height:100vh!important;background:var(--brand-bg)!important}
 body.app-mode .terminal{display:flex!important;flex-direction:column!important;min-height:100vh!important;background:var(--brand-bg)!important;color:var(--brand-ink)!important}
 body.app-mode .terminal-head{height:56px!important;min-height:56px!important;flex:0 0 56px!important;display:flex!important;align-items:center!important;justify-content:space-between!important;padding:0 18px!important;background:#fff!important;border:0!important;border-bottom:1px solid var(--brand-border)!important;box-shadow:0 1px 3px rgba(15,23,42,.04)!important;position:sticky!important;top:0!important;z-index:200!important}
