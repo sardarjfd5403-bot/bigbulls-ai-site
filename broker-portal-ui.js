@@ -47,7 +47,7 @@
    accordion('products','Bigbulls Products','grid',item('echo-system','Echo System')+item('learning','Education')+item('services','Trading products')+item('partner','IB Partner'))+
    accordion('help','Help','help',item('support','Help centre')+item('support','FAQs')+item('support','Contact support'))+
    '<section class="bb-nav-group"><button type="button" class="bb-nav-main" data-bb-utility="language"><span class="bb-nav-ico">'+svg('globe')+'</span><span>English</span>'+svg('down')+'</button><div class="bb-utility-pop" data-bb-utility-pop="language" hidden><button type="button" data-bb-language="English">English · selected</button><button type="button" data-bb-language="Urdu">اردو</button></div></section>'+
-   '<section class="bb-nav-group"><button type="button" class="bb-nav-main" data-bb-utility="theme"><span class="bb-nav-ico">'+svg('sun')+'</span><span>Display theme</span>'+svg('down')+'</button><div class="bb-utility-pop" data-bb-utility-pop="theme" hidden><button type="button" data-bb-theme="light">Light · selected</button></div></section></nav></div><div class="bb-drawer-bottom"><button type="button" class="bb-referral" data-page="partner"><span class="bb-referral-icon">'+svg('user')+'</span><span><b>Refer traders, earn commission</b><small>Invite your network to BIGBULLS</small></span></button></div>';
+   '<section class="bb-nav-group"><button type="button" class="bb-nav-main" data-bb-utility="theme"><span class="bb-nav-ico">'+svg('sun')+'</span><span>Display theme</span>'+svg('down')+'</button><div class="bb-utility-pop" data-bb-utility-pop="theme" hidden><button type="button" data-bb-theme="light">Light</button><button type="button" data-bb-theme="dark">Dark</button></div></section></nav></div><div class="bb-drawer-bottom"><button type="button" class="bb-referral" data-page="partner"><span class="bb-referral-icon">'+svg('user')+'</span><span><b>Refer traders, earn commission</b><small>Invite your network to BIGBULLS</small></span></button></div>';
   if(panel){panel.classList.add('bb-notification-panel');head.append(panel);}
   let backdrop=$('.bb-drawer-backdrop');if(!backdrop){backdrop=document.createElement('div');backdrop.className='bb-drawer-backdrop';document.body.append(backdrop);}
   const title=$('.terminal-page-head h2',main);if(title&&(title.textContent.trim()==='Trading Accounts'||title.textContent.trim()==='Dashboard'))title.textContent='My accounts';
@@ -103,7 +103,7 @@
    if(t.hasAttribute('data-bb-card-details')){const meta=$('.bb-account-meta',t.closest('.bb-account-card'));if(meta)meta.hidden=!meta.hidden;}
    if(t.hasAttribute('data-bb-utility')){const id=t.dataset.bbUtility,p=$('[data-bb-utility-pop="'+id+'"]');if(p)p.hidden=!p.hidden;}
    if(t.hasAttribute('data-bb-language')){const label=$('[data-bb-utility="language"] span:nth-child(2)');if(label)label.textContent=t.dataset.bbLanguage;const p=t.closest('.bb-utility-pop');if(p)p.hidden=true;}
-   if(t.hasAttribute('data-bb-theme')){document.documentElement.dataset.theme='light';const p=t.closest('.bb-utility-pop');if(p)p.hidden=true;}
+   if(t.hasAttribute('data-bb-theme')){const mode=t.dataset.bbTheme==='dark'?'dark':'light';document.documentElement.dataset.theme=mode;$('[data-bb-theme]').forEach(x=>{x.textContent=(x.dataset.bbTheme===mode?'✓ ':'')+(x.dataset.bbTheme==='dark'?'Dark':'Light');});const p=t.closest('.bb-utility-pop');if(p)p.hidden=true;}
   }
   if(e.target.closest('.bb-drawer-backdrop'))closeDrawer();
   if(!e.target.closest('.bb-account-card'))$$('.bb-more-menu').forEach(x=>x.hidden=true);
