@@ -1,4 +1,3 @@
--- Mandatory client KYC + AAL2 access gate, KYC review notifications and admin reason codes.
 begin;
 
 alter table public.kyc_submissions
@@ -28,13 +27,10 @@ create policy "clients mark own notifications read"
   using (user_id = (select auth.uid()))
   with check (user_id = (select auth.uid()));
 revoke all on public.client_notifications from anon;
-revoke update on table public.client_notifications from authenticated;
-grant select on public.client_notifications to authenticated;
-grant update (read_at) on table public.client_notifications to authenticated;
+grant select, update on public.client_notifications to authenticated;
 
 create schema if not exists private;
 revoke all on schema private from public, anon, authenticated;
-grant usage on schema private to authenticated;
 
 create or replace function private.client_platform_access_allowed()
 returns boolean
@@ -46,12 +42,13 @@ as $$
   select
     coalesce((auth.jwt() ->> 'aal') = 'aal2', false)
     and exists (
-      select 1 from public.kyc_submissions k
-      where k.user_id = (select auth.uid()) and k.status = 'approved'
+      select 1
+      from public.kyc_submissions k
+      where k.user_id = (select auth.uid())
+        and k.status = 'approved'
     );
 $$;
 revoke all on function private.client_platform_access_allowed() from public, anon, authenticated;
-grant execute on function private.client_platform_access_allowed() to authenticated;
 
 create or replace function private.notify_kyc_status_change()
 returns trigger
@@ -59,7 +56,9 @@ language plpgsql
 security definer
 set search_path = ''
 as $$
-declare v_title text; v_message text;
+declare
+  v_title text;
+  v_message text;
 begin
   if tg_op = 'INSERT' then
     v_title := 'KYC submitted';
@@ -78,41 +77,56 @@ begin
   else
     return new;
   end if;
+
   insert into public.client_notifications(user_id,title,message,category,metadata)
-  values (new.user_id,v_title,v_message,'kyc',jsonb_build_object(
-    'kyc_submission_id',new.id,'status',new.status,
-    'rejection_reasons',coalesce(new.rejection_reasons,'{}'::text[]),
-    'admin_note',coalesce(new.admin_note,'')));
+  values (
+    new.user_id,
+    v_title,
+    v_message,
+    'kyc',
+    jsonb_build_object(
+      'kyc_submission_id', new.id,
+      'status', new.status,
+      'rejection_reasons', coalesce(new.rejection_reasons, '{}'::text[]),
+      'admin_note', coalesce(new.admin_note, '')
+    )
+  );
   return new;
 end;
 $$;
 revoke all on function private.notify_kyc_status_change() from public, anon, authenticated;
+
 drop trigger if exists kyc_notify_status_change on public.kyc_submissions;
 create trigger kyc_notify_status_change
 after insert or update of status, admin_note, rejection_reasons
-on public.kyc_submissions for each row
-execute function private.notify_kyc_status_change();
+on public.kyc_submissions
+for each row execute function private.notify_kyc_status_change();
 
--- Preserve each table's existing ownership policy; this adds a mandatory
--- second factor and approved-KYC condition for client-owned rows.
+-- Add a restrictive KYC + AAL2 gate to client-owned tables. Existing ownership
+-- policies remain in force; this policy adds a second, mandatory condition.
 do $$
 declare r record;
 begin
   for r in
-    select c.table_schema,c.table_name
+    select c.table_schema, c.table_name
     from information_schema.columns c
     join information_schema.tables t
-      on t.table_schema=c.table_schema and t.table_name=c.table_name
-    where c.table_schema='public' and c.column_name='user_id'
-      and t.table_type='BASE TABLE'
+      on t.table_schema = c.table_schema and t.table_name = c.table_name
+    where c.table_schema = 'public'
+      and c.column_name = 'user_id'
+      and t.table_type = 'BASE TABLE'
       and c.table_name not in ('kyc_submissions','client_notifications')
   loop
-    execute format('drop policy if exists %I on %I.%I','client_kyc_aal2_gate',r.table_schema,r.table_name);
+    execute format(
+      'drop policy if exists %I on %I.%I',
+      'client_kyc_aal2_gate', r.table_schema, r.table_name
+    );
     execute format(
       'create policy %I on %I.%I as restrictive for all to authenticated using (public.is_bigbulls_admin() or private.client_platform_access_allowed()) with check (public.is_bigbulls_admin() or private.client_platform_access_allowed())',
-      'client_kyc_aal2_gate',r.table_schema,r.table_name);
+      'client_kyc_aal2_gate', r.table_schema, r.table_name
+    );
   end loop;
 end $$;
 
-notify pgrst,'reload schema';
+notify pgrst, 'reload schema';
 commit;
