@@ -14,7 +14,6 @@ function init(){
  if(window.supabase&&window.supabase.createClient){connectSupabase();}
  else{
   // Keep the login visible even if the primary CDN is blocked; retry through a fallback CDN.
-  loginForm();showModal();
   const fallback=document.createElement("script");
   fallback.src="https://unpkg.com/@supabase/supabase-js@2";
   fallback.onload=()=>connectSupabase();
@@ -27,7 +26,7 @@ function init(){
 }
 function connectSupabase(){
  if(!window.supabase||!window.supabase.createClient){
-  loginForm();showModal();message("Supabase client library is unavailable. Please refresh and try again.",true);return;
+  console.error("Supabase client library is unavailable.");return;
  }
  sb=window.supabase.createClient(URL,KEY,{
   auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
@@ -42,8 +41,7 @@ function connectSupabase(){
  });
  window.openPortal=openModal;window.closePortal=closeModal;
  updateHeader();
- // Render login immediately; session restoration must not leave the visitor on a blank page.
- loginForm();showModal();
+ // Keep the public landing page visible; authentication opens only when the visitor selects Login or Sign up.
  // Keep this callback synchronous to avoid waiting on the Supabase auth lock.
  sb.auth.onAuthStateChange((event,session)=>{
   user=session?session.user:null;
@@ -60,7 +58,7 @@ function connectSupabase(){
  }).catch(error=>{
   console.error("Unable to restore the client session:",error);
   user=null;updateHeader();hideApp();
-  message("Could not restore your session: "+(error?.message||"Please sign in again."),true);
+  console.error("Could not restore client session:",error);
  });
 }
 
@@ -129,7 +127,7 @@ function hideApp(){
  activePage="accounts";
  updateHeader();
  // The client login is the only signed-out screen; never reveal the legacy public website.
- if(body){loginForm();showModal();}
+ if(body){closeModal();}
 }
 function isAdmin(){return user?.app_metadata?.role==="admin";}
 function showFinancialNotice(row){
