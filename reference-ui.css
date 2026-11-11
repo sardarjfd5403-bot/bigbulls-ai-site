@@ -1,0 +1,67 @@
+/* BIGBULLS GLOBAL REFERENCE UI — light broker portal visual system */
+:root{color-scheme:light;--bb-blue:#0066FF;--bb-blue-hover:#0052CC;--bb-ink:#181C25;--bb-muted:#64748B;--bb-bg:#F8F9FA;--bb-line:#E5E7EB;--bb-white:#fff;--bb-purple:#F5F0FF;--bb-purple-line:#E4D5FF;font-family:Inter,Arial,sans-serif}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:#fff!important;color:var(--bb-ink)!important;font-family:Inter,Arial,sans-serif!important}
+a{color:var(--bb-blue)}
+button,.btn,.navbtn{font-family:inherit;cursor:pointer}
+.site-header{height:56px!important;min-height:56px!important;padding:0 clamp(14px,3vw,36px)!important;background:#fff!important;color:var(--bb-ink)!important;border-bottom:1px solid var(--bb-line)!important;box-shadow:0 1px 3px #0f172a08!important;backdrop-filter:none!important;z-index:100!important}
+.site-header .brand{color:var(--bb-blue)!important;letter-spacing:-.025em!important;font-size:15px!important}
+.site-header .brand b{color:#111827!important}
+.site-header .brand small{color:#64748b!important}
+.site-header .mark{width:30px!important;height:30px!important;border-radius:8px!important;background:var(--bb-blue)!important;color:#fff!important;border:0!important;font-size:18px!important}
+.main-nav{gap:clamp(9px,1.6vw,22px)!important;color:#475569!important;font-size:12px!important}
+.main-nav a{color:#475569!important}
+.main-nav a:hover{color:var(--bb-blue)!important}
+.navbtn{border:1px solid var(--bb-line)!important;background:#fff!important;color:#181c25!important;border-radius:9px!important;padding:8px 13px!important;font-weight:650!important}
+.navbtn.nav-open{background:var(--bb-blue)!important;border-color:var(--bb-blue)!important;color:#fff!important}
+.hero{max-width:1440px!important;padding:clamp(44px,7vw,88px) clamp(18px,5vw,72px)!important;gap:clamp(24px,4vw,56px)!important}
+.eyebrow{color:var(--bb-blue)!important;letter-spacing:.12em!important}
+h1,h2,h3,h4{color:#181c25!important}
+h1 em,h2 em{color:var(--bb-blue)!important}
+.lead,.section p,.risk p{color:#64748b!important}
+.chart{background:#f8f9fa!important;border:1px solid var(--bb-line)!important;border-radius:18px!important;box-shadow:0 8px 28px #0f172a0a!important;color:#181c25!important}
+.charttop,.charttitle,.chartfoot{color:#475569!important}
+.charttop b{color:var(--bb-blue)!important}
+.charttitle strong{color:#181c25!important}
+.charttitle small{color:#64748b!important}
+.chart svg path[stroke="#26344b"]{stroke:#dbe2ea!important}
+.ticker{background:#f8f9fa!important;color:#475569!important;border-block:1px solid var(--bb-line)!important}
+.section,.ai-showcase{background:#fff!important;color:#181c25!important}
+.cards{gap:16px!important}
+.cards article,.card,.ai-card,.feature-card{background:#fff!important;color:#181c25!important;border:1px solid var(--bb-line)!important;border-radius:16px!important;box-shadow:0 2px 8px #0f172a08!important}
+.cards article p,.cards article small{color:#64748b!important}
+.btn{border:1px solid var(--bb-line)!important;background:#fff!important;color:#181c25!important;border-radius:10px!important;font-weight:700!important}
+.btn.gold,.btn.primary{background:var(--bb-blue)!important;border-color:var(--bb-blue)!important;color:#fff!important}
+.btn:hover,.navbtn:hover{filter:brightness(.97)}
+.risk{background:#f8f9fa!important;color:#181c25!important;border:1px solid var(--bb-line)!important;border-radius:16px!important}
+footer{background:#fff!important;color:#64748b!important;border-top:1px solid var(--bb-line)!important}
+footer a{color:var(--bb-blue)!important}
+.modal-backdrop{background:#0f172a80!important}
+.modal{background:#fff!important;color:#181c25!important;border:1px solid var(--bb-line)!important;border-radius:18px!important}
+input,select,textarea{background:#fff!important;color:#181c25!important;border:1px solid #cbd5e1!important;border-radius:9px!important}
+input::placeholder,textarea::placeholder{color:#94a3b8!important}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #0066ff55!important;outline-offset:2px!important}
+/* Client portal follows the supplied dashboard geometry */
+body.app-mode{background:#f8f9fa!important;color:#181c25!important}
+body.app-mode .terminal,body.app-mode .terminal-main{background:#f8f9fa!important}
+body.app-mode .terminal-head{height:56px!important;min-height:56px!important;background:#fff!important;border-bottom:1px solid var(--bb-line)!important;box-shadow:none!important}
+body.app-mode .terminal-layout{grid-template-columns:260px minmax(0,1fr)!important}
+body.app-mode .client-sidebar{background:#fff!important;border-right:1px solid var(--bb-line)!important}
+body.app-mode .terminal-main{padding:28px clamp(16px,3vw,42px)!important}
+body.app-mode .terminal-page-head h2{color:#181c25!important}
+body.app-mode .bb-menu-main{color:#181c25!important}
+body.app-mode .bb-menu-main:hover,body.app-mode .bb-menu-main[aria-expanded=true]{background:#f1f5f9!important}
+body.app-mode .bb-submenu button{color:#64748b!important}
+body.app-mode .bb-submenu button:hover,body.app-mode .bb-submenu button.active{color:#0052cc!important;background:#eff6ff!important}
+body.app-mode .bb-drawer-profile{background:linear-gradient(135deg,#1e293b,#0f172a)!important}
+body.app-mode .bb-progress i{background:#0066ff!important}
+body.app-mode .bb-new-badge{background:#eaf2ff!important;color:#0052cc!important}
+body.app-mode .bb-referral{background:#f5f0ff!important;border-color:#e4d5ff!important}
+body.app-mode .bb-account-card{background:#fff!important;border:1px solid #e5e7eb!important;border-radius:16px!important;box-shadow:0 2px 8px #0f172a08!important}
+body.app-mode .bb-account-actions button:first-child{background:#0066ff!important;color:#fff!important}
+body.app-mode .bb-account-actions button:not(:first-child){background:#f1f5f9!important;color:#181c25!important}
+body.app-mode .bb-open-account{background:#f1f5f9!important;color:#181c25!important;border:1px solid #e5e7eb!important}
+@media(max-width:1050px){.main-nav{gap:10px!important}.main-nav a{font-size:11px!important}}
+@media(max-width:850px){.site-header{padding:0 14px!important}.main-nav{display:none!important}.header-actions{gap:7px!important}.hero{grid-template-columns:1fr!important;padding-top:42px!important}.chart{max-width:100%!important}.site-header .brand small{display:none!important}}
+@media(max-width:560px){.site-header .brand{font-size:12px!important}.navbtn{padding:7px 9px!important;font-size:11px!important}.hero{padding-inline:18px!important}.lead{font-size:15px!important}.cards{grid-template-columns:1fr!important}}
