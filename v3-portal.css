@@ -214,3 +214,12 @@ body.app-mode>.public-header,body.app-mode>main,body.app-mode>footer{display:non
 #client-page .bb-account-card button:focus-visible,#client-page .bb-account-tabs button:focus-visible{outline:3px solid #1769e844;outline-offset:2px}
 @media(max-width:900px){#client-page .accounts-workspace{grid-template-columns:minmax(0,1fr)}#client-page .account-request-panel .client-form{grid-template-columns:repeat(2,minmax(0,1fr))}#client-page .account-request-panel .client-form>button,#client-page .account-request-panel .client-form>[data-page-message],#client-page .account-request-panel .client-form>.fine{grid-column:1/-1}}
 @media(max-width:560px){#client-page .bb-account-tabs{display:flex;width:100%;gap:3px}#client-page .bb-account-tabs button{flex:1;padding:9px 7px;font-size:8px}#client-page .accounts-workspace>.client-panel{padding:15px}#client-page .account-request-panel .client-form{grid-template-columns:minmax(0,1fr)}#client-page .account-request-panel .client-form>button,#client-page .account-request-panel .client-form>[data-page-message],#client-page .account-request-panel .client-form>.fine{grid-column:auto}#client-page .bb-account-card{padding:13px}#client-page .bb-account-meta{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px 12px}#client-page .bb-account-actions button{flex:1 1 auto}#client-page .bb-account-actions.account-financial-actions button{flex:1 1 calc(50% - 7px)}}
+
+
+/* ADMIN SUPPORT REVIEW QUEUE */
+#client-page #admin-support-queue{display:grid;gap:12px;margin-top:14px}
+#client-page #admin-support-queue .admin-transaction{padding:16px;border:1px solid #e5eaf1;border-radius:12px;background:#fff}
+#client-page #admin-support-queue .admin-transaction>p{margin:10px 0;color:#4b5d73;font-size:11px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
+#client-page .bb-support-review-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+#client-page .bb-support-review-actions button{padding:8px 11px;border:1px solid #dce5f1;border-radius:8px;background:#f5f8fc;color:#40536d;font-size:9px;font-weight:800}
+#client-page .bb-support-review-actions button:hover{border-color:#1769e8;background:#edf4ff;color:#1769e8}
