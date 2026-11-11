@@ -87,7 +87,7 @@
   document.addEventListener('click',handleClick);
   document.addEventListener('click',handlePageClick,true);
   document.addEventListener('click',e=>{if(e.target.closest('.bb-drawer-backdrop'))handleClick(e);});
-  document.addEventListener('change',e=>{if(e.target.matches('.bb-sort-select')){const host=$('#my-trading-accounts');if(!host)return;const cards=$$(':scope > *',host);cards.sort((a,b)=>{if(e.target.value==='name')return a.textContent.localeCompare(b.textContent);return e.target.value==='oldest'?1:-1;}).forEach(x=>host.append(x));}});
+  document.addEventListener('change',e=>{if(e.target.matches('.bb-sort-select')){const host=$('#my-trading-accounts');if(!host)return;const cards=$$(':scope > *',host);const ordered=e.target.value==='name'?cards.sort((a,b)=>a.textContent.localeCompare(b.textContent)):e.target.value==='oldest'?cards.reverse():cards;ordered.forEach(x=>host.append(x));}});
   const obs=new MutationObserver(()=>syncUser());obs.observe(document.body,{childList:true,subtree:true});
   const t=$('.terminal','#app-shell');if(t){enhance();if($('.terminal-page-head h2')?.textContent.trim()==='Dashboard'){$('.bb-menu-main[data-page="accounts"]')?.click();}}
  }
