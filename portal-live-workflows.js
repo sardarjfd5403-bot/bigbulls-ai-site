@@ -63,6 +63,7 @@ async function startRealtime(){
   const u=data.user;if(liveUser===u.id)return;liveUser=u.id;
   if(liveChannel)c.removeChannel(liveChannel);
   const ch=c.channel("bb-portal-workflows-"+u.id);
+  ch.on("postgres_changes",{event:"*",schema:"public",table:"bb_market_signal_feed"},()=>{if($("#bb-brain-signals"))loadMarketBrain();});
   ch.on("postgres_changes",{event:"*",schema:"public",table:"wallet_transactions",filter:"user_id=eq."+u.id},()=>walletHistory());
   ch.on("postgres_changes",{event:"*",schema:"public",table:"kyc_submissions",filter:"user_id=eq."+u.id},async()=>{
    const badge=$("#client-kyc-profile-status");if(!badge)return;
