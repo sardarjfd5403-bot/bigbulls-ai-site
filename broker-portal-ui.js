@@ -95,7 +95,7 @@
  function onClick(e){
   const t=e.target.closest('[data-bb-drawer-toggle],[data-bb-drawer-close],[data-bb-accordion],[data-bb-open-account],[data-bb-more-toggle],[data-bb-card-details],[data-bb-utility],[data-bb-language],[data-bb-theme]');
   if(t){
-   if(t.hasAttribute('data-bb-drawer-toggle'))openDrawer();
+   if(t.hasAttribute('data-bb-drawer-toggle')){const isOpen=$('.client-sidebar')?.classList.contains('bb-drawer-open');if(isOpen)closeDrawer();else openDrawer();t.setAttribute('aria-expanded',String(!isOpen));}
    if(t.hasAttribute('data-bb-drawer-close'))closeDrawer();
    if(t.hasAttribute('data-bb-accordion')){const id=t.dataset.bbAccordion,sub=$('[data-bb-submenu="'+id+'"]');const open=t.getAttribute('aria-expanded')==='true';t.setAttribute('aria-expanded',String(!open));if(sub)sub.hidden=open;}
    if(t.hasAttribute('data-bb-open-account')){const p=$('.account-request-panel');if(p){p.hidden=false;p.classList.add('bb-open');p.scrollIntoView({behavior:'smooth',block:'start'});}}
@@ -117,7 +117,7 @@
   document.addEventListener('click',onPageClick,true);
   document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();});
   document.addEventListener('change',e=>{if(e.target.matches('.bb-sort-select')){const h=$('#my-trading-accounts');if(!h)return;const cards=$$(':scope > .bb-account-card',h);const sorted=e.target.value==='name'?cards.sort((a,b)=>a.textContent.localeCompare(b.textContent)):e.target.value==='oldest'?cards.reverse():cards;sorted.forEach(c=>h.append(c));}});
-  const t=$('.terminal','#app-shell');if(t)enhance();
+  const shell=$('#app-shell');const t=shell&&$('.terminal',shell);if(t)enhance();
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',observe);else observe();
 })();
