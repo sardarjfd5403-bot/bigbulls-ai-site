@@ -32,6 +32,7 @@ function connectSupabase(){
  sb=window.supabase.createClient(URL,KEY,{
   auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
  });
+ window.__bbSupabaseClient=sb;
  document.addEventListener("keydown",e=>{
   if(e.key==="Escape"){
    closeModal();
@@ -171,6 +172,7 @@ async function showApp(page){
  // Financial/account mutations continue to use the existing Supabase RPC/RLS checks.
  window.__bbUserName=user.user_metadata?.full_name||user.email?.split("@")[0]||"Client";
  window.__bbUserEmail=user.email||"";
+ window.__bbUserId=user.id;
  activePage=requested;
  startFinancialRealtime();
  if(activePage==="accounts")window.bbAccountMode="real";
