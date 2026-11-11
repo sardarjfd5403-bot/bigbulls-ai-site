@@ -660,7 +660,7 @@ async function openAccountFinancialModal(accountId,action,providedMethods){
  const account=(window.bbClientAccounts||[]).find(x=>x.id===accountId);if(!account)return;
  const methods=providedMethods||[];window.bbFinancialContext={accountId,action,methods};
  if(action==="deposit"){
-  body.innerHTML='<p class="eyebrow">ACCOUNT DEPOSIT · #'+esc(account.account_number)+'</p><h2>Deposit funds</h2>'+(methods.length?'<form id="account-deposit-form" class="client-form"><label>Payment method / network<select name="wallet_id">'+methods.map(w=>'<option value="'+esc(w.id)+'">'+esc(w.asset)+' · '+esc(w.network)+'</option>').join("")+'</select></label><div id="bb-deposit-address"></div><label>Deposit amount (USD)<input name="amount_usd" type="number" min="1" step=".01" required></label><label>Amount sent in crypto<input name="amount_crypto" type="number" min="0.00000001" step="any" required></label><label>Blockchain TXID<input name="tx_hash" minlength="11" required></label><label>Payment screenshot / proof (optional)<input name="proof" type="file" accept="image/jpeg,image/png,image/webp,application/pdf"></label><button class="portal-primary" type="submit">Submit deposit request</button><div data-page-message></div></form>':'<div class="empty-state">No deposit methods are enabled by Admin yet.</div>')+'<p class="fine">Funds are credited only after Admin verifies your payment.</p>';
+  body.innerHTML='<p class="eyebrow">ACCOUNT DEPOSIT · #'+esc(account.account_number)+'</p><h2>Deposit funds</h2>'+(methods.length?'<form id="account-deposit-form" class="client-form"><label>Payment method / network<select name="wallet_id">'+methods.map(w=>'<option value="'+esc(w.id)+'">'+esc(w.asset)+' · '+esc(w.network)+'</option>').join("")+'</select></label><div id="bb-deposit-address"></div><label>Deposit amount (USD)<input name="amount_usd" type="number" min="1" step=".01" required></label><label>Amount sent in crypto<input name="amount_crypto" type="number" min="0.00000001" step="any" required></label><label>Blockchain TXID<input name="tx_hash" minlength="11" required></label><label>Payment screenshot / proof (required)<input name="proof" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf" required></label><p class="fine">Proof file: minimum 100 KB · maximum 15 MB · JPG, PNG, WEBP or PDF.</p><button class="portal-primary" type="submit">Submit deposit request</button><div data-page-message></div></form>':'<div class="empty-state">No deposit methods are enabled by Admin yet.</div>')+'<p class="fine">Funds are credited only after Admin verifies your payment.</p>';
   const form=document.getElementById("account-deposit-form");if(form){const select=form.elements.wallet_id;const render=()=>{const w=methods.find(x=>x.id===select.value),slot=document.getElementById("bb-deposit-address");if(slot){slot.innerHTML=w?'<div class="wallet-address-card"><small>ADMIN DEPOSIT ADDRESS · '+esc(w.asset)+' / '+esc(w.network)+'</small><div class="deposit-qr" id="bb-account-deposit-qr" aria-label="QR code for the selected deposit address"></div><code>'+esc(w.address)+'</code><button type="button" data-copy-address="'+esc(w.address)+'">Copy address</button><p>'+esc(w.label||"Official deposit wallet")+'</p></div>':'';if(w)renderDepositQr(document.getElementById("bb-account-deposit-qr"),w.address);}};select.addEventListener("change",render);render();}
   showModal();return;
  }
@@ -732,18 +732,22 @@ async function submitHandler(e){
   const account=(window.bbClientAccounts||[]).find(x=>x.id===accountId);
   if(!account||account.account_mode!=="real"||account.status!=="approved"||account.archived_at||account.deleted_at){if(out)out.textContent="Funding is available only for active, approved Real accounts.";return;}
   if(!(amountUsd>0)||!(amountCrypto>0)||txHash.length<11){if(out)out.textContent="Enter a valid USD amount, crypto amount and blockchain TXID (at least 11 characters).";return;}
-  if(proof instanceof File&&proof.size>10485760){if(out)out.textContent="Proof file must be 10 MB or smaller.";return;}
+  const minProofBytes=100*1024,maxProofBytes=15*1024*1024;
+  if(!(proof instanceof File)||!proof.size){if(out)out.textContent="Payment proof is required. Please attach your transfer screenshot or PDF.";return;}
+  if(proof.size<minProofBytes){if(out)out.textContent="Proof file must be at least 100 KB.";return;}
+  if(proof.size>maxProofBytes){if(out)out.textContent="Proof file must be 15 MB or smaller.";return;}
   button.disabled=true;button.textContent="Submitting deposit request…";
   let uploadedPath=null;
   try{
    const walletId=String(d.get("wallet_id")),w=ctx.methods.find(x=>x.id===walletId);
    if(!w)throw new Error("Select a valid active Admin payment method.");
-   if(proof instanceof File&&proof.size){
-    const ext=proof.name.split(".").pop().toLowerCase(),mime=proof.type||({jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",pdf:"application/pdf"}[ext]||"");
+   if(proof instanceof File){
+    const ext=proof.name.split(".").pop().toLowerCase(),typed=String(proof.type||"").toLowerCase(),byExt={jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",pdf:"application/pdf"};
+    const mime=["image/jpeg","image/png","image/webp","application/pdf"].includes(typed)?typed:(typed==="image/jpg"||typed==="image/pjpeg"?"image/jpeg":byExt[ext]||"");
     if(!["image/jpeg","image/png","image/webp","application/pdf"].includes(mime))throw new Error("Proof must be JPG, PNG, WEBP or PDF.");
     uploadedPath=user.id+"/"+Date.now()+"-"+proof.name.replace(/[^a-zA-Z0-9._-]/g,"_");
-    const up=await sb.storage.from("payment-proofs").upload(uploadedPath,proof,{contentType:mime});
-    if(up.error)throw up.error;
+    const up=await sb.storage.from("payment-proofs").upload(uploadedPath,proof,{contentType:mime,upsert:false});
+    if(up.error)throw new Error("Payment proof upload failed: "+up.error.message);
    }
    const {data:tx,error}=await sb.from("wallet_transactions").insert({user_id:user.id,account_id:accountId,kind:"deposit",asset:w.asset,network:w.network,destination_address:w.address,amount_usd:amountUsd,amount_crypto:amountCrypto,tx_hash:txHash,proof_path:uploadedPath,status:"pending"}).select("id,invoice_id").single();
    if(error)throw error;
@@ -751,7 +755,7 @@ async function submitHandler(e){
    await loadClientTradingAccounts();
   }catch(err){
    if(uploadedPath)await sb.storage.from("payment-proofs").remove([uploadedPath]);
-   if(out)out.textContent="Deposit request failed: "+(err?.message||"Please check the details and try again.");
+   if(out){out.classList.add("error");out.textContent="Deposit request failed: "+(err?.message||"Please check the details and try again.");}
    button.disabled=false;button.textContent="Submit deposit request";
   }
   return;
