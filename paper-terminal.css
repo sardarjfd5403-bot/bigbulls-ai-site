@@ -56,3 +56,17 @@
 .bb-exec-check{display:flex;justify-content:space-between;gap:8px;padding:8px;border-bottom:1px solid #24504a;font-size:11px}
 .bb-exec-warning{font-size:12px;color:#d8c6a0;line-height:1.5}
 .bb-exec-halt{padding:10px 14px;border:1px solid #a84e4e;border-radius:8px;background:#572727;color:#fff;font-weight:800}
+
+
+/* REAL / DEMO ACCOUNT AREA — subdued panel colours, maximum content readability */
+.bb-paper-terminal .bb-paper-account-switch{background:#172334!important;border:1px solid #3b4c63!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.035)!important}
+.bb-paper-terminal .bb-paper-account-switch label{color:#f1f5fb!important;font-size:12px!important;font-weight:900!important}
+.bb-paper-terminal .bb-paper-account-switch select{background:#080f1b!important;color:#fff!important;border:1px solid #71839b!important;font-size:13px!important;font-weight:800!important;box-shadow:0 0 0 1px rgba(255,255,255,.04)!important}
+.bb-paper-terminal .bb-paper-account-switch select:focus{outline:2px solid #a9c8f3!important;outline-offset:2px!important}
+.bb-paper-terminal #bb-account-switch-status{color:#e7edf7!important;font-size:12px!important;font-weight:800!important}
+.bb-paper-terminal .bb-paper-summary>div{background:#0a1320!important;border:1px solid #536780!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.045),0 3px 10px rgba(0,0,0,.16)!important}
+.bb-paper-terminal .bb-paper-summary small{color:#d7e1ef!important;font-size:11px!important;font-weight:900!important;letter-spacing:.035em!important}
+.bb-paper-terminal .bb-paper-summary b{color:#fff!important;font-size:21px!important;font-weight:900!important;text-shadow:0 1px 1px rgba(0,0,0,.35)!important}
+.bb-paper-terminal .bb-paper-summary .positive{color:#78edb4!important}
+.bb-paper-terminal .bb-paper-summary .negative{color:#ff929b!important}
+@media(max-width:560px){.bb-paper-terminal .bb-paper-account-switch label{font-size:11px!important}.bb-paper-terminal .bb-paper-summary small{font-size:10px!important}.bb-paper-terminal .bb-paper-summary b{font-size:18px!important}}
