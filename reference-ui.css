@@ -65,3 +65,33 @@ body.app-mode .bb-open-account{background:#f1f5f9!important;color:#181c25!import
 @media(max-width:1050px){.main-nav{gap:10px!important}.main-nav a{font-size:11px!important}}
 @media(max-width:850px){.site-header{padding:0 14px!important}.main-nav{display:none!important}.header-actions{gap:7px!important}.hero{grid-template-columns:1fr!important;padding-top:42px!important}.chart{max-width:100%!important}.site-header .brand small{display:none!important}}
 @media(max-width:560px){.site-header .brand{font-size:12px!important}.navbtn{padding:7px 9px!important;font-size:11px!important}.hero{padding-inline:18px!important}.lead{font-size:15px!important}.cards{grid-template-columns:1fr!important}}
+
+
+/* FINAL REFERENCE MATCH — compact top bar + slide-over 7-section navigation */
+body.app-mode> .site-header{display:none!important}
+body.app-mode #app-shell{display:block!important;min-height:100vh;background:#f8f9fa!important}
+body.app-mode .terminal{min-height:100vh;background:#f8f9fa!important}
+body.app-mode .terminal-head{height:56px!important;min-height:56px!important;padding:0 16px!important;background:#fff!important;border-bottom:1px solid #e5e7eb!important;box-shadow:0 1px 3px rgba(15,23,42,.04)!important}
+.bb-menu-toggle{width:32px!important;height:32px!important;min-width:32px!important;border:1px solid #e5e7eb!important;border-radius:8px!important;background:#fff!important;color:#181c25!important;padding:0!important}
+.bb-menu-toggle svg{width:17px!important;height:17px!important}
+.bb-brand{font-size:13px!important;gap:8px!important;color:#0066ff!important}
+.bb-brand .mark{width:28px!important;height:28px!important;border-radius:7px!important;background:#0066ff!important;color:#fff!important}
+.bb-brand small{font-size:8px!important;color:#64748b!important}
+body.app-mode .terminal-layout{display:block!important;min-height:calc(100vh - 56px)!important}
+body.app-mode .client-sidebar{position:fixed!important;left:0!important;top:0!important;bottom:0!important;width:min(320px,88vw)!important;height:100dvh!important;max-height:100dvh!important;overflow-y:auto!important;z-index:401!important;background:#fff!important;border-right:1px solid #e5e7eb!important;box-shadow:12px 0 36px rgba(15,23,42,.16)!important;transform:translateX(-110%)!important;transition:transform .22s ease!important;padding:14px 12px 18px!important;display:flex!important}
+body.app-mode .client-sidebar.bb-drawer-open{transform:translateX(0)!important}
+.bb-drawer-backdrop{display:block!important;position:fixed!important;inset:0!important;background:rgba(15,23,42,.42)!important;z-index:400!important;opacity:0!important;pointer-events:none!important;transition:opacity .2s ease!important}
+.bb-drawer-backdrop.is-open{opacity:1!important;pointer-events:auto!important}
+body.app-mode .terminal-main{width:100%!important;min-width:0!important;padding:28px clamp(16px,4vw,48px)!important;background:#f8f9fa!important}
+body.app-mode .terminal-page-head h2{font-size:26px!important;color:#181c25!important}
+body.app-mode .bb-menu-main{font-size:12px!important;color:#181c25!important;min-height:38px!important}
+body.app-mode .bb-submenu button{font-size:11px!important;color:#475569!important}
+body.app-mode .bb-submenu button:hover,body.app-mode .bb-submenu button.active{background:#eff6ff!important;color:#0052cc!important}
+body.app-mode .bb-drawer-profile{background:linear-gradient(135deg,#1e293b,#0f172a)!important}
+body.app-mode .bb-referral{background:#f5f0ff!important;border:1px solid #e4d5ff!important;color:#3e3470!important}
+body.app-mode .bb-referral small{color:#675b9a!important}
+body.app-mode .bb-account-card{background:#fff!important;color:#181c25!important;border:1px solid #e5e7eb!important;border-radius:15px!important;box-shadow:0 2px 8px rgba(15,23,42,.05)!important}
+body.app-mode .bb-account-actions button:first-child i{background:#0066ff!important;border-color:#0066ff!important;color:#fff!important}
+body.app-mode .bb-account-actions button:not(:first-child) i{background:#f1f5f9!important;border-color:#e2e8f0!important;color:#334155!important}
+body.app-mode .bb-account-actions span{color:#334155!important}
+@media(max-width:900px){body.app-mode .terminal-head{height:56px!important;min-height:56px!important}body.app-mode .terminal-main{padding:20px 14px!important}}
