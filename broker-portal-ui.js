@@ -30,19 +30,21 @@
   const oldBrand=$('.terminal-brand',head);\n  const oldName=$('.profile-trigger b',head)?.textContent||'Client Account';\n  const notificationPanel=$('#client-notification-panel',head);
   const brand=oldBrand?oldBrand.innerHTML:'<span class="mark">B</span><span>BIGBULLS <b>FX</b><small>PERSONAL AREA</small></span>';
   const balance=$('#header-wallet-balance',head)?.textContent||'Loading…';
-  head.innerHTML='<div class="bb-layout-left"><button class="bb-menu-toggle" type="button" data-bb-drawer-toggle aria-label="Open navigation menu"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><a class="bb-brand" href="#" data-page="accounts">'+brand+'</a></div><div class="bb-header-right"><div class="header-balance"><small>WALLET</small><b id="header-wallet-balance">'+balance+'</b></div><button type="button" data-notification-toggle aria-label="Notifications">♧</button><button type="button" class="profile-trigger" data-page="profile"><span class="profile-avatar">B</span><span><b>My Profile</b><small>Personal Area ▾</small></span></button></div>';
+  head.innerHTML='<div class="bb-layout-left"><button class="bb-menu-toggle" type="button" data-bb-drawer-toggle aria-label="Open navigation menu"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><a class="bb-brand" href="#" data-page="accounts">'+brand+'</a></div><div class="bb-header-right"><div class="header-balance"><small>WALLET</small><b id="header-wallet-balance">'+balance+'</b></div><button type="button" class="profile-trigger" data-page="profile"><span class="profile-avatar">B</span><span><b>My Profile</b><small>Personal Area ▾</small></span></button></div>';
   sidebar.innerHTML='<button type="button" class="bb-mobile-close" data-bb-drawer-close aria-label="Close menu">×</button><div class="bb-drawer-profile"><div class="bb-tier-row"><span>BRONZE MEMBER</span><span>10 days to upgrade</span></div><div class="bb-points"><span>BIGBULLS REWARD POINTS</span><b>0.03 BBP</b></div><div class="bb-progress"><i></i></div><div class="bb-progress-label"><span>Earn 10 BBP</span><span>0.03 / 10</span></div></div><div class="bb-user-row"><span><b class="bb-user-name">Client Account</b><small class="bb-user-email">Signed-in account</small></span><span>⌄</span></div><div class="bb-wallet-row"><span><small>WALLET BALANCE</small><b id="bb-drawer-balance">'+balance+'</b></span><span class="bb-new-badge">NEW　⌄</span></div><nav class="client-nav sidebar-nav" aria-label="BigBulls main navigation"><button type="button" class="bb-menu-main" data-page="accounts"><span class="bb-nav-icon"><svg viewBox="0 0 24 24">'+icon('trade')+'</svg></span><span>My accounts</span></button>'+navMarkup()+'</nav><div class="bb-referral">♧ &nbsp; Refer traders, earn commission<small>Invite your network to BIGBULLS FX Market</small></div>';
-  const name=$('.profile-trigger b',head)?.textContent||'Client Account';
-  const email=window.__bbUserEmail||'Your registered email';
+  const name=oldName;
+  const email=window.__bbUserEmail||'Registered email';
   $('.bb-user-name',sidebar).textContent=name;
   $('.bb-user-email',sidebar).textContent=email;
   const notificationWrap=document.createElement('div');notificationWrap.className='header-pop-wrap';notificationWrap.innerHTML='<button type="button" data-notification-toggle aria-label="Notifications">♧</button>';if(notificationPanel)notificationWrap.append(notificationPanel);$('.bb-header-right',head)?.insertBefore(notificationWrap,$('.profile-trigger',head));\n  let backdrop=$('.bb-drawer-backdrop');
   if(!backdrop){backdrop=document.createElement('div');backdrop.className='bb-drawer-backdrop';document.body.append(backdrop);}
   if(window.matchMedia('(min-width:901px)').matches)sidebar.classList.add('bb-drawer-open');
   const title=$('.terminal-page-head h2',main);
-  if(title&&title.textContent.trim()==='Dashboard'){title.textContent='My accounts';}
+  const redirectDashboard=!!(title&&title.textContent.trim()==='Dashboard');
+  if(redirectDashboard){title.textContent='My accounts';}
   if(title&&title.textContent.trim()==='Trading Accounts'){title.textContent='My accounts';}
   if(activePageName()==='accounts')decorateAccounts();
+  if(redirectDashboard){window.setTimeout(()=>$('.bb-menu-main[data-page="accounts"]')?.click(),0);}
  }
  function activePageName(){const h=$('.terminal-page-head h2');return h?.textContent.trim()==='My accounts'?'accounts':h?.textContent.trim().toLowerCase()||'';}
  function decorateAccounts(){
