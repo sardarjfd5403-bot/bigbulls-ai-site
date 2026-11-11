@@ -47,7 +47,8 @@
   }
   async function enhance() {
     const shell=$("#app-shell"), terminal=$(".terminal",shell);
-    if (!shell || !terminal) return;
+    if (!shell || !terminal || terminal.dataset.bbReference==="yes") return;
+    terminal.dataset.bbReference="yes";
     const oldHead=$(".terminal-head",terminal), layout=$(".terminal-layout",terminal), oldSidebar=$(".client-sidebar",layout), main=$(".terminal-main",layout);
     if (!layout || !main) return;
     const name=window.__bbUserName || "Client";
