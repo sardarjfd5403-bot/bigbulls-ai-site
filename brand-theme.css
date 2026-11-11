@@ -871,3 +871,49 @@ body.app-mode .terminal .service-tile:active{transform:translateY(1px)!important
  body.app-mode .terminal-sidebar .side-group>button .side-copy b{font-size:9px!important}
 }
 @media(prefers-reduced-motion:reduce){body.app-mode .terminal *{animation:none!important;scroll-behavior:auto!important;transition:none!important}}
+
+
+/* ACCOUNTS CENTRE — soften bright white card surfaces; sharpen every account detail */
+body.app-mode .terminal #client-page .bb-account-card{
+  background:#e9edf4!important;
+  color:#111827!important;
+  border:1px solid #9eacc0!important;
+  box-shadow:0 5px 16px rgba(15,23,42,.10)!important;
+}
+body.app-mode .terminal #client-page .bb-account-card :is(h4,strong,b){
+  color:#101827!important;
+  font-weight:800!important;
+}
+body.app-mode .terminal #client-page .bb-account-card :is(small,p,span,div){
+  color:#273449!important;
+}
+body.app-mode .terminal #client-page .bb-account-card .bb-account-number{
+  color:#1746a2!important;
+  font-weight:900!important;
+}
+body.app-mode .terminal #client-page .bb-account-card .bb-account-meta{
+  gap:10px!important;
+}
+body.app-mode .terminal #client-page .bb-account-card .bb-account-meta>span{
+  background:#f3f5f9!important;
+  color:#344256!important;
+  border:1px solid #c1ccda!important;
+  border-radius:7px!important;
+  padding:9px 10px!important;
+  font-size:11px!important;
+  font-weight:800!important;
+}
+body.app-mode .terminal #client-page .bb-account-card .bb-account-meta>span b{
+  color:#101827!important;
+  font-size:14px!important;
+  font-weight:900!important;
+}
+body.app-mode .terminal #client-page .bb-account-card .bb-account-actions button{
+  font-weight:800!important;
+  text-shadow:none!important;
+}
+body.app-mode .terminal #client-page .bb-account-card .notice{
+  background:#f3f5f9!important;
+  color:#273449!important;
+  border:1px solid #c1ccda!important;
+}
