@@ -185,6 +185,8 @@ async function showApp(page){
 
  try{
   renderApp();
+  // Apply the reference client UI synchronously after the authenticated shell exists.
+  if(typeof window.__bbEnhanceClientPortal==="function")window.__bbEnhanceClientPortal();
  }catch(error){
   console.error("Client portal render failed:",error);
   shell.innerHTML='<div class="portal-load-error" role="alert"><h2>Workspace could not be rendered</h2><p>Please refresh the page. Your sign-in session is still active.</p><button type="button" onclick="location.reload()">Reload workspace</button></div>';
