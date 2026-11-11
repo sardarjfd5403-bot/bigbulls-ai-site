@@ -21,10 +21,46 @@
  const item=(page,label)=>'<button type="button" class="bb-sub-link" data-page="'+page+'">'+label+'</button>';
  const accordion=(id,label,ico,links)=>'<section class="bb-nav-group"><button type="button" class="bb-nav-main" data-bb-accordion="'+id+'" aria-expanded="false"><span class="bb-nav-ico">'+svg(ico)+'</span><span>'+label+'</span>'+svg('down')+'</button><div class="bb-nav-sub" data-bb-submenu="'+id+'" hidden>'+links+'</div></section>';
  function maskName(n){return String(n||"Client").split(/\s+/).map(w=>w.length<2?w:w[0]+"*".repeat(Math.max(2,w.length-1))).join(" ");}
- function maskEmail(e){if(!e||!e.includes("@"))return "Registered email";const [u,d]=e.split("@");return (u.length>2?u[0]+"****"+u.slice(-1):u[0]+"***")+"@"+d;}
+ function escapeHtml(value){return String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));}
  function closeDrawer(){const s=$(".client-sidebar"),b=$(".bb-drawer-backdrop");s?.classList.remove("bb-drawer-open");b?.classList.remove("is-open");document.body.classList.remove("bb-drawer-visible");}
  function openDrawer(){const s=$(".client-sidebar"),b=$(".bb-drawer-backdrop");s?.classList.add("bb-drawer-open");b?.classList.add("is-open");document.body.classList.add("bb-drawer-visible");}
  function syncBalance(){const v=$("#header-wallet-balance")?.textContent||"0.00 USD";const n=$("#bb-drawer-balance");if(n)n.textContent=v.replace("$","")+" USD";}
+ async function loadMembership(){
+  const card=$("#bb-membership-card"),client=window.__bbSupabaseClient,userId=window.__bbUserId;
+  if(!card||!client||!userId)return;
+  const {data,error}=await client.from("bb_client_memberships").select("level_name,points_balance,points_unit,next_level_name,next_level_threshold,upgrade_due_at").eq("user_id",userId).maybeSingle();
+  if(error||!data){
+   const level=$("#bb-membership-level"),points=$("#bb-membership-points"),status=$("#bb-membership-status"),next=$("#bb-membership-next-label"),progress=$("#bb-membership-progress-label");
+   if(level)level.textContent="Membership unavailable";
+   if(points)points.textContent="— EXD";
+   if(status)status.textContent="Your membership record could not be loaded.";
+   if(next)next.textContent="Please contact support";
+   if(progress)progress.textContent="—";
+   return;
+  }
+  const level=String(data.level_name||"Bronze"),unit=String(data.points_unit||"EXD");
+  const pointsValue=Math.max(0,Number(data.points_balance)||0),threshold=Math.max(0,Number(data.next_level_threshold)||0);
+  const nextLevel=String(data.next_level_name||"Next level");
+  const percent=threshold>0?Math.min(100,Math.max(0,pointsValue/threshold*100)):0;
+  const due=data.upgrade_due_at?Math.max(0,Math.ceil((new Date(data.upgrade_due_at).getTime()-Date.now())/86400000)):null;
+  const set=(id,value)=>{const node=$("#"+id);if(node)node.textContent=value;};
+  set("bb-membership-level",level);
+  set("bb-membership-points",pointsValue.toFixed(2)+" "+unit);
+  set("bb-membership-status",due===null?"Current membership level":due+" days left to upgrade");
+  set("bb-membership-next-label",threshold>0?"Earn "+threshold.toFixed(2)+" "+unit+" to reach "+nextLevel:"Membership progress");
+  set("bb-membership-progress-label",threshold>0?pointsValue.toFixed(2)+"/"+threshold.toFixed(2):"—");
+  const bar=$("#bb-membership-progress-bar");if(bar)bar.style.width=percent.toFixed(1)+"%";
+ }
+ let membershipChannel=null;
+ function watchMembership(){
+  const client=window.__bbSupabaseClient,userId=window.__bbUserId;
+  if(!client||!userId)return;
+  if(membershipChannel)client.removeChannel(membershipChannel);
+  membershipChannel=client.channel("bb-membership-"+userId)
+   .on("postgres_changes",{event:"*",schema:"public",table:"bb_client_memberships",filter:"user_id=eq."+userId},()=>loadMembership())
+   .subscribe();
+ }
+
  function enhance(){
   const shell=$("#app-shell"),terminal=shell&&$(".terminal",shell);if(!terminal)return;
   if(enhanced===terminal&&terminal.dataset.bbReference==="yes")return;
@@ -34,8 +70,8 @@
   const email=window.__bbUserEmail||"";
   const balance=$("#header-wallet-balance",head)?.textContent||"0.00 USD";
   head.innerHTML='<div class="bb-top-left"><button type="button" class="bb-hamburger" data-bb-drawer-toggle aria-label="Open menu">'+svg('menu')+'</button><a class="bb-top-brand" href="#" data-page="accounts"><strong>BIGBULLSGLOBAL</strong> <span>MARKET</span></a></div><div class="bb-top-actions"><button type="button" class="bb-bell" data-notification-toggle aria-label="Notifications">'+svg('bell')+'<i></i></button></div><span class="bb-hidden-balance" id="header-wallet-balance">'+balance+'</span>';
-  const n=maskName(name),em=maskEmail(email);
-  sidebar.innerHTML='<div class="bb-drawer-head"><button type="button" class="bb-close" data-bb-drawer-close aria-label="Close menu">'+svg('close')+'</button><span><b>BIGBULLSGLOBAL</b> MARKET</span><button type="button" class="bb-drawer-bell" data-notification-toggle aria-label="Notifications">'+svg('bell')+'</button></div><div class="bb-drawer-scroll"><section class="bb-bronze-card"><div class="bb-bronze-top"><h3>Bronze</h3><b>0.03 BGM</b></div><p>10 days left to upgrade</p><div class="bb-progress-text"><span>Earn 10 BGM</span><span>0/10</span></div><div class="bb-progress-track"><i></i></div></section><button class="bb-identity" type="button" data-page="profile"><span class="bb-user-icon">'+svg('user')+'</span><span><b>'+n+'</b><small>'+em+'</small></span>'+svg('down')+'</button><button class="bb-wallet-quick" type="button" data-page="wallet"><span>'+svg('wallet')+'<b id="bb-drawer-balance">'+balance.replace("$","")+' USD</b></span><span class="bb-new-pill">NEW</span>'+svg('down')+'</button><nav class="bb-reference-nav" aria-label="Main navigation">'+
+  const n=escapeHtml(maskName(name)),em=escapeHtml(email);
+  sidebar.innerHTML='<div class="bb-drawer-head"><button type="button" class="bb-close" data-bb-drawer-close aria-label="Close menu">'+svg('close')+'</button><span><b>BIGBULLSGLOBAL</b> MARKET</span><button type="button" class="bb-drawer-bell" data-notification-toggle aria-label="Notifications">'+svg('bell')+'</button></div><div class="bb-drawer-scroll"><section class="bb-bronze-card" id="bb-membership-card"><div class="bb-bronze-top"><h3 id="bb-membership-level">Loading level…</h3><b id="bb-membership-points">— EXD</b></div><p id="bb-membership-status">Loading your membership status…</p><div class="bb-progress-text"><span id="bb-membership-next-label">Next level progress</span><span id="bb-membership-progress-label">—</span></div><div class="bb-progress-track"><i id="bb-membership-progress-bar" style="width:0%"></i></div></section><button class="bb-identity" type="button" data-page="profile"><span class="bb-user-icon">'+svg('user')+'</span><span><b>'+n+'</b><small>'+em+'</small></span>'+svg('down')+'</button><button class="bb-wallet-quick" type="button" data-page="wallet"><span>'+svg('wallet')+'<b id="bb-drawer-balance">'+balance.replace("$","")+' USD</b></span><span class="bb-new-pill">NEW</span>'+svg('down')+'</button><nav class="bb-reference-nav" aria-label="Main navigation">'+
    accordion('trading','Trading','trade',item('accounts','Accounts')+item('portfolio','Performance')+item('orders','History of orders')+item('terminal','Bigbulls Terminal'))+
    accordion('payments','Payments & wallet','wallet',item('wallet','Deposit')+item('wallet','Withdrawal')+item('wallet','Transfer')+item('wallet','Transaction history')+item('wallet','Funding wallet')+item('wallet','Crypto wallet'))+
    accordion('analytics','Analytics','news',item('signals','Trading signals')+item('market-analysis','News')+item('economic-calendar','Economic Calendar'))+
@@ -52,6 +88,7 @@
   const title=$('.terminal-page-head h2',main);if(title&&(title.textContent.trim()==='Trading Accounts'||title.textContent.trim()==='Dashboard'))title.textContent='My accounts';
   if(title&&title.textContent.trim()==='My accounts')decorateAccounts();
   syncBalance();
+  loadMembership();watchMembership();
  }
  function decorateAccounts(){
   const intro=$('.accounts-page-intro');if(!intro)return;
