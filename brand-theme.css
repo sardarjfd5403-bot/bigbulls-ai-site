@@ -917,3 +917,39 @@ body.app-mode .terminal #client-page .bb-account-card .notice{
   color:#273449!important;
   border:1px solid #c1ccda!important;
 }
+
+
+/* PRO TERMINAL — soften blue account-card fills while keeping all account details crisp */
+body.app-mode .terminal .bb-account-card{
+  background:#f7f9fc!important;
+  background-image:none!important;
+  border:1.5px solid #cbd5e1!important;
+  color:#111827!important;
+  box-shadow:0 4px 14px rgba(15,23,42,.07)!important;
+}
+body.app-mode .terminal .bb-account-card :is(.account-header,.account-details,.account-meta,.account-number,.account-info,.account-actions,.account-type,.account-balance,.account-card-head,.account-card-body,.account-card-footer,.bb-account-meta,.bb-account-number,.bb-account-actions){
+  background:#f8fafc!important;
+  background-image:none!important;
+  color:#111827!important;
+  border-color:#d5deea!important;
+}
+body.app-mode .terminal .bb-account-card :is(h1,h2,h3,h4,h5,h6,b,strong,dt,.account-number,.bb-account-number){
+  color:#111827!important;
+  font-weight:900!important;
+  opacity:1!important;
+}
+body.app-mode .terminal .bb-account-card :is(p,span,small,label,li,dd,.muted,.hint,.description,.note,.account-meta,.bb-account-meta){
+  color:#334155!important;
+  font-weight:650!important;
+  opacity:1!important;
+}
+body.app-mode .terminal .bb-account-card :is(input,select,textarea){
+  background:#fff!important;
+  color:#111827!important;
+  border:1.5px solid #94a3b8!important;
+}
+body.app-mode .terminal .bb-account-card :is(button,.btn,a.button){
+  opacity:1!important;
+  color:#fff!important;
+  font-weight:850!important;
+}
