@@ -11,14 +11,27 @@ function init(){
  document.addEventListener("submit",submitHandler,true);
  document.addEventListener("change",kycFileChangeHandler,true);
  startAICarousel();
- if(window.supabase&&window.supabase.createClient){
-  sb=window.supabase.createClient(URL,KEY,{
-   auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
-  });
- }else{
-  console.error("Supabase SDK failed to load");
-  return;
+ if(window.supabase&&window.supabase.createClient){connectSupabase();}
+ else{
+  // Keep the login visible even if the primary CDN is blocked; retry through a fallback CDN.
+  loginForm();showModal();
+  const fallback=document.createElement("script");
+  fallback.src="https://unpkg.com/@supabase/supabase-js@2";
+  fallback.onload=()=>connectSupabase();
+  fallback.onerror=()=>{
+   console.error("Supabase SDK failed to load from both CDNs");
+   message("Secure connection could not be loaded. Check your internet connection and refresh.",true);
+  };
+  document.head.appendChild(fallback);
  }
+}
+function connectSupabase(){
+ if(!window.supabase||!window.supabase.createClient){
+  loginForm();showModal();message("Supabase client library is unavailable. Please refresh and try again.",true);return;
+ }
+ sb=window.supabase.createClient(URL,KEY,{
+  auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
+ });
  document.addEventListener("keydown",e=>{
   if(e.key==="Escape"){
    closeModal();
@@ -28,16 +41,13 @@ function init(){
  });
  window.openPortal=openModal;window.closePortal=closeModal;
  updateHeader();
-
- // IMPORTANT: Keep the auth listener synchronous. Supabase auth calls from inside
- // onAuthStateChange can wait on the same auth lock and prevent the portal from rendering.
+ // Keep this callback synchronous to avoid waiting on the Supabase auth lock.
  sb.auth.onAuthStateChange((event,session)=>{
   user=session?session.user:null;
   updateHeader();
   if(event==="SIGNED_OUT")hideApp();
  });
-
- // Restore the persisted session outside the auth callback, then render the portal.
+ // Restore the persisted session outside the auth callback.
  sb.auth.getSession().then(({data,error})=>{
   if(error)throw error;
   user=data?.session?.user||null;
@@ -47,6 +57,7 @@ function init(){
  }).catch(error=>{
   console.error("Unable to restore the client session:",error);
   user=null;updateHeader();hideApp();
+  message("Could not restore your session: "+(error?.message||"Please sign in again."),true);
  });
 }
 
