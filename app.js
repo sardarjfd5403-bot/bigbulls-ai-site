@@ -124,10 +124,12 @@ function esc(v){return String(v||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&l
 function hideApp(){
  if(shell)shell.hidden=true;
  document.body.classList.remove("app-mode");
- activePage="accounts";
+ activePage="landing";
+ const main=document.querySelector("main"),footer=document.querySelector("footer");
+ if(main)main.removeAttribute("hidden");
+ if(footer)footer.removeAttribute("hidden");
  updateHeader();
- // The client login is the only signed-out screen; never reveal the legacy public website.
- if(body){closeModal();}
+ if(body)closeModal();
 }
 function isAdmin(){return user?.app_metadata?.role==="admin";}
 function showFinancialNotice(row){
@@ -175,6 +177,17 @@ async function applyReferenceClientUI(attempt=0){
 }
 function showApp(page){
  if(!user||!shell)return;
+ // Regular clients stay on the public landing page; the separately authorised admin workspace is retained.
+ if(!isAdmin()){
+  shell.hidden=true;
+  document.body.classList.remove("app-mode");
+  const main=document.querySelector("main"),footer=document.querySelector("footer");
+  if(main)main.removeAttribute("hidden");
+  if(footer)footer.removeAttribute("hidden");
+  closeModal();
+  activePage="landing";
+  return;
+ }
  let requested=pages.includes(page)?page:"accounts";
  if(requested==="dashboard")requested="accounts";
 
