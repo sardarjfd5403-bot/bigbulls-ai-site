@@ -998,3 +998,34 @@ body:not(.app-mode) .ai-progress i{background:#155fbd!important}
  .mega-menu-column+.mega-menu-column{padding-top:10px;border-top:1px solid #263b55}
  .top-menu-dropdown:not(.mega-menu-panel){position:fixed;top:var(--bb-menu-top,150px);left:10px;right:10px;max-height:65vh;overflow:auto}
 }
+
+
+/* BIGBULLS client portal: left navigation and high-contrast blue controls */
+body.app-mode #app-shell .terminal{min-height:100vh;background:#f4f8fd!important}
+body.app-mode #app-shell .terminal-layout{display:grid!important;grid-template-columns:260px minmax(0,1fr)!important;align-items:stretch;min-height:calc(100vh - 76px)}
+body.app-mode #app-shell .client-sidebar{position:sticky;top:0;align-self:start;height:calc(100vh - 76px);min-height:620px;overflow-y:auto;padding:18px 13px;background:#0c1b31!important;border-right:1px solid #243d5e!important;color:#fff!important}
+body.app-mode #app-shell .sidebar-user{display:flex;align-items:center;gap:11px;padding:9px 7px 19px;margin-bottom:13px;border-bottom:1px solid #29415f}
+body.app-mode #app-shell .sidebar-avatar{width:39px;height:39px;display:grid;place-items:center;border-radius:50%;background:#1768c5;color:#fff;font-weight:900;font-size:16px}
+body.app-mode #app-shell .sidebar-user b{display:block;color:#fff!important;font-size:12px;max-width:170px;overflow:hidden;text-overflow:ellipsis}
+body.app-mode #app-shell .sidebar-user small{display:block;margin-top:4px;color:#dceaff!important;font-size:9px;letter-spacing:.12em}
+body.app-mode #app-shell .sidebar-nav{display:grid;gap:7px;margin:0}
+body.app-mode #app-shell .sidebar-group{min-width:0}
+body.app-mode #app-shell .sidebar-main-link{display:flex!important;align-items:center;gap:10px;width:100%;min-height:44px;padding:10px 11px!important;border:1px solid #2876d2!important;border-radius:8px!important;background:#1768c5!important;color:#fff!important;text-align:left}
+body.app-mode #app-shell .sidebar-main-link span{width:20px;flex:0 0 20px;color:#fff!important;text-align:center;font-size:16px}
+body.app-mode #app-shell .sidebar-main-link b{flex:1;color:#fff!important;font-size:12px;font-weight:850}
+body.app-mode #app-shell .sidebar-main-link i{color:#fff!important;font-style:normal;font-size:12px}
+body.app-mode #app-shell .sidebar-main-link:hover,body.app-mode #app-shell .sidebar-main-link.active,body.app-mode #app-shell .sidebar-group.is-active>.sidebar-main-link{background:#084b9b!important;border-color:#8bc2ff!important;color:#fff!important;box-shadow:inset 3px 0 #fff,0 3px 12px #1768c533}
+body.app-mode #app-shell .sidebar-submenu{display:grid;gap:6px;margin:7px 0 5px 9px;padding:8px 0 8px 10px;border-left:2px solid #3987e8}
+body.app-mode #app-shell .sidebar-submenu[hidden]{display:none!important}
+body.app-mode #app-shell .sidebar-subgroup h4{margin:7px 0 6px;color:#8dc1ff!important;font-size:9px;letter-spacing:.1em}
+body.app-mode #app-shell .sidebar-sub-link{display:block!important;width:100%;min-height:39px;padding:8px 10px!important;border:1px solid #286dc0!important;border-radius:7px!important;background:#1457a5!important;color:#fff!important;text-align:left;white-space:normal}
+body.app-mode #app-shell .sidebar-sub-link b{display:block;color:#fff!important;font-size:11px;font-weight:850}
+body.app-mode #app-shell .sidebar-sub-link small{display:block;margin-top:3px;color:#fff!important;font-size:9px;line-height:1.35}
+body.app-mode #app-shell .sidebar-sub-link:hover,body.app-mode #app-shell .sidebar-sub-link.active{background:#073f83!important;border-color:#a6d1ff!important;color:#fff!important}
+body.app-mode #app-shell .sidebar-logout{width:100%;margin-top:16px;padding:11px;border:1px solid #3e82cf!important;border-radius:8px;background:#124d8f!important;color:#fff!important;font-weight:800}
+body.app-mode #app-shell .terminal-main{min-width:0;padding:22px clamp(14px,2.6vw,34px) 48px;background:#f4f8fd!important}
+body.app-mode #app-shell .terminal-head{min-height:76px;padding:0 24px;background:#fff!important}
+body.app-mode #app-shell .terminal button[data-page],body.app-mode #app-shell .terminal button.navbtn,body.app-mode #app-shell .terminal button.service-tile,body.app-mode #app-shell .terminal button.portal-primary,body.app-mode #app-shell .terminal button.portal-secondary,body.app-mode #app-shell .terminal button[type="submit"]{background:#1768c5!important;border:1px solid #1768c5!important;color:#fff!important;font-weight:850!important}
+body.app-mode #app-shell .terminal button[data-page] *,body.app-mode #app-shell .terminal button.navbtn *,body.app-mode #app-shell .terminal button.service-tile *,body.app-mode #app-shell .terminal button.portal-primary *,body.app-mode #app-shell .terminal button.portal-secondary *{color:#fff!important}
+@media(max-width:900px){body.app-mode #app-shell .terminal-layout{grid-template-columns:220px minmax(0,1fr)!important}body.app-mode #app-shell .client-sidebar{padding:14px 9px}}
+@media(max-width:680px){body.app-mode #app-shell .terminal-layout{grid-template-columns:minmax(0,1fr)!important}body.app-mode #app-shell .client-sidebar{position:relative;top:auto;height:auto;min-height:0;max-height:none;padding:12px;border-right:0!important;border-bottom:1px solid #243d5e;overflow:visible}body.app-mode #app-shell .sidebar-user{padding:4px 5px 11px;margin-bottom:10px}body.app-mode #app-shell .sidebar-nav{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}body.app-mode #app-shell .sidebar-main-link{min-height:42px;padding:9px 8px!important}body.app-mode #app-shell .sidebar-main-link b{font-size:11px}body.app-mode #app-shell .sidebar-submenu{grid-column:1/-1;max-height:45vh;overflow:auto;margin-left:0;padding-left:8px}body.app-mode #app-shell .sidebar-logout{margin-top:10px}body.app-mode #app-shell .terminal-main{padding:16px 12px 35px}body.app-mode #app-shell .terminal-head{padding:0 12px}}
