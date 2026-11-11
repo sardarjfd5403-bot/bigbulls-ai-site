@@ -3,11 +3,25 @@
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BigbullsGlobal Market - Dashboard (Part 2)</title>
+  <!-- Configure Tailwind BEFORE loading its CDN runtime. The old order caused custom theme tokens to be missed. -->
+  <script>
+    window.tailwind = window.tailwind || {};
+    window.tailwind.config = {
+      theme: { extend: {
+        fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+        colors: {
+          brandBlue:'#0066FF', brandBlueHover:'#0052CC', brandDark:'#111827',
+          brandGrayBg:'#F8F9FA', brandBorder:'#E5E7EB', brandText:'#181C25',
+          brandSubtext:'#64748B', brandPurple:'#F5F0FF', brandPurpleBorder:'#E4D5FF'
+        }
+      }}
+    };
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css'">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script>tailwind.config={theme:{extend:{fontFamily:{sans:['Inter','sans-serif']},colors:{brandBlue:'#0066FF',brandBlueHover:'#0052CC',brandDark:'#111827',brandGrayBg:'#F8F9FA',brandBorder:'#E5E7EB',brandText:'#181C25',brandSubtext:'#64748B',brandPurple:'#F5F0FF',brandPurpleBorder:'#E4D5FF'}}}}</script>
   <style>
     .drawer-scrollbar::-webkit-scrollbar{width:4px}.drawer-scrollbar::-webkit-scrollbar-track{background:transparent}.drawer-scrollbar::-webkit-scrollbar-thumb{background:#E2E8F0;border-radius:4px}
     .sidebar-drawer{transition:transform .3s cubic-bezier(.4,0,.2,1)}.bronze-card-bg{background:linear-gradient(135deg,#1E293B 0%,#0F172A 100%)}
