@@ -6,18 +6,48 @@ let sb=null,modal,body,shell,user=null,activePage="dashboard",licenseActive=fals
 const pages=["course-forex","course-smc","course-ict","course-vsa","dashboard","terminal","accounts","wallet","market-analysis","signals","learning","services","portfolio","orders","license","echo-system","downloads","profile","settings","support","verification","partner","economic-calendar","trading-central","admin"];
 function init(){
  modal=document.getElementById("portal-modal");body=document.getElementById("portal-body");shell=document.getElementById("app-shell");
- if(!modal||!body){console.error("Login modal markup missing");return;}
- // Capture clicks early so navigation scripts or mobile wrappers cannot swallow auth actions.
- document.addEventListener("click",clickHandler,true);document.addEventListener("submit",submitHandler,true);document.addEventListener("change",kycFileChangeHandler,true);startAICarousel();
- if(window.supabase&&window.supabase.createClient){sb=window.supabase.createClient(URL,KEY);}
- else console.error("Supabase SDK failed to load");
- document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeModal();document.querySelectorAll(".top-menu-dropdown,.sidebar-submenu").forEach(x=>x.hidden=true);document.querySelectorAll("[data-menu-toggle]").forEach(x=>x.setAttribute("aria-expanded","false"));}});
+ if(!modal||!body||!shell){console.error("Portal markup missing");return;}
+ document.addEventListener("click",clickHandler,true);
+ document.addEventListener("submit",submitHandler,true);
+ document.addEventListener("change",kycFileChangeHandler,true);
+ startAICarousel();
+ if(window.supabase&&window.supabase.createClient){
+  sb=window.supabase.createClient(URL,KEY,{
+   auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
+  });
+ }else{
+  console.error("Supabase SDK failed to load");
+  return;
+ }
+ document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"){
+   closeModal();
+   document.querySelectorAll(".top-menu-dropdown,.sidebar-submenu").forEach(x=>x.hidden=true);
+   document.querySelectorAll("[data-menu-toggle]").forEach(x=>x.setAttribute("aria-expanded","false"));
+  }
+ });
  window.openPortal=openModal;window.closePortal=closeModal;
  updateHeader();
- if(sb){
-  sb.auth.onAuthStateChange((_event,session)=>{user=session?session.user:null;updateHeader();if(user){showApp(activePage);}else{hideApp();}});
-  sb.auth.getSession().then(({data})=>{user=data.session?data.session.user:null;updateHeader();if(user)showApp("dashboard");}).catch(console.error);
- }
+
+ // IMPORTANT: Keep the auth listener synchronous. Supabase auth calls from inside
+ // onAuthStateChange can wait on the same auth lock and prevent the portal from rendering.
+ sb.auth.onAuthStateChange((event,session)=>{
+  user=session?session.user:null;
+  updateHeader();
+  if(event==="SIGNED_OUT")hideApp();
+ });
+
+ // Restore the persisted session outside the auth callback, then render the portal.
+ sb.auth.getSession().then(({data,error})=>{
+  if(error)throw error;
+  user=data?.session?.user||null;
+  updateHeader();
+  if(user)showApp("dashboard");
+  else hideApp();
+ }).catch(error=>{
+  console.error("Unable to restore the client session:",error);
+  user=null;updateHeader();hideApp();
+ });
 }
 
 function startAICarousel(){
@@ -114,21 +144,35 @@ function startFinancialRealtime(){
 }
 async function showApp(page){
  if(!user||!shell)return;
- let requested=pages.includes(page)?page:"accounts";if(requested==="dashboard")requested="accounts";
- if(!isAdmin()&&requested!=="verification"){
-  const {data:kyc,error:kycError}=await sb.from("kyc_submissions").select("status").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1).maybeSingle();
-  if(kycError||kyc?.status!=="approved")requested="verification";
-  else{
-   const {data:factors,error:factorError}=await sb.auth.mfa.listFactors();
-   const verified=!factorError&&(factors?.totp||[]).some(x=>x.status==="verified");
-   if(!verified)requested="verification";
-   else{const {data:aal,error:aalError}=await sb.auth.mfa.getAuthenticatorAssuranceLevel();if(aalError||aal?.currentLevel!=="aal2")requested="verification";}
-  }
+ let requested=pages.includes(page)?page:"accounts";
+ if(requested==="dashboard")requested="accounts";
+
+ // The client portal itself must remain accessible while KYC is pending.
+ // Financial/account mutations continue to use the existing Supabase RPC/RLS checks.
+ window.__bbUserName=user.user_metadata?.full_name||user.email?.split("@")[0]||"Client";
+ window.__bbUserEmail=user.email||"";
+ activePage=requested;
+ startFinancialRealtime();
+ if(activePage==="accounts")window.bbAccountMode="real";
+ if(activePage==="admin"&&!isAdmin())activePage="accounts";
+
+ shell.hidden=false;
+ document.body.classList.add("app-mode");
+ const main=document.querySelector("main"),footer=document.querySelector("footer");
+ if(main)main.setAttribute("hidden","");
+ if(footer)footer.setAttribute("hidden","");
+ closeModal();
+
+ try{
+  renderApp();
+ }catch(error){
+  console.error("Client portal render failed:",error);
+  shell.innerHTML='<div class="portal-load-error" role="alert"><h2>Workspace could not be rendered</h2><p>Please refresh the page. Your sign-in session is still active.</p><button type="button" onclick="location.reload()">Reload workspace</button></div>';
+  return;
  }
- window.__bbUserName=user.user_metadata?.full_name||user.email?.split("@")[0]||"Client";window.__bbUserEmail=user.email||"";activePage=requested;startFinancialRealtime();if(activePage==="accounts")window.bbAccountMode="real";if(activePage==="admin"&&!isAdmin())activePage="dashboard";
- shell.hidden=false;document.body.classList.add("app-mode");
- const main=document.querySelector("main"),footer=document.querySelector("footer");if(main)main.setAttribute("hidden","");if(footer)footer.setAttribute("hidden","");
- closeModal();renderApp();refreshHeaderBalance();loadPageData();loadClientNotifications();
+ Promise.resolve(refreshHeaderBalance()).catch(error=>console.error("Wallet balance refresh failed:",error));
+ Promise.resolve(loadPageData()).catch(error=>console.error("Portal data loading failed:",error));
+ Promise.resolve(loadClientNotifications()).catch(error=>console.error("Notifications loading failed:",error));
 }
 async function renderMfaControl(host){
  if(!host||!user||isAdmin())return;
@@ -745,10 +789,47 @@ async function submitHandler(e){
   return;
  }
  if(f.id==="signup-form"||f.id==="login-form"){
-  e.preventDefault();const d=new FormData(f),b=f.querySelector("button[type=submit]");b.disabled=true;b.textContent="Please wait…";
-  try{if(f.id==="signup-form"){const {data,error}=await sb.auth.signUp({email:String(d.get("email")).trim(),password:String(d.get("password")),options:{emailRedirectTo:location.origin+location.pathname,data:{full_name:String(d.get("full_name")).trim(),country:String(d.get("country")||""),phone:String(d.get("phone")||""),account_type:String(d.get("account_type")||"Individual"),referral_code:String(d.get("referral_code")||"")}}});if(error)throw error;if(data.session){user=data.user;showApp("dashboard");}else{message("Registration submitted. Check your email and verify your address, then log in.",false);b.disabled=false;b.textContent="Create account";}}
-  else{const {data,error}=await sb.auth.signInWithPassword({email:String(d.get("email")).trim(),password:String(d.get("password"))});if(error)throw error;user=data.user;showApp("dashboard");}}
-  catch(err){message(err.message||"Authentication failed.",true);b.disabled=false;b.textContent=f.id==="signup-form"?"Create account":"Login";}return;
+  e.preventDefault();
+  const d=new FormData(f),b=f.querySelector('button[type="submit"]');
+  if(!sb){message("Account service is unavailable. Refresh the page and try again.",true);return;}
+  b.disabled=true;b.textContent="Please wait…";
+  try{
+   if(f.id==="signup-form"){
+    const {data,error}=await sb.auth.signUp({
+     email:String(d.get("email")).trim(),
+     password:String(d.get("password")),
+     options:{emailRedirectTo:location.origin+location.pathname,data:{
+      full_name:String(d.get("full_name")).trim(),
+      country:String(d.get("country")||""),
+      phone:String(d.get("phone")||""),
+      account_type:String(d.get("account_type")||"Individual"),
+      referral_code:String(d.get("referral_code")||"")
+     }}
+    });
+    if(error)throw error;
+    if(data?.session&&data?.user){
+     user=data.user;
+     await showApp("dashboard");
+    }else{
+     message("Registration submitted. Check your email and verify your address, then log in.",false);
+     b.disabled=false;b.textContent="Create account";
+    }
+   }else{
+    const {data,error}=await sb.auth.signInWithPassword({
+     email:String(d.get("email")).trim(),
+     password:String(d.get("password"))
+    });
+    if(error)throw error;
+    user=data?.user||data?.session?.user||null;
+    if(!user)throw new Error("Login succeeded but no active session was returned. Please try again.");
+    await showApp("dashboard");
+   }
+  }catch(err){
+   console.error("Authentication / portal opening error:",err);
+   message(err?.message||"Authentication failed. Please try again.",true);
+   b.disabled=false;b.textContent=f.id==="signup-form"?"Create account":"Secure login";
+  }
+  return;
  }
  if(f.id==="echo-purchase-form"){e.preventDefault();if(!user||!sb){alert("Please log in before submitting your payment TXID.");return;}const d=new FormData(f),txid=String(d.get("txid")||"").trim(),button=f.querySelector("button[type=submit]"),out=f.querySelector("[data-page-message]");if(txid.length<11){if(out)out.textContent="Enter a valid blockchain TXID.";return;}button.disabled=true;button.textContent="Submitting order…";const {error}=await sb.from("product_orders").insert({user_id:user.id,product_code:"BIGBULLS_AI_ECHO",amount_usd:199,payment_method:"USDT_TRC20",payment_reference:txid,status:"pending"});button.disabled=false;button.textContent="Submit payment for verification";if(out)out.textContent=error?"Order submission failed: "+error.message:"Payment TXID submitted. Your order is pending admin blockchain verification.";if(!error)button.disabled=true;return;}
  if(f.id==="account-deposit-form"){
