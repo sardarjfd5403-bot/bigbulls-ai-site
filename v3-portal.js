@@ -25,7 +25,7 @@
   ];
   function pageLabel() {
     const title = $(".terminal-page-head h2")?.textContent?.trim();
-    return title || "My Accounts";
+    return title === "Trading Accounts" ? "My Accounts" : (title || "My Accounts");
   }
   async function membershipMarkup() {
     const sb = window.__bbSupabaseClient, userId = window.__bbUserId;
