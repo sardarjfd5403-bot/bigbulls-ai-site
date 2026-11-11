@@ -138,7 +138,7 @@ create trigger auth_user_partner_referral after insert on auth.users
 for each row execute function public.capture_partner_referral();
 
 insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
-values('kyc-documents','kyc-documents',false,10485760,array['image/jpeg','image/png','image/webp','application/pdf'])
+values('kyc-documents','kyc-documents',false,20971520,array['image/jpeg','image/png','image/webp','application/pdf'])
 on conflict(id) do update set public=false,file_size_limit=10485760,allowed_mime_types=excluded.allowed_mime_types;
 
 drop policy if exists "users upload own kyc documents" on storage.objects;
