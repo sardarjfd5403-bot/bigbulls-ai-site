@@ -41,6 +41,8 @@ function connectSupabase(){
  });
  window.openPortal=openModal;window.closePortal=closeModal;
  updateHeader();
+ // Render login immediately; session restoration must not leave the visitor on a blank page.
+ loginForm();showModal();
  // Keep this callback synchronous to avoid waiting on the Supabase auth lock.
  sb.auth.onAuthStateChange((event,session)=>{
   user=session?session.user:null;
