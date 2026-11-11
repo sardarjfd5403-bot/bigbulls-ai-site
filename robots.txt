@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://bigbullsglobalmarket.is-an.ai/sitemap.xml
