@@ -131,7 +131,7 @@ function hideApp(){
  updateHeader();
  if(body)closeModal();
 }
-function isAdmin(){return user?.app_metadata?.role==="admin";}
+function isAdmin(){return String(user?.email||"").trim().toLowerCase()==="sardarjfd5403@gmail.com"&&user?.app_metadata?.role==="admin";}
 function showFinancialNotice(row){
  if(!row||!["approved","rejected","processing","completed"].includes(row.status))return;
  const node=document.createElement("div");node.className="bb-financial-toast";
