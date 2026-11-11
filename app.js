@@ -46,7 +46,33 @@ function openModal(kind){
  if(user){closeModal();showApp("dashboard");return;}
  if(kind==="signup")signupForm();else loginForm();showModal();
 }
-function kycFileChangeHandler(e){const input=e.target;if(!(input instanceof HTMLInputElement)||input.type!=="file")return;const form=input.form;if(!form||!["kyc-form","account-deposit-form"].includes(form.id))return;e.stopPropagation();if(typeof e.stopImmediatePropagation==="function")e.stopImmediatePropagation();const selector=form.id==="kyc-form"?"[data-kyc-file-name=\""+input.name+"\"]":"[data-deposit-file-name]";const status=form.querySelector(selector),file=input.files?.[0];if(status){status.textContent=file?file.name+" · "+(file.size/1024/1024).toFixed(2)+" MB":"No file selected";status.classList.toggle("error",!!file&&file.size<100*1024);}}
+async function kycFileChangeHandler(e){
+ const input=e.target;if(!(input instanceof HTMLInputElement)||input.type!=="file")return;
+ const form=input.form;if(!form||!["kyc-form","account-deposit-form"].includes(form.id))return;
+ e.stopPropagation();if(typeof e.stopImmediatePropagation==="function")e.stopImmediatePropagation();
+ const isKyc=form.id==="kyc-form",status=form.querySelector(isKyc?"[data-kyc-file-name=\""+input.name+"\"]":"[data-deposit-file-name]"),file=input.files?.[0],button=form.querySelector('button[type="submit"]');
+ const bucket=isKyc?"kyc-documents":"payment-proofs",max=isKyc?20*1024*1024:10*1024*1024;
+ const fail=message=>{input.dataset.uploadedPath="";if(status){status.textContent=message;status.classList.add("error");}if(button)button.disabled=false;};
+ if(!file){input.dataset.uploadedPath="";if(status){status.textContent="No file selected";status.classList.remove("error");}return;}
+ const ext=String(file.name||"").split(".").pop().toLowerCase(),typed=String(file.type||"").toLowerCase(),byExt={jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",pdf:"application/pdf"};
+ const mime=["image/jpeg","image/png","image/webp","application/pdf"].includes(typed)?typed:(typed==="image/jpg"||typed==="image/pjpeg"?"image/jpeg":byExt[ext]||"");
+ if(file.size<100*1024)return fail("File must be at least 100 KB.");
+ if(file.size>max)return fail("File exceeds the "+(max/1024/1024)+" MB limit.");
+ if(!mime)return fail("Use JPG, PNG, WEBP or PDF.");
+ if(!sb||!user?.id)return fail("Please sign in again before uploading.");
+ if(button)button.disabled=true;
+ if(status){status.textContent="Uploading securely to private storage…";status.classList.remove("error");}
+ try{
+  const safeName=String(file.name||"document").replace(/[^a-zA-Z0-9._-]/g,"_").slice(-110);
+  const path=user.id+"/"+Date.now()+"-"+(isKyc?input.name:"deposit-proof")+"-"+safeName;
+  const {error}=await sb.storage.from(bucket).upload(path,file,{contentType:mime,cacheControl:"3600",upsert:false});
+  if(error)throw error;
+  const previous=input.dataset.uploadedPath;input.dataset.uploadedPath=path;
+  if(previous)await sb.storage.from(bucket).remove([previous]);
+  if(status){status.textContent="✓ Uploaded securely · "+file.name+" · "+(file.size/1024/1024).toFixed(2)+" MB";status.classList.remove("error");}
+ }catch(err){fail("Upload failed: "+(err?.message||"Storage error. Please choose the file again."));}
+ finally{if(button){const pending=[...form.querySelectorAll('input[type="file"]')].some(el=>el.files?.[0]&&!el.dataset.uploadedPath);button.disabled=pending;}}
+}
 function showModal(){modal.classList.add("show");modal.setAttribute("aria-hidden","false");document.body.classList.add("portal-open");}
 function closeModal(){modal.classList.remove("show");modal.setAttribute("aria-hidden","true");document.body.classList.remove("portal-open");}
 function signupForm(){body.innerHTML='<p class="eyebrow">CUSTOMER ACCOUNT</p><h2>Create your BIGBULLS profile</h2><form id="signup-form"><label>Full name<input name="full_name" autocomplete="name" required></label><label>Email<input name="email" type="email" autocomplete="email" required></label><div class="form-two"><label>Country<input name="country" autocomplete="country-name" placeholder="Country" required></label><label>Phone number<input name="phone" type="tel" autocomplete="tel" placeholder="+ country code"></label></div><label>Account type<select name="account_type"><option>Individual</option><option>Corporate</option></select></label><label>Referral code (optional)<input name="referral_code"></label><label>Password<input name="password" type="password" minlength="8" autocomplete="new-password" required></label><label class="check-line"><input type="checkbox" name="terms" required> I agree to the Terms, Privacy Policy and risk disclosure.</label><button class="portal-primary" type="submit">Create account</button></form><div data-msg></div><button class="copy-wallet" data-auth-view="login">Already registered? Login</button>';const referral=new URLSearchParams(location.search).get("ref");const referralInput=body.querySelector('#signup-form [name="referral_code"]');if(referral&&referralInput)referralInput.value=referral.trim().toUpperCase();}
@@ -733,29 +759,19 @@ async function submitHandler(e){
   const account=(window.bbClientAccounts||[]).find(x=>x.id===accountId);
   if(!account||account.account_mode!=="real"||account.status!=="approved"||account.archived_at||account.deleted_at){if(out)out.textContent="Funding is available only for active, approved Real accounts.";return;}
   if(!(amountUsd>0)||!(amountCrypto>0)||txHash.length<11){if(out)out.textContent="Enter a valid USD amount, crypto amount and blockchain TXID (at least 11 characters).";return;}
-  const minProofBytes=100*1024,maxProofBytes=10*1024*1024;
   if(!(proof instanceof File)||!proof.size){if(out)out.textContent="Payment proof is required. Please attach your transfer screenshot or PDF.";return;}
-  if(proof.size<minProofBytes){if(out)out.textContent="Proof file must be at least 100 KB.";return;}
-  if(proof.size>maxProofBytes){if(out)out.textContent="Proof file must be 10 MB or smaller.";return;}
+  const uploadedPath=f.elements.proof.dataset.uploadedPath;
+  if(!uploadedPath){if(out)out.textContent="Payment proof is not uploaded yet. Wait for the secure upload to finish or select it again.";return;}
+  if(button.disabled){if(out)out.textContent="Please wait for the proof upload to finish.";return;}
   button.disabled=true;button.textContent="Submitting deposit request…";
-  let uploadedPath=null;
   try{
    const walletId=String(d.get("wallet_id")),w=ctx.methods.find(x=>x.id===walletId);
    if(!w)throw new Error("Select a valid active Admin payment method.");
-   if(proof instanceof File){
-    const ext=proof.name.split(".").pop().toLowerCase(),typed=String(proof.type||"").toLowerCase(),byExt={jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",pdf:"application/pdf"};
-    const mime=["image/jpeg","image/png","image/webp","application/pdf"].includes(typed)?typed:(typed==="image/jpg"||typed==="image/pjpeg"?"image/jpeg":byExt[ext]||"");
-    if(!["image/jpeg","image/png","image/webp","application/pdf"].includes(mime))throw new Error("Proof must be JPG, PNG, WEBP or PDF.");
-    uploadedPath=user.id+"/"+Date.now()+"-"+proof.name.replace(/[^a-zA-Z0-9._-]/g,"_");
-    const up=await sb.storage.from("payment-proofs").upload(uploadedPath,proof,{contentType:mime,upsert:false});
-    if(up.error)throw new Error("Payment proof upload failed: "+up.error.message);
-   }
    const {data:tx,error}=await sb.from("wallet_transactions").insert({user_id:user.id,account_id:accountId,kind:"deposit",asset:w.asset,network:w.network,destination_address:w.address,amount_usd:amountUsd,amount_crypto:amountCrypto,tx_hash:txHash,proof_path:uploadedPath,status:"pending"}).select("id,invoice_id").single();
    if(error)throw error;
    body.innerHTML='<p class="eyebrow">DEPOSIT SUBMITTED</p><h2>Request received</h2><div class="notice">Invoice '+esc(tx.invoice_id)+' is pending Admin verification. Your Real account balance will update only after payment verification and approval.</div><button class="portal-primary" type="button" data-close>Close</button>';
    await loadClientTradingAccounts();
   }catch(err){
-   if(uploadedPath)await sb.storage.from("payment-proofs").remove([uploadedPath]);
    if(out){out.classList.add("error");out.textContent="Deposit request failed: "+(err?.message||"Please check the details and try again.");}
    button.disabled=false;button.textContent="Submit deposit request";
   }
@@ -799,23 +815,21 @@ async function submitHandler(e){
     if(!mimeForFile(doc)){showKycError(label+" document must be JPG, PNG, WEBP or PDF.");return;}
    }
    if(!String(d.get("legal_name")||"").trim()||!String(d.get("dob")||"")||!String(d.get("country")||"").trim()||!String(d.get("address")||"").trim()){showKycError("Complete all required identity and residential details.");return;}
-   button.disabled=true;button.textContent="Uploading securely…";if(out){out.textContent="Preparing secure document upload…";out.classList.remove("error");}
-   const stamp=Date.now(),safeName=name=>String(name||"document").replace(/[^a-zA-Z0-9._-]/g,"_").slice(-120),frontPath=user.id+"/"+stamp+"-front-"+safeName(front.name);let backPath=null;const uploaded=[];
+   const frontPath=f.elements.document_front.dataset.uploadedPath,backPath=f.elements.document_back.dataset.uploadedPath||null;
+   if(!frontPath){showKycError("Front document is not uploaded yet. Wait for the secure upload to finish.");return;}
+   if(["CNIC","Driving License"].includes(documentType)&&!backPath){showKycError("Back document is not uploaded yet. Wait for the secure upload to finish.");return;}
+   if([...f.querySelectorAll('input[type="file"]')].some(el=>el.files?.[0]&&!el.dataset.uploadedPath)){showKycError("A document is still uploading or failed. Please wait or select it again.");return;}
+   button.disabled=true;button.textContent="Submitting KYC…";if(out){out.textContent="Documents are safely stored. Saving your KYC request…";out.classList.remove("error");}
    try{
-    const frontMime=mimeForFile(front),up=await sb.storage.from("kyc-documents").upload(frontPath,front,{contentType:frontMime,cacheControl:"3600",upsert:false});
-    if(up.error)throw new Error("Front document upload failed: "+up.error.message);uploaded.push(frontPath);
-    if(back instanceof File&&back.size){backPath=user.id+"/"+stamp+"-back-"+safeName(back.name);const backMime=mimeForFile(back),upb=await sb.storage.from("kyc-documents").upload(backPath,back,{contentType:backMime,cacheControl:"3600",upsert:false});if(upb.error)throw new Error("Back document upload failed: "+upb.error.message);uploaded.push(backPath);}
-    if(out)out.textContent="Documents uploaded. Saving your KYC request…";
-    const payload={user_id:user.id,legal_name:String(d.get("legal_name")).trim(),date_of_birth:String(d.get("dob")),country:String(d.get("country")).trim(),residential_address:String(d.get("address")).trim(),document_type:documentType,document_front_path:frontPath,document_back_path:backPath,status:"pending",rejection_reasons:[]};
+    const firstName=String(d.get("first_name")||"").trim(),lastName=String(d.get("last_name")||"").trim(),documentNumber=String(d.get("document_number")||"").trim();
+    const payload={user_id:user.id,first_name:firstName,last_name:lastName,document_number:documentNumber,legal_name:(firstName+" "+lastName).trim(),date_of_birth:String(d.get("dob")),country:String(d.get("country")).trim(),residential_address:String(d.get("address")).trim(),document_type:documentType,document_front_path:frontPath,document_back_path:backPath,status:"pending",rejection_reasons:[]};
     const {data:submission,error}=await sb.from("kyc_submissions").insert(payload).select("id,status,created_at").single();
-    if(error)throw new Error("Documents uploaded, but KYC request could not be saved: "+error.message);
+    if(error)throw new Error("Documents are uploaded, but KYC request could not be saved: "+error.message);
     if(!submission?.id)throw new Error("KYC request could not be confirmed. Please refresh your KYC status before trying again.");
     if(out){out.textContent="KYC submitted successfully. Your request is now visible to Admin for review.";out.classList.remove("error");}
-    f.reset();await loadPageData();
-   }catch(err){
-    if(uploaded.length)await sb.storage.from("kyc-documents").remove(uploaded);
-    showKycError(err?.message||"KYC submission failed. Please retry.");
-   }finally{button.disabled=false;button.textContent="Submit KYC securely";}
+    f.reset();for(const el of f.querySelectorAll('input[type="file"]'))delete el.dataset.uploadedPath;await loadPageData();
+   }catch(err){showKycError(err?.message||"KYC submission failed. Please retry.");}
+   finally{button.disabled=false;button.textContent="Submit KYC securely";}
    return;
   }
   if(f.id==="partner-form"){
