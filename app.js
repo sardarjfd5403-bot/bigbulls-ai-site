@@ -627,7 +627,7 @@ async function loadSeoAdminPanel(){
   root.querySelector("#bb-growth-monitoring").disabled=!integrations.gemini_model_configured;
   root.querySelector("#bb-social-drafts").checked=settings.social_drafts_enabled!==false;
   root.querySelector("#bb-social-drafts").disabled=!integrations.gemini_model_configured;
-  root.querySelector("#bb-seo-max-posts").value=Number(settings.max_daily_posts||1);
+  root.querySelector("#bb-seo-max-posts").value=Number(settings.max_daily_posts||3);
   root.querySelector("#bb-seo-keywords").innerHTML=(seo.keywords||[]).map(k=>'<div class="admin-row"><span><b>'+esc(k.keyword)+'</b><small>'+esc(k.intent)+' · '+esc(k.target_path||"/")+'</small></span><em>'+esc(k.status)+'</em></div>').join("")||'<p class="fine">No tracked keywords yet. Search volume and ranking remain blank until Search Console/provider data is connected.</p>';
   root.querySelector("#bb-seo-cards").innerHTML=(seo.cards||[]).map(c=>'<div class="admin-row"><span><b>'+esc(c.title)+'</b><small>'+esc(c.slug)+' · '+esc(c.focus_keyword||"No focus keyword")+' · '+esc(c.status)+'</small></span>'+(c.status==="draft"?'<button type="button" data-seo-publish="'+esc(c.id)+'">Publish</button>':"")+'</div>').join("")||'<p class="fine">No SEO cards created yet.</p>';
   root.querySelector("#bb-seo-pages").innerHTML=(seo.pages||[]).map(p=>'<div class="admin-row"><span><b>'+esc(p.path)+'</b><small>'+esc(p.page_title||"Untitled")+' · '+esc(p.focus_keyword||"No keyword")+'</small></span><b>'+Number(p.seo_score||0)+'/100</b></div>').join("")||'<p class="fine">No page audit records yet.</p>';
