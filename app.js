@@ -109,7 +109,14 @@ function signupForm(){body.innerHTML='<p class="eyebrow">CUSTOMER ACCOUNT</p><h2
 function loginForm(){body.innerHTML='<p class="eyebrow">CUSTOMER ACCOUNT</p><h2>Welcome back</h2><form id="login-form"><label>Email<input name="email" type="email" autocomplete="username" required></label><label>Password<input name="password" type="password" autocomplete="current-password" required></label><label class="check-line"><input type="checkbox" name="remember" checked> Remember me on this device</label><button class="portal-primary" type="submit">Secure login</button></form><div data-msg></div><button class="copy-wallet" data-auth-view="signup">Create account</button><button class="copy-wallet" data-action="forgot">Forgot password?</button><div class="notice">Authenticator-based 2FA will be added in the security backend phase.</div>';}
 function message(t,bad){let el=body.querySelector("[data-msg]");if(!el){el=document.createElement("div");el.dataset.msg="";body.append(el);}el.className="notice auth-message"+(bad?" error":"");el.textContent=t;}
 function esc(v){return String(v||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
-function hideApp(){shell.hidden=true;document.body.classList.remove("app-mode");document.querySelector("main")?.removeAttribute("hidden");document.querySelector("footer")?.removeAttribute("hidden");activePage="dashboard";updateHeader();}
+function hideApp(){
+ if(shell)shell.hidden=true;
+ document.body.classList.remove("app-mode");
+ activePage="accounts";
+ updateHeader();
+ // The client login is the only signed-out screen; never reveal the legacy public website.
+ if(body){loginForm();showModal();}
+}
 function isAdmin(){return user?.app_metadata?.role==="admin";}
 function showFinancialNotice(row){
  if(!row||!["approved","rejected","processing","completed"].includes(row.status))return;
