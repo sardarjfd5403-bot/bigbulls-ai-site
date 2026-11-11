@@ -89,6 +89,11 @@
   if(title&&title.textContent.trim()==='My accounts')decorateAccounts();
   syncBalance();
   loadMembership();watchMembership();
+  // Mark this terminal as enhanced before the MutationObserver runs again.
+  // Without this guard, rewriting the header/sidebar retriggers enhance() forever,
+  // causing the authenticated portal to freeze and expose the legacy UI.
+  terminal.dataset.bbReference="yes";
+  enhanced=terminal;
  }
  function decorateAccounts(){
   const intro=$('.accounts-page-intro');if(!intro)return;
