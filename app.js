@@ -191,7 +191,7 @@ async function showApp(page){
  let requested=pages.includes(page)?page:"accounts";
  if(requested==="dashboard")requested="accounts";
  const kycProtectedPages=["echo-system","market-analysis","signals","trading-central"];
- if(kycProtectedPages.includes(requested)){
+ if(kycProtectedPages.includes(requested)&&!isAdmin()){
   const {data:kyc,error:kycError}=await sb.from("kyc_submissions").select("status").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1).maybeSingle();
   if(kycError||kyc?.status!=="approved"){
    requested="verification";
