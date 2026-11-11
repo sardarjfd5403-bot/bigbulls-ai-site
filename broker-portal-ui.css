@@ -94,3 +94,15 @@ body.app-mode .client-panel input,body.app-mode .client-panel select{background:
  .bb-open-account{flex:1}
  body.app-mode #my-trading-accounts{grid-template-columns:1fr}
 }
+
+/* Account cards and four circular quick actions */
+body.app-mode .bb-account-card{background:#fff!important;border:1px solid #e1e5ec!important;border-radius:15px!important;padding:17px!important;box-shadow:0 3px 14px rgba(15,23,42,.035)!important;color:#172033!important;min-width:0}
+body.app-mode .bb-account-card :is(b,strong,h3,span,small,p){color:#172033}
+.bb-account-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:17px;padding-top:14px;border-top:1px solid #edf0f4}
+.bb-account-actions button{display:flex!important;flex-direction:column!important;align-items:center!important;gap:6px!important;border:0!important;background:transparent!important;color:#465367!important;padding:3px!important;font-size:10px!important;font-weight:750!important;cursor:pointer}
+.bb-account-actions i{width:43px;height:43px;border:1px solid #e0e5ec;border-radius:50%;display:grid;place-items:center;background:#fff;color:#344054;font-size:21px;font-style:normal;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.bb-account-actions button:first-child i{background:#f2c400;border-color:#e3b800;color:#1a1a1a}
+.bb-account-actions span{color:#344054!important;font-size:10px;font-weight:800}
+.bb-more-menu{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid #edf0f4}
+.bb-more-menu button{background:#f4f6f9!important;border:1px solid #e1e5ec!important;border-radius:8px!important;padding:8px 10px!important;color:#344054!important;font-size:10px!important}
+@media(max-width:480px){.bb-account-actions i{width:40px;height:40px}}
