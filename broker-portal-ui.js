@@ -109,6 +109,7 @@
   if(!e.target.closest('.bb-account-card'))$$('.bb-more-menu').forEach(x=>x.hidden=true);
  }
  function onPageClick(e){const l=e.target.closest('.bb-sub-link[data-page],.bb-nav-direct[data-page],.bb-referral[data-page],.bb-identity[data-page],.bb-wallet-quick[data-page],.bb-top-brand[data-page]');if(l)closeDrawer();}
+ window.__bbEnhanceClientPortal=enhance;
  function observe(){
   const shell=$('#app-shell');if(!shell)return;
   const obs=new MutationObserver(()=>{const t=$('.terminal',shell);if(t&&t.dataset.bbReference!=='yes'){enhanced=null;enhance();}else if(t&&$('.terminal-page-head h2')?.textContent.trim()==='My accounts'){decorateAccounts();}syncBalance();});
