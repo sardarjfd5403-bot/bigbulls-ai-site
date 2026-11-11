@@ -191,7 +191,11 @@ async function showApp(page){
   return;
  }
  Promise.resolve(refreshHeaderBalance()).catch(error=>console.error("Wallet balance refresh failed:",error));
- Promise.resolve(loadPageData()).catch(error=>console.error("Portal data loading failed:",error));
+ Promise.resolve(loadPageData()).catch(error=>{
+  console.error("Portal data loading failed:",error);
+  const host=document.getElementById("client-page");
+  if(host){const note=document.createElement("div");note.className="notice error";note.setAttribute("role","alert");note.textContent="Live page data could not be loaded: "+(error?.message||"Please refresh and try again.");host.prepend(note);}
+ });
  Promise.resolve(loadClientNotifications()).catch(error=>console.error("Notifications loading failed:",error));
 }
 async function renderMfaControl(host){
