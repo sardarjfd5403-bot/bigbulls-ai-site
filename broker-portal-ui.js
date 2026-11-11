@@ -61,13 +61,24 @@
   const real=tabs.querySelector('[data-account-mode="real"]');if(real)real.textContent='Real';
   const archived=tabs.querySelector('[data-account-mode="archived"]');if(archived)archived.hidden=true;
   if(request){request.querySelector('.free-tag')?.remove();const h=request.querySelector('h3');if(h)h.textContent='Open a trading account';}
+  decorateAccountCards();
+ }
+ function decorateAccountCards(){
+  const host=$('#my-trading-accounts');if(!host)return;
+  $('#my-trading-accounts > *').forEach((card,index)=>{
+   if(card.classList.contains('empty-state')||card.querySelector('.bb-account-actions')||!/(account|#\\s*\\d)/i.test(card.textContent))return;
+   card.classList.add('bb-account-card');
+   const actions=document.createElement('div');actions.className='bb-account-actions';
+   actions.innerHTML='<button type="button" data-page="terminal"><i>⌁</i><span>Trade</span></button><button type="button" data-page="wallet"><i>↓</i><span>Deposit</span></button><button type="button" data-page="wallet"><i>↗</i><span>Withdraw</span></button><button type="button" data-bb-more="'+index+'"><i>⋮</i><span>More</span></button>';
+   card.append(actions);
+  });
  }
  function syncUser(){
   const email=window.__bbUserEmail||'';
   const node=$('.bb-user-email');if(node&&email)node.textContent=email.replace(/^(.{1}).*(@.*)$/, '$1••••$2');
  }
  function handleClick(e){
-  const t=e.target.closest('[data-bb-drawer-toggle],[data-bb-drawer-close],[data-bb-accordion],[data-bb-open-account],[data-account-mode],[data-notification-toggle]')||(e.target.classList?.contains('bb-drawer-backdrop')?e.target:null);
+  const t=e.target.closest('[data-bb-drawer-toggle],[data-bb-drawer-close],[data-bb-accordion],[data-bb-open-account],[data-account-mode],[data-notification-toggle],[data-bb-more]')||(e.target.classList?.contains('bb-drawer-backdrop')?e.target:null);
   if(!t)return;
   const sidebar=$('.client-sidebar'),backdrop=$('.bb-drawer-backdrop');
   if(t.hasAttribute('data-bb-drawer-toggle')){sidebar?.classList.add('bb-drawer-open');backdrop?.classList.add('is-open');}
@@ -76,6 +87,7 @@
   if(t.hasAttribute('data-bb-open-account')){$('.account-request-panel')?.classList.toggle('bb-open');$('.account-request-panel')?.scrollIntoView({behavior:'smooth',block:'start'});}
   if(t.hasAttribute('data-account-mode')){setTimeout(()=>{const mode=t.dataset.accountMode;const real=$('[data-account-mode="real"]');const demo=$('[data-account-mode="demo"]');real?.classList.toggle('active',mode==='real');demo?.classList.toggle('active',mode==='demo');},0);}
   if(t.hasAttribute('data-notification-toggle')){const panel=$('#client-notification-panel');if(panel)panel.hidden=!panel.hidden;}
+  if(t.hasAttribute('data-bb-more')){const card=t.closest('.bb-account-card');let menu=card?.querySelector('.bb-more-menu');if(!menu&&card){menu=document.createElement('div');menu.className='bb-more-menu';menu.innerHTML='<button type="button" data-page="portfolio">Performance</button><button type="button" data-page="orders">History of orders</button><button type="button" data-page="wallet">Transfer</button>';card.append(menu);}else if(menu)menu.remove();}
  }
  function handlePageClick(e){
   const link=e.target.closest('.bb-submenu [data-page],.bb-menu-main[data-page],.bb-brand[data-page]');
@@ -83,12 +95,12 @@
  }
  function observe(){
   const shell=$('#app-shell');if(!shell)return;
-  new MutationObserver(()=>{const t=$('.terminal',shell);if(t&&t.dataset.bbEnhanced!=='yes'){enhancedTerminal=null;enhance();syncUser();if($('.terminal-page-head h2')?.textContent.trim()==='Dashboard'){const b=$('.bb-menu-main[data-page="accounts"]');if(b)b.click();}}else if(t&&activePageName()==='accounts'){decorateAccounts();}}).observe(shell,{childList:true,subtree:true});
+  new MutationObserver(()=>{const t=$('.terminal',shell);if(t&&t.dataset.bbEnhanced!=='yes'){enhancedTerminal=null;enhance();syncUser();if($('.terminal-page-head h2')?.textContent.trim()==='Dashboard'){const b=$('.bb-menu-main[data-page="accounts"]');if(b)b.click();}}else if(t&&activePageName()==='accounts'){decorateAccounts();decorateAccountCards();}}).observe(shell,{childList:true,subtree:true});
   document.addEventListener('click',handleClick);
   document.addEventListener('click',handlePageClick,true);
   document.addEventListener('click',e=>{if(e.target.closest('.bb-drawer-backdrop'))handleClick(e);});
   document.addEventListener('change',e=>{if(e.target.matches('.bb-sort-select')){const host=$('#my-trading-accounts');if(!host)return;const cards=$$(':scope > *',host);const ordered=e.target.value==='name'?cards.sort((a,b)=>a.textContent.localeCompare(b.textContent)):e.target.value==='oldest'?cards.reverse():cards;ordered.forEach(x=>host.append(x));}});
-  const obs=new MutationObserver(()=>syncUser());obs.observe(document.body,{childList:true,subtree:true});
+  const obs=new MutationObserver(()=>{syncUser();if(activePageName()==='accounts')decorateAccountCards();});obs.observe(document.body,{childList:true,subtree:true});
   const t=$('.terminal','#app-shell');if(t){enhance();if($('.terminal-page-head h2')?.textContent.trim()==='Dashboard'){$('.bb-menu-main[data-page="accounts"]')?.click();}}
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',observe);else observe();
