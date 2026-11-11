@@ -6,6 +6,8 @@ on:
       - "app.js"
       - "v3-portal.js"
       - "index.html"
+      - "v3-auth.js"
+      - "auth.html"
       - ".github/workflows/validate-trading-terminal.yml"
   push:
     branches:
@@ -29,3 +31,4 @@ jobs:
         run: |
           node --check app.js
           node --check v3-portal.js
+          node --check v3-auth.js
