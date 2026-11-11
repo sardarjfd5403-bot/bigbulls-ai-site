@@ -83,24 +83,43 @@ async function startRealtime(){
 let brainBusy=false,brainTimer=null;
 async function loadMarketBrain(){
  const summary=$("#bb-brain-summary"),host=$("#bb-brain-signals"),back=$("#bb-brain-backtests"),status=$("#bb-brain-status");if(!summary||!host||brainBusy)return;
- brainBusy=true;if(status)status.textContent="SCANNING 5,000 ONE-MINUTE CANDLES…";
+ brainBusy=true;if(status)status.textContent="LOADING PUBLISHED CLIENT SIGNALS…";
  try{
-  const r=await sb().functions.invoke("market-brain",{body:{}});
-  if(r.error||r.data?.error)throw Error(r.data?.error||r.error?.message||"Market Brain unavailable.");
-  const d=r.data||{},signals=d.signals||[],tests=d.backtests||[],actionable=signals.filter(x=>x.direction==="BUY"||x.direction==="SELL").length;
-  summary.innerHTML=[["ENGINE","ONLINE"],["MARKETS SCANNED",signals.length],["ACTIVE SETUPS",actionable],["LAST SCAN",new Date(d.generated_at||Date.now()).toLocaleTimeString()]].map(x=>'<article><small>'+esc(x[0])+'</small><b>'+esc(x[1])+'</b></article>').join("");
-  host.innerHTML=signals.map(x=>'<article class="client-panel bb-live-card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>'+esc(x.name||x.symbol)+'</b><strong style="color:'+(x.direction==="BUY"?"#07845b":x.direction==="SELL"?"#c33d4b":"#64748b")+'">'+esc(x.direction||"WAIT")+'</strong></div><p>'+esc(x.setup_status||"Research only")+' · Score '+Number(x.score||0)+'/100 · '+esc(x.data_status||"")+'</p><div class="bb-live-grid"><div class="bb-live-stat"><small>LAST PRICE</small><b>'+((x.price==null)?"—":Number(x.price).toFixed(Number(x.digits||5)))+'</b></div><div class="bb-live-stat"><small>TIMEFRAME BIAS</small><b style="font-size:11px">'+esc(x.bias||"—")+'</b></div></div><p class="bb-live-muted">Frames: '+esc((x.timeframes||[]).join(" · "))+'</p>'+(x.direction!=="WAIT"?'<p class="bb-live-muted">Research entry '+Number(x.entry_low).toFixed(Number(x.digits||5))+' – '+Number(x.entry_high).toFixed(Number(x.digits||5))+' · SL '+Number(x.stop_loss).toFixed(Number(x.digits||5))+' · TP '+Number(x.take_profit).toFixed(Number(x.digits||5))+'</p>':"")+'<details><summary>Evidence & news context</summary><ul>'+(x.reasons||[]).map(z=>'<li>'+esc(z)+'</li>').join("")+'</ul><p class="bb-live-muted">VSA: '+esc(x.vsa||"Unavailable")+'</p><p class="bb-live-muted">News: '+esc(x.news_status||"")+' · '+esc((x.news_context||[]).map(n=>n.title+" ("+n.currency+")").join("; "))+'</p></details></article>').join("")||'<div class="empty-state">No market signals returned.</div>';
-  if(back)back.innerHTML=tests.map(x=>'<div class="bb-live-row"><span><b>'+esc(x.symbol)+' · '+esc(x.strategy)+'</b><small>'+Number(x.trades||0)+' trades · '+Number(x.win_rate||0)+'% wins · PF '+esc(x.profit_factor)+'</small><small>Max DD '+Number(x.max_drawdown||0).toFixed(2)+'R · '+esc(x.cost_model||"")+'</small></span><b class="'+(Number(x.net_r)>=0?"bb-live-positive":"bb-live-negative")+'">'+Number(x.net_r||0).toFixed(2)+'R</b></div>').join("")||'<p class="bb-live-muted">No backtest output.</p>';
-  if(status)status.textContent="LIVE RESEARCH · "+signals.length+" markets · "+actionable+" directional setups · "+new Date(d.generated_at||Date.now()).toLocaleTimeString();
- }catch(e){if(status)status.textContent="MARKET BRAIN UNAVAILABLE";host.innerHTML=note("Market Brain could not load: "+e.message,true);}
+  const rows=await getRows(sb().from("bb_market_signal_feed").select("symbol,direction,score,signal_data,backtests,generated_at,expires_at").eq("published",true).gt("expires_at",new Date().toISOString()).order("generated_at",{ascending:false}));
+  const signals=rows.map(x=>({...x.signal_data,direction:x.direction,score:x.score,generated_at:x.generated_at})),tests=rows[0]?.backtests||[],actionable=signals.filter(x=>x.direction==="BUY"||x.direction==="SELL").length;
+  summary.innerHTML=[["ENGINE",rows.length?"PUBLISHED":"AWAITING ADMIN"],["MARKETS SCANNED",signals.length],["ACTIVE SETUPS",actionable],["LAST PUBLISH",rows[0]?.generated_at?new Date(rows[0].generated_at).toLocaleTimeString():"—"]].map(x=>'<article><small>'+esc(x[0])+'</small><b>'+esc(x[1])+'</b></article>').join("");
+  host.innerHTML=signals.map(x=>'<article class="client-panel bb-live-card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>'+esc(x.name||x.symbol)+'</b><strong style="color:'+(x.direction==="BUY"?"#07845b":x.direction==="SELL"?"#c33d4b":"#64748b")+'">'+esc(x.direction||"WAIT")+'</strong></div><p>'+esc(x.setup_status||"Research only")+' · Score '+Number(x.score||0)+'/100 · '+esc(x.data_status||"")+'</p><div class="bb-live-grid"><div class="bb-live-stat"><small>LAST PRICE</small><b>'+((x.price==null)?"—":Number(x.price).toFixed(Number(x.digits||5)))+'</b></div><div class="bb-live-stat"><small>TIMEFRAME BIAS</small><b style="font-size:11px">'+esc(x.bias||"—")+'</b></div></div><p class="bb-live-muted">Frames: '+esc((x.timeframes||[]).join(" · "))+'</p>'+(x.direction!=="WAIT"?'<p class="bb-live-muted">Research entry '+Number(x.entry_low).toFixed(Number(x.digits||5))+' – '+Number(x.entry_high).toFixed(Number(x.digits||5))+' · SL '+Number(x.stop_loss).toFixed(Number(x.digits||5))+' · TP '+Number(x.take_profit).toFixed(Number(x.digits||5))+'</p>':"")+'<details><summary>Evidence & news context</summary><ul>'+(x.reasons||[]).map(z=>'<li>'+esc(z)+'</li>').join("")+'</ul><p class="bb-live-muted">VSA: '+esc(x.vsa||"Unavailable")+'</p><p class="bb-live-muted">News: '+esc(x.news_status||"")+' · '+esc((x.news_context||[]).map(n=>n.title+" ("+n.currency+")").join("; "))+'</p></details></article>').join("")||note("No currently published signals. Admin must run and publish a fresh Market Brain scan.");
+  if(back)back.innerHTML=tests.map(x=>'<div class="bb-live-row"><span><b>'+esc(x.symbol)+' · '+esc(x.strategy)+'</b><small>'+Number(x.trades||0)+' trades · '+Number(x.win_rate||0)+'% wins · PF '+esc(x.profit_factor)+'</small><small>Max DD '+Number(x.max_drawdown||0).toFixed(2)+'R · '+esc(x.cost_model||"")+'</small></span><b class="'+(Number(x.net_r)>=0?"bb-live-positive":"bb-live-negative")+'">'+Number(x.net_r||0).toFixed(2)+'R</b></div>').join("")||'<p class="bb-live-muted">No backtest snapshot published.</p>';
+  if(status)status.textContent=rows.length?"PUBLISHED FEED · "+signals.length+" markets · "+actionable+" directional setups · "+new Date(rows[0].generated_at).toLocaleString():"WAITING FOR ADMIN PUBLISH";
+ }catch(e){if(status)status.textContent="SIGNAL FEED UNAVAILABLE";host.innerHTML=note("Published Market Brain feed could not load: "+e.message,true);}
  finally{brainBusy=false;}
 }
+async function publishMarketBrain(){
+ const button=$("#bb-admin-market-run"),status=$("#bb-admin-market-status");if(!button||button.disabled)return;
+ button.disabled=true;if(status)status.textContent="Running live market research and validating feed…";
+ try{
+  const who=await user(),r=await sb().functions.invoke("market-brain",{body:{}});
+  if(r.error||r.data?.error)throw Error(r.data?.error||r.error?.message||"Market Brain unavailable.");
+  const d=r.data||{},signals=d.signals||[],tests=d.backtests||[];
+  if(!signals.length)throw Error("The engine returned no market rows; nothing was published.");
+  const generatedAt=d.generated_at||new Date().toISOString(),expiresAt=new Date(Date.now()+20*60*1000).toISOString();
+  const payload=signals.map(x=>({symbol:String(x.name||x.symbol),direction:["BUY","SELL","WAIT"].includes(x.direction)?x.direction:"WAIT",score:Math.max(0,Math.min(100,Math.round(Number(x.score)||0))),signal_data:x,backtests:tests,published:true,generated_at:generatedAt,expires_at:expiresAt,created_by:who.id,updated_at:new Date().toISOString()}));
+  const hide=await sb().from("bb_market_signal_feed").update({published:false,updated_at:new Date().toISOString()}).eq("published",true);if(hide.error)throw hide.error;
+  const saved=await sb().from("bb_market_signal_feed").upsert(payload,{onConflict:"symbol"});if(saved.error)throw saved.error;
+  if(status)status.textContent="SUCCESS · "+payload.length+" market snapshots published to the KYC-approved client Signals page. Expiry: "+new Date(expiresAt).toLocaleTimeString()+".";
+ }catch(e){if(status)status.textContent="PUBLISH FAILED · "+e.message;}
+ finally{button.disabled=false;}
+}
+function enhanceAdminMarketPublisher(){
+ const button=$("#bb-admin-market-run");if(!button||button.dataset.ready)return;button.dataset.ready="1";button.addEventListener("click",publishMarketBrain);
+}
+
 function enhanceBrain(){
  const host=$("#bb-brain-signals");if(!host||host.dataset.bbBrainReady)return;host.dataset.bbBrainReady="1";
  $("#bb-brain-refresh")?.addEventListener("click",()=>loadMarketBrain());
  loadMarketBrain();if(brainTimer)clearInterval(brainTimer);brainTimer=setInterval(()=>{if($("#bb-brain-signals"))loadMarketBrain();},15*60*1000);
 }
-function scan(){startRealtime();if($("#bb-brain-signals"))enhanceBrain();if($("#wallet-content"))walletEnhance();if($("#bb-tv-chart"))terminalEnhance();if($("#bb-fx-market-grid"))marketCharts();}
+function scan(){startRealtime();enhanceAdminMarketPublisher();if($("#bb-brain-signals"))enhanceBrain();if($("#wallet-content"))walletEnhance();if($("#bb-tv-chart"))terminalEnhance();if($("#bb-fx-market-grid"))marketCharts();}
 function start(){const app=$("#app-shell");if(!app)return;scan();new MutationObserver(scan).observe(app,{childList:true,subtree:true});}
 window.addEventListener("click",e=>{const t=e.target instanceof Element?e.target:null,b=t?.closest("[data-wallet-tab]");if(!b||!["deposit","withdraw"].includes(b.dataset.walletTab))return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();$$("[data-wallet-tab]").forEach(x=>x.classList.toggle("active",x===b));walletPicker(b.dataset.walletTab);},true);
 window.addEventListener("click",e=>{const t=e.target instanceof Element?e.target:null;if(!t)return;const tab=t.closest("[data-term-bottom]");if(tab&&$("#bb-tv-chart")){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();$$("[data-term-bottom]").forEach(x=>x.classList.toggle("active",x===tab));paperBottom(tab.dataset.termBottom);return;}const close=t.closest("[data-bb-close]");if(close){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();close.disabled=true;paperCall({action:"close",account_mode:"demo",trade_id:close.dataset.bbClose,reason:"MANUAL CLOSE"}).then(paperRefresh).catch(err=>{alert(err.message);close.disabled=false;});}},true);
