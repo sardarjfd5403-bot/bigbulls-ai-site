@@ -700,7 +700,7 @@ if(activePage==="admin"&&isAdmin()){
   }
   const [w,t,ac,tr,kyc,partners,productOrders,supportTickets]=await Promise.all([
    sb.from("crypto_wallets").select("*").order("asset"),
-   sb.from("wallet_transactions").select("*").in("status",["pending","processing"]).order("created_at"),
+   sb.from("wallet_transactions").select("*").in("status",["pending","otp_pending","processing"]).order("created_at"),
    sb.from("trading_accounts").select("*").eq("status","pending").order("created_at"),
    sb.from("account_transfers").select("*").eq("status","pending").order("created_at"),
    sb.from("kyc_submissions").select("*").order("created_at",{ascending:false}).limit(100),
@@ -716,8 +716,8 @@ if(activePage==="admin"&&isAdmin()){
    else {
     const rows=await Promise.all((t.data||[]).map(async x=>{
      const proof=x.proof_path?await sb.storage.from("payment-proofs").createSignedUrl(x.proof_path,300):null;
-     const processing=x.status==="processing";
-     return '<div class="admin-transaction"><b>'+esc(x.kind.toUpperCase())+' · '+esc(x.asset)+' / '+esc(x.network)+' · '+esc(x.status.toUpperCase())+'</b><small>Invoice '+esc(x.invoice_id||x.id)+' · Client '+esc(x.user_id)+' · Account '+esc(x.account_id||"—")+'</small><small>Amount $'+Number(x.amount_usd||0).toFixed(2)+' · '+esc(x.amount_crypto||"")+' · '+new Date(x.created_at).toLocaleString()+'</small><small>'+(x.kind==="withdrawal"?'Receiving address / Binance ID: ':'Deposit TXID: ')+esc(x.kind==="withdrawal"?x.destination_address:x.tx_hash||"")+'</small>'+(proof?.data?.signedUrl?'<a href="'+esc(proof.data.signedUrl)+'" target="_blank" rel="noopener">View payment proof</a>':'')+(processing?'<button data-complete-withdrawal="'+esc(x.id)+'">Confirm payout sent</button>':('<button data-review="'+esc(x.id)+'" data-status="approved">Approve / process</button>'))+(processing?'':'<button data-review="'+esc(x.id)+'" data-status="rejected">Reject</button>')+(x.rejection_reason?'<small>Rejection: '+esc(x.rejection_reason)+'</small>':'')+'</div>';
+     const processing=x.status==="processing",otpPending=x.status==="otp_pending";
+     return '<div class="admin-transaction"><b>'+esc(x.kind.toUpperCase())+' · '+esc(x.asset)+' / '+esc(x.network)+' · '+esc(x.status.toUpperCase())+'</b><small>Invoice '+esc(x.invoice_id||x.id)+' · Client '+esc(x.user_id)+' · Account '+esc(x.account_id||"—")+'</small><small>Amount $'+Number(x.amount_usd||0).toFixed(2)+' · '+esc(x.amount_crypto||"")+' · '+new Date(x.created_at).toLocaleString()+'</small><small>'+(x.kind==="withdrawal"?'Receiving address / Binance ID: ':'Deposit TXID: ')+esc(x.kind==="withdrawal"?x.destination_address:x.tx_hash||"")+'</small>'+(proof?.data?.signedUrl?'<a href="'+esc(proof.data.signedUrl)+'" target="_blank" rel="noopener">View payment proof</a>':'')+(otpPending?'<small>Awaiting client email OTP verification. Review actions unlock after successful verification.</small>':(processing?'<button data-complete-withdrawal="'+esc(x.id)+'">Confirm payout sent</button>':'<button data-review="'+esc(x.id)+'" data-status="approved">Approve / process</button>')+(processing?'':'<button data-review="'+esc(x.id)+'" data-status="rejected">Reject</button>'))+(x.rejection_reason?'<small>Rejection: '+esc(x.rejection_reason)+'</small>':'')+'</div>';
     }));
     tl.innerHTML=rows.join("")||"No pending wallet requests.";
    }
