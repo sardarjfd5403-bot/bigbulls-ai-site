@@ -260,3 +260,104 @@ body :is(.progress,.progress-bar-track,.meter-track){border:1px solid #94a3b8!im
  body :is(p,li,small,label,td,th){line-height:1.55}
  body.app-mode .terminal-sidebar :is(a,button){border:1.5px solid #526783!important}
 }
+
+
+/* 2026-11-11 ACCESSIBILITY CONTRAST PASS — all navigation, action controls and icons */
+:root{
+  --bb-contrast-ink:#111827;
+  --bb-contrast-muted:#334155;
+  --bb-contrast-line:#64748b;
+  --bb-contrast-navy:#0b132b;
+  --bb-contrast-blue:#174ea6;
+  --bb-contrast-gold:#ffdf00;
+  --bb-contrast-green:#166534;
+  --bb-contrast-red:#991b1b;
+}
+/* Consistent, high-contrast text on light surfaces */
+body :is(.card,.panel,.client-panel,.client-stat,.service-tile,.bbx-section,.bbx-card,.dashboard-card,.stat-card,.metric-card,.widget,.form-card,.settings-card,.table-wrap,.chart-card,.account-card,.order-card,.transaction-card,.seo-card,.seo-panel,.seo-metric,.seo-stat,.admin-card,.admin-panel,.admin-section,.admin-widget,.content-panel,.settings-panel,.feature-card,.course-card,.market-card,.auth-card,.login-card,.signup-card,.support-panel,.notification-panel,.modal,.modal-content,.modal-dialog,.dropdown-menu,.popover,.menu-panel,.profile-menu,.header-popover,.cards article,.learning-course,.insight-card,.trading-card,.feature-grid article,.pricecard,.price-card,.lockcard,.ai-feature-card,.payment-cards article,.client-stat,.metric-card){
+  color:var(--bb-contrast-ink)!important;
+  border-color:var(--bb-contrast-line)!important;
+}
+body :is(.card,.panel,.client-panel,.client-stat,.service-tile,.bbx-section,.bbx-card,.dashboard-card,.stat-card,.metric-card,.widget,.form-card,.settings-card,.table-wrap,.chart-card,.account-card,.order-card,.transaction-card,.seo-card,.seo-panel,.seo-metric,.seo-stat,.admin-card,.admin-panel,.admin-section,.admin-widget,.content-panel,.settings-panel,.feature-card,.course-card,.market-card,.auth-card,.login-card,.signup-card,.support-panel,.notification-panel,.modal,.modal-content,.modal-dialog,.dropdown-menu,.popover,.menu-panel,.profile-menu,.header-popover,.cards article,.learning-course,.insight-card,.trading-card,.feature-grid article,.pricecard,.price-card,.lockcard,.ai-feature-card,.payment-cards article) :is(p,li,small,label,span,td,dd,.muted,.hint,.description,.note,.fine,.helper-text){
+  color:var(--bb-contrast-muted)!important;
+  opacity:1!important;
+}
+/* All buttons and page/menu controls: readable label, icon and unmistakable outline */
+body :is(button,.btn,.button,.navbtn,.action-btn,.portal-primary,.admin-button,.primary-btn,.cta,.tab,.tab-button,[role=tab],input[type=button],input[type=submit]){
+  color:#fff!important;
+  background-color:var(--bb-contrast-blue)!important;
+  border:2px solid #123d82!important;
+  text-shadow:none!important;
+  opacity:1!important;
+  font-weight:800!important;
+  box-shadow:0 2px 6px rgba(15,23,42,.16)!important;
+}
+body :is(button,.btn,.button,.navbtn,.action-btn,.portal-primary,.admin-button,.primary-btn,.cta,.tab,.tab-button,[role=tab],input[type=button],input[type=submit]) :is(svg,i,.icon){
+  color:currentColor!important;stroke:currentColor!important;fill:currentColor;
+}
+body :is(button,.btn,.button,.navbtn,.action-btn,.portal-primary,.admin-button,.primary-btn,.cta,.tab,.tab-button,[role=tab],input[type=button],input[type=submit]):hover{
+  color:#fff!important;background-color:#123d82!important;border-color:#0b2e65!important;
+}
+body :is(.gold,.btn.gold,.btn-gold,.nav-open,.open-account,.register-btn,.btn-register,.btn-cta,.claim-bonus,.btn-account-open){
+  color:#111827!important;background:var(--bb-contrast-gold)!important;border:2px solid #8a6b00!important;
+}
+body :is(.gold,.btn.gold,.btn-gold,.nav-open,.open-account,.register-btn,.btn-register,.btn-cta,.claim-bonus,.btn-account-open):hover{
+  color:#111827!important;background:#f5c400!important;border-color:#705600!important;
+}
+body :is(.success,.btn-success,.approve,.verify,[data-action=approve],[data-action=verify],.bb-buy,.buy-button,[data-side=buy]){
+  color:#fff!important;background:#166534!important;border:2px solid #14532d!important;
+}
+body :is(.danger,.btn-danger,.reject,.delete,[data-action=reject],[data-action=delete],.bb-sell,.sell-button,[data-side=sell]){
+  color:#fff!important;background:#991b1b!important;border:2px solid #7f1d1d!important;
+}
+body :is(button:disabled,.btn:disabled,input:disabled,select:disabled,textarea:disabled){
+  color:#334155!important;background:#e2e8f0!important;border:2px solid #94a3b8!important;opacity:1!important;
+}
+/* Top bar, equity/balance area and header icons */
+body :is(.site-header,.app-header,.terminal-header,.portal-header,.admin-header,.topbar,.navbar,.terminal-head,.app-topbar,.mobile-header){
+  background:#0b132b!important;color:#fff!important;border-color:#64748b!important;
+}
+body :is(.site-header,.app-header,.terminal-header,.portal-header,.admin-header,.topbar,.navbar,.terminal-head,.app-topbar,.mobile-header) :is(a,span,small,strong,b,label,p){
+  color:#fff!important;opacity:1!important;
+}
+body :is(.terminal-head-right,.header-actions,.header-balance,.equity,.equity-value,.balance-chip,.account-equity,.topbar-equity) :is(span,b,strong,small,i,svg){
+  color:#fff!important;opacity:1!important;stroke:currentColor!important;
+}
+body :is(.header-balance,.equity,.equity-value,.balance-chip,.account-equity,.topbar-equity){
+  background:#172b4d!important;color:#fff!important;border:1.5px solid #9bb5dc!important;border-radius:9px!important;
+}
+body :is(.terminal-head-right,.header-actions) button{
+  background:#174ea6!important;color:#fff!important;border:2px solid #9bb5dc!important;
+}
+body :is(.terminal-head-right,.header-actions) button :is(svg,i){color:#fff!important;stroke:#fff!important}
+/* Sidebar/menu items and icon tiles */
+body.app-mode :is(.terminal-sidebar,.sidebar,.app-sidebar,.dashboard-sidebar,.side-nav) :is(a,button){
+  color:#172033!important;background:#fff!important;border:2px solid #64748b!important;
+}
+body.app-mode :is(.terminal-sidebar,.sidebar,.app-sidebar,.dashboard-sidebar,.side-nav) :is(a,button) :is(svg,i,.side-icon){
+  color:#174ea6!important;stroke:#174ea6!important;
+}
+body.app-mode :is(.terminal-sidebar,.sidebar,.app-sidebar,.dashboard-sidebar,.side-nav) :is(a,button).active,
+body.app-mode :is(.terminal-sidebar,.sidebar,.app-sidebar,.dashboard-sidebar,.side-nav) :is(a,button)[aria-current]{
+  background:#174ea6!important;color:#fff!important;border:2px solid #0b2e65!important;
+}
+body.app-mode :is(.terminal-sidebar,.sidebar,.app-sidebar,.dashboard-sidebar,.side-nav) :is(a,button).active :is(svg,i,.side-icon),
+body.app-mode :is(.terminal-sidebar,.sidebar,.app-sidebar,.dashboard-sidebar,.side-nav) :is(a,button)[aria-current] :is(svg,i,.side-icon){
+  color:#fff!important;stroke:#fff!important;
+}
+/* Light backgrounds: strong labels and icon strokes; dark backgrounds: white labels */
+body :is(.dropdown-menu,.popover,.menu-panel,.profile-menu,.header-popover) :is(a,button,span,b,small,svg,i){color:#111827!important;stroke:currentColor!important}
+body :is(.dropdown-menu,.popover,.menu-panel,.profile-menu,.header-popover) a:hover{background:#e8eef8!important;color:#0b2e65!important}
+body :is(.dark-card,.card-dark,.terminal-card,.dashboard-dark-card,.bbx-section,.bbx-card) :is(h1,h2,h3,h4,h5,h6,p,li,small,label,span,b,strong){color:#fff!important;opacity:1!important}
+body :is(.dark-card,.card-dark,.terminal-card,.dashboard-dark-card,.bbx-section,.bbx-card) :is(.muted,.hint,.description,.note,.fine){color:#e2e8f0!important}
+body :is(svg,i,.icon,[class*="icon"]){opacity:1!important}
+body :is(a,button,[role=button],[role=tab],input,select,textarea,[tabindex]):focus-visible{
+  outline:3px solid #f59e0b!important;outline-offset:3px!important;
+}
+body :is(input,select,textarea,.form-control,.form-select){
+  color:#111827!important;background:#fff!important;border:2px solid #64748b!important;
+}
+body :is(input,select,textarea,.form-control,.form-select)::placeholder{color:#475569!important;opacity:1!important}
+body :is(.market-tabs button.active,.tab.active,.tab-button.active,[role=tab][aria-selected=true]){
+  color:#fff!important;background:#174ea6!important;border:2px solid #0b2e65!important;
+}
