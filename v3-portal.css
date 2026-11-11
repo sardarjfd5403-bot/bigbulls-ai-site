@@ -161,3 +161,56 @@ body.app-mode>.public-header,body.app-mode>main,body.app-mode>footer{display:non
 /* BIGBULLS RESPONSIVE ICON HARDENING */
 .app-shell svg{display:block;max-width:100%;flex-shrink:0}.app-shell button{min-width:0}.bb-top-left,.bb-top-actions,.bb-top-brand{flex-shrink:0}.bb-top-actions>*{flex-shrink:0}.bb-reference-nav,.bb-nav-group,.bb-nav-main,.bb-nav-direct,.bb-sub-link{min-width:0}.bb-nav-main{display:flex;flex-flow:row nowrap;align-items:center}.bb-nav-main>span:first-child{display:grid;place-items:center;flex:0 0 19px}.bb-nav-main>svg{flex:0 0 12px}.bb-nav-direct{display:flex;flex-flow:row nowrap;align-items:center}.bb-nav-direct>svg{flex:0 0 18px}.bb-identity{display:flex;flex-flow:row nowrap;align-items:center}.bb-identity>span:nth-child(2){flex:1;overflow:hidden}.bb-drawer-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}.bb-drawer-backdrop{touch-action:manipulation}
 @media(max-width:380px){.bb-top-brand{font-size:8px;letter-spacing:0}.bb-top-actions{gap:4px}.bb-bell,.bb-profile-chip,.bb-hamburger{width:34px;min-width:34px;height:34px}.bb-top-brand span{display:none}.bb-top-brand:after{content:'FX MARKET';color:#1769e8}.bb-top-brand{font-size:9px}.bb-v3-page-head{gap:8px}.bb-open-account{padding:8px;font-size:9px}}
+
+
+/* BIGBULLS EXNESS-INSPIRED CLIENT PORTAL — ACCOUNT CENTRE */
+#client-page .accounts-page-intro{margin:0 0 22px;padding:0;background:transparent;border:0;box-shadow:none}
+#client-page .accounts-kicker{display:block;color:#8a98aa;font-size:9px;font-weight:800;letter-spacing:.13em;text-transform:uppercase}
+#client-page .accounts-page-intro h3{margin:6px 0 5px;color:#181c25;font-size:clamp(24px,3vw,31px);font-weight:800;letter-spacing:-.045em;line-height:1.15}
+#client-page .accounts-page-intro p{max-width:720px;margin:0;color:#64748b;font-size:11px;line-height:1.65}
+#client-page .bb-account-tabs{display:inline-flex;flex-wrap:wrap;gap:4px;max-width:100%;padding:4px;margin:0 0 18px;border:1px solid #e5e7eb;border-radius:12px;background:#f1f3f6}
+#client-page .bb-account-tabs button{min-height:38px;padding:9px 17px;border:0;border-radius:9px;background:transparent;color:#64748b;font-size:10px;font-weight:800;letter-spacing:.025em;white-space:nowrap;transition:background .18s,color .18s,box-shadow .18s}
+#client-page .bb-account-tabs button:hover{color:#181c25;background:#fff}
+#client-page .bb-account-tabs button.active{background:#fff;color:#181c25;box-shadow:0 1px 4px #17243a18}
+#client-page .accounts-workspace{display:grid;grid-template-columns:minmax(250px,.78fr) minmax(0,1.5fr);align-items:start;gap:16px;margin:0}
+#client-page .accounts-workspace>.client-panel{min-width:0;margin:0;padding:20px;border:1px solid #e5e7eb;border-radius:16px;background:#fff;box-shadow:0 3px 16px rgba(20,42,75,.035)}
+#client-page .account-request-panel>.free-tag{display:inline-flex;padding:5px 8px;border-radius:6px;background:#edf4ff;color:#1769e8;font-size:9px;font-weight:850;letter-spacing:.08em}
+#client-page .account-request-panel h3,#client-page .account-list-heading h3{margin:9px 0 15px;color:#181c25;font-size:16px;font-weight:800;letter-spacing:-.025em}
+#client-page .account-request-panel .client-form{gap:13px}
+#client-page .account-request-panel .client-form label{color:#475569;font-size:10px;font-weight:750}
+#client-page .account-request-panel .client-form input,#client-page .account-request-panel .client-form select{min-height:43px;margin-top:6px;border:1px solid #e1e6ed;border-radius:9px;background:#fff;color:#182538;font-size:11px}
+#client-page .account-request-panel .client-form input:focus,#client-page .account-request-panel .client-form select:focus{border-color:#6da5ff;box-shadow:0 0 0 3px #1769e814}
+#client-page .account-request-panel .portal-primary{width:100%;min-height:43px;border-radius:10px;background:#1769e8;color:#fff;font-size:11px;font-weight:850;box-shadow:0 5px 12px #1769e826}
+#client-page .account-request-panel .portal-primary:hover{background:#0d55c7}
+#client-page .account-request-panel .fine{font-size:9px;line-height:1.65}
+#client-page .account-list-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding-bottom:13px;border-bottom:1px solid #edf0f4}
+#client-page .account-list-heading h3{margin:4px 0 0;font-size:17px}
+#client-page .account-list-mark{display:grid;width:36px;height:36px;place-items:center;border-radius:11px;background:#edf4ff;color:#1769e8;font-size:12px;font-weight:900}
+#client-page #my-trading-accounts{display:grid;gap:12px;min-width:0}
+#client-page .bb-account-card{min-width:0;padding:17px;border:1px solid #e5e7eb;border-radius:14px;background:#fff;box-shadow:0 2px 10px rgba(20,42,75,.025);transition:border-color .18s,box-shadow .18s}
+#client-page .bb-account-card:hover{border-color:#cbdcf5;box-shadow:0 6px 18px rgba(20,42,75,.07)}
+#client-page .bb-account-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding-bottom:13px;border-bottom:1px solid #edf0f4}
+#client-page .bb-account-card-top>div{min-width:0}
+#client-page .bb-account-card-top small{display:block;margin-bottom:5px;color:#8a98aa;font-size:8px;font-weight:800;letter-spacing:.09em}
+#client-page .bb-account-card-top h4{margin:0;color:#182538;font-size:15px;font-weight:850;line-height:1.35;overflow-wrap:anywhere}
+#client-page .bb-account-number{flex:0 0 auto;padding:5px 9px;border-radius:7px;background:#f3f6fa;color:#64748b;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;font-weight:750}
+#client-page .bb-account-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 15px;padding:15px 0}
+#client-page .bb-account-meta>span{display:flex;flex-direction:column;gap:4px;min-width:0;color:#94a0af;font-size:8px;font-weight:800;letter-spacing:.07em}
+#client-page .bb-account-meta b{color:#27364b;font-size:11px;font-weight:800;letter-spacing:0;overflow-wrap:anywhere}
+#client-page .bb-account-meta>span:nth-child(5) b{color:#181c25;font-size:15px}
+#client-page .bb-account-actions{display:flex;flex-wrap:wrap;align-items:center;gap:7px;padding-top:12px;border-top:1px solid #edf0f4}
+#client-page .bb-account-actions button{min-height:34px;padding:8px 12px;border:1px solid #e3e8ef;border-radius:9px;background:#f7f9fc;color:#42516a;font-size:9px;font-weight:800;line-height:1.2;transition:background .16s,border-color .16s,color .16s}
+#client-page .bb-account-actions button:hover{border-color:#c6d9f6;background:#edf4ff;color:#1769e8}
+#client-page .bb-account-actions.account-financial-actions{padding:12px 0;border-top:0}
+#client-page .bb-account-actions.account-financial-actions button{border-color:#1769e8;background:#1769e8;color:#fff}
+#client-page .bb-account-actions.account-financial-actions button:hover{border-color:#0d55c7;background:#0d55c7}
+#client-page .bb-account-actions button.danger{border-color:#f3d9dc;background:#fff7f7;color:#bd4655}
+#client-page .bb-account-actions button.danger:hover{background:#ffebed}
+#client-page .bb-account-card .notice{margin:10px 0 0;border-radius:9px;font-size:9px}
+#client-page .bb-account-tools{margin-top:16px;padding:20px;border:1px solid #e5e7eb;border-radius:15px;background:#fff}
+#client-page .bb-account-tools h3{margin:5px 0 8px;color:#181c25;font-weight:800}
+#client-page .accounts-workspace~.notice{margin-top:16px;border-radius:11px}
+#client-page .empty-state{padding:24px 16px;border:1px dashed #d9e1eb;border-radius:12px;background:#fafbfd;color:#8190a4;text-align:center;font-size:11px;line-height:1.6}
+#client-page .bb-account-card button:focus-visible,#client-page .bb-account-tabs button:focus-visible{outline:3px solid #1769e844;outline-offset:2px}
+@media(max-width:900px){#client-page .accounts-workspace{grid-template-columns:minmax(0,1fr)}#client-page .account-request-panel .client-form{grid-template-columns:repeat(2,minmax(0,1fr))}#client-page .account-request-panel .client-form>button,#client-page .account-request-panel .client-form>[data-page-message],#client-page .account-request-panel .client-form>.fine{grid-column:1/-1}}
+@media(max-width:560px){#client-page .bb-account-tabs{display:flex;width:100%;gap:3px}#client-page .bb-account-tabs button{flex:1;padding:9px 7px;font-size:8px}#client-page .accounts-workspace>.client-panel{padding:15px}#client-page .account-request-panel .client-form{grid-template-columns:minmax(0,1fr)}#client-page .account-request-panel .client-form>button,#client-page .account-request-panel .client-form>[data-page-message],#client-page .account-request-panel .client-form>.fine{grid-column:auto}#client-page .bb-account-card{padding:13px}#client-page .bb-account-meta{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px 12px}#client-page .bb-account-actions button{flex:1 1 auto}#client-page .bb-account-actions.account-financial-actions button{flex:1 1 calc(50% - 7px)}}
