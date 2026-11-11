@@ -1,6 +1,3 @@
--- Require approved KYC and AAL2 for client trading-account mutations.
--- Admin RPCs remain guarded by public.is_bigbulls_admin() inside each function.
-
 CREATE OR REPLACE FUNCTION public.create_client_trading_account(
   p_account_mode text,
   p_account_type text,
