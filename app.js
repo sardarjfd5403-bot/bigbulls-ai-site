@@ -1036,8 +1036,23 @@ async function submitHandler(e){
   button.textContent="Submitting withdrawal request…";
   const {data:tx,error}=await sb.from("wallet_transactions").insert({user_id:user.id,account_id:ctx.accountId,kind:"withdrawal",asset:method.asset,network:method.network,destination_address:destination,amount_usd:amount,amount_crypto:amountCrypto,status:"pending"}).select("id,invoice_id").single();
   if(error){if(out)out.textContent="Withdrawal request failed: "+error.message;button.disabled=false;button.textContent="Submit withdrawal request";return;}
-  body.innerHTML='<p class="eyebrow">WITHDRAWAL SUBMITTED</p><h2>Request received</h2><div class="notice">Invoice '+esc(tx.invoice_id)+' is pending Admin review. Your account is debited only after the payout is sent and Admin records its payout reference.</div><button class="portal-primary" type="button" data-close>Close</button>';
-  await loadClientTradingAccounts();return;
+  button.textContent="Sending email verification…";
+  const otp=await sb.functions.invoke("withdrawal-otp",{body:{action:"request",transaction_id:tx.id}});
+  if(otp.error||otp.data?.error){
+   body.innerHTML='<p class="eyebrow">WITHDRAWAL SAVED</p><h2>Verification email unavailable</h2><div class="notice">Request '+esc(tx.invoice_id||"saved")+' is recorded as pending. Email OTP could not be sent: '+esc(otp.data?.error||otp.error?.message||"Email service unavailable")+'. Please contact Support before submitting another request.</div><button class="portal-primary" type="button" data-close>Close</button>';
+   await loadClientTradingAccounts();return;
+  }
+  body.innerHTML='<p class="eyebrow">EMAIL VERIFICATION</p><h2>Verify withdrawal</h2><p>A six-digit code was sent to your registered email. It expires in 10 minutes.</p><form id="bb-account-withdrawal-otp" class="client-form"><label>Verification code<input name="otp" inputmode="numeric" autocomplete="one-time-code" minlength="6" maxlength="6" pattern="[0-9]{6}" required></label><button class="portal-primary" type="submit">Verify & send for Admin review</button><div data-page-message role="status" aria-live="polite"></div></form>';
+  const otpForm=document.getElementById("bb-account-withdrawal-otp");
+  otpForm?.addEventListener("submit",async ev=>{
+   ev.preventDefault();const form=ev.currentTarget,verifyButton=form.querySelector('button[type="submit"]'),messageBox=form.querySelector("[data-page-message]"),code=String(new FormData(form).get("otp")||"").trim();
+   verifyButton.disabled=true;verifyButton.textContent="Verifying…";
+   const result=await sb.functions.invoke("withdrawal-otp",{body:{action:"verify",transaction_id:tx.id,otp:code}});
+   if(result.error||result.data?.error){if(messageBox)messageBox.textContent=result.data?.error||result.error?.message||"OTP verification failed.";verifyButton.disabled=false;verifyButton.textContent="Verify & send for Admin review";return;}
+   form.innerHTML='<div class="notice">Email verified. Withdrawal '+esc(tx.invoice_id||"request")+' is now pending Admin approval. Your account is debited only after Admin confirms the payout.</div><button type="button" class="portal-primary" data-close>Close</button>';
+   await loadClientTradingAccounts();
+  });
+  return;
  }
  if(f.id==="wallet-form"){e.preventDefault();const d=new FormData(f),kind=String(d.get("kind")||"deposit"),accountId=String(d.get("account_id")||"")||null;if(!accountId){const msg=f.querySelector("[data-page-message]")||f.parentElement.querySelector("[data-page-message]");if(msg)msg.textContent="Please submit deposits and withdrawals from a specific Trading Account.";return;}let payload;if(kind==="withdrawal"){const pair=String(d.get("asset_network")).split("|");payload={user_id:user.id,account_id:accountId,kind:"withdrawal",asset:pair[0],network:pair[1],destination_address:String(d.get("destination_address")).trim(),amount_usd:Number(d.get("amount_usd")),amount_crypto:String(d.get("amount_crypto")).trim(),status:"pending"};}else{const walletId=String(d.get("wallet_id")||document.getElementById("deposit-asset")?.value||"");if(!walletId)return;const {data:w,error:walletError}=await sb.from("crypto_wallets").select("asset,network,address").eq("id",walletId).single();if(walletError||!w)return;payload={user_id:user.id,account_id:accountId,kind:"deposit",asset:w.asset,network:w.network,destination_address:w.address,amount_usd:Number(d.get("amount_usd")),amount_crypto:String(d.get("amount_crypto")).trim(),tx_hash:String(d.get("tx_hash")).trim(),status:"pending"};}const {error}=await sb.from("wallet_transactions").insert(payload);const msg=f.querySelector("[data-page-message]")||f.parentElement.querySelector("[data-page-message]");if(msg)msg.textContent=error?"Request failed: "+error.message:"Request submitted and is pending admin review.";if(!error){f.reset();if(accountId)showAccountTool(accountId,kind==="deposit"?"deposit":"withdraw");else loadPageData();}return;}
  if(f.id==="kyc-form"){
