@@ -17,6 +17,7 @@ on:
       - "app.js"
       - "v3-portal.js"
       - "index.html"
+      - "v3-auth.js"
       - ".github/workflows/validate-trading-terminal.yml"
 
 jobs:
