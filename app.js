@@ -212,6 +212,7 @@ async function showApp(page){
 
  try{
   renderApp();
+  if(window.__bbAccessNotice)message(window.__bbAccessNotice,true);
   // Apply the approved broker reference UI after the terminal has entered the DOM.
   // Retry briefly if the enhancement layer is still initializing or the browser schedules scripts late.
   applyReferenceClientUI();
