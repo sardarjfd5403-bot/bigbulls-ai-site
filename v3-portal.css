@@ -23,3 +23,7 @@ body.app-mode.bb-v3-active .bb-drawer-logout{position:sticky!important;bottom:0!
 body.app-mode.bb-v3-active .bb-admin-link{color:#0066ff!important;font-weight:800!important}
 body.app-mode.bb-v3-active .bb-drawer-active{overflow:hidden!important}
 @media(max-width:640px){body.app-mode.bb-v3-active .terminal-main{padding:15px 12px 30px!important}body.app-mode.bb-v3-active .bb-v3-page-head h2{font-size:20px!important}body.app-mode.bb-v3-active .bb-v3-meta{font-size:11px!important}body.app-mode.bb-v3-active .bb-v3-head .bb-header-balance{display:none!important}}
+
+body.app-mode.bb-v3-active .bb-v3-head{position:relative!important}
+body.app-mode.bb-v3-active .bb-v3-head .bb-top-brand{position:absolute!important;left:50%!important;transform:translateX(-50%)!important;top:50%!important;translate:0 -50%!important}
+@media(max-width:520px){body.app-mode.bb-v3-active .bb-v3-head .bb-top-brand{font-size:11px!important;max-width:48vw!important;overflow:hidden!important;text-overflow:ellipsis!important}.bb-top-actions{gap:7px!important}}
