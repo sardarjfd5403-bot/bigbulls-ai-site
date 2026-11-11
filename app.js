@@ -161,7 +161,19 @@ function startFinancialRealtime(){
  }
  financialChannel=channel.subscribe();
 }
-async function showApp(page){
+async function applyReferenceClientUI(attempt=0){
+ const terminal=shell&&shell.querySelector(".terminal");
+ if(!terminal)return;
+ const enhance=window.__bbEnhanceClientPortal;
+ if(typeof enhance==="function"){
+  try{
+   enhance();
+   if(terminal.dataset.bbReference==="yes")return;
+  }catch(error){console.error("BIGBULLS reference dashboard enhancement failed:",error);}
+ }
+ if(attempt<12)window.setTimeout(()=>applyReferenceClientUI(attempt+1),Math.min(50*(attempt+1),300));
+}
+function showApp(page){
  if(!user||!shell)return;
  let requested=pages.includes(page)?page:"accounts";
  if(requested==="dashboard")requested="accounts";
@@ -185,8 +197,11 @@ async function showApp(page){
 
  try{
   renderApp();
-  // Apply the reference client UI synchronously after the authenticated shell exists.
-  if(typeof window.__bbEnhanceClientPortal==="function")window.__bbEnhanceClientPortal();
+  // Apply the approved broker reference UI after the terminal has entered the DOM.
+  // Retry briefly if the enhancement layer is still initializing or the browser schedules scripts late.
+  applyReferenceClientUI();
+  window.requestAnimationFrame(()=>applyReferenceClientUI());
+  window.setTimeout(()=>applyReferenceClientUI(),80);
  }catch(error){
   console.error("Client portal render failed:",error);
   shell.innerHTML='<div class="portal-load-error" role="alert"><h2>Workspace could not be rendered</h2><p>Please refresh the page. Your sign-in session is still active.</p><button type="button" onclick="location.reload()">Reload workspace</button></div>';
