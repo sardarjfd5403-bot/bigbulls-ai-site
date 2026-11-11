@@ -28,7 +28,6 @@
  function enhance(){
   const shell=$("#app-shell"),terminal=shell&&$(".terminal",shell);if(!terminal)return;
   if(enhanced===terminal&&terminal.dataset.bbReference==="yes")return;
-  enhanced=terminal;terminal.dataset.bbReference="yes";
   const head=$(".terminal-head",terminal),sidebar=$(".client-sidebar",terminal),main=$(".terminal-main",terminal);if(!head||!sidebar||!main)return;
   const panel=$("#client-notification-panel",head);
   const name=window.__bbUserName||$(".profile-trigger b",head)?.textContent||"Client";
