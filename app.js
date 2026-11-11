@@ -177,17 +177,8 @@ async function applyReferenceClientUI(attempt=0){
 }
 function showApp(page){
  if(!user||!shell)return;
- // Regular clients stay on the public landing page; the separately authorised admin workspace is retained.
- if(!isAdmin()){
-  shell.hidden=true;
-  document.body.classList.remove("app-mode");
-  const main=document.querySelector("main"),footer=document.querySelector("footer");
-  if(main)main.removeAttribute("hidden");
-  if(footer)footer.removeAttribute("hidden");
-  closeModal();
-  activePage="landing";
-  return;
- }
+ // Every authenticated customer enters the client portal. Admin routes remain role-gated.
+
  let requested=pages.includes(page)?page:"accounts";
  if(requested==="dashboard")requested="accounts";
 
@@ -196,6 +187,7 @@ function showApp(page){
  window.__bbUserName=user.user_metadata?.full_name||user.email?.split("@")[0]||"Client";
  window.__bbUserEmail=user.email||"";
  window.__bbUserId=user.id;
+ window.__bbIsAdmin=()=>isAdmin();
  activePage=requested;
  startFinancialRealtime();
  if(activePage==="accounts")window.bbAccountMode="real";
