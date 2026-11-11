@@ -114,7 +114,7 @@ function startFinancialRealtime(){
 }
 async function showApp(page){
  if(!user||!shell)return;
- let requested=pages.includes(page)?page:"dashboard";
+ let requested=pages.includes(page)?page:"accounts";if(requested==="dashboard")requested="accounts";
  if(!isAdmin()&&requested!=="verification"){
   const {data:kyc,error:kycError}=await sb.from("kyc_submissions").select("status").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1).maybeSingle();
   if(kycError||kyc?.status!=="approved")requested="verification";
@@ -125,7 +125,7 @@ async function showApp(page){
    else{const {data:aal,error:aalError}=await sb.auth.mfa.getAuthenticatorAssuranceLevel();if(aalError||aal?.currentLevel!=="aal2")requested="verification";}
   }
  }
- activePage=requested;startFinancialRealtime();if(activePage==="accounts")window.bbAccountMode="real";if(activePage==="admin"&&!isAdmin())activePage="dashboard";
+ window.__bbUserName=user.user_metadata?.full_name||user.email?.split("@")[0]||"Client";window.__bbUserEmail=user.email||"";activePage=requested;startFinancialRealtime();if(activePage==="accounts")window.bbAccountMode="real";if(activePage==="admin"&&!isAdmin())activePage="dashboard";
  shell.hidden=false;document.body.classList.add("app-mode");
  const main=document.querySelector("main"),footer=document.querySelector("footer");if(main)main.setAttribute("hidden","");if(footer)footer.setAttribute("hidden","");
  closeModal();renderApp();refreshHeaderBalance();loadPageData();loadClientNotifications();
