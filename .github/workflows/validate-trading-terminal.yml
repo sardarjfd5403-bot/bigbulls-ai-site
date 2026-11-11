@@ -1,10 +1,11 @@
-name: Validate BIGBULLS trading terminal
+name: Validate BIGBULLS client portal
 
 on:
   pull_request:
     paths:
       - "app.js"
-      - "paper-terminal.js"
+      - "v3-portal.js"
+      - "index.html"
       - ".github/workflows/validate-trading-terminal.yml"
   push:
     branches:
@@ -12,7 +13,9 @@ on:
       - "feature/**"
     paths:
       - "app.js"
-      - "paper-terminal.js"
+      - "v3-portal.js"
+      - "index.html"
+      - ".github/workflows/validate-trading-terminal.yml"
 
 jobs:
   syntax:
@@ -22,7 +25,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Check JavaScript syntax
+      - name: Check client portal JavaScript syntax
         run: |
           node --check app.js
-          node --check paper-terminal.js
+          node --check v3-portal.js
