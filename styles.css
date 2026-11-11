@@ -917,3 +917,51 @@ body.app-mode .terminal .deposit-qr{background:#fff!important}
 #bb-seo-admin-panel textarea{width:100%;resize:vertical}
 #bb-seo-admin-panel .fine{color:#a5b1c4}
 @media(max-width:760px){.bb-seo-grid{grid-template-columns:1fr}.bb-seo-head{align-items:flex-start;flex-direction:column}}
+
+
+/* LANDING HERO + AI INTELLIGENCE — softer blue surfaces, maximum text contrast */
+body:not(.app-mode) .hero{
+ background:linear-gradient(115deg,#f5f9ff 0%,#eaf2ff 52%,#dce9fb 100%)!important;
+ color:#10213b!important;
+}
+body:not(.app-mode) .hero .eyebrow{color:#1558a6!important;font-weight:900!important}
+body:not(.app-mode) .hero h1,
+body:not(.app-mode) .hero h1 em{color:#10213b!important;-webkit-text-fill-color:#10213b!important}
+body:not(.app-mode) .hero .lead{color:#263b59!important;font-weight:600!important}
+body:not(.app-mode) .hero .note{color:#405572!important;font-weight:600!important}
+body:not(.app-mode) .hero .btn{background:#fff!important;color:#12345d!important;border:1px solid #8daed8!important;font-weight:800!important;box-shadow:0 3px 10px #173b6812!important}
+body:not(.app-mode) .hero .btn.gold{background:#155fbd!important;color:#fff!important;border-color:#155fbd!important}
+body:not(.app-mode) .hero .chart{
+ background:linear-gradient(145deg,#fff 0%,#f4f8ff 100%)!important;
+ border:1px solid #9bb8dc!important;color:#10213b!important;
+ box-shadow:0 18px 48px #16365b1c!important;
+}
+body:not(.app-mode) .hero .charttop,
+body:not(.app-mode) .hero .charttitle strong,
+body:not(.app-mode) .hero .chartfoot{color:#142b4b!important}
+body:not(.app-mode) .hero .charttop b,
+body:not(.app-mode) .hero .chartfoot b{color:#075eae!important}
+body:not(.app-mode) .hero .charttitle small{color:#405875!important}
+body:not(.app-mode) .hero .chartfoot{border-color:#c8d7eb!important}
+body:not(.app-mode) .ai-showcase{
+ background:linear-gradient(135deg,#f5f8fd 0%,#eaf1fa 55%,#f8fbff 100%)!important;
+ border-block:1px solid #d3dfef!important;color:#14243d!important;
+}
+body:not(.app-mode) .ai-showcase h2,
+body:not(.app-mode) .ai-showcase h2 em{color:#10213b!important;-webkit-text-fill-color:#10213b!important}
+body:not(.app-mode) .ai-showcase-head p{color:#334761!important;font-weight:600!important}
+body:not(.app-mode) .ai-rotate-label{background:#fff!important;color:#17365e!important;border:1px solid #b8cbe3!important}
+body:not(.app-mode) .ai-rotate-label b{color:#155fbd!important}
+body:not(.app-mode) .ai-feature-card,
+body:not(.app-mode) .ai-feature-card:nth-child(3n+2){
+ background:#fff!important;border:1px solid #b9cce5!important;
+ border-top:4px solid #3979c7!important;
+ box-shadow:0 8px 24px #17365b12!important;color:#10213b!important;
+}
+body:not(.app-mode) .ai-feature-card small{color:#155fbd!important;font-weight:900!important}
+body:not(.app-mode) .ai-feature-card h3{color:#10213b!important;font-weight:900!important}
+body:not(.app-mode) .ai-feature-card p{color:#334761!important;font-weight:600!important}
+body:not(.app-mode) .ai-card-mark{color:#155fbd!important;opacity:.16!important}
+body:not(.app-mode) .ai-carousel-foot{color:#334761!important}
+body:not(.app-mode) .ai-progress{background:#d4dfed!important}
+body:not(.app-mode) .ai-progress i{background:#155fbd!important}
