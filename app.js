@@ -131,7 +131,7 @@ function hideApp(){
  updateHeader();
  if(body)closeModal();
 }
-function isAdmin(){return String(user?.email||"").trim().toLowerCase()==="sardarjfd5403@gmail.com"&&user?.app_metadata?.role==="admin";}
+function isAdmin(){return window.__bbAdminAccess===true||(String(user?.email||"").trim().toLowerCase()==="sardarjfd5403@gmail.com"&&user?.app_metadata?.role==="admin");}
 function showFinancialNotice(row){
  if(!row||!["approved","rejected","processing","completed"].includes(row.status))return;
  const node=document.createElement("div");node.className="bb-financial-toast";
@@ -178,6 +178,15 @@ async function applyReferenceClientUI(attempt=0){
 }
 async function showApp(page){
  if(!user||!shell)return;
+ // Resolve administrator access from the same database-side authorization function used by protected Edge Functions.
+ // This avoids hiding Admin/SEO navigation when JWT app_metadata is stale in the browser session.
+ try{
+  const {data:adminFlag,error:adminError}=await sb.rpc("is_bigbulls_admin");
+  window.__bbAdminAccess=!adminError&&adminFlag===true;
+ }catch(error){
+  console.error("Administrator access check failed:",error);
+  window.__bbAdminAccess=false;
+ }
  // AI analysis pages require an authenticated client with the latest KYC submission approved.
  let requested=pages.includes(page)?page:"accounts";
  if(requested==="dashboard")requested="accounts";
