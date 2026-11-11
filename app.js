@@ -176,15 +176,24 @@ async function applyReferenceClientUI(attempt=0){
  }
  if(attempt<12)window.setTimeout(()=>applyReferenceClientUI(attempt+1),Math.min(50*(attempt+1),300));
 }
-function showApp(page){
+async function showApp(page){
  if(!user||!shell)return;
- // Every authenticated customer enters the client portal. Admin routes remain role-gated.
-
+ // AI analysis pages require an authenticated client with the latest KYC submission approved.
  let requested=pages.includes(page)?page:"accounts";
  if(requested==="dashboard")requested="accounts";
-
- // The client portal itself must remain accessible while KYC is pending.
- // Financial/account mutations continue to use the existing Supabase RPC/RLS checks.
+ const kycProtectedPages=["echo-system","market-analysis","signals","trading-central"];
+ if(kycProtectedPages.includes(requested)){
+  const {data:kyc,error:kycError}=await sb.from("kyc_submissions").select("status").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1).maybeSingle();
+  if(kycError||kyc?.status!=="approved"){
+   requested="verification";
+   window.__bbAccessNotice=kycError?"AI access is locked because KYC status could not be verified. Please retry after checking your verification status.":kyc?.status==="pending"?"AI access is locked while your KYC is under review.":"AI access requires an approved KYC submission.";
+  }else{
+   window.__bbAccessNotice="";
+  }
+ }else{
+  window.__bbAccessNotice="";
+ }
+ // The client portal itself remains accessible while KYC is pending.
  window.__bbUserName=user.user_metadata?.full_name||user.email?.split("@")[0]||"Client";
  window.__bbUserEmail=user.email||"";
  window.__bbUserId=user.id;
