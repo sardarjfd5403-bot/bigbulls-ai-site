@@ -27,7 +27,7 @@
   enhancedTerminal=terminal;terminal.dataset.bbEnhanced='yes';
   const head=$('.terminal-head',terminal),sidebar=$('.client-sidebar',terminal),main=$('.terminal-main',terminal);
   if(!head||!sidebar||!main)return;
-  const oldBrand=$('.terminal-brand',head);
+  const oldBrand=$('.terminal-brand',head);\n  const oldName=$('.profile-trigger b',head)?.textContent||'Client Account';\n  const notificationPanel=$('#client-notification-panel',head);
   const brand=oldBrand?oldBrand.innerHTML:'<span class="mark">B</span><span>BIGBULLS <b>FX</b><small>PERSONAL AREA</small></span>';
   const balance=$('#header-wallet-balance',head)?.textContent||'Loading…';
   head.innerHTML='<div class="bb-layout-left"><button class="bb-menu-toggle" type="button" data-bb-drawer-toggle aria-label="Open navigation menu"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><a class="bb-brand" href="#" data-page="accounts">'+brand+'</a></div><div class="bb-header-right"><div class="header-balance"><small>WALLET</small><b id="header-wallet-balance">'+balance+'</b></div><button type="button" data-notification-toggle aria-label="Notifications">♧</button><button type="button" class="profile-trigger" data-page="profile"><span class="profile-avatar">B</span><span><b>My Profile</b><small>Personal Area ▾</small></span></button></div>';
@@ -36,7 +36,7 @@
   const email=window.__bbUserEmail||'Your registered email';
   $('.bb-user-name',sidebar).textContent=name;
   $('.bb-user-email',sidebar).textContent=email;
-  let backdrop=$('.bb-drawer-backdrop');
+  const notificationWrap=document.createElement('div');notificationWrap.className='header-pop-wrap';notificationWrap.innerHTML='<button type="button" data-notification-toggle aria-label="Notifications">♧</button>';if(notificationPanel)notificationWrap.append(notificationPanel);$('.bb-header-right',head)?.insertBefore(notificationWrap,$('.profile-trigger',head));\n  let backdrop=$('.bb-drawer-backdrop');
   if(!backdrop){backdrop=document.createElement('div');backdrop.className='bb-drawer-backdrop';document.body.append(backdrop);}
   if(window.matchMedia('(min-width:901px)').matches)sidebar.classList.add('bb-drawer-open');
   const title=$('.terminal-page-head h2',main);
@@ -65,7 +65,7 @@
   const node=$('.bb-user-email');if(node&&email)node.textContent=email.replace(/^(.{1}).*(@.*)$/, '$1••••$2');
  }
  function handleClick(e){
-  const t=e.target.closest('[data-bb-drawer-toggle],[data-bb-drawer-close],[data-bb-accordion],[data-bb-open-account],[data-account-mode],[data-notification-toggle]');
+  const t=e.target.closest('[data-bb-drawer-toggle],[data-bb-drawer-close],[data-bb-accordion],[data-bb-open-account],[data-account-mode],[data-notification-toggle]')||(e.target.classList?.contains('bb-drawer-backdrop')?e.target:null);
   if(!t)return;
   const sidebar=$('.client-sidebar'),backdrop=$('.bb-drawer-backdrop');
   if(t.hasAttribute('data-bb-drawer-toggle')){sidebar?.classList.add('bb-drawer-open');backdrop?.classList.add('is-open');}
