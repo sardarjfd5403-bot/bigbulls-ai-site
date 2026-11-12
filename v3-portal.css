@@ -223,3 +223,21 @@ body.app-mode>.public-header,body.app-mode>main,body.app-mode>footer{display:non
 #client-page .bb-support-review-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
 #client-page .bb-support-review-actions button{padding:8px 11px;border:1px solid #dce5f1;border-radius:8px;background:#f5f8fc;color:#40536d;font-size:9px;font-weight:800}
 #client-page .bb-support-review-actions button:hover{border-color:#1769e8;background:#edf4ff;color:#1769e8}
+
+/* BIGBULLS fixed-height client workflow modals */
+#portal-modal.modal-backdrop{display:none;position:fixed;inset:0;z-index:1000;align-items:center;justify-content:center;padding:14px;background:rgba(9,20,37,.58);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+#portal-modal.modal-backdrop.show{display:flex}
+#portal-modal .modal{position:relative;width:min(100%,560px);max-height:calc(100dvh - 28px);overflow-y:auto;overscroll-behavior:contain;padding:26px;background:#fff;color:#18283e;border:1px solid #dfe8f3;border-radius:20px;box-shadow:0 24px 80px rgba(10,30,60,.24)}
+#portal-modal .modal>.close{position:absolute;right:14px;top:12px;width:34px;height:34px;border:0;border-radius:10px;background:#f1f5fa;color:#52647d;font-size:22px;cursor:pointer}
+#portal-modal #portal-body{display:grid;gap:12px;padding-top:8px}
+#portal-modal #portal-body h2{margin:0;color:#172b48;font-size:clamp(21px,4vw,27px);line-height:1.2}
+#portal-modal #portal-body p{margin:0;color:#64748b;font-size:12px;line-height:1.65}
+#portal-modal #portal-body .eyebrow{color:#287cff;font-size:9px;font-weight:850;letter-spacing:.15em}
+#portal-modal #portal-body .client-form{display:grid;gap:11px}
+#portal-modal #portal-body .client-form label{display:block;color:#52647d;font-size:10px;font-weight:750}
+#portal-modal #portal-body .client-form input,#portal-modal #portal-body .client-form select,#portal-modal #portal-body .client-form textarea{width:100%;min-height:40px;margin-top:5px;padding:9px 11px;border:1px solid #dce5f0;border-radius:9px;background:#fff;color:#1d304a;font:inherit}
+#portal-modal #portal-body .portal-primary{min-height:43px;border:0;border-radius:10px;background:#1769e8;color:#fff;font-weight:800;cursor:pointer}
+#portal-modal #portal-body .portal-primary:disabled{opacity:.55;cursor:wait}
+#portal-modal #portal-body .notice{padding:10px 12px;border:1px solid #dce9fb;border-radius:10px;background:#f2f7ff;color:#355579;font-size:10px;line-height:1.6}
+#portal-modal #portal-body .copy-wallet{border:0;background:transparent;color:#3569ae;font-size:11px;font-weight:750;padding:7px;cursor:pointer}
+@media(max-width:600px){#portal-modal.modal-backdrop{padding:8px}#portal-modal .modal{width:100%;max-height:calc(100dvh - 16px);padding:19px;border-radius:16px}#portal-modal .modal>.close{right:9px;top:9px}}
