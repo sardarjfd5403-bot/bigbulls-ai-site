@@ -61,12 +61,17 @@ Deno.serve(async (req: Request) => {
     const { data:openRows, error:positionsError } = await db.from("bb_bbook_positions")
       .select("*").eq("status","OPEN").order("opened_at",{ascending:true}).limit(5000);
     if (positionsError) throw positionsError;
+    const { data:pendingRows, error:pendingError } = await db.from("bb_bbook_pending_orders")
+      .select("*").eq("status","PENDING").order("created_at",{ascending:true}).limit(5000);
+    if (pendingError) throw pendingError;
     const open = openRows || [];
+    const pending = pendingRows || [];
     const quotes: Record<string,any> = {};
     const errors: string[] = [];
-    let closed = 0, processed = 0;
+    let closed = 0, processed = 0, pendingFilled = 0, pendingRejected = 0;
 
-    for (const symbol of [...new Set(open.map((p:any)=>normalize(p.symbol)))]) {
+    const symbols = [...new Set([...open,...pending].map((p:any)=>normalize(p.symbol)))];
+    for (const symbol of symbols) {
       try {
         const q = await getQuote(symbol,settings,url,anon);
         quotes[symbol] = q;
@@ -77,6 +82,25 @@ Deno.serve(async (req: Request) => {
         if (error) throw error;
       } catch (error) {
         errors.push(symbol + ": " + (error instanceof Error ? error.message : "quote error"));
+      }
+    }
+
+    // Persisted pending orders are evaluated against server-side reference quotes.
+    // The database trigger RPC atomically converts a hit order into a B-Book position.
+    for (const order of pending) {
+      const q = quotes[normalize(order.symbol)];
+      if (!q) continue;
+      const result = await db.rpc("bb_bbook_trigger_pending_order", {
+        p_order_id:order.id,p_mid:q.mid,p_bid:q.bid,p_ask:q.ask,p_spread_cost:0
+      });
+      if (result.error) {
+        errors.push("Pending " + order.id + ": " + result.error.message);
+      } else if (result.data?.status === "FILLED") {
+        pendingFilled++;
+        processed++;
+      } else if (result.data?.status === "REJECTED") {
+        pendingRejected++;
+        errors.push("Pending " + order.id + ": " + (result.data.error || "Order rejected"));
       }
     }
 
@@ -143,7 +167,7 @@ Deno.serve(async (req: Request) => {
       last_closed:closed,margin_call_accounts:marginCalls,updated_at:new Date().toISOString()
     }).eq("singleton",true);
     if (updateError) throw updateError;
-    return json({ok:true,processed,closed,margin_call_accounts:marginCalls.length,errors:errors.length,generated_at:new Date().toISOString()});
+    return json({ok:true,processed,closed,pending_filled:pendingFilled,pending_rejected:pendingRejected,margin_call_accounts:marginCalls.length,errors:errors.length,generated_at:new Date().toISOString()});
   } catch (error) {
     console.error("bbook-worker:",error);
     return json({error:error instanceof Error ? error.message : "B-Book worker failed"},500);
