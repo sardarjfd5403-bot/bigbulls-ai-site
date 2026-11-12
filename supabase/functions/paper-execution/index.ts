@@ -135,19 +135,12 @@ Deno.serve(async (req: Request) => {
         if (openTradesError) throw openTradesError;
         if ((openTrades || []).length) return json({ error: "Close all open Demo positions before resetting the balance. Top-up remains available." }, 409);
       }
-      const before = Number(ledger.virtual_balance || 0);
-      const after = operation === "set" ? amount : before + amount;
-      const update = { virtual_balance: after, updated_at: new Date().toISOString(), ...(operation === "set" ? { starting_balance: amount } : {}) };
-      const { data: updated, error: updateError } = await admin.from("bb_paper_execution_accounts")
-        .update(update).eq("id", ledger.id).eq("user_id", targetUserId).select("*").single();
-      if (updateError) throw updateError;
-      const { error: auditError } = await admin.from("bb_paper_balance_adjustments").insert({
-        user_id: targetUserId, account_id: accountId, paper_account_id: ledger.id, actor_id: user.id,
-        adjustment_type: operation === "set" ? "SET" : "TOP_UP", amount, balance_before: before,
-        balance_after: after, note: note || "Demo balance adjustment"
+      const { data: adjustment, error: adjustmentError } = await admin.rpc("bb_paper_adjust_demo_balance", {
+        p_actor_id: user.id, p_user_id: targetUserId, p_account_id: accountId,
+        p_operation: operation, p_amount: amount, p_note: note || "Demo balance adjustment"
       });
-      if (auditError) throw auditError;
-      return json({ success: true, ledger: updated, balance_before: before, balance_after: after, adjustment_type: operation.toUpperCase() });
+      if (adjustmentError) throw adjustmentError;
+      return json(adjustment);
     }
 
     if (action === "status" || action === "refresh") {
