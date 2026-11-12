@@ -41,7 +41,8 @@ const SYMBOLS: Record<string,string> = {
 const BIQUOTE_BASE = "https://biquote.io";
 const cache = new Map<string,{at:number,payload:any}>();
 const normalize = (s:string) => String(s||"").toUpperCase().replaceAll("/","").trim();
-const cacheCategory = (s:string) => s === "XAUUSD" ? "XAUUSD" : s.endsWith("USDT") ? "CRYPTO" : "FX";
+const CRYPTO_SYMBOLS = new Set(["BTCUSD","ETHUSD","BNBUSD","SOLUSD","XRPUSD","BTCUSDT","ETHUSDT","BNBUSDT","SOLUSDT","XRPUSDT"]);
+const cacheCategory = (s:string) => CRYPTO_SYMBOLS.has(s) ? "CRYPTO" : ["XAUUSD","XAGUSD","XPTUSD","XPDUSD"].includes(s) ? "XAUUSD" : ["USOIL","UKOIL","NATGAS","NATGASUSDT"].includes(s) ? "COMMODITY" : "FX";
 const json = (body:unknown,status=200) => new Response(JSON.stringify(body),{
   status, headers:{...cors,"Content-Type":"application/json","Cache-Control":"no-store"}
 });
