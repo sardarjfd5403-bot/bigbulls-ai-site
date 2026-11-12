@@ -113,10 +113,15 @@
   html, body { width:100%; min-width:0; height:100%; min-height:100%; margin:0!important; padding:0!important; background:#0b0e14!important; }
     #appStage { width:100vw!important; height:100dvh!important; min-height:100dvh!important; margin:0!important; padding:0!important; background:#0b0e14!important; }
     .mobile-shell { width:100%; max-width:none; height:100dvh; min-height:100dvh; max-height:none; margin:0; border:0; border-radius:0; box-shadow:none; background:#0f172a; }
-  </style>
+  html.bb-auth-pending #appStage{visibility:hidden}
+html.bb-auth-pending #bb-auth-boot{display:flex}
+#bb-auth-boot{display:none;position:fixed;inset:0;z-index:9999;background:#0b0e14;color:#f3f4f6;align-items:center;justify-content:center;flex-direction:column;gap:12px;font:600 14px Inter,sans-serif}
+#bb-auth-boot .bb-auth-spinner{width:28px;height:28px;border:3px solid #293447;border-top-color:#2979ff;border-radius:50%;animation:bb-auth-spin .8s linear infinite}
+@keyframes bb-auth-spin{to{transform:rotate(360deg)}}
+</style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="h-screen min-h-screen flex flex-col overflow-hidden">
+<body class="h-screen min-h-screen flex flex-col overflow-hidden">\n  <div id="bb-auth-boot" role="status" aria-live="polite"><span class="bb-auth-spinner"></span><span>BIGBULLS · Securing your session…</span></div>
 
   <!-- MAIN VIEWPORT STAGE -->
   <main id="appStage" class="flex-1 flex items-stretch justify-stretch w-full min-h-0 p-0 overflow-hidden">
@@ -1312,7 +1317,7 @@
             <!-- Timeframes & Buy/Sell Footer -->
             <div class="p-3 bg-[#131722] border-t border-[#262C3A] space-y-2.5 shrink-0">
               <div class="flex items-center gap-2 text-xs">
-                ${['1m', '5m', '15m', '1h', '4h'].map(tf => `
+                ${['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w', '1M'].map(tf => `
                   <button onclick="state.timeframe='${tf}'; renderApp()" class="px-2.5 py-1 rounded-lg font-bold ${state.timeframe===tf ? 'bg-[#262C3A] text-white' : 'text-gray-400'}">${tf}</button>
                 `).join('')}
               </div>
@@ -1515,7 +1520,7 @@
       const accClosedOrders = state.closedOrders.filter(o => o.accountId === acc.id);
 
       const topTabs = ['BTC', 'USOIL', 'USTEC', 'XAU/USD'];
-      const timeframes = ['5y', '1y', '6m', '3m', '1m', '5d', '1d'];
+      const timeframes = ['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w', '1M'];
 
       return `
         <div class="w-full h-full min-h-0 bg-[#0E1117] flex flex-col overflow-hidden select-none">
@@ -1911,10 +1916,11 @@
 <script>
 (function(){
 'use strict';
+document.documentElement.classList.add('bb-auth-pending');
 const BB_URL='https://ztiiyulusburxjkpcfxu.supabase.co',BB_KEY='sb_publishable_5hDwqvbcUHeSJdXFHf9ugw_VPYGN4J_';
 const MARKET={'XAU/USD':'XAU/USD','EUR/USD':'EUR/USD','GBP/USD':'GBP/USD','BTC':'BTCUSDT','USOIL':'WTI/USD','USTEC':'NDX'};
 const PAPER={'XAU/USD':'XAUUSD','EUR/USD':'EURUSD','GBP/USD':'GBPUSD','BTC':'BTCUSDT'};
-let session=null,ready=false,busy=false,refreshEpoch=0,lastAccount='',lastMarket='';
+let session=null,ready=false,busy=false,refreshEpoch=0,candleEpoch=0,lastAccount='',lastMarket='';
 const notify=(t,s='',type='info')=>{if(typeof showToast==='function')showToast(t,s,type);};
 function client(){
  if(window.__bbSupabaseClient?.auth&&window.__bbSupabaseClient?.functions)return window.__bbSupabaseClient;
@@ -1969,10 +1975,13 @@ async function quotes(){
  updateLiveDOMElements();
 }
 async function candles(){
- const s=state.selectedSymbol,p=MARKET[s],i=state.instruments[s];if(!p||!i){notify('Market data unavailable',s+' is not enabled by the connected provider.','error');return;}
- const d=await call('market-data',{action:'candles',symbol:p,timeframe:state.timeframe,outputsize:160});
- const rows=(d.candles||[]).map(c=>({time:Number(c.time),open:Number(c.open),high:Number(c.high),low:Number(c.low),close:Number(c.close)})).filter(c=>[c.open,c.high,c.low,c.close].every(Number.isFinite));
- if(!rows.length)throw new Error('The market provider returned no candles for '+s+'.');i.candles=rows;applyQuote(s,d.price||rows[rows.length-1].close);drawChartCanvas();updateLiveDOMElements();
+ const s=state.selectedSymbol,tf=state.timeframe,p=MARKET[s],i=state.instruments[s],request=++candleEpoch;
+ if(!p||!i){notify('Market data unavailable',s+' is not enabled by the connected provider.','error');return;}
+ const d=await call('market-data',{action:'candles',symbol:p,timeframe:tf,outputsize:500});
+ if(request!==candleEpoch||s!==state.selectedSymbol||tf!==state.timeframe)return;
+ const rows=(d.candles||[]).map(c=>({time:Number(c.time),open:Number(c.open),high:Number(c.high),low:Number(c.low),close:Number(c.close)})).filter(c=>Number.isFinite(c.time)&&[c.open,c.high,c.low,c.close].every(Number.isFinite));
+ if(!rows.length)throw new Error('The market provider returned no candles for '+s+' ('+tf+').');
+ i.candles=rows;applyQuote(s,d.price||rows[rows.length-1].close);drawChartCanvas();updateLiveDOMElements();
 }
 function mapTrade(t,n,accountId){const s=mapSymbol(t.symbol);if(!s)return null;const open=String(t.status).toUpperCase()==='OPEN',tm=v=>v?new Date(v).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}):'';return{id:n+1,backendTradeId:t.id,accountId,symbol:s,side:String(t.side).toUpperCase()==='BUY'?'Buy':'Sell',lots:Number(t.quantity),openPrice:Number(t.entry_price),sl:t.stop_loss==null?'':String(t.stop_loss),tp:t.take_profit==null?'':String(t.take_profit),openTime:tm(t.opened_at),closeTime:tm(t.closed_at),closePrice:t.exit_price==null?Number(t.mark_price||t.entry_price):Number(t.exit_price),realizedPL:Number(t.realized_pnl||0),status:open?'open':'closed'};}
 async function refresh(silent=true){
@@ -2087,11 +2096,11 @@ window.switchTradingAccount=async function(backendId){
 };
 async function start(){
  try{const c=client(),auth=await c.auth.getSession();if(auth.error)throw auth.error;session=auth.data?.session||null;if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}
- await accounts();Object.values(state.instruments).forEach(i=>{i.candles=[];i.bid=0;i.ask=0;});state.openOrders=[];state.pendingOrders=[];state.closedOrders=[];ready=true;startBbookRealtime(c);lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();
+ await accounts();Object.values(state.instruments).forEach(i=>{i.candles=[];i.bid=0;i.ask=0;});state.openOrders=[];state.pendingOrders=[];state.closedOrders=[];ready=true;document.documentElement.classList.remove('bb-auth-pending');startBbookRealtime(c);lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();
  try{await quotes();}catch(e){console.warn('Market quotes:',e.message);}try{await candles();}catch(e){notify('Market feed unavailable',e.message||'Provider candles could not be loaded.','error');}
  await refresh(true);setInterval(()=>{if(!document.hidden)quotes().catch(()=>{});},15000);setInterval(async()=>{if(document.hidden)return;const symbol=MARKET[state.selectedSymbol];if(!symbol)return;try{const q=await call('market-data',{action:'quote',symbol});applyQuote(state.selectedSymbol,q.price);updateLiveDOMElements();}catch(e){console.warn('Selected symbol live quote:',e.message);}},10000);setInterval(async()=>{if(document.hidden)return;try{const current=getActiveAccount()?.backendId||null;await accounts(current);renderApp();await refresh(true);}catch(e){console.warn('Account balance refresh:',e.message);}},10000);
- c.auth.onAuthStateChange((_event,s)=>{session=s||null;if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}accounts().then(()=>{ready=true;startBbookRealtime(c);lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();refresh(true);}).catch(e=>notify('Account refresh failed',e.message,'error'));});
- }catch(e){console.error('BIGBULLS terminal startup:',e);notify('Terminal connection failed',e.message||'Unable to connect to the trading backend.','error');}
+ c.auth.onAuthStateChange((_event,s)=>{session=s||null;if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}accounts().then(()=>{ready=true;document.documentElement.classList.remove('bb-auth-pending');startBbookRealtime(c);lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();refresh(true);}).catch(e=>notify('Account refresh failed',e.message,'error'));});
+ }catch(e){document.documentElement.classList.remove('bb-auth-pending');console.error('BIGBULLS terminal startup:',e);notify('Terminal connection failed',e.message||'Unable to connect to the trading backend.','error');}
 }
 window.addEventListener('load',start,{once:true});
 })();
