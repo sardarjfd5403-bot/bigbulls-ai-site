@@ -389,10 +389,12 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
           openCount:accountOpenOrders.length,pendingCount:state.pendingOrders.filter(o=>o.accountId===acc.id).length};
       }
       if(String(acc?.type||'').toLowerCase()==='real'&&window.__bbBbookMetrics){
-        const bm=window.__bbBbookMetrics;
-        return {balance:Number(bm.balance||0),equity:Number(bm.equity||0),floatingPL:Number(bm.floating_pnl||0),
-          usedMargin:Number(bm.margin||0),freeMargin:Number(bm.free_margin||0),marginLevel:Number(bm.margin_level_pct||0),
-          openCount:accountOpenOrders.length,pendingCount:0};
+        const bm=window.__bbBbookMetrics,balance=Number(bm.balance||0);
+        const floatingPL=accountOpenOrders.reduce((sum,o)=>sum+calculateOrderPL(o),0);
+        const usedMargin=Number(bm.margin||0),equity=balance+floatingPL;
+        const freeMargin=Math.max(0,equity-usedMargin),marginLevel=usedMargin>0?equity/usedMargin*100:0;
+        return {balance,equity,floatingPL,usedMargin,freeMargin,marginLevel,
+          openCount:accountOpenOrders.length,pendingCount:state.pendingOrders.filter(o=>o.accountId===acc.id).length};
       }
       let floatingPL = 0;
       let usedMargin = 0;
