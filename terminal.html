@@ -2138,8 +2138,9 @@ async function place(){
   if(m.mode==='Market'&&confirmed){const optimistic=mapTrade({...confirmed,status:confirmed.status||'OPEN'},state.openOrders.length,a.id);if(optimistic){optimistic.status='open';state.openOrders.unshift(optimistic);updateLiveDOMElements();renderApp();}}
   notify(m.mode==='Market'?(real?'B-Book position accepted':'Paper position opened'):'B-Book pending order saved',
    s+' '+m.side+' '+quantity.toFixed(2)+' lots · '+String(confirmed?.id||d.order?.id||'').slice(0,8),'success');
+  playTerminalSound(m.mode==='Market'?'placed':'pending');
   refresh(true);
- }catch(e){const msg=/insufficient/i.test(e.message)?'Insufficient Funds':e.message;notify('Order not placed',msg,'error');}
+ }catch(e){const msg=/insufficient/i.test(e.message)?'Insufficient Funds':e.message;playTerminalSound('error');notify('Order not placed',msg,'error');}
 }
 const closingPositions=new Set();
 async function closePosition(id,silent=false,reason='Closed manually'){
@@ -2234,6 +2235,41 @@ window.switchTradingAccount=async function(backendId){
   if(!loaded)return;
   notify('Account switched',next.nickname+' · #'+(next.accountNumber||next.id),'success');
  }catch(e){notify('Account switch failed',e.message||'The selected account could not be loaded.','error');}
+};
+// BIGBULLS terminal audio cues — lightweight Web Audio API, no external audio files.
+let bbSoundEnabled=true;
+try{bbSoundEnabled=localStorage.getItem('bb-terminal-sound')!=='off';}catch(_){}
+function playTerminalSound(kind){
+ if(!bbSoundEnabled)return;
+ const AudioCtx=window.AudioContext||window.webkitAudioContext;if(!AudioCtx)return;
+ try{
+  const ctx=window.__bbAudioContext||(window.__bbAudioContext=new AudioCtx());
+  const tones=kind==='placed'?[[880,.09],[1174,.12]]:kind==='closed'?[[660,.08],[440,.15]]:kind==='pending'?[[784,.07],[988,.07],[1318,.12]]:kind==='error'?[[220,.18]]:[[660,.08]];
+  const startAt=ctx.currentTime+.015;
+  tones.forEach((tone,i)=>{const osc=ctx.createOscillator(),gain=ctx.createGain(),at=startAt+i*.105;osc.type='sine';osc.frequency.setValueAtTime(tone[0],at);gain.gain.setValueAtTime(.0001,at);gain.gain.exponentialRampToValueAtTime(.055,at+.012);gain.gain.exponentialRampToValueAtTime(.0001,at+tone[1]);osc.connect(gain);gain.connect(ctx.destination);osc.start(at);osc.stop(at+tone[1]+.02);});
+ }catch(e){console.debug('Terminal audio unavailable:',e);}
+}
+function mountTerminalSoundToggle(){
+ if(document.getElementById('bbTerminalSoundToggle'))return;
+ const btn=document.createElement('button');btn.id='bbTerminalSoundToggle';btn.type='button';
+ btn.title='Toggle terminal sound';btn.setAttribute('aria-label','Toggle terminal sound');
+ btn.style.cssText='position:fixed;right:14px;bottom:14px;z-index:75;width:40px;height:40px;border:1px solid #344054;border-radius:12px;background:#17202e;color:#f8fafc;box-shadow:0 6px 20px #0008;font-size:17px;display:flex;align-items:center;justify-content:center;cursor:pointer';
+ const paint=()=>{btn.textContent=bbSoundEnabled?'🔊':'🔇';btn.setAttribute('aria-pressed',String(bbSoundEnabled));btn.title=bbSoundEnabled?'Mute terminal sounds':'Unmute terminal sounds';};
+ btn.addEventListener('click',()=>{bbSoundEnabled=!bbSoundEnabled;try{localStorage.setItem('bb-terminal-sound',bbSoundEnabled?'on':'off');}catch(_){}paint();if(bbSoundEnabled){try{const C=window.AudioContext||window.webkitAudioContext;if(C){window.__bbAudioContext=window.__bbAudioContext||new C();window.__bbAudioContext.resume?.();}}catch(_){}playTerminalSound('placed');}});
+ paint();document.body.appendChild(btn);
+}
+mountTerminalSoundToggle();
+// Detect a server-side pending-order transition after ledger refresh.
+const bbRefreshWithPendingCue=refresh;
+refresh=async function(silent=true){
+ const previous=[...state.pendingOrders];
+ const ok=await bbRefreshWithPendingCue(silent);
+ if(ok){
+  const pendingIds=new Set(state.pendingOrders.map(p=>String(p.backendOrderId||p.id)));
+  const activated=previous.some(p=>!pendingIds.has(String(p.backendOrderId||p.id))&&state.openOrders.some(o=>o.accountId===p.accountId&&o.symbol===p.symbol&&o.side===p.side));
+  if(activated)playTerminalSound('pending');
+ }
+ return ok;
 };
 async function start(){
  try{const c=client(),auth=await c.auth.getSession();if(auth.error)throw auth.error;session=auth.data?.session||null;if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}
@@ -2434,9 +2470,33 @@ async function place(){
  }catch(e){const msg=/insufficient/i.test(e.message)?'Insufficient Funds':e.message;notify('Order not placed',msg,'error');}
 }
 async function closePosition(id,silent=false,reason='Closed manually'){
- const o=state.openOrders.find(x=>String(x.id)===String(id));if(!o)return;const a=getActiveAccount(),real=mode(a)==='real',b={action:'close',account_mode:mode(a),reason};
- if(real){b.position_id=o.backendTradeId;b.account_id=a.backendId;}else{b.trade_id=o.backendTradeId;if(a.backendId)b.account_id=a.backendId;}
- try{await call(real?'bbook-engine':'paper-execution',b);if(!silent)closeModal();await refresh(true);if(!silent)notify('Position closed',o.symbol+' '+o.side+' '+o.lots.toFixed(2)+' lots','success');}catch(e){notify('Close failed',e.message||'The position could not be closed.','error');}
+ const o=state.openOrders.find(x=>String(x.id)===String(id)||String(x.backendTradeId)===String(id));
+ if(!o){notify('Close failed','This position is no longer open. Refreshing the account ledger.','error');await refresh(true);return false;}
+ const a=state.accounts.find(x=>String(x.id)===String(o.accountId))||getActiveAccount(),real=mode(a)==='real';
+ if(!a?.backendId||a.status!=='approved'){notify('Close failed','Select an approved trading account.','error');return false;}
+ const tradeId=String(o.backendTradeId||'');
+ if(!tradeId){notify('Close failed','The position is missing its backend ledger ID.','error');return false;}
+ const lock='close:'+tradeId;
+ if(window.__bbClosingPositions?.has(lock))return false;
+ window.__bbClosingPositions=window.__bbClosingPositions||new Set();window.__bbClosingPositions.add(lock);
+ try{
+  const payload={action:'close',account_mode:mode(a),reason};
+  if(real){payload.position_id=tradeId;payload.account_id=a.backendId;}
+  else{payload.trade_id=tradeId;payload.account_id=a.backendId;}
+  const result=await call(real?'bbook-engine':'paper-execution',payload);
+  if(result?.success===false)throw new Error(result.error||'The execution service did not confirm the close.');
+  if(!silent)closeModal();
+  const loaded=await refresh(true);
+  if(!loaded){
+   state.openOrders=state.openOrders.filter(x=>String(x.backendTradeId||x.id)!==tradeId);
+   state.closedOrders=[{...o,status:'closed',closeTime:new Date().toISOString(),closePrice:Number(result?.position?.exit_price??result?.exit_price??0),realizedPL:Number(result?.realized_pnl??result?.position?.realized_pnl??0)},...state.closedOrders];
+   updateLiveDOMElements();renderApp();
+  }
+  playTerminalSound('closed');
+  notify('Position closed',o.symbol+' '+o.side+' '+o.lots.toFixed(2)+' lots','success');
+  return true;
+ }catch(e){playTerminalSound('error');notify('Close failed',e.message||'The position could not be closed.','error');return false;}
+ finally{window.__bbClosingPositions.delete(lock);}
 }
 const originalRender=window.renderApp;
 if(typeof originalRender==='function')window.renderApp=function(){originalRender();if(!ready)return;const a=getActiveAccount(),ak=a?.id||'',mk=state.selectedSymbol+':'+state.timeframe;if(ak&&ak!==lastAccount){lastAccount=ak;try{sessionStorage.setItem('bb:terminal:active-mode:'+session.user.id,mode(a));if(a.backendId)sessionStorage.setItem('bb:terminal:selected-account:'+session.user.id+':'+mode(a),a.backendId);}catch(_){}refresh(true);}if(mk!==lastMarket){lastMarket=mk;candles().catch(e=>console.warn('Market candles:',e.message));}};
