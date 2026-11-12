@@ -2630,7 +2630,7 @@
       const tp=parseFloat(document.getElementById('editTpInput').value);
       if(!Number.isFinite(sl)){bbToast('A valid Stop Loss is required.','error');return;}
       try{
-        await bbPaperCall({action:'modify',account_mode:state.activeAccountKey,account_id:state.activeAccountKey==='real'?state.backendAccountIds?.real:undefined,trade_id:String(pos.id),stop_loss:sl,take_profit:Number.isFinite(tp)?tp:null});
+        await bbPaperCall({action:'modify',account_mode:state.activeAccountKey,account_id:state.backendAccountIds?.[state.activeAccountKey]||undefined,trade_id:String(pos.id),stop_loss:sl,take_profit:Number.isFinite(tp)?tp:null});
         closeModal('editPositionModal'); bbToast('Paper TP/SL updated.','success'); await bbRefreshPaperState(true);
       }catch(e){bbToast(e.message||'TP/SL update failed.','error');}
     };
@@ -2638,7 +2638,7 @@
       closeAllPopovers();
       const targets=state.positions.filter(p=>p.status==='open').filter(p=>{const pnl=getPositionPnl(p);return filter==='profit'?pnl>0:filter==='loss'?pnl<0:true;});
       if(!targets.length){bbToast('No matching open paper positions.','info');return;}
-      for(const p of targets){try{await bbPaperCall({action:'close',account_mode:state.activeAccountKey,account_id:state.activeAccountKey==='real'?state.backendAccountIds?.real:undefined,trade_id:String(p.id),reason:'TERMINAL BULK CLOSE'});}catch(e){bbToast(e.message||'A paper position could not be closed.','error');}}
+      for(const p of targets){try{await bbPaperCall({action:'close',account_mode:state.activeAccountKey,account_id:state.backendAccountIds?.[state.activeAccountKey]||undefined,trade_id:String(p.id),reason:'TERMINAL BULK CLOSE'});}catch(e){bbToast(e.message||'A paper position could not be closed.','error');}}
       await bbRefreshPaperState(true);
     };
     window.handleTopUp=function(){bbToast('Paper balances are maintained by the backend ledger. No deposit or payment has been made.', 'info');};
