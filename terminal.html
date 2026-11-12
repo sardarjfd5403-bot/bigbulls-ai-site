@@ -1981,12 +1981,12 @@ async function refresh(silent=true){
    rows=(d.trades||[]).map((t,n)=>mapTrade(t,n,a.id)).filter(Boolean);
    Object.entries(d.prices||{}).forEach(([symbol,p])=>applyQuote(mapSymbol(symbol),p));
   }
-  if(epoch!==refreshEpoch||getActiveAccount()?.backendId!==a.backendId)return;
+  if(epoch!==refreshEpoch||getActiveAccount()?.backendId!==a.backendId)return false;
   a.balance=balance;
   window.__bbBbookMetrics=metrics;window.__bbBbookExecution=execution;
   state.openOrders=rows.filter(t=>t.status==='open');state.closedOrders=rows.filter(t=>t.status==='closed');state.pendingOrders=[];
-  updateLiveDOMElements();renderApp();
- }catch(e){if(epoch===refreshEpoch){state.openOrders=[];state.closedOrders=[];state.pendingOrders=[];updateLiveDOMElements();if(!silent)notify('Trading connection error',e.message||'Trading ledger could not be refreshed.','error');}console.error('BIGBULLS terminal backend:',e);}finally{if(epoch===refreshEpoch)busy=false;}
+  updateLiveDOMElements();renderApp();return true;
+ }catch(e){if(epoch===refreshEpoch){state.openOrders=[];state.closedOrders=[];state.pendingOrders=[];updateLiveDOMElements();if(!silent)notify('Trading connection error',e.message||'Trading ledger could not be refreshed.','error');}console.error('BIGBULLS terminal backend:',e);return false;}finally{if(epoch===refreshEpoch)busy=false;}
 }
 async function place(){
  const a=getActiveAccount(),m=state.orderTicket,s=state.selectedSymbol;if(!a)return;
@@ -2030,7 +2030,8 @@ window.switchTradingAccount=async function(backendId){
   state.openOrders=[];state.closedOrders=[];state.pendingOrders=[];
   try{sessionStorage.setItem('bb:terminal:active-mode:'+session.user.id,mode(next));sessionStorage.setItem('bb:terminal:selected-account:'+session.user.id+':'+mode(next),next.backendId);}catch(_){}
   closeModal();renderApp();updateLiveDOMElements();
-  await refresh(false);
+  const loaded=await refresh(false);
+  if(!loaded)return;
   notify('Account switched',next.nickname+' · #'+(next.accountNumber||next.id),'success');
  }catch(e){notify('Account switch failed',e.message||'The selected account could not be loaded.','error');}
 };
