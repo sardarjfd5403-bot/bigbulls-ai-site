@@ -1262,6 +1262,39 @@ async function submitHandler(e){
   finally{button.disabled=false;button.textContent="Submit support ticket";}
   return;
  }
+ if(f.id==="partner-transfer-form"){
+  e.preventDefault();const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector('button[type="submit"]');
+  const accountId=String(d.get("account_id")||""),amount=Number(d.get("amount"));
+  if(!accountId||!Number.isFinite(amount)||amount<=0){if(out)out.textContent="Select an approved Real USD account and enter a valid amount.";return;}
+  button.disabled=true;button.textContent="Transferring…";
+  const {data,error}=await sb.rpc("partner_transfer_to_real_account",{p_account_id:accountId,p_amount:amount,p_note:"IB commission wallet transfer"});
+  button.disabled=false;button.textContent="Instant transfer to account";
+  if(out)out.textContent=error?"Transfer failed: "+error.message:"IB commission transferred to your Real trading account.";
+  if(!error){f.reset();await loadPageData();}
+  return;
+ }
+ if(f.id==="partner-payout-form"){
+  e.preventDefault();const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector('button[type="submit"]');
+  const amount=Number(d.get("amount")),method=String(d.get("payout_method")||"crypto"),destination=String(d.get("destination")||"").trim();
+  if(!Number.isFinite(amount)||amount<=0||destination.length<4){if(out)out.textContent="Enter a valid amount and payout destination.";return;}
+  button.disabled=true;button.textContent="Submitting request…";
+  const {data,error}=await sb.rpc("partner_request_payout",{p_amount:amount,p_payout_method:method,p_destination:destination});
+  button.disabled=false;button.textContent="Request withdrawal";
+  if(out)out.textContent=error?"Payout request failed: "+error.message:"Payout request submitted. The amount is reserved pending Admin Finance review.";
+  if(!error){f.reset();await loadPageData();}
+  return;
+ }
+ if(f.id==="admin-ib-adjust-form"){
+  e.preventDefault();if(!isAdmin())return;const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector('button[type="submit"]');
+  const partnerId=String(d.get("partner_user_id")||"").trim(),direction=String(d.get("direction")||"credit"),amount=Number(d.get("amount")),note=String(d.get("note")||"").trim();
+  if(!partnerId||!Number.isFinite(amount)||amount<=0||note.length<4){if(out)out.textContent="Enter a partner ID, valid amount and audit note.";return;}
+  button.disabled=true;button.textContent="Applying adjustment…";
+  const {error}=await sb.rpc("admin_adjust_partner_wallet",{p_partner_user_id:partnerId,p_direction:direction,p_amount:amount,p_note:note});
+  button.disabled=false;button.textContent="Apply audited adjustment";
+  if(out)out.textContent=error?"Adjustment failed: "+error.message:"IB wallet adjustment recorded in the partner ledger.";
+  if(!error){f.reset();await loadPageData();}
+  return;
+ }
  if(f.id==="partner-form"){
   e.preventDefault();const d=new FormData(f),out=f.querySelector("[data-page-message]"),payload={user_id:user.id,partner_type:String(d.get("partner_type")),business_name:String(d.get("business_name")||"").trim()||null,website_or_social:String(d.get("website_or_social")||"").trim()||null,audience_size:String(d.get("audience_size")||"").trim()?Number(d.get("audience_size")):null,experience:String(d.get("experience")||"").trim()||null,status:"pending"};
   const {error}=await sb.from("partner_applications").insert(payload);if(out)out.textContent=error?error.message:"Partner application submitted for review.";if(!error)loadPageData();return;
