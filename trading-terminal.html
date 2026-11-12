@@ -2363,7 +2363,7 @@
       updatePortfolioMetrics();
       renderPositionsTable();
       resizeCanvas();
-      setInterval(tickMarketPrices, 650);
+      setInterval(() => { if (!window.__bbExternalMarketFeedActive) tickMarketPrices(); }, 650);
     };
   </script>
 
@@ -2371,6 +2371,7 @@
   // BIGBULLS terminal integration: Twelve Data candles + authenticated Supabase paper execution.
   (function () {
     'use strict';
+    window.__bbExternalMarketFeedActive = true;
     const BB_URL = 'https://ztiiyulusburxjkpcfxu.supabase.co';
     const BB_KEY = 'sb_publishable_5hDwqvbcUHeSJdXFHf9ugw_VPYGN4J_';
     const BB_SYMBOLS = ['EUR/USD', 'GBP/USD', 'USD/JPY', 'XAU/USD'];
