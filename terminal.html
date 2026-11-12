@@ -1942,6 +1942,17 @@ const mode=a=>String(a?.type||'Demo').toLowerCase()==='real'?'real':'demo';
 function mapSymbol(s){return({XAUUSD:'XAU/USD',EURUSD:'EUR/USD',GBPUSD:'GBP/USD',USDJPY:'USD/JPY',BTCUSDT:'BTC',BTC:'BTC',WTIUSD:'USOIL',WTI:'USOIL',NDX:'USTEC'})[String(s||'').toUpperCase().replaceAll('/','')]||null;}
 function applyQuote(s,p){const i=state.instruments[s];if(!i||!(Number(p)>0))return;i.bid=Number(p);i.ask=Number((i.bid+Number(i.spread||0)).toFixed(i.digits));}
 function applyBookQuote(s,q){const i=state.instruments[s];if(!i||!q)return;const bid=Number(q.bid),ask=Number(q.ask);if(bid>0&&ask>=bid){i.bid=bid;i.ask=ask;}}
+let bbookRealtimeChannel=null;
+function startBbookRealtime(c){
+ if(bbookRealtimeChannel){c.removeChannel(bbookRealtimeChannel);bbookRealtimeChannel=null;}
+ if(!session?.user)return;
+ bbookRealtimeChannel=c.channel('bb-bbook-terminal-'+session.user.id)
+  .on('postgres_changes',{event:'*',schema:'public',table:'bb_bbook_quotes'},payload=>{
+   const row=payload.new||{};applyBookQuote(mapSymbol(row.symbol),row);updateLiveDOMElements();
+  })
+  .on('postgres_changes',{event:'*',schema:'public',table:'bb_bbook_positions',filter:'user_id=eq.'+session.user.id},()=>{if(mode(getActiveAccount())==='real')refresh(true);})
+  .subscribe();
+}
 async function accounts(){
  const d=await call('trading-gateway',{action:'accounts'});
  const approved=(d.accounts||[]).filter(a=>['demo','real'].includes(String(a.account_mode).toLowerCase())&&a.status==='approved'&&!a.archived_at&&!a.deleted_at).map(a=>({id:String(a.account_number||a.id),backendId:a.id,nickname:a.display_name||a.account_type||a.account_mode.toUpperCase(),type:a.account_mode==='real'?'Real':'Demo',platform:a.account_mode==='real'?'BigBulls B-Book':'BigBulls Paper',accountClass:a.account_type||'Standard',balance:Number(a.balance||0),leverage:a.requested_leverage||'1:100',server:a.server_name||'BigBulls',archived:false,status:a.status,currency:a.currency||'USD'}));
@@ -2023,10 +2034,10 @@ window.submitWithdraw=()=>notify('Withdrawals managed in Client Area','No termin
 window.createNewAccount=()=>{notify('Account creation managed in Client Area','Open My Accounts in the Client Area to create a trading account.','info');location.href='dashboard.html';};
 async function start(){
  try{const c=client(),auth=await c.auth.getSession();if(auth.error)throw auth.error;session=auth.data?.session||null;if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}
- await accounts();Object.values(state.instruments).forEach(i=>{i.candles=[];i.bid=0;i.ask=0;});state.openOrders=[];state.pendingOrders=[];state.closedOrders=[];ready=true;lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();
+ await accounts();Object.values(state.instruments).forEach(i=>{i.candles=[];i.bid=0;i.ask=0;});state.openOrders=[];state.pendingOrders=[];state.closedOrders=[];ready=true;startBbookRealtime(c);lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();
  try{await quotes();}catch(e){console.warn('Market quotes:',e.message);}try{await candles();}catch(e){notify('Market feed unavailable',e.message||'Provider candles could not be loaded.','error');}
  await refresh(true);setInterval(()=>{if(!document.hidden)quotes().catch(()=>{});},15000);setInterval(async()=>{if(document.hidden)return;const symbol=MARKET[state.selectedSymbol];if(!symbol)return;try{const q=await call('market-data',{action:'quote',symbol});applyQuote(state.selectedSymbol,q.price);updateLiveDOMElements();}catch(e){console.warn('Selected symbol live quote:',e.message);}},10000);setInterval(()=>{if(!document.hidden)refresh(true);},10000);
- c.auth.onAuthStateChange((_event,s)=>{session=s||null;if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}accounts().then(()=>{ready=true;lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();refresh(true);}).catch(e=>notify('Account refresh failed',e.message,'error'));});
+ c.auth.onAuthStateChange((_event,s)=>{session=s||null;if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}accounts().then(()=>{ready=true;startBbookRealtime(c);lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();refresh(true);}).catch(e=>notify('Account refresh failed',e.message,'error'));});
  }catch(e){console.error('BIGBULLS terminal startup:',e);notify('Terminal connection failed',e.message||'Unable to connect to the trading backend.','error');}
 }
 window.addEventListener('load',start,{once:true});
