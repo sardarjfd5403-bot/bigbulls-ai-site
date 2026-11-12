@@ -1,3 +1,11 @@
+drop policy if exists bb_bbook_pending_orders_update_own on public.bb_bbook_pending_orders;
+create policy bb_bbook_pending_orders_update_own
+  on public.bb_bbook_pending_orders
+  for update to authenticated
+  using ((select auth.uid())=user_id and status='PENDING')
+  with check ((select auth.uid())=user_id and status='PENDING');
+grant update(target_price,stop_loss,take_profit,updated_at) on public.bb_bbook_pending_orders to authenticated;
+
 create or replace function public.bb_bbook_modify_pending_order(
   p_order_id uuid,
   p_target_price numeric,
@@ -5,7 +13,7 @@ create or replace function public.bb_bbook_modify_pending_order(
   p_take_profit numeric default null
 ) returns jsonb
 language plpgsql
-security definer
+security invoker
 set search_path=public,pg_temp
 as $function$
 declare
