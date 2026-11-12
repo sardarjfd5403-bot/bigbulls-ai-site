@@ -2086,7 +2086,8 @@ async function accounts(preferredBackendId=null){
  try{sessionStorage.setItem('bb:terminal:active-mode:'+session.user.id,mode(selected));if(selected.backendId)sessionStorage.setItem('bb:terminal:selected-account:'+session.user.id+':'+mode(selected),selected.backendId);}catch(_){}
 }
 async function quotes(){
- const d=await call('market-data',{action:'quotes'});
+ const quoteSymbols=[...new Set([...Object.values(MARKET).slice(0,27),MARKET[state.selectedSymbol]].filter(Boolean))];
+ const d=await call('market-data',{action:'quotes',symbols:quoteSymbols});
  (d.quotes||[]).forEach(q=>{
   const ui=mapSymbol(q.symbol),inst=state.instruments[ui];if(!inst||q.error)return;
   inst.brokerSpreadBps=Number(q.broker_spread_bps);
