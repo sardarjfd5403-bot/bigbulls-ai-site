@@ -1989,7 +1989,7 @@ async function startBiQuoteRealtime(){
   const connection=new window.signalR.HubConnectionBuilder().withUrl('https://biquote.io/hubs/tick').withAutomaticReconnect([0,2000,5000,10000,30000]).build();
   connection.on('ReceiveTick',handleBiQuoteTick);
   connection.onreconnected(async()=>{try{await connection.invoke('Subscribe',BIQUOTE_STREAM_SYMBOLS);}catch(e){console.warn('BiQuote resubscribe failed:',e.message);}});
-  connection.onclose(e=>console.warn('BiQuote SignalR closed:',e?.message||'connection closed'));
+  connection.onclose(e=>{console.warn('BiQuote SignalR closed:',e?.message||'connection closed');biQuoteConnection=null;if(session?.user)setTimeout(()=>startBiQuoteRealtime().catch(()=>{}),5000);});
   try{await connection.start();await connection.invoke('Subscribe',BIQUOTE_STREAM_SYMBOLS);biQuoteConnection=connection;console.info('BiQuote SignalR connected; subscribed:',BIQUOTE_STREAM_SYMBOLS);return connection;}
   catch(e){console.warn('BiQuote SignalR connection failed:',e.message);try{await connection.stop();}catch(_){}return null;}
  })();
