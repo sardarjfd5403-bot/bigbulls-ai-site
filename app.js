@@ -475,7 +475,7 @@ function pageContent(p,name){
 async function renderMainWalletWithdrawal(){
  const box=document.getElementById("wallet-content");if(!box||!sb||!user)return;
  box.innerHTML='<span class="free-tag">MAIN WALLET · PAYOUT</span><h3>Withdraw from Main Wallet</h3><p>Verified withdrawals are reserved against your wallet and the BIGBULLS internal pool. Admin records the payout reference before funds are marked completed.</p><div class="notice" id="bb-main-wallet-withdraw-balance">Loading available balance…</div><div id="bb-main-wallet-withdraw-form-state">Loading payout networks…</div>';
- const [wallet,methods,holds]=await Promise.all([sb.rpc("ensure_client_wallet"),sb.from("crypto_wallets").select("asset,network").eq("active",true).order("asset"),sb.from("wallet_transactions").select("amount_usd").eq("user_id",user.id).is("account_id",null).eq("kind","withdrawal").eq("status","processing")]);
+ const [wallet,methods,holds]=await Promise.all([sb.rpc("ensure_client_wallet"),sb.from("crypto_wallets").select("asset,network").eq("active",true).order("asset"),sb.from("wallet_transactions").select("amount_usd").eq("user_id",user.id).is("account_id",null).eq("kind","withdrawal").in("status",["pending","otp_pending","processing"])]);
  const status=document.getElementById("bb-main-wallet-withdraw-form-state");if(!status)return;
  if(wallet.error||methods.error||holds.error){status.innerHTML='<div class="notice">Wallet withdrawal setup unavailable: '+esc(wallet.error?.message||methods.error?.message||holds.error?.message||"Please retry.")+'</div>';return;}
  const available=Math.max(0,Number(wallet.data||0)-(holds.data||[]).reduce((n,x)=>n+Number(x.amount_usd||0),0));
@@ -1095,7 +1095,7 @@ async function submitHandler(e){
   const amount=Number(d.get("amount_usd")),amountCrypto=Number(d.get("amount_crypto")),destination=String(d.get("destination_address")||"").trim();
   if(!(amount>0)||!(amountCrypto>0)||destination.length<6){if(out)out.textContent="Enter a valid amount, crypto quantity and receiving address.";return;}
   button.disabled=true;button.textContent="Checking available balance…";
-  const {data:reservedRows,error:reserveError}=await sb.from("wallet_transactions").select("amount_usd").eq("account_id",ctx.accountId).eq("kind","withdrawal").eq("status","processing");
+  const {data:reservedRows,error:reserveError}=await sb.from("wallet_transactions").select("amount_usd").eq("account_id",ctx.accountId).eq("kind","withdrawal").in("status",["pending","otp_pending","processing"]);
   if(reserveError){if(out)out.textContent="Could not verify available balance: "+reserveError.message;button.disabled=false;button.textContent="Submit withdrawal request";return;}
   const reserved=(reservedRows||[]).reduce((sum,x)=>sum+Number(x.amount_usd||0),0),available=Math.max(0,Number(account.balance||0)-reserved);
   if(amount>available){if(out)out.textContent="Amount exceeds available balance after already-approved withdrawals. Available: "+account.currency+" "+available.toFixed(2);button.disabled=false;button.textContent="Submit withdrawal request";return;}
@@ -1126,7 +1126,7 @@ async function submitHandler(e){
   if(!(amount>0)||!(amountCrypto>0)||destination.length<10||pair.length!==2){if(out)out.textContent="Enter a valid amount, payout network and destination address.";return;}
   button.disabled=true;button.textContent="Checking Main Wallet…";
   try{
-   const [wallet,holds]=await Promise.all([sb.rpc("ensure_client_wallet"),sb.from("wallet_transactions").select("amount_usd").eq("user_id",user.id).is("account_id",null).eq("kind","withdrawal").eq("status","processing")]);
+   const [wallet,holds]=await Promise.all([sb.rpc("ensure_client_wallet"),sb.from("wallet_transactions").select("amount_usd").eq("user_id",user.id).is("account_id",null).eq("kind","withdrawal").in("status",["pending","otp_pending","processing"])]);
    if(wallet.error||holds.error)throw wallet.error||holds.error;
    const reserved=(holds.data||[]).reduce((n,x)=>n+Number(x.amount_usd||0),0),available=Math.max(0,Number(wallet.data||0)-reserved);
    if(amount>available)throw new Error("Amount exceeds available Main Wallet balance after payout locks. Available: $"+available.toFixed(2));
