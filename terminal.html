@@ -963,7 +963,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
     }
 
     function openClosePositionModal(orderId) {
-      const order = state.openOrders.find(o => o.id === orderId);
+      const order = state.openOrders.find(o => String(o.id) === String(orderId) || String(o.backendTradeId) === String(orderId));
       if (!order) return;
       const pl = calculateOrderPL(order);
       const inst = state.instruments[order.symbol];
@@ -978,7 +978,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
           <div class="flex justify-between"><span class="text-gray-400">Lots</span><span class="font-mono font-bold text-white">${order.lots.toFixed(2)}</span></div>
           <div class="flex justify-between"><span class="text-gray-400">Closing price</span><span class="font-mono font-bold text-white">${closePrice.toFixed(inst.digits)}</span></div>
           <div class="flex justify-between"><span class="text-gray-400">Profit / Loss</span><span class="font-mono font-bold ${pl>=0?'text-bullGreen':'text-bullRed'}">${pl>=0?'+':''}${formatMoney(pl)} USD</span></div>
-          <button onclick="executeCloseOrder(${order.id}, false)" class="w-full py-3 rounded-xl bg-bullBlue hover:bg-bullYellowHover text-white font-bold text-sm mt-2">Confirm</button>
+          <button onclick="executeCloseOrder('${order.backendTradeId || order.id}', false)" class="w-full py-3 rounded-xl bg-bullBlue hover:bg-bullYellowHover text-white font-bold text-sm mt-2">Confirm</button>
           <button onclick="closeModal()" class="w-full py-2.5 rounded-xl bg-[#262C3A] text-gray-300 font-bold text-xs">Cancel</button>
         </div>
       `);
@@ -1257,7 +1257,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
                       <div class="font-bold text-sm text-white">${o.symbol}</div>
                       <div class="text-xs text-bullBlue">${o.side} ${o.pendingType} ${o.lots.toFixed(2)} lot @ ${o.targetPrice}</div>
                     </div>
-                    <button onclick="cancelPendingOrder(${o.id})" class="px-3 py-1 rounded-lg bg-bullRed/20 text-bullRed text-xs font-bold">Cancel</button>
+                    <button onclick="cancelPendingOrder('${o.backendOrderId || o.id}')" class="px-3 py-1 rounded-lg bg-bullRed/20 text-bullRed text-xs font-bold">Cancel</button>
                   </div>
                 `).join('') : `<div class="text-xs text-gray-400 py-4 text-center">No pending orders.</div>`
               ) : (
@@ -1741,7 +1741,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
                             <td class="py-1.5 font-sans text-bullBlue">${o.side} ${o.pendingType}</td>
                             <td class="py-1.5 text-white">${o.lots.toFixed(2)} lot</td>
                             <td class="py-1.5 text-gray-300">@ ${o.targetPrice}</td>
-                            <td class="py-1.5 text-right"><button onclick="cancelPendingOrder(${o.id})" class="text-bullRed hover:underline font-sans font-bold">Cancel</button></td>
+                            <td class="py-1.5 text-right"><button onclick="cancelPendingOrder('${o.backendOrderId || o.id}')" class="text-bullRed hover:underline font-sans font-bold">Cancel</button></td>
                           </tr>
                         `).join('')}
                       </tbody>
@@ -2121,10 +2121,32 @@ async function place(){
   refresh(true);
  }catch(e){const msg=/insufficient/i.test(e.message)?'Insufficient Funds':e.message;notify('Order not placed',msg,'error');}
 }
+const closingPositions=new Set();
 async function closePosition(id,silent=false,reason='Closed manually'){
- const o=state.openOrders.find(x=>String(x.id)===String(id));if(!o)return;const a=getActiveAccount(),real=mode(a)==='real',b={action:'close',account_mode:mode(a),reason};
- if(real){b.position_id=o.backendTradeId;b.account_id=a.backendId;}else{b.trade_id=o.backendTradeId;if(a.backendId)b.account_id=a.backendId;}
- try{await call(real?'bbook-engine':'paper-execution',b);if(!silent)closeModal();await refresh(true);if(!silent)notify('Position closed',o.symbol+' '+o.side+' '+o.lots.toFixed(2)+' lots','success');}catch(e){notify('Close failed',e.message||'The position could not be closed.','error');}
+ const o=state.openOrders.find(x=>String(x.id)===String(id)||String(x.backendTradeId)===String(id));
+ if(!o){notify('Close failed','This position is no longer open. Refreshing the account ledger.','error');await refresh(true);return false;}
+ const a=getActiveAccount(),real=mode(a)==='real';
+ if(!a?.backendId||a.status!=='approved'){notify('Close failed','Select an approved trading account.','error');return false;}
+ const tradeId=String(o.backendTradeId||'');if(real&&!tradeId){notify('Close failed','The position is missing its backend ledger ID.','error');return false;}
+ const lock=tradeId||String(o.id);if(closingPositions.has(lock))return false;closingPositions.add(lock);
+ try{
+  const payload={action:'close',account_mode:mode(a),reason};
+  if(real){payload.position_id=tradeId;payload.account_id=a.backendId;}else{payload.trade_id=tradeId;if(a.backendId)payload.account_id=a.backendId;}
+  const result=await call(real?'bbook-engine':'paper-execution',payload);
+  if(real&&(!result.success||String(result.position?.status||'').toUpperCase()!=='CLOSED'))throw new Error(result.error||'B-Book engine did not confirm the position close.');
+  if(!silent)closeModal();
+  const realized=Number(result.realized_pnl??result.position?.realized_pnl??o.realizedPL??0);
+  const exit=Number(result.position?.exit_price??result.quote?.bid??result.quote?.ask??o.closePrice);
+  const closed={...o,closePrice:exit,closeTime:new Date().toLocaleString(),realizedPL:realized,status:'closed'};
+  state.openOrders=state.openOrders.filter(x=>String(x.backendTradeId||x.id)!==lock);
+  state.closedOrders=[closed,...state.closedOrders.filter(x=>String(x.backendTradeId||x.id)!==lock)];
+  if(real&&Number.isFinite(Number(result.account_balance)))a.balance=Number(result.account_balance);
+  updateLiveDOMElements();renderApp();
+  const refreshed=await refresh(true);
+  if(!refreshed){state.openOrders=state.openOrders.filter(x=>String(x.backendTradeId||x.id)!==lock);state.closedOrders=[closed,...state.closedOrders.filter(x=>String(x.backendTradeId||x.id)!==lock)];updateLiveDOMElements();renderApp();}
+  notify('Position closed',o.symbol+' '+o.side+' '+o.lots.toFixed(2)+' lots · '+(realized>=0?'+':'')+formatMoney(realized)+' USD','success');return true;
+ }catch(e){notify('Close failed',e.message||'The position could not be closed.','error');return false;}
+ finally{closingPositions.delete(lock);}
 }
 const originalRender=window.renderApp;
 if(typeof originalRender==='function')window.renderApp=function(){originalRender();if(!ready)return;const a=getActiveAccount(),ak=a?.id||'',mk=state.selectedSymbol+':'+state.timeframe;if(ak&&ak!==lastAccount){lastAccount=ak;try{sessionStorage.setItem('bb:terminal:active-mode:'+session.user.id,mode(a));if(a.backendId)sessionStorage.setItem('bb:terminal:selected-account:'+session.user.id+':'+mode(a),a.backendId);}catch(_){}refresh(true);}if(mk!==lastMarket){lastMarket=mk;candles().catch(e=>console.warn('Market candles:',e.message));}};
