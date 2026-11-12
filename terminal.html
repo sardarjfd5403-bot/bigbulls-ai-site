@@ -1968,7 +1968,7 @@ function startBbookRealtime(c){
   .subscribe();
 }
 let biQuoteConnection=null,biQuoteStartPromise=null;
-const BIQUOTE_STREAM_SYMBOLS=['EURUSD','GBPUSD','USDJPY','XAUUSD','BTCUSD','USOIL','NDX'];
+const BIQUOTE_STREAM_SYMBOLS=['EURUSD','GBPUSD','USDJPY','XAUUSD','BTCUSD','USOIL','USTEC'];
 function handleBiQuoteTick(tick){
  if(Array.isArray(tick))tick=tick[0];if(!tick||!tick.symbol)return;
  const ui=mapSymbol(tick.symbol),inst=state.instruments[ui];if(!inst)return;
