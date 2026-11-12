@@ -857,8 +857,7 @@ if(activePage==="admin"&&isAdmin()){
      const tier=document.createElement("select");tier.dataset.ibTierSelect=partner.user_id;
      for(const name of ["bronze","silver","gold","diamond"]){const option=document.createElement("option");option.value=name;option.textContent=name.toUpperCase();option.selected=(partner.tier||"bronze")===name;tier.appendChild(option);}
      actions.appendChild(tier);
-     const saveTier=document.createElement("button");saveTier.type="button";saveTier.dataset.ibPartnerTierSave=partner.user_id;saveTier.textContent="Save tier";actions.appendChild(saveTier);
-     if(status==="approved"||status==="disabled"){
+     if(status==="approved"||status==="disabled"){const saveTier=document.createElement("button");saveTier.type="button";saveTier.dataset.ibPartnerTierSave=partner.user_id;saveTier.textContent="Save tier";actions.appendChild(saveTier);
       const button=document.createElement("button");button.type="button";button.dataset.ibPartnerStatus=partner.user_id;
       button.dataset.status=status==="approved"?"disabled":"approved";button.textContent=status==="approved"?"Disable IB":"Enable IB";actions.appendChild(button);
      }else{
