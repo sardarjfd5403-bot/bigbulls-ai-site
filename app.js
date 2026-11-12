@@ -1300,6 +1300,33 @@ async function submitHandler(e){
   finally{button.disabled=false;button.textContent="Submit support ticket";}
   return;
  }
+ if(f.id==="partner-transfer-form"){
+  e.preventDefault();const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector('button[type="submit"]'),accountId=String(d.get("account_id")||""),amount=Number(d.get("amount"));
+  if(!accountId||!Number.isFinite(amount)||amount<=0||Math.round(amount*100)!==amount*100){if(out)out.textContent="Choose an approved Real USD account and enter a valid amount.";return;}
+  button.disabled=true;button.textContent="Transferring securely…";
+  try{const {data,error}=await sb.rpc("partner_transfer_to_real_account",{p_account_id:accountId,p_amount:amount,p_note:"IB commission transfer to Real trading account"});if(error)throw error;if(out)out.textContent="Transfer completed · Reference "+String(data||"");f.reset();await loadPageData();await loadClientTradingAccounts();}
+  catch(err){if(out)out.textContent="IB transfer failed: "+(err.message||"Please retry.");}
+  finally{button.disabled=false;button.textContent="Instant transfer to account";}
+  return;
+ }
+ if(f.id==="partner-payout-form"){
+  e.preventDefault();const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector('button[type="submit"]'),amount=Number(d.get("amount")),method=String(d.get("payout_method")||""),destination=String(d.get("destination")||"").trim();
+  if(!Number.isFinite(amount)||amount<=0||Math.round(amount*100)!==amount*100||destination.length<4||destination.length>500){if(out)out.textContent="Enter a valid payout amount and destination details.";return;}
+  button.disabled=true;button.textContent="Submitting payout request…";
+  try{const {data,error}=await sb.rpc("partner_request_payout",{p_amount:amount,p_payout_method:method,p_destination:destination});if(error)throw error;if(out)out.textContent="Withdrawal request submitted · Reference "+String(data||"");f.reset();await loadPageData();}
+  catch(err){if(out)out.textContent="Payout request failed: "+(err.message||"Please retry.");}
+  finally{button.disabled=false;button.textContent="Request withdrawal";}
+  return;
+ }
+ if(f.id==="admin-ib-adjust-form"){
+  e.preventDefault();if(!isAdmin())return;const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector('button[type="submit"]'),partnerId=String(d.get("partner_user_id")||"").trim(),direction=String(d.get("direction")||""),amount=Number(d.get("amount")),note=String(d.get("note")||"").trim();
+  if(!partnerId||!["credit","debit"].includes(direction)||!Number.isFinite(amount)||amount<=0||Math.round(amount*100)!==amount*100||note.length<4){if(out)out.textContent="Enter a valid partner UUID, amount, direction and audit note.";return;}
+  button.disabled=true;button.textContent="Applying audited adjustment…";
+  try{const {error}=await sb.rpc("admin_adjust_partner_wallet",{p_partner_user_id:partnerId,p_direction:direction,p_amount:amount,p_note:note});if(error)throw error;if(out)out.textContent="IB wallet adjustment saved with audit record.";f.reset();await loadPageData();}
+  catch(err){if(out)out.textContent="Adjustment failed: "+(err.message||"Please retry.");}
+  finally{button.disabled=false;button.textContent="Apply audited adjustment";}
+  return;
+ }
  if(f.id==="partner-form"){
   e.preventDefault();const d=new FormData(f),out=f.querySelector("[data-page-message]"),payload={user_id:user.id,partner_type:String(d.get("partner_type")),business_name:String(d.get("business_name")||"").trim()||null,website_or_social:String(d.get("website_or_social")||"").trim()||null,audience_size:String(d.get("audience_size")||"").trim()?Number(d.get("audience_size")):null,experience:String(d.get("experience")||"").trim()||null,status:"pending"};
   const {error}=await sb.from("partner_applications").insert(payload);if(out)out.textContent=error?error.message:"Partner application submitted for review.";if(!error)loadPageData();return;
@@ -1431,6 +1458,16 @@ async function clickHandler(e){
  if(el.closest("[data-wallet-queue-refresh]")&&isAdmin()){loadPageData();return;}
  if(el.closest("[data-kyc-refresh]")&&isAdmin()){loadPageData();return;}
   const kycReview=el.closest("[data-kyc-review]");if(kycReview&&isAdmin()){const row=kycReview.closest(".admin-transaction"),reasons=Array.from(row?.querySelector("[data-kyc-reasons]")?.selectedOptions||[]).map(x=>x.value),note=String(row?.querySelector("[data-kyc-admin-note]")?.value||"").trim();if(kycReview.dataset.status==="rejected"&&!reasons.length){alert("Select at least one KYC rejection reason.");return;}const {error}=await sb.rpc("admin_review_kyc_submission",{p_submission_id:kycReview.dataset.kycReview,p_status:kycReview.dataset.status,p_admin_note:note||null,p_rejection_reasons:kycReview.dataset.status==="rejected"?reasons:[]});if(error)alert(error.message);else loadPageData();return;}
+ const partnerShare=el.closest("[data-partner-share]");
+ if(partnerShare){const url=window.__bbPartnerReferralUrl||"";if(!url){message("Your referral link becomes available after partner approval.",true);return;}try{if(navigator.share){await navigator.share({title:"Join BIGBULLS Global Market",text:"Create your BIGBULLS account using my partner link.",url});}else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(url);message("Partner link copied. Share it with your clients.");}else{window.prompt("Copy your BIGBULLS partner link:",url);}}catch(err){if(err?.name!=="AbortError")message("Share failed: "+(err?.message||"Please copy the link manually."),true);}return;}
+ const partnerCodeCopy=el.closest("[data-partner-copy-code]");
+ if(partnerCodeCopy){const code=window.__bbPartnerReferralCode||"";if(!code){message("Your referral code becomes available after partner approval.",true);return;}try{await navigator.clipboard.writeText(code);message("Referral code copied: "+code);}catch(_){window.prompt("Copy your BIGBULLS referral code:",code);}return;}
+ const ibRateSave=el.closest("[data-ib-rate-save]");
+ if(ibRateSave&&isAdmin()){const row=ibRateSave.closest("[data-ib-rate-row]"),rate=Number(row?.querySelector("[data-ib-rate-value]")?.value),enabled=!!row?.querySelector("[data-ib-rate-enabled]")?.checked,tier=ibRateSave.dataset.ibRateSave;if(!Number.isFinite(rate)||rate<0||rate>1000){message("Commission rate must be between $0 and $1,000 per lot.",true);return;}ibRateSave.disabled=true;const {error}=await sb.rpc("admin_update_partner_commission_rate",{p_tier:tier,p_commission_per_lot:rate,p_enabled:enabled});ibRateSave.disabled=false;if(error)message("Rate update failed: "+error.message,true);else{message(tier.toUpperCase()+" commission rate saved.");await loadPageData();}return;}
+ const ibStatus=el.closest("[data-ib-partner-status]");
+ if(ibStatus&&isAdmin()){const row=ibStatus.closest(".ib-partner-row"),tier=String(row?.querySelector("[data-ib-tier-select]")?.value||"bronze"),status=ibStatus.dataset.status;if(!confirm((status==="disabled"?"Disable":"Enable")+" IB partner access?"))return;ibStatus.disabled=true;const {error}=await sb.rpc("admin_set_partner_status",{p_partner_user_id:ibStatus.dataset.ibPartnerStatus,p_status:status,p_tier:tier});if(error){ibStatus.disabled=false;message("IB status update failed: "+error.message,true);}else{message("IB partner status updated.");await loadPageData();}return;}
+ const ibPayoutReview=el.closest("[data-ib-payout-review]");
+ if(ibPayoutReview&&isAdmin()){const status=ibPayoutReview.dataset.status;let note=null;if(status==="rejected"){note=window.prompt("Enter rejection reason (minimum 4 characters):");if(!note||note.trim().length<4){message("A clear payout rejection reason is required.",true);return;}note=note.trim();}if(status==="paid"&&!confirm("Confirm that this IB payout has actually been sent?"))return;ibPayoutReview.disabled=true;const {error}=await sb.rpc("admin_review_partner_payout",{p_request_id:ibPayoutReview.dataset.ibPayoutReview,p_status:status,p_admin_note:note});if(error){ibPayoutReview.disabled=false;message("Payout review failed: "+error.message,true);}else{message(status==="paid"?"IB payout marked paid.":"IB payout rejected and wallet funds returned.");await loadPageData();}return;}
  const partnerReview=el.closest("[data-partner-review]");if(partnerReview&&isAdmin()){let note=null;if(partnerReview.dataset.status==="rejected"){note=prompt("Enter partner rejection reason (required):");if(!note||note.trim().length<4){alert("A clear rejection reason is required.");return;}note=note.trim();}const {error}=await sb.rpc("admin_review_partner_application",{p_application_id:partnerReview.dataset.partnerReview,p_status:partnerReview.dataset.status,p_admin_note:note});if(error)alert(error.message);else loadPageData();return;}
  if(el.closest("[data-support-queue-refresh]")&&isAdmin()){loadPageData();return;}
  const supportReview=el.closest("[data-support-review]");
