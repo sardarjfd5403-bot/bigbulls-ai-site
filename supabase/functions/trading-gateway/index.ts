@@ -64,16 +64,22 @@ Deno.serve(async (req: Request) => {
         .select("account_id,virtual_balance").eq("user_id", user.id).eq("account_mode", "demo");
       if (demoLedgerError) throw demoLedgerError;
       const demoBalanceByAccount = new Map((demoLedgers || []).map((x: any) => [x.account_id, Number(x.virtual_balance || 0)]));
-      const { data: paperTrades, error: paperTradesError } = await admin.from("bb_paper_execution_trades")
-        .select("account_id,unrealized_pnl,status").eq("user_id", user.id).eq("account_mode", "demo").eq("status", "OPEN");
-      if (paperTradesError) throw paperTradesError;
+      const [{ data: paperTrades, error: paperTradesError }, { data: realPositions, error: realPositionsError }] = await Promise.all([
+        admin.from("bb_paper_execution_trades").select("account_id,unrealized_pnl,status")
+          .eq("user_id", user.id).eq("account_mode", "demo").eq("status", "OPEN"),
+        admin.from("bb_bbook_positions").select("account_id,floating_pnl,status")
+          .eq("user_id", user.id).eq("account_mode", "real").eq("status", "OPEN")
+      ]);
+      if (paperTradesError || realPositionsError) throw paperTradesError || realPositionsError;
       const demoFloatingByAccount = new Map<string, number>();
       for (const trade of paperTrades || []) demoFloatingByAccount.set(trade.account_id, (demoFloatingByAccount.get(trade.account_id) || 0) + Number(trade.unrealized_pnl || 0));
+      const realFloatingByAccount = new Map<string, number>();
+      for (const position of realPositions || []) realFloatingByAccount.set(position.account_id, (realFloatingByAccount.get(position.account_id) || 0) + Number(position.floating_pnl || 0));
       const enrichedAccounts = (data || []).map((a: any) => {
-        if (a.account_mode !== "demo") return a;
-        const balance = demoBalanceByAccount.get(a.id) ?? Number(a.balance || 0);
-        const floating = demoFloatingByAccount.get(a.id) || 0;
-        return { ...a, balance, virtual_balance: balance, floating_pnl: floating, equity: balance + floating };
+        const demo = a.account_mode === "demo";
+        const balance = demo ? (demoBalanceByAccount.get(a.id) ?? Number(a.balance || 0)) : Number(a.balance || 0);
+        const floating = (demo ? demoFloatingByAccount : realFloatingByAccount).get(a.id) || 0;
+        return { ...a, balance, ...(demo ? { virtual_balance: balance } : {}), floating_pnl: floating, equity: balance + floating };
       });
       const { data: control, error: controlError } = await admin.from("bb_execution_settings").select("demo_execution_enabled,live_execution_enabled,global_halt,halt_reason,live_readiness").eq("singleton", true).single();
       if (controlError) throw controlError;
