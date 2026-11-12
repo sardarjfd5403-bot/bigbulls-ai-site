@@ -12,6 +12,8 @@ function init(){
  modal=document.getElementById("portal-modal");body=document.getElementById("portal-body");shell=document.getElementById("app-shell");
  if(!modal||!body||!shell){console.error("Portal markup missing");return;}
  document.addEventListener("click",e=>{clickHandler(e).catch(err=>{console.error("Portal click workflow failed:",err);message("This action could not be completed: "+(err?.message||"Please retry."),true);});},true);
+ document.addEventListener("click",e=>{const el=e.target instanceof Element?e.target:null;const button=el?.closest('#signup-form button[type="submit"],#login-form button[type="submit"]');if(button?.form)button.form.dataset.explicitAuthSubmit="1";},true);
+ document.addEventListener("keydown",e=>{if(e.key!=="Enter"||!(e.target instanceof HTMLInputElement))return;const form=e.target.form;if(form&&["signup-form","login-form"].includes(form.id))e.preventDefault();},true);
  document.addEventListener("submit",e=>{submitHandler(e).catch(err=>{console.error("Portal form workflow failed:",err);const out=e.target?.querySelector?.("[data-page-message]");if(out)out.textContent="This request could not be completed: "+(err?.message||"Please retry.");else message("This request could not be completed: "+(err?.message||"Please retry."),true);});},true);
  document.addEventListener("change",e=>{kycFileChangeHandler(e).catch(err=>{console.error("Secure upload workflow failed:",err);message("Secure upload failed: "+(err?.message||"Please retry."),true);});},true);
  startAICarousel();
@@ -1008,6 +1010,8 @@ async function submitHandler(e){
  const f=e.target;if(!(f instanceof HTMLFormElement))return;
  if(f.id==="signup-form"||f.id==="login-form"){
   e.preventDefault();
+  if(f.dataset.explicitAuthSubmit!=="1")return;
+  delete f.dataset.explicitAuthSubmit;
   const d=new FormData(f),b=f.querySelector('button[type="submit"]');
   if(!sb){message("Account service is unavailable. Refresh the page and try again.",true);return;}
   b.disabled=true;b.textContent="Please wait…";
