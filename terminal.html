@@ -1914,14 +1914,14 @@ const BB_URL='https://ztiiyulusburxjkpcfxu.supabase.co',BB_KEY='sb_publishable_5
 const MARKET={
  'XAU/USD':'XAU/USD','XAG/USD':'XAG/USD','XPT/USD':'XPT/USD','XPD/USD':'XPD/USD',
  'EUR/USD':'EUR/USD','GBP/USD':'GBP/USD','USD/JPY':'USD/JPY','USD/CAD':'USD/CAD','AUD/USD':'AUD/USD','NZD/USD':'NZD/USD','USD/CHF':'USD/CHF','EUR/GBP':'EUR/GBP','EUR/JPY':'EUR/JPY','GBP/JPY':'GBP/JPY',
- 'US30':'US30','USTEC':'USTEC','SPX500':'SPX500','GER40':'GER40','UK100':'UK100','JPN225':'JPN225',
- 'USOIL':'USOIL','UKOIL':'UKOIL','NATGAS':'NATGAS',
+ 'US30':'US30','USTEC':'USTEC','SPX500':'US500','GER40':'DE30','UK100':'UK100','JPN225':'JP225',
+ 'USOIL':'USOIL','UKOIL':'UKOIL','NATGAS':'NATGASUSDT',
  'BTC':'BTCUSDT','ETH/USD':'ETHUSDT','SOL/USD':'SOLUSDT','XRP/USD':'XRPUSDT','BNB/USD':'BNBUSDT'
 };
 const PAPER={
  'XAU/USD':'XAUUSD','XAG/USD':'XAGUSD','XPT/USD':'XPTUSD','XPD/USD':'XPDUSD',
  'EUR/USD':'EURUSD','GBP/USD':'GBPUSD','USD/JPY':'USDJPY','USD/CAD':'USDCAD','AUD/USD':'AUDUSD','NZD/USD':'NZDUSD','USD/CHF':'USDCHF','EUR/GBP':'EURGBP','EUR/JPY':'EURJPY','GBP/JPY':'GBPJPY',
- 'US30':'US30','USTEC':'USTEC','SPX500':'SPX500','GER40':'GER40','UK100':'UK100','JPN225':'JPN225',
+ 'US30':'US30','USTEC':'USTEC','SPX500':'US500','GER40':'DE30','UK100':'UK100','JPN225':'JP225',
  'USOIL':'USOIL','UKOIL':'UKOIL','NATGAS':'NATGAS',
  'BTC':'BTCUSDT','ETH/USD':'ETHUSDT','SOL/USD':'SOLUSDT','XRP/USD':'XRPUSDT','BNB/USD':'BNBUSDT'
 
@@ -1981,7 +1981,7 @@ async function call(fn,body){const r=await client().functions.invoke(fn,{body});
 const mode=a=>String(a?.type||'Demo').toLowerCase()==='real'?'real':'demo';
 function mapSymbol(s){
  const raw=String(s||'').toUpperCase().trim(),key=raw.replaceAll('/','').replaceAll('-','');
- const aliases={XAUUSD:'XAU/USD',XAGUSD:'XAG/USD',XPTUSD:'XPT/USD',XPDUSD:'XPD/USD',EURUSD:'EUR/USD',GBPUSD:'GBP/USD',USDJPY:'USD/JPY',USDCAD:'USD/CAD',AUDUSD:'AUD/USD',NZDUSD:'NZD/USD',USDCHF:'USD/CHF',EURGBP:'EUR/GBP',EURJPY:'EUR/JPY',GBPJPY:'GBP/JPY',BTCUSDT:'BTC',BTCUSD:'BTC',ETHUSDT:'ETH/USD',ETHUSD:'ETH/USD',SOLUSDT:'SOL/USD',SOLUSD:'SOL/USD',XRPUSDT:'XRP/USD',XRPUSD:'XRP/USD',BNBUSDT:'BNB/USD',BNBUSD:'BNB/USD',WTIUSD:'USOIL',USOIL:'USOIL',WTI:'USOIL',UKOIL:'UKOIL',BRENT:'UKOIL',NATGAS:'NATGAS',NGAS:'NATGAS',NDX:'USTEC',NAS100:'USTEC',USTEC:'USTEC',DJI:'US30',US30:'US30',SP500:'SPX500',SPX500:'SPX500',DE40:'GER40',GER40:'GER40',FTSE100:'UK100',UK100:'UK100',JP225:'JPN225',JPN225:'JPN225'};
+ const aliases={XAUUSD:'XAU/USD',XAGUSD:'XAG/USD',XPTUSD:'XPT/USD',XPDUSD:'XPD/USD',EURUSD:'EUR/USD',GBPUSD:'GBP/USD',USDJPY:'USD/JPY',USDCAD:'USD/CAD',AUDUSD:'AUD/USD',NZDUSD:'NZD/USD',USDCHF:'USD/CHF',EURGBP:'EUR/GBP',EURJPY:'EUR/JPY',GBPJPY:'GBP/JPY',BTCUSDT:'BTC',BTCUSD:'BTC',ETHUSDT:'ETH/USD',ETHUSD:'ETH/USD',SOLUSDT:'SOL/USD',SOLUSD:'SOL/USD',XRPUSDT:'XRP/USD',XRPUSD:'XRP/USD',BNBUSDT:'BNB/USD',BNBUSD:'BNB/USD',WTIUSD:'USOIL',USOIL:'USOIL',WTI:'USOIL',UKOIL:'UKOIL',BRENT:'UKOIL',NATGAS:'NATGAS',NATGASUSDT:'NATGAS',NGAS:'NATGAS',NDX:'USTEC',NAS100:'USTEC',USTEC:'USTEC',DJI:'US30',US30:'US30',SP500:'SPX500',US500:'SPX500',SPX500:'SPX500',DE40:'GER40',DE30:'GER40',GER40:'GER40',FTSE100:'UK100',UK100:'UK100',JP225:'JPN225',JPN225:'JPN225'};
  return aliases[key]||(state.instruments[raw]?raw:null);
 }
 
@@ -1992,14 +1992,19 @@ async function loadBiQuoteCatalog(){
   const payload=await response.json(),rows=Array.isArray(payload)?payload:(payload.symbols||payload.items||[]);
   const extra=[];
   for(const row of rows){
-   const provider=String(row.name||row.symbol||'').toUpperCase().trim();if(!provider)continue;
-   const known=mapSymbol(provider),ui=known||provider;
+   const provider=String(row.name||row.symbol||'').toUpperCase().trim();if(!provider||row.hasData===false)continue;
+   const known=mapSymbol(provider),ui=known||provider,type=String(row.type||'').toLowerCase();
+   const category=type==='forex'?'Forex':type==='crypto'?'Crypto':type==='index'||type==='stock'?'Indices':'Commodities';
    if(!state.instruments[ui]){
-    const type=String(row.type||'').toLowerCase();
-    const category=type==='forex'?'Forex':type==='crypto'?'Crypto':type==='index'||type==='stock'?'Indices':'Commodities';
-    state.instruments[ui]={symbol:ui,providerSymbol:provider,name:row.description||row.name||provider,category,bid:0,ask:0,spread:0,change:0,digits:provider.endsWith('JPY')?3:provider.endsWith('USD')?5:2,contractSize:1,iconBg:'#475569',iconText:provider.slice(0,3),candles:[],tradeEnabled:false};
-    MARKET[ui]=provider;extra.push(provider);
-   }else if(!MARKET[ui])MARKET[ui]=provider;
+    state.instruments[ui]={symbol:ui,providerSymbol:provider,name:row.description||row.name||provider,category,bid:0,ask:0,spread:0,change:0,digits:Number(row.digits)||2,contractSize:Number(row.contractSize)||1,tickSize:Number(row.tickSize)||null,tickValue:Number(row.tickValue)||null,currency:row.currency||'USD',iconBg:'#475569',iconText:provider.slice(0,3),candles:[],tradeEnabled:!!PAPER[ui]};
+    extra.push(provider);
+   }else{
+    const inst=state.instruments[ui];inst.providerSymbol=provider;inst.name=row.description||inst.name;inst.category=category;
+    inst.digits=Number(row.digits)||inst.digits;inst.contractSize=Number(row.contractSize)||inst.contractSize;
+    inst.tickSize=Number(row.tickSize)||inst.tickSize||null;inst.tickValue=Number(row.tickValue)||inst.tickValue||null;inst.currency=row.currency||inst.currency||'USD';
+    inst.tradeEnabled=!!PAPER[ui];
+   }
+   MARKET[ui]=provider;
   }
   if(extra.length)BIQUOTE_STREAM_SYMBOLS=[...new Set([...BIQUOTE_STREAM_SYMBOLS,...extra])];
   console.info('BiQuote symbol catalogue loaded:',rows.length,'symbols; extra stream subscriptions:',extra.length);
