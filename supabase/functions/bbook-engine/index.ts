@@ -82,7 +82,7 @@ Deno.serve(async (req: Request) => {
           db.from("bb_bbook_positions").select("*,trading_accounts(account_number,display_name)").eq("status","OPEN").order("opened_at",{ascending:false}).limit(500),
         ]);
         if (poolError || posError) throw poolError || posError;
-        const exposure = (positions || []).reduce((n:any,p:any)=>n + Number(p.entry_price)*Number(p.quantity)*Number(p.contract_size),0);
+        const exposure = (positions || []).reduce((n:any,p:any)=>n + (p.symbol==="USDJPY"?Number(p.quantity)*Number(p.contract_size):Number(p.entry_price)*Number(p.quantity)*Number(p.contract_size)),0);
         const floating = (positions || []).reduce((n:any,p:any)=>n + Number(p.floating_pnl||0),0);
         const {data:ledger,error:ledgerError} = await db.from("bb_bbook_liquidity_ledger").select("*").order("created_at",{ascending:false}).limit(100);
         if (ledgerError) throw ledgerError;
@@ -179,7 +179,7 @@ Deno.serve(async (req: Request) => {
       for(const p of open){
         const q=quotes[p.symbol];if(!q)continue;
         const exit=p.side==="BUY"?q.bid:q.ask;
-        const floating=(p.side==="BUY"?exit-Number(p.entry_price):Number(p.entry_price)-exit)*Number(p.quantity)*Number(p.contract_size);
+        let floating=(p.side==="BUY"?exit-Number(p.entry_price):Number(p.entry_price)-exit)*Number(p.quantity)*Number(p.contract_size);if(p.symbol==="USDJPY"&&exit>0)floating/=exit;
         const hitSl=p.side==="BUY"?exit<=Number(p.stop_loss):exit>=Number(p.stop_loss);
         const hitTp=p.side==="BUY"?exit>=Number(p.take_profit):exit<=Number(p.take_profit);
         if(hitSl||hitTp){
@@ -216,7 +216,7 @@ Deno.serve(async (req: Request) => {
       const latestBalance=Number(latestAccount.balance||0),latestEquity=latestBalance+latestFloating;
       return json({account:{id:accountId,account_mode:"real",currency:latestAccount.currency||"USD"},
         execution:{mode:"BBOOK",label:"BigBulls In-House B-Book",broker_routing:false,enabled:settings.enabled},
-        positions:fresh||[],quotes,metrics:{balance:latestBalance,equity:latestEquity,margin:latestMargin,free_margin:latestEquity-latestMargin,margin_level_pct:latestMargin>0?latestEquity/latestMargin*100:0,floating_pnl:latestFloating},
+        positions:fresh||[],quotes,metrics:{balance:latestBalance,equity:latestEquity,margin:latestMargin,free_margin:latestEquity-latestMargin,margin_level_pct:latestMargin>0?latestEquity/latestMargin*100:0,margin_call:latestMargin>0&&latestEquity/latestMargin*100<=Number(settings.margin_call_level_pct||100),floating_pnl:latestFloating},
         generated_at:new Date().toISOString()});
     }
     return json({error:"Unsupported B-Book action."},400);
