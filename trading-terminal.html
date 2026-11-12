@@ -2663,7 +2663,19 @@
       }
       renderSymbolTabs(); renderSymbolPicker(); renderAccountLists(); bbSyncAccountPicker(); drawChart();
       await bbLoadCandles(); await bbLoadQuotes();
-      if(bbSession){await bbLoadLinkedAccounts();await bbRefreshPaperState(true);}
+      if(bbSession){
+        await bbLoadLinkedAccounts();
+        const launchId=new URLSearchParams(location.search).get('account_id');
+        if(launchId){
+          const launchAccount=bbLinkedAccounts.find(a=>a.id===launchId);
+          if(launchAccount){
+            state.backendAccountIds[launchAccount.account_mode]=launchAccount.id;
+            if(typeof originalSwitchAccount==='function')originalSwitchAccount(launchAccount.account_mode);
+            bbSyncAccountPicker();
+          }else bbToast('The requested account is not approved or is no longer available. Select another account from the switcher.','error');
+        }
+        await bbRefreshPaperState(true);
+      }
       else bbSetFeedStatus('TWELVE DATA LIVE · SIGN IN FOR PAPER TRADING',false);
       window.setInterval(()=>{bbLoadQuotes();bbLoadCandles();},15000);
       window.setInterval(()=>{if(bbSession)bbRefreshPaperState(true);},20000);
