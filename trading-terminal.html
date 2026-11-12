@@ -542,7 +542,7 @@
             <span id="tpPnlPreview" class="text-[11px] text-bb-demo font-mono"></span>
           </div>
           <div class="flex items-center h-9 rounded bg-bb-bg border border-bb-borderLight focus-within:border-bb-yellow">
-            <input id="deskTpInput" type="number" step="0.01" placeholder="Not set" oninput="updateOrderCalculations()" class="w-full bg-transparent px-2.5 text-xs font-mono text-white placeholder-bb-dim focus:outline-none tabular-nums" />
+            <input id="deskTpInput" type="number" step="any" placeholder="Not set" oninput="updateOrderCalculations()" class="w-full bg-transparent px-2.5 text-xs font-mono text-white placeholder-bb-dim focus:outline-none tabular-nums" />
             <button onclick="clearInput('deskTpInput')" title="Clear TP" class="px-1.5 text-bb-dim hover:text-white text-xs">×</button>
             <span class="text-[11px] text-bb-muted px-2 border-x border-bb-border">Price</span>
             <button onclick="stepTpSl('tp', -1)" class="w-8 h-full flex items-center justify-center text-bb-muted hover:text-white">−</button>
@@ -557,7 +557,7 @@
             <span id="slPnlPreview" class="text-[11px] text-bb-sell font-mono"></span>
           </div>
           <div class="flex items-center h-9 rounded bg-bb-bg border border-bb-borderLight focus-within:border-bb-yellow">
-            <input id="deskSlInput" type="number" step="0.01" placeholder="Not set" oninput="updateOrderCalculations()" class="w-full bg-transparent px-2.5 text-xs font-mono text-white placeholder-bb-dim focus:outline-none tabular-nums" />
+            <input id="deskSlInput" type="number" step="any" placeholder="Not set" oninput="updateOrderCalculations()" class="w-full bg-transparent px-2.5 text-xs font-mono text-white placeholder-bb-dim focus:outline-none tabular-nums" />
             <button onclick="clearInput('deskSlInput')" title="Clear SL" class="px-1.5 text-bb-dim hover:text-white text-xs">×</button>
             <span class="text-[11px] text-bb-muted px-2 border-x border-bb-border">Price</span>
             <button onclick="stepTpSl('sl', -1)" class="w-8 h-full flex items-center justify-center text-bb-muted hover:text-white">−</button>
@@ -895,11 +895,11 @@
       <div class="space-y-3">
         <div>
           <label class="text-xs text-bb-muted block mb-1">Take Profit (Price)</label>
-          <input id="editTpInput" type="number" step="0.01" placeholder="Not set" class="w-full h-9 px-3 rounded bg-bb-bg border border-bb-borderLight text-xs font-mono text-white focus:border-bb-yellow focus:outline-none" />
+          <input id="editTpInput" type="number" step="any" placeholder="Not set" class="w-full h-9 px-3 rounded bg-bb-bg border border-bb-borderLight text-xs font-mono text-white focus:border-bb-yellow focus:outline-none" />
         </div>
         <div>
           <label class="text-xs text-bb-muted block mb-1">Stop Loss (Price)</label>
-          <input id="editSlInput" type="number" step="0.01" placeholder="Not set" class="w-full h-9 px-3 rounded bg-bb-bg border border-bb-borderLight text-xs font-mono text-white focus:border-bb-yellow focus:outline-none" />
+          <input id="editSlInput" type="number" step="any" placeholder="Not set" class="w-full h-9 px-3 rounded bg-bb-bg border border-bb-borderLight text-xs font-mono text-white focus:border-bb-yellow focus:outline-none" />
         </div>
       </div>
       <div class="grid grid-cols-2 gap-2 pt-2">
