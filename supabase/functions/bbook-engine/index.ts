@@ -229,8 +229,8 @@ Deno.serve(async (req: Request) => {
         const q=quotes[p.symbol];if(!q)continue;
         const exit=p.side==="BUY"?q.bid:q.ask;
         let floating=(p.side==="BUY"?exit-Number(p.entry_price):Number(p.entry_price)-exit)*Number(p.quantity)*Number(p.contract_size);if(p.symbol==="USDJPY"&&exit>0)floating/=exit;
-        const hitSl=p.side==="BUY"?exit<=Number(p.stop_loss):exit>=Number(p.stop_loss);
-        const hitTp=p.side==="BUY"?exit>=Number(p.take_profit):exit<=Number(p.take_profit);
+        const hitSl=p.stop_loss!=null&&(p.side==="BUY"?exit<=Number(p.stop_loss):exit>=Number(p.stop_loss));
+        const hitTp=p.take_profit!=null&&(p.side==="BUY"?exit>=Number(p.take_profit):exit<=Number(p.take_profit));
         if(hitSl||hitTp){
           const {error}=await db.rpc("bb_bbook_close_position",{p:{user_id:user.id,position_id:p.id,exit_price:exit,bid:q.bid,ask:q.ask,reason:hitSl?"STOP LOSS":"TAKE PROFIT"}});
           if(error)console.error("B-Book automatic close failed:",p.id,error);
