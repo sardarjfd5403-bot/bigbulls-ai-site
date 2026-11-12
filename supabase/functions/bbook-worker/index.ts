@@ -111,8 +111,8 @@ Deno.serve(async (req: Request) => {
       let floating = (p.side === "BUY" ? exit-Number(p.entry_price) : Number(p.entry_price)-exit)
         * Number(p.quantity) * Number(p.contract_size);
       if (p.symbol === "USDJPY" && exit > 0) floating /= exit;
-      const hitSl = p.side === "BUY" ? exit <= Number(p.stop_loss) : exit >= Number(p.stop_loss);
-      const hitTp = p.side === "BUY" ? exit >= Number(p.take_profit) : exit <= Number(p.take_profit);
+      const hitSl = p.stop_loss != null && (p.side === "BUY" ? exit <= Number(p.stop_loss) : exit >= Number(p.stop_loss));
+      const hitTp = p.take_profit != null && (p.side === "BUY" ? exit >= Number(p.take_profit) : exit <= Number(p.take_profit));
       if (hitSl || hitTp) {
         const result = await db.rpc("bb_bbook_close_position",{p:{
           user_id:p.user_id,position_id:p.id,exit_price:exit,bid:q.bid,ask:q.ask,
