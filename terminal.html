@@ -2015,7 +2015,7 @@ function filterMarketWatch(value){
  });
 }
 function applyQuote(s,p){const i=state.instruments[s];if(!i||!(Number(p)>0))return;i.bid=Number(p);i.ask=Number((i.bid+Number(i.spread||0)).toFixed(i.digits));}
-function applyBookQuote(s,q){const i=state.instruments[s];if(!i||!q)return;const bid=Number(q.bid),ask=Number(q.ask);if(bid>0&&ask>=bid){i.bid=bid;i.ask=ask;updateCandleFromTick(s,bid,q.time||q.updated_at||Date.now());}}
+function applyBookQuote(s,q){const i=state.instruments[s];if(!i||!q)return;const bid=Number(q.bid),ask=Number(q.ask);if(bid>0&&ask>=bid){i.bid=bid;i.ask=ask;updateCandleFromTick(s,(bid+ask)/2,q.time||q.updated_at||Date.now());}}
 let bbookRealtimeChannel=null;
 function startBbookRealtime(c){
  if(bbookRealtimeChannel){c.removeChannel(bbookRealtimeChannel);bbookRealtimeChannel=null;}
@@ -2043,7 +2043,7 @@ function handleBiQuoteTick(tick){
  if(real&&Number.isFinite(inst.brokerSpreadBps)){
   const half=inst.brokerSpreadBps/20000;bid=mid*(1-half);ask=mid*(1+half);
  }
- if(bid>0&&ask>=bid){inst.bid=bid;inst.ask=ask;updateCandleFromTick(ui,bid,tick.timestamp||Date.now());}
+ if(bid>0&&ask>=bid){inst.bid=bid;inst.ask=ask;updateCandleFromTick(ui,mid,tick.timestamp||Date.now());}
  updateLiveDOMElements();
 }
 async function startBiQuoteRealtime(){
