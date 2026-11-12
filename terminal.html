@@ -1986,10 +1986,18 @@ async function refresh(silent=true){
    rows=(d.trades||[]).map((t,n)=>mapTrade(t,n,a.id)).filter(Boolean);
    Object.entries(d.prices||{}).forEach(([symbol,p])=>applyQuote(mapSymbol(symbol),p));
   }
+  let pendingRows=[];
+  if(m==='real'){
+   const pr=await client().from('bb_bbook_pending_orders').select('*').eq('account_id',a.backendId).eq('user_id',session.user.id).eq('status','PENDING').order('created_at',{ascending:false});
+   if(pr.error)throw pr.error;
+   pendingRows=(pr.data||[]).map((p,n)=>({id:String(p.id),backendOrderId:p.id,accountId:a.id,symbol:mapSymbol(p.symbol)||state.selectedSymbol,
+    side:String(p.side).toUpperCase()==='BUY'?'Buy':'Sell',lots:Number(p.quantity),pendingType:({BUY_LIMIT:'Buy Limit',SELL_LIMIT:'Sell Limit',BUY_STOP:'Buy Stop',SELL_STOP:'Sell Stop'})[p.order_type]||p.order_type,
+    targetPrice:Number(p.target_price),sl:p.stop_loss==null?'':String(p.stop_loss),tp:p.take_profit==null?'':String(p.take_profit),status:p.status,openTime:p.created_at}));
+  }
   if(epoch!==refreshEpoch||getActiveAccount()?.backendId!==a.backendId)return false;
   a.balance=balance;
   window.__bbBbookMetrics=metrics;window.__bbBbookExecution=execution;
-  state.openOrders=rows.filter(t=>t.status==='open');state.closedOrders=rows.filter(t=>t.status==='closed');state.pendingOrders=[];
+  state.openOrders=rows.filter(t=>t.status==='open');state.closedOrders=rows.filter(t=>t.status==='closed');state.pendingOrders=pendingRows;
   updateLiveDOMElements();renderApp();return true;
  }catch(e){if(epoch===refreshEpoch){state.openOrders=[];state.closedOrders=[];state.pendingOrders=[];updateLiveDOMElements();if(!silent)notify('Trading connection error',e.message||'Trading ledger could not be refreshed.','error');}console.error('BIGBULLS terminal backend:',e);return false;}finally{if(epoch===refreshEpoch)busy=false;}
 }
@@ -2040,7 +2048,13 @@ window.goToClientArea=function(){
  if(document.referrer){try{const ref=new URL(document.referrer);if(ref.origin===location.origin){location.href=ref.href;return;}}catch(_){}}
  notify('Client Area unavailable','Please reopen the terminal from your signed-in BIGBULLS Client Area.','error');
 };
-window.cancelPendingOrder=()=>notify('Pending orders unavailable','No pending-order backend is enabled.','error');
+window.cancelPendingOrder=async function(id){
+ const a=getActiveAccount(),o=state.pendingOrders.find(x=>String(x.id)===String(id));
+ if(!o)return;
+ if(mode(a)!=='real'||!o.backendOrderId){notify('Cancel failed','This pending order is not linked to the B-Book ledger.','error');return;}
+ try{await call('bbook-engine',{action:'cancel_pending',account_id:a.backendId,order_id:o.backendOrderId});await refresh(true);notify('Pending order cancelled',o.symbol+' '+o.pendingType,'success');}
+ catch(e){notify('Cancel failed',e.message||'Pending order could not be cancelled.','error');}
+};
 window.submitDeposit=()=>notify('Funding managed in Client Area','No terminal balance was changed. Open the Client Area to submit a deposit.','info');
 window.submitWithdraw=()=>notify('Withdrawals managed in Client Area','No terminal balance was changed. Open the Client Area to submit a withdrawal.','info');
 window.createNewAccount=()=>{closeModal();notify('Account creation managed in Client Area','Create and manage accounts from the Client Area.','info');};
