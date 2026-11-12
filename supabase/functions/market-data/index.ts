@@ -9,14 +9,34 @@ const cors = {
   "X-Content-Type-Options": "nosniff",
 };
 const SYMBOLS: Record<string,string> = {
-  "EUR/USD":"EURUSD", "EURUSD":"EURUSD",
-  "GBP/USD":"GBPUSD", "GBPUSD":"GBPUSD",
-  "USD/JPY":"USDJPY", "USDJPY":"USDJPY",
-  "XAU/USD":"XAUUSD", "XAUUSD":"XAUUSD",
-  "WTI/USD":"USOIL", "WTI":"USOIL", "USOIL":"USOIL",
-  "NDX":"USTEC",
-  "BTC":"BTCUSD", "BTCUSD":"BTCUSD", "BTCUSDT":"BTCUSD",
-  "ETH":"ETHUSD", "ETHUSD":"ETHUSD", "ETHUSDT":"ETHUSD",
+  "EUR/USD":"EURUSD","EURUSD":"EURUSD",
+  "GBP/USD":"GBPUSD","GBPUSD":"GBPUSD",
+  "USD/JPY":"USDJPY","USDJPY":"USDJPY",
+  "USD/CAD":"USDCAD","USDCAD":"USDCAD",
+  "AUD/USD":"AUDUSD","AUDUSD":"AUDUSD",
+  "NZD/USD":"NZDUSD","NZDUSD":"NZDUSD",
+  "USD/CHF":"USDCHF","USDCHF":"USDCHF",
+  "EUR/GBP":"EURGBP","EURGBP":"EURGBP",
+  "EUR/JPY":"EURJPY","EURJPY":"EURJPY",
+  "GBP/JPY":"GBPJPY","GBPJPY":"GBPJPY",
+  "XAU/USD":"XAUUSD","XAUUSD":"XAUUSD",
+  "XAG/USD":"XAGUSD","XAGUSD":"XAGUSD",
+  "XPT/USD":"XPTUSD","XPTUSD":"XPTUSD",
+  "XPD/USD":"XPDUSD","XPDUSD":"XPDUSD",
+  "US30":"US30","DJI":"US30",
+  "NAS100":"USTEC","USTEC":"USTEC","NDX":"USTEC",
+  "SPX500":"US500","SP500":"US500","US500":"US500",
+  "GER40":"DE30","DE40":"DE30","DE30":"DE30",
+  "UK100":"UK100","FTSE100":"UK100",
+  "JPN225":"JP225","JP225":"JP225",
+  "WTI/USD":"USOIL","WTI":"USOIL","USOIL":"USOIL",
+  "UKOIL":"UKOIL","BRENT":"UKOIL",
+  "NATGAS":"NATGASUSDT","NGAS":"NATGASUSDT","NATGASUSDT":"NATGASUSDT",
+  "BTC":"BTCUSD","BTC/USD":"BTCUSD","BTCUSD":"BTCUSD","BTCUSDT":"BTCUSD",
+  "ETH":"ETHUSD","ETH/USD":"ETHUSD","ETHUSD":"ETHUSD","ETHUSDT":"ETHUSD",
+  "SOL":"SOLUSD","SOL/USD":"SOLUSD","SOLUSD":"SOLUSD","SOLUSDT":"SOLUSD",
+  "XRP":"XRPUSD","XRP/USD":"XRPUSD","XRPUSD":"XRPUSD","XRPUSDT":"XRPUSD",
+  "BNB":"BNBUSD","BNB/USD":"BNBUSD","BNBUSD":"BNBUSD","BNBUSDT":"BNBUSD"
 };
 const BIQUOTE_BASE = "https://biquote.io";
 const cache = new Map<string,{at:number,payload:any}>();
@@ -114,7 +134,7 @@ Deno.serve(async(req:Request)=>{
     const action=String(body.action||"quotes");
     const rawSymbol=String(body.symbol||"XAU/USD").toUpperCase();
     const symbol=normalize(rawSymbol);
-    const providerSymbol=SYMBOLS[symbol]||SYMBOLS[rawSymbol];
+    const providerSymbol=SYMBOLS[symbol]||SYMBOLS[rawSymbol]||rawSymbol;
     if(action==="candles") {
       if(!providerSymbol)return json({error:"Unsupported BiQuote chart symbol: "+rawSymbol},400);
       const timeframe=String(body.timeframe||"1m");
@@ -176,7 +196,7 @@ Deno.serve(async(req:Request)=>{
     if(action==="quotes") {
       const cacheKey="quotes",cached=cache.get(cacheKey);
       if(cached&&Date.now()-cached.at<3000)return json(cached.payload);
-      const requested=["EUR/USD","GBP/USD","USD/JPY","XAU/USD","WTI/USD","NDX","BTCUSDT"];
+      const requested=Array.isArray(body.symbols)?body.symbols.slice(0,100).map((v:any)=>String(v)):["EUR/USD","GBP/USD","USD/JPY","XAU/USD","WTI/USD","NDX","BTCUSDT","XAG/USD","XPT/USD","XPD/USD","USDCAD","AUDUSD","NZDUSD","USDCHF","EURGBP","EURJPY","GBPJPY","US30","SPX500","GER40","UK100","JPN225","UKOIL","NATGAS","ETHUSDT","SOLUSDT","XRPUSDT","BNBUSDT"];
       const quotes=await Promise.all(requested.map(async label=>{
         const key=normalize(label),provider=SYMBOLS[key]||SYMBOLS[label];
         if(!provider)return {symbol:label,error:"Unsupported symbol"};
