@@ -118,7 +118,7 @@ function decorate(){
    if(bbookPane.dataset.refreshing==="1")return;
    bbookPane.dataset.refreshing="1";
    const client=bbookClient(),stats=bbookPane.querySelector("[data-bb-bbook-stats]");
-   if(!client?.functions){if(stats)stats.textContent="Secure Supabase client unavailable.";return;}
+   if(!client?.functions){if(stats)stats.textContent="Secure Supabase client unavailable.";bbookPane.dataset.refreshing="0";return;}
    const refresh=bbookPane.querySelector("[data-bb-bbook-refresh]");if(refresh)refresh.disabled=true;
    try{
      const result=await client.functions.invoke("bbook-engine",{body:{action:"admin_status"}});
