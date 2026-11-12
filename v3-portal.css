@@ -248,3 +248,25 @@ body.app-mode>.public-header,body.app-mode>main,body.app-mode>footer{display:non
 .bb-transfer-quick button{min-width:54px;padding:7px 12px;border:1px solid #d6e3f3;border-radius:999px;background:#f4f8ff;color:#225ca8;font-size:11px;font-weight:800;cursor:pointer}
 .bb-transfer-quick button:active{background:#e5efff}
 #bb-transfer-available{display:block;color:#64748b;font-size:11px;font-weight:700}
+
+
+/* Immersive dark terminal mode: remove portal chrome only while terminal is active. */
+html:has(body.app-mode #client-page .bb-terminal-frame-wrap),
+body.app-mode:has(#client-page .bb-terminal-frame-wrap),
+body.app-mode:has(#client-page .bb-terminal-frame-wrap) #app-shell,
+body.app-mode:has(#client-page .bb-terminal-frame-wrap) .terminal,
+body.app-mode:has(#client-page .bb-terminal-frame-wrap) .terminal-layout,
+body.app-mode:has(#client-page .bb-terminal-frame-wrap) .terminal-main,
+body.app-mode:has(#client-page .bb-terminal-frame-wrap) #client-page {
+  background:#0b0e14!important;color:#f3f4f6!important;
+}
+body.app-mode:has(#client-page .bb-terminal-frame-wrap){margin:0!important;padding:0!important;overflow:hidden!important;}
+body.app-mode:has(#client-page .bb-terminal-frame-wrap) .terminal-head,
+body.app-mode:has(#client-page .bb-terminal-frame-wrap) .client-sidebar,
+body.app-mode:has(#client-page .bb-terminal-frame-wrap) .terminal-page-head,
+body.app-mode:has(#client-page .bb-terminal-frame-wrap) .terminal-footer{display:none!important;}
+body.app-mode:has(#client-page .bb-terminal-frame-wrap) .terminal-layout{display:block!important;width:100%!important;max-width:none!important;min-height:100dvh!important;height:100dvh!important;margin:0!important;padding:0!important;}
+body.app-mode:has(#client-page .bb-terminal-frame-wrap) .terminal-main{display:block!important;width:100%!important;height:100dvh!important;min-height:100dvh!important;margin:0!important;padding:0!important;overflow:hidden!important;}
+body.app-mode:has(#client-page .bb-terminal-frame-wrap) #client-page{position:static!important;width:100%!important;height:100dvh!important;min-height:100dvh!important;margin:0!important;padding:0!important;overflow:hidden!important;}
+body.app-mode:has(#client-page .bb-terminal-frame-wrap) .bb-terminal-frame-wrap{position:fixed!important;inset:0!important;z-index:999!important;width:100vw!important;height:100dvh!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:#0b0e14!important;}
+body.app-mode:has(#client-page .bb-terminal-frame-wrap) .bb-terminal-frame{display:block!important;width:100%!important;height:100dvh!important;min-height:100dvh!important;margin:0!important;border:0!important;border-radius:0!important;background:#0b0e14!important;}
