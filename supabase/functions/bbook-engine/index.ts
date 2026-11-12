@@ -205,6 +205,18 @@ Deno.serve(async (req: Request) => {
       return json({success:true,...data,quote:q});
     }
 
+    if(action==="cancel_pending"){
+      const orderId=String(body.order_id||"");
+      const {data:order,error:orderError}=await auth.from("bb_bbook_pending_orders")
+        .select("id,status").eq("id",orderId).eq("account_id",accountId).eq("user_id",user.id).maybeSingle();
+      if(orderError)throw orderError;
+      if(!order||order.status!=="PENDING")return json({error:"Pending order not found."},404);
+      const {data:cancelled,error}=await db.rpc("bb_bbook_cancel_pending_order",{p_order_id:orderId,p_user_id:user.id});
+      if(error)throw error;
+      if(cancelled!==true)return json({error:"Pending order could not be cancelled."},409);
+      return json({success:true,order_id:orderId,status:"CANCELLED"});
+    }
+
     if(action==="status"||action==="refresh"){
       const {data:positions,error:positionsError}=await db.from("bb_bbook_positions").select("*").eq("account_id",accountId).eq("user_id",user.id).order("opened_at",{ascending:false}).limit(500);
       if(positionsError)throw positionsError;
