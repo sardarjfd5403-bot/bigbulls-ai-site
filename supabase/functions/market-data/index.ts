@@ -94,7 +94,7 @@ Deno.serve(async(req:Request)=>{
       if(CRYPTO.has(input)){
         const interval=BINANCE_INTERVALS[timeframe];
         if(!interval)return json({error:"Unsupported crypto timeframe."},400);
-        const rows=await binance("klines",{symbol:input,interval,limit:String(outputsize)});
+        const rows=await binance("klines",{symbol:input,interval,limit:String(Math.min(outputsize,1000))});
         const candles=(rows||[]).map((v:any)=>({time:Number(v[0]),open:Number(v[1]),high:Number(v[2]),low:Number(v[3]),close:Number(v[4]),volume:Number(v[5])}))
           .filter((v:any)=>Number.isFinite(v.time)&&[v.open,v.high,v.low,v.close].every(Number.isFinite));
         if(!candles.length)throw new Error("Binance returned no OHLC candles for "+input+".");
