@@ -115,6 +115,8 @@ function decorate(){
  const bbookEsc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
  const bbookMoney=v=>"$"+Number(v||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
  async function refreshBbook(){
+   if(bbookPane.dataset.refreshing==="1")return;
+   bbookPane.dataset.refreshing="1";
    const client=bbookClient(),stats=bbookPane.querySelector("[data-bb-bbook-stats]");
    if(!client?.functions){if(stats)stats.textContent="Secure Supabase client unavailable.";return;}
    const refresh=bbookPane.querySelector("[data-bb-bbook-refresh]");if(refresh)refresh.disabled=true;
@@ -139,8 +141,8 @@ function decorate(){
      ledger.innerHTML=(d.ledger||[]).length?(d.ledger||[]).map(x=>'<tr><td>'+bbookEsc(new Date(x.created_at).toLocaleString())+'</td><td>'+bbookEsc(x.entry_type)+'</td><td>'+bbookEsc(x.direction)+'</td><td>'+bbookMoney(x.amount)+'</td><td>'+bbookMoney(x.balance_after)+'</td><td>'+bbookEsc(x.note||"—")+'</td></tr>').join(""):'<tr><td colspan="6">No liquidity ledger entries yet.</td></tr>';
      const form=bbookPane.querySelector("[data-bb-bbook-settings]");
      if(form&&!form.dataset.loaded){form.elements.default_leverage.value=cfg.default_leverage||100;form.elements.max_leverage.value=cfg.max_leverage||500;form.elements.FX.value=cfg.spread_bps?.FX??2;form.elements.XAUUSD.value=cfg.spread_bps?.XAUUSD??4;form.elements.CRYPTO.value=cfg.spread_bps?.CRYPTO??10;form.elements.margin_call_level_pct.value=cfg.margin_call_level_pct||100;form.elements.stop_out_level_pct.value=cfg.stop_out_level_pct||50;form.dataset.loaded="1";}
-   }catch(e){if(stats)stats.textContent="B-Book load failed: "+(e?.message||"Unknown error");}
-   finally{if(refresh)refresh.disabled=false;}
+   }catch(e){if(stats)stats.textContent="B-Book load failed: "+(e?.message||"Unknown error");const root=bbookPane.closest("#"+ROOT_ID);const engine=root?.querySelector("[data-bb-bbook-engine-status]"),poolStatus=root?.querySelector("[data-bb-bbook-pool-status]");if(engine)engine.textContent="UNAVAILABLE";if(poolStatus)poolStatus.textContent="UNAVAILABLE";}
+   finally{if(refresh)refresh.disabled=false;bbookPane.dataset.refreshing="0";}
  }
  bbookPane.querySelector("[data-bb-bbook-refresh]").addEventListener("click",refreshBbook);
  bbookPane.querySelector("[data-bb-bbook-worker-toggle]").addEventListener("click",async()=>{
@@ -205,6 +207,8 @@ function decorate(){
   if(id==="bbook")refreshBbook();
  }
  activate("overview");
+ refreshBbook();
+ window.setInterval(()=>{if(document.getElementById(ROOT_ID))refreshBbook();},15000);
  top.querySelector("[data-bb-admin-notice]").addEventListener("click",()=>{
    const existing=document.getElementById("bb-admin-notice-dialog");if(existing){existing.remove();return;}
    const d=document.createElement("section");d.id="bb-admin-notice-dialog";d.className="client-panel";d.style.marginTop="12px";
