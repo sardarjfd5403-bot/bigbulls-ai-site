@@ -75,25 +75,26 @@ Deno.serve(async (req: Request) => {
     const body = await req.json().catch(() => ({}));
     const action = String(body.action || "status");
     const accountId = body.account_id ? String(body.account_id) : null;
+    const { data: actorIsAdmin, error: actorAdminError } = await auth.rpc("is_bigbulls_admin");
+    if (actorAdminError) throw actorAdminError;
+    const targetUserId = actorIsAdmin === true && body.user_id ? String(body.user_id) : user.id;
     let account: any = null;
     const mode = String(body.account_mode || (accountId ? "" : "demo"));
     if (!["demo","real"].includes(mode)) return json({ error: "Unsupported account mode." }, 400);
     if (accountId) {
-      const { data, error } = await auth.from("trading_accounts")
+      const { data, error } = await admin.from("trading_accounts")
         .select("id,user_id,account_mode,status,currency,archived_at,deleted_at")
-        .eq("id", accountId).eq("user_id", user.id).maybeSingle();
+        .eq("id", accountId).eq("user_id", targetUserId).maybeSingle();
       if (error) throw error;
       account = data;
       if (!account || account.account_mode !== mode || account.status !== "approved" || account.archived_at || account.deleted_at) {
         return json({ error: "Approved account not found or account access is restricted." }, 403);
       }
     } else if (mode !== "demo") {
-      return json({ error: "A linked approved Real account is required." }, 400);
+      return json({ error: "A linked approved account is required." }, 400);
     }
     if (mode === "real") {
-      const { data: isAdmin, error: adminCheckError } = await auth.rpc("is_bigbulls_admin");
-      if (adminCheckError) throw adminCheckError;
-      if (isAdmin !== true) {
+      if (actorIsAdmin !== true) {
         const { data: kyc, error: kycError } = await auth.from("kyc_submissions")
           .select("status").eq("user_id", user.id).eq("status", "approved").maybeSingle();
         if (kycError) throw kycError;
@@ -112,12 +113,42 @@ Deno.serve(async (req: Request) => {
     }
 
     const { error: ledgerInsertError } = await admin.from("bb_paper_execution_accounts")
-      .insert({ account_id: accountId, user_id: user.id, account_mode: mode });
+      .insert({ account_id: accountId, user_id: targetUserId, account_mode: mode });
     if (ledgerInsertError && ledgerInsertError.code !== "23505") throw ledgerInsertError;
-    let ledgerQuery = admin.from("bb_paper_execution_accounts").select("*").eq("user_id", user.id).eq("account_mode", mode);
+    let ledgerQuery = admin.from("bb_paper_execution_accounts").select("*").eq("user_id", targetUserId).eq("account_mode", mode);
     ledgerQuery = accountId ? ledgerQuery.eq("account_id", accountId) : ledgerQuery.is("account_id", null);
     const { data: ledger, error: readLedgerError } = await ledgerQuery.single();
     if (readLedgerError) throw readLedgerError;
+
+    if (action === "set_balance") {
+      if (mode !== "demo" || !accountId) return json({ error: "Demo account ID is required for virtual balance changes." }, 400);
+      if (targetUserId !== user.id && actorIsAdmin !== true) return json({ error: "Administrator permission required." }, 403);
+      const operation = String(body.operation || "topup").toLowerCase();
+      const amount = Number(body.amount);
+      const note = String(body.note || (actorIsAdmin === true ? "Administrator demo balance adjustment" : "Client demo balance adjustment")).trim().slice(0,240);
+      if (!["set","topup"].includes(operation) || !Number.isFinite(amount) || amount < 0 || amount > 100000000 || (operation === "topup" && amount <= 0)) {
+        return json({ error: "Enter a valid demo balance amount between 0 and 100,000,000." }, 400);
+      }
+      if (operation === "set") {
+        const { data: openTrades, error: openTradesError } = await admin.from("bb_paper_execution_trades")
+          .select("id").eq("paper_account_id", ledger.id).eq("user_id", targetUserId).eq("status", "OPEN").limit(1);
+        if (openTradesError) throw openTradesError;
+        if ((openTrades || []).length) return json({ error: "Close all open Demo positions before resetting the balance. Top-up remains available." }, 409);
+      }
+      const before = Number(ledger.virtual_balance || 0);
+      const after = operation === "set" ? amount : before + amount;
+      const update = { virtual_balance: after, updated_at: new Date().toISOString(), ...(operation === "set" ? { starting_balance: amount } : {}) };
+      const { data: updated, error: updateError } = await admin.from("bb_paper_execution_accounts")
+        .update(update).eq("id", ledger.id).eq("user_id", targetUserId).select("*").single();
+      if (updateError) throw updateError;
+      const { error: auditError } = await admin.from("bb_paper_balance_adjustments").insert({
+        user_id: targetUserId, account_id: accountId, paper_account_id: ledger.id, actor_id: user.id,
+        adjustment_type: operation === "set" ? "SET" : "TOP_UP", amount, balance_before: before,
+        balance_after: after, note: note || "Demo balance adjustment"
+      });
+      if (auditError) throw auditError;
+      return json({ success: true, ledger: updated, balance_before: before, balance_after: after, adjustment_type: operation.toUpperCase() });
+    }
 
     if (action === "status" || action === "refresh") {
       const { data: trades, error: tradesError } = await admin.from("bb_paper_execution_trades")
