@@ -366,12 +366,16 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
     }
 
     function calculateOrderPL(order) {
-      if(Number.isFinite(Number(order.floatingPL)))return Number(Number(order.floatingPL).toFixed(2));
+      if(mode(getActiveAccount())!=='real'&&Number.isFinite(Number(order.floatingPL)))return Number(Number(order.floatingPL).toFixed(2));
       const inst = state.instruments[order.symbol];
-      if (!inst) return 0;
+      if (!inst) return Number(order.floatingPL||0);
       const currentPrice = order.side === 'Buy' ? inst.bid : inst.ask;
+      if(!(currentPrice>0))return Number(order.floatingPL||0);
       const diff = order.side === 'Buy' ? (currentPrice - order.openPrice) : (order.openPrice - currentPrice);
-      const pl = diff * order.lots * Number(inst.contractSize||1);
+      let pl = diff * order.lots * Number(inst.contractSize||1);
+      if(['USD/JPY','USD/CAD','USD/CHF'].includes(order.symbol))pl/=currentPrice;
+      else if(order.symbol.endsWith('JPY')){const fx=state.instruments['USD/JPY'];const rate=fx?(Number(fx.bid)+Number(fx.ask))/2:0;if(rate>0)pl/=rate;else return Number(order.floatingPL||0);}
+      else if(order.symbol==='EUR/GBP'){const fx=state.instruments['GBP/USD'];const rate=fx?(Number(fx.bid)+Number(fx.ask))/2:0;if(rate>0)pl*=rate;else return Number(order.floatingPL||0);}
       return Number(pl.toFixed(2));
     }
 
