@@ -612,74 +612,32 @@
 
     function openSwitchAccountModal() {
       const activeAcc = getActiveAccount();
-      const renderList = (type) => {
-        const list = state.accounts.filter(a => a.type === type && !a.archived);
-        return list.map(a => `
-          <div onclick="state.activeAccountId='${a.id}'; closeModal(); renderApp(); showToast('Account Switched', '${a.nickname} (#${a.id}) active', 'info')"
-               class="p-3.5 rounded-2xl border ${a.id === activeAcc.id ? 'border-bullBlue bg-bullBlue/10' : 'border-[#2D3545] bg-[#131722] hover:bg-[#1E2430]'} cursor-pointer transition flex items-center justify-between mb-2">
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="font-bold text-sm text-white">${a.nickname}</span>
-                <span class="text-[10px] px-1.5 py-0.5 rounded bg-[#262C3A] text-gray-300 font-semibold">${a.platform}</span>
-                <span class="text-[10px] px-1.5 py-0.5 rounded bg-[#262C3A] text-gray-300 font-semibold">${a.accountClass}</span>
-              </div>
-              <div class="text-xs font-mono text-gray-400 mt-1"># ${a.id}</div>
-            </div>
-            <div class="font-mono font-bold text-sm text-white">${formatMoney(a.balance)} USD</div>
-          </div>
-        `).join('');
+      const safe = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      const renderList = type => {
+        const list = state.accounts.filter(a => a.type === type && !a.archived && a.id !== '__no_account__');
+        if (!list.length) return '<div class="text-xs text-gray-500 rounded-xl border border-dashed border-[#2D3545] p-3">No '+type+' accounts found.</div>';
+        return list.map(a => {
+          const approved = a.status === 'approved' && !!a.backendId;
+          const selected = a.id === activeAcc?.id;
+          return `<button type="button" ${approved ? 'onclick="switchTradingAccount(\''+safe(a.backendId)+'\')"' : 'disabled'} class="w-full text-left p-3.5 rounded-2xl border ${selected ? 'border-bullBlue bg-bullBlue/10' : 'border-[#2D3545] bg-[#131722]'} ${approved ? 'hover:bg-[#1E2430] cursor-pointer' : 'opacity-60 cursor-not-allowed'} transition flex items-center justify-between gap-3 mb-2">
+            <span class="min-w-0"><span class="flex items-center gap-2 flex-wrap"><b class="font-bold text-sm text-white">${safe(a.nickname)}</b><small class="text-[10px] px-1.5 py-0.5 rounded bg-[#262C3A] text-gray-300">${safe(a.platform)}</small><small class="text-[10px] px-1.5 py-0.5 rounded bg-[#262C3A] text-gray-300">${safe(a.accountClass)}</small><small class="text-[10px] px-1.5 py-0.5 rounded ${approved ? 'text-emerald-400' : 'text-amber-300'}">${safe(String(a.status||'pending').toUpperCase())}</small></span><span class="block text-xs font-mono text-gray-400 mt-1"># ${safe(a.accountNumber||a.id)}</span></span>
+            <span class="font-mono font-bold text-sm text-white whitespace-nowrap">${formatMoney(a.balance)} ${safe(a.currency||'USD')}</span>
+          </button>`;
+        }).join('');
       };
-
       openModal(`
-        <div class="p-4 border-b border-[#262C3A] flex items-center justify-between">
-          <h3 class="font-bold text-base text-white">Switch Account</h3>
-          <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#262C3A] text-gray-300 flex items-center justify-center">✕</button>
-        </div>
+        <div class="p-4 border-b border-[#262C3A] flex items-center justify-between"><h3 class="font-bold text-base text-white">Switch Account</h3><button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#262C3A] text-gray-300 flex items-center justify-center">✕</button></div>
         <div class="p-4 overflow-y-auto space-y-4">
-          <div>
-            <div class="text-xs font-bold uppercase tracking-wider text-bullBlue mb-2">Demo Accounts</div>
-            ${renderList('Demo')}
-          </div>
-          <div>
-            <div class="text-xs font-bold uppercase tracking-wider text-bullGreen mb-2">Real Accounts</div>
-            ${renderList('Real')}
-          </div>
-          <button onclick="openNewAccountModal()" class="w-full py-3 rounded-xl bg-bullBlue hover:bg-bullYellowHover text-white font-bold text-sm transition">
-            + Open new account
-          </button>
-        </div>
-      `);
+          <section><div class="text-xs font-bold uppercase tracking-wider text-bullBlue mb-2">Demo Accounts</div>${renderList('Demo')}</section>
+          <section><div class="text-xs font-bold uppercase tracking-wider text-bullGreen mb-2">Real Accounts</div>${renderList('Real')}</section>
+          <button onclick="openNewAccountModal()" class="w-full py-3 rounded-xl bg-bullBlue hover:bg-bullYellowHover text-white font-bold text-sm transition">Manage / create accounts in Client Area</button>
+        </div>`);
     }
 
     function openNewAccountModal() {
       openModal(`
-        <div class="p-4 border-b border-[#262C3A] flex items-center justify-between">
-          <h3 class="font-bold text-base text-white">Open New Account</h3>
-          <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#262C3A] text-gray-300 flex items-center justify-center">✕</button>
-        </div>
-        <div class="p-4 space-y-3">
-          <div>
-            <label class="text-xs text-gray-400 block mb-1">Account Type</label>
-            <select id="newAccType" class="w-full bg-[#0E1117] border border-[#2D3545] rounded-xl px-3 py-2.5 text-sm text-white">
-              <option value="Demo">Demo (Virtual Funds)</option>
-              <option value="Real">Real (Live Trading)</option>
-            </select>
-          </div>
-          <div>
-            <label class="text-xs text-gray-400 block mb-1">Platform</label>
-            <select id="newAccPlatform" class="w-full bg-[#0E1117] border border-[#2D3545] rounded-xl px-3 py-2.5 text-sm text-white">
-              <option value="BIGBULLS">BigBulls Native Terminal</option>
-            </select>
-          </div>
-          <div>
-            <label class="text-xs text-gray-400 block mb-1">Nickname</label>
-            <input id="newAccName" type="text" value="BigBull_Trader" class="w-full bg-[#0E1117] border border-[#2D3545] rounded-xl px-3 py-2.5 text-sm text-white" />
-          </div>
-          <button onclick="createNewAccount()" class="w-full py-3 rounded-xl bg-bullBlue hover:bg-bullYellowHover text-white font-bold text-sm mt-2">
-            Create Account
-          </button>
-        </div>
-      `);
+        <div class="p-4 border-b border-[#262C3A] flex items-center justify-between"><h3 class="font-bold text-base text-white">Manage Trading Accounts</h3><button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#262C3A] text-gray-300 flex items-center justify-center">✕</button></div>
+        <div class="p-4 space-y-3"><p class="text-sm text-gray-300">Account creation, approval and funding are managed centrally in your BIGBULLS Client Area. The terminal will only use accounts provisioned by that workflow.</p><button onclick="closeModal()" class="w-full py-3 rounded-xl bg-bullBlue text-white font-bold text-sm">Close</button></div>`);
     }
 
     function createNewAccount() {
@@ -1945,7 +1903,7 @@
 const BB_URL='https://ztiiyulusburxjkpcfxu.supabase.co',BB_KEY='sb_publishable_5hDwqvbcUHeSJdXFHf9ugw_VPYGN4J_';
 const MARKET={'XAU/USD':'XAU/USD','EUR/USD':'EUR/USD','GBP/USD':'GBP/USD','BTC':'BTCUSDT','USOIL':'WTI/USD','USTEC':'NDX'};
 const PAPER={'XAU/USD':'XAUUSD','EUR/USD':'EURUSD','GBP/USD':'GBPUSD','BTC':'BTCUSDT'};
-let session=null,ready=false,busy=false,lastAccount='',lastMarket='';
+let session=null,ready=false,busy=false,refreshEpoch=0,lastAccount='',lastMarket='';
 const notify=(t,s='',type='info')=>{if(typeof showToast==='function')showToast(t,s,type);};
 function client(){
  if(window.__bbSupabaseClient?.auth&&window.__bbSupabaseClient?.functions)return window.__bbSupabaseClient;
@@ -1967,18 +1925,28 @@ function startBbookRealtime(c){
    const row=payload.new||{};applyBookQuote(mapSymbol(row.symbol),row);updateLiveDOMElements();
   })
   .on('postgres_changes',{event:'*',schema:'public',table:'bb_bbook_positions',filter:'user_id=eq.'+session.user.id},()=>{if(mode(getActiveAccount())==='real')refresh(true);})
+  .on('postgres_changes',{event:'*',schema:'public',table:'trading_accounts',filter:'user_id=eq.'+session.user.id},async()=>{
+   try{const current=getActiveAccount()?.backendId||null;await accounts(current);renderApp();await refresh(true);}
+   catch(e){notify('Account sync failed',e.message||'Client Area account updates could not be loaded.','error');}
+  })
   .subscribe();
 }
-async function accounts(){
+async function accounts(preferredBackendId=null){
  const d=await call('trading-gateway',{action:'accounts'});
- const approved=(d.accounts||[]).filter(a=>['demo','real'].includes(String(a.account_mode).toLowerCase())&&a.status==='approved'&&!a.archived_at&&!a.deleted_at).map(a=>({id:String(a.account_number||a.id),backendId:a.id,nickname:a.display_name||a.account_type||a.account_mode.toUpperCase(),type:a.account_mode==='real'?'Real':'Demo',platform:a.account_mode==='real'?'BigBulls B-Book':'BigBulls Paper',accountClass:a.account_type||'Standard',balance:Number(a.balance||0),leverage:a.requested_leverage||'1:100',server:a.server_name||'BigBulls',archived:false,status:a.status,currency:a.currency||'USD'}));
- const demos=approved.filter(a=>mode(a)==='demo'),reals=approved.filter(a=>mode(a)==='real');
- const demoDefault={id:'__demo_default__',backendId:null,nickname:'BigBull Demo',type:'Demo',platform:'BigBulls Paper',accountClass:'Standard',balance:10000,leverage:'1:1000',server:'BigBulls Paper',archived:false,status:'approved'};
- state.accounts=[...(demos.length?demos:[demoDefault]),...reals];
+ const rows=(d.accounts||[]).filter(a=>['demo','real'].includes(String(a.account_mode||'').toLowerCase())&&!a.archived_at&&!a.deleted_at).map(a=>({
+  id:String(a.account_number||a.id),accountNumber:a.account_number,backendId:String(a.id),nickname:a.display_name||a.account_type||String(a.account_mode).toUpperCase(),
+  type:String(a.account_mode).toLowerCase()==='real'?'Real':'Demo',platform:a.platform||(a.account_mode==='real'?'BigBulls B-Book':'BigBulls Paper'),
+  accountClass:a.account_type||'Standard',balance:Number(a.balance||0),leverage:a.requested_leverage||'1:100',
+  server:a.server_name||'BigBulls',archived:false,status:String(a.status||'pending').toLowerCase(),currency:a.currency||'USD'
+ }));
+ state.accounts=rows.length?rows:[{id:'__no_account__',accountNumber:null,backendId:null,nickname:'No trading account',type:'Demo',platform:'BIGBULLS',accountClass:'—',balance:0,leverage:'1:100',server:'BIGBULLS',archived:false,status:'unavailable',currency:'USD'}];
  let preferred='demo',selected=null;const launch=new URLSearchParams(location.search).get('account_id');
- if(launch)selected=state.accounts.find(a=>a.backendId===launch)||null;
- try{const sm=sessionStorage.getItem('bb:terminal:active-mode:'+session.user.id);if(sm==='demo'||sm==='real')preferred=sm;const sid=sessionStorage.getItem('bb:terminal:selected-account:'+session.user.id+':'+preferred);if(!selected&&sid)selected=state.accounts.find(a=>a.id===sid||a.backendId===sid)||null;}catch(_){}
- if(!selected)selected=state.accounts.find(a=>mode(a)===preferred)||state.accounts[0];
+ try{const sm=sessionStorage.getItem('bb:terminal:active-mode:'+session.user.id);if(sm==='demo'||sm==='real')preferred=sm;}catch(_){}
+ const findByBackend=id=>state.accounts.find(a=>a.backendId===String(id));
+ if(launch)selected=findByBackend(launch)||null;
+ if(!selected&&preferredBackendId)selected=findByBackend(preferredBackendId)||null;
+ try{const sid=sessionStorage.getItem('bb:terminal:selected-account:'+session.user.id+':'+preferred);if(!selected&&sid)selected=findByBackend(sid)||null;}catch(_){}
+ if(!selected)selected=state.accounts.find(a=>mode(a)===preferred&&a.status==='approved')||state.accounts.find(a=>a.status==='approved')||state.accounts[0];
  state.activeAccountId=selected.id;lastAccount=selected.id;
  try{sessionStorage.setItem('bb:terminal:active-mode:'+session.user.id,mode(selected));if(selected.backendId)sessionStorage.setItem('bb:terminal:selected-account:'+session.user.id+':'+mode(selected),selected.backendId);}catch(_){}
 }
@@ -1996,31 +1964,33 @@ async function candles(){
 }
 function mapTrade(t,n,accountId){const s=mapSymbol(t.symbol);if(!s)return null;const open=String(t.status).toUpperCase()==='OPEN',tm=v=>v?new Date(v).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}):'';return{id:n+1,backendTradeId:t.id,accountId,symbol:s,side:String(t.side).toUpperCase()==='BUY'?'Buy':'Sell',lots:Number(t.quantity),openPrice:Number(t.entry_price),sl:t.stop_loss==null?'':String(t.stop_loss),tp:t.take_profit==null?'':String(t.take_profit),openTime:tm(t.opened_at),closeTime:tm(t.closed_at),closePrice:t.exit_price==null?Number(t.mark_price||t.entry_price):Number(t.exit_price),realizedPL:Number(t.realized_pnl||0),status:open?'open':'closed'};}
 async function refresh(silent=true){
- if(busy)return;busy=true;
+ const epoch=++refreshEpoch;busy=true;
  try{
-  const a=getActiveAccount(),m=mode(a);if(!a)throw new Error('No trading account is selected.');if(m==='real'&&!a.backendId)throw new Error('No approved Real account is linked to this client.');
-  let rows=[];
+  const a=getActiveAccount(),m=mode(a);
+  if(!a||!a.backendId||a.status!=='approved')throw new Error('Select an approved account created in the BIGBULLS Client Area before trading.');
+  window.__bbBbookMetrics=null;window.__bbBbookExecution=null;
+  let rows=[],balance=null,metrics=null,execution=null;
   if(m==='real'){
-   const d=await call('bbook-engine',{action:'status',account_id:a.backendId}),metrics=d.metrics||{};
-   a.balance=Number(metrics.balance??a.balance);
+   const d=await call('bbook-engine',{action:'status',account_id:a.backendId});metrics=d.metrics||{};execution=d.execution||{};
+   balance=Number(metrics.balance??a.balance);
    rows=(d.positions||[]).map((t,n)=>mapTrade(t,n,a.id)).filter(Boolean);
    Object.entries(d.quotes||{}).forEach(([symbol,q])=>applyBookQuote(mapSymbol(symbol),q));
-   window.__bbBbookMetrics=metrics;
-   window.__bbBbookExecution=d.execution||{};
   }else{
-   const body={action:'status',account_mode:m};if(a.backendId)body.account_id=a.backendId;
-   const d=await call('paper-execution',body),ledger=d.ledger||{};
-   a.balance=Number(ledger.virtual_balance??ledger.starting_balance??a.balance);
+   const d=await call('paper-execution',{action:'status',account_mode:m,account_id:a.backendId}),ledger=d.ledger||{};
+   balance=Number(ledger.virtual_balance??ledger.starting_balance??a.balance);
    rows=(d.trades||[]).map((t,n)=>mapTrade(t,n,a.id)).filter(Boolean);
    Object.entries(d.prices||{}).forEach(([symbol,p])=>applyQuote(mapSymbol(symbol),p));
-   window.__bbBbookMetrics=null;window.__bbBbookExecution=null;
   }
+  if(epoch!==refreshEpoch||getActiveAccount()?.backendId!==a.backendId)return;
+  a.balance=balance;
+  window.__bbBbookMetrics=metrics;window.__bbBbookExecution=execution;
   state.openOrders=rows.filter(t=>t.status==='open');state.closedOrders=rows.filter(t=>t.status==='closed');state.pendingOrders=[];
   updateLiveDOMElements();renderApp();
- }catch(e){if(!silent)notify('Trading connection error',e.message||'Trading ledger could not be refreshed.','error');console.error('BIGBULLS terminal backend:',e);}finally{busy=false;}
+ }catch(e){if(epoch===refreshEpoch){state.openOrders=[];state.closedOrders=[];state.pendingOrders=[];updateLiveDOMElements();if(!silent)notify('Trading connection error',e.message||'Trading ledger could not be refreshed.','error');}console.error('BIGBULLS terminal backend:',e);}finally{if(epoch===refreshEpoch)busy=false;}
 }
 async function place(){
  const a=getActiveAccount(),m=state.orderTicket,s=state.selectedSymbol;if(!a)return;
+ if(!a.backendId||a.status!=='approved'){notify('Account approval required','Only approved Client Area trading accounts can place orders.','error');return;}
  if(m.mode!=='Market'){notify('Pending orders unavailable','The connected paper-execution service currently supports market positions only. No order was created.','error');return;}
  if(!session){notify('Login required','Sign in to your client account before trading.','error');return;}
  const symbol=PAPER[s],quantity=Number(m.lots),sl=Number(m.sl),tp=m.tp===''||m.tp==null?null:Number(m.tp);
@@ -2047,7 +2017,23 @@ window.closeAllOpenOrders=async()=>{const a=getActiveAccount(),real=mode(a)==='r
 window.cancelPendingOrder=()=>notify('Pending orders unavailable','No pending-order backend is enabled.','error');
 window.submitDeposit=()=>notify('Funding managed in Client Area','No terminal balance was changed. Open the Client Area to submit a deposit.','info');
 window.submitWithdraw=()=>notify('Withdrawals managed in Client Area','No terminal balance was changed. Open the Client Area to submit a withdrawal.','info');
-window.createNewAccount=()=>{notify('Account creation managed in Client Area','Open My Accounts in the Client Area to create a trading account.','info');location.href='dashboard.html';};
+window.createNewAccount=()=>{closeModal();notify('Account creation managed in Client Area','Create and manage accounts from the Client Area.','info');};
+window.switchTradingAccount=async function(backendId){
+ if(!ready||!session?.user){notify('Terminal not ready','Please wait for the account connection to finish.','error');return;}
+ const next=state.accounts.find(a=>a.backendId===String(backendId));
+ if(!next||next.status!=='approved'){notify('Account unavailable','This account must be approved in the Client Area before terminal access.','error');return;}
+ try{
+  const result=await call('trading-gateway',{action:'select_account',account_id:next.backendId});
+  if(String(result.account?.id)!==next.backendId)throw new Error('The backend did not confirm the selected account.');
+  state.activeAccountId=next.id;lastAccount=next.id;
+  window.__bbBbookMetrics=null;window.__bbBbookExecution=null;
+  state.openOrders=[];state.closedOrders=[];state.pendingOrders=[];
+  try{sessionStorage.setItem('bb:terminal:active-mode:'+session.user.id,mode(next));sessionStorage.setItem('bb:terminal:selected-account:'+session.user.id+':'+mode(next),next.backendId);}catch(_){}
+  closeModal();renderApp();updateLiveDOMElements();
+  await refresh(false);
+  notify('Account switched',next.nickname+' · #'+(next.accountNumber||next.id),'success');
+ }catch(e){notify('Account switch failed',e.message||'The selected account could not be loaded.','error');}
+};
 async function start(){
  try{const c=client(),auth=await c.auth.getSession();if(auth.error)throw auth.error;session=auth.data?.session||null;if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}
  await accounts();Object.values(state.instruments).forEach(i=>{i.candles=[];i.bid=0;i.ask=0;});state.openOrders=[];state.pendingOrders=[];state.closedOrders=[];ready=true;startBbookRealtime(c);lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();
