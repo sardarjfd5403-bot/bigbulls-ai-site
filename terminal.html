@@ -1915,7 +1915,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 <script>
 (function(){
 'use strict';
-let session=null;
+let session=null,ready=false,busy=false,refreshEpoch=0,candleEpoch=0,lastAccount='',lastMarket='';
 document.documentElement.classList.add('bb-auth-pending');
 const BB_URL='https://ztiiyulusburxjkpcfxu.supabase.co',BB_KEY='sb_publishable_5hDwqvbcUHeSJdXFHf9ugw_VPYGN4J_';
 const MARKET={
