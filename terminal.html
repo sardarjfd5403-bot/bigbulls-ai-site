@@ -110,6 +110,7 @@
       to { transform: translateY(0); opacity: 1; }
     }
     .sheet-animate { animation: slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1); }
+    #liveChartCanvas{touch-action:none;user-select:none;-webkit-user-select:none;display:block;width:100%;height:100%;}
   html, body { width:100%; min-width:0; height:100%; min-height:100%; margin:0!important; padding:0!important; background:#0b0e14!important; }
     #appStage { width:100vw!important; height:100dvh!important; min-height:100dvh!important; margin:0!important; padding:0!important; background:#0b0e14!important; }
     .mobile-shell { width:100%; max-width:none; height:100dvh; min-height:100dvh; max-height:none; margin:0; border:0; border-radius:0; box-shadow:none; background:#0f172a; }
@@ -1029,107 +1030,92 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
     // ==========================================
     // 5. LIVE CANDLESTICK CHART CANVAS RENDERER
     // ==========================================
+
+    let chartView={count:90,offset:0,priceShift:0};
+    const chartPointers=new Map();
+    let chartGesture=null;
+    function bindChartGestures(canvas){
+      if(canvas.dataset.gesturesBound==='1')return;
+      canvas.dataset.gesturesBound='1';
+      canvas.style.touchAction='none';
+      canvas.addEventListener('pointerdown',e=>{
+        canvas.setPointerCapture?.(e.pointerId);
+        chartPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+        if(chartPointers.size===1)chartGesture={mode:'pan',x:e.clientX,y:e.clientY,offset:chartView.offset,shift:chartView.priceShift};
+        else if(chartPointers.size===2){
+          const p=[...chartPointers.values()],dx=p[0].x-p[1].x,dy=p[0].y-p[1].y;
+          chartGesture={mode:'pinch',distance:Math.hypot(dx,dy),count:chartView.count,midY:(p[0].y+p[1].y)/2};
+        }
+      });
+      canvas.addEventListener('pointermove',e=>{
+        if(!chartPointers.has(e.pointerId))return;
+        chartPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+        const rect=canvas.getBoundingClientRect();
+        if(chartPointers.size>=2&&chartGesture?.mode==='pinch'){
+          const p=[...chartPointers.values()],dx=p[0].x-p[1].x,dy=p[0].y-p[1].y,d=Math.max(1,Math.hypot(dx,dy));
+          chartView.count=Math.max(18,Math.min(500,Math.round(chartGesture.count*chartGesture.distance/d)));
+          chartView.offset=Math.min(Math.max(0,state.instruments[state.selectedSymbol].candles.length-chartView.count),chartView.offset);
+          queueChartPaint();
+        }else if(chartPointers.size===1&&chartGesture?.mode==='pan'){
+          const barsPerPx=chartView.count/Math.max(100,rect.width-70);
+          const dx=e.clientX-chartGesture.x,dy=e.clientY-chartGesture.y;
+          chartView.offset=Math.max(0,Math.min(Math.max(0,state.instruments[state.selectedSymbol].candles.length-chartView.count),Math.round(chartGesture.offset+dx*barsPerPx)));
+          chartView.priceShift=chartGesture.shift+dy/Math.max(1,rect.height);
+          queueChartPaint();
+        }
+      });
+      const finish=e=>{chartPointers.delete(e.pointerId);if(chartPointers.size===0)chartGesture=null;else if(chartPointers.size===1){const p=[...chartPointers.values()][0];chartGesture={mode:'pan',x:p.x,y:p.y,offset:chartView.offset,shift:chartView.priceShift};}};
+      canvas.addEventListener('pointerup',finish);canvas.addEventListener('pointercancel',finish);canvas.addEventListener('lostpointercapture',finish);
+      canvas.addEventListener('wheel',e=>{
+        e.preventDefault();const factor=e.deltaY>0?1.18:0.85;
+        chartView.count=Math.max(18,Math.min(500,Math.round(chartView.count*factor)));
+        chartView.offset=Math.min(Math.max(0,state.instruments[state.selectedSymbol].candles.length-chartView.count),chartView.offset);
+        queueChartPaint();
+      },{passive:false});
+      canvas.addEventListener('dblclick',()=>{chartView={count:90,offset:0,priceShift:0};queueChartPaint();});
+    }
     function drawChartCanvas() {
-      const canvas = document.getElementById('liveChartCanvas');
-      if (!canvas) return;
-      const rect = canvas.parentElement.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return;
-
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      const ctx = canvas.getContext('2d');
-      ctx.scale(dpr, dpr);
-
-      const w = rect.width;
-      const h = rect.height;
-      const inst = state.instruments[state.selectedSymbol];
-      const candles = inst.candles;
-
-      // Dark chart background
-      ctx.fillStyle = '#0E1117';
-      ctx.fillRect(0, 0, w, h);
-
-      // Subtle grid lines
-      ctx.strokeStyle = '#191F2C';
-      ctx.lineWidth = 1;
-      for (let i = 1; i < 6; i++) {
-        const y = (h / 6) * i;
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(w - 64, y);
-        ctx.stroke();
-      }
-      for (let j = 1; j < 7; j++) {
-        const x = ((w - 64) / 7) * j;
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, h);
-        ctx.stroke();
-      }
-
-      if (!candles || candles.length === 0) return;
-
-      let minP = Infinity, maxP = -Infinity;
-      candles.forEach(c => {
-        if (c.low < minP) minP = c.low;
-        if (c.high > maxP) maxP = c.high;
+      const canvas=document.getElementById('liveChartCanvas');if(!canvas)return;
+      const rect=canvas.parentElement.getBoundingClientRect();if(rect.width<=0||rect.height<=0)return;
+      bindChartGestures(canvas);
+      const dpr=window.devicePixelRatio||1;canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);
+      const ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);
+      const w=rect.width,h=rect.height,chartW=Math.max(40,w-72),inst=state.instruments[state.selectedSymbol];
+      ctx.fillStyle='#0E1117';ctx.fillRect(0,0,w,h);
+      ctx.strokeStyle='#202838';ctx.lineWidth=1;
+      for(let i=1;i<7;i++){const y=h*i/7;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(chartW,y);ctx.stroke();}
+      for(let i=1;i<9;i++){const x=chartW*i/9;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}
+      const all=inst?.candles||[];if(!all.length)return;
+      const count=Math.max(18,Math.min(all.length,chartView.count));
+      const end=Math.max(1,all.length-Math.max(0,chartView.offset)),start=Math.max(0,end-count),candles=all.slice(start,end);
+      const open=state.openOrders.filter(o=>o.accountId===getActiveAccount()?.id&&o.symbol===state.selectedSymbol);
+      const pending=state.pendingOrders.filter(o=>o.accountId===getActiveAccount()?.id&&o.symbol===state.selectedSymbol);
+      const levels=[];
+      open.forEach(o=>{levels.push({price:o.openPrice,color:'#60A5FA',dash:[],label:(o.side==='Buy'?'BUY':'SELL')+' '+o.lots.toFixed(2)+' @ '+Number(o.openPrice).toFixed(inst.digits)});if(Number(o.sl)>0)levels.push({price:Number(o.sl),color:'#FF4D4D',dash:[6,4],label:'SL '+Number(o.sl).toFixed(inst.digits)});if(Number(o.tp)>0)levels.push({price:Number(o.tp),color:'#00C076',dash:[6,4],label:'TP '+Number(o.tp).toFixed(inst.digits)});});
+      pending.forEach(o=>{levels.push({price:o.targetPrice,color:'#F59E0B',dash:[3,3],label:'PENDING '+o.pendingType+' @ '+Number(o.targetPrice).toFixed(inst.digits)});if(Number(o.sl)>0)levels.push({price:Number(o.sl),color:'#FF4D4D',dash:[6,4],label:'SL '+Number(o.sl).toFixed(inst.digits)});if(Number(o.tp)>0)levels.push({price:Number(o.tp),color:'#00C076',dash:[6,4],label:'TP '+Number(o.tp).toFixed(inst.digits)});});
+      let minP=Math.min(...candles.map(c=>Number(c.low))),maxP=Math.max(...candles.map(c=>Number(c.high)));
+      levels.forEach(v=>{minP=Math.min(minP,v.price);maxP=Math.max(maxP,v.price);});
+      if(inst.bid>0){minP=Math.min(minP,inst.bid);maxP=Math.max(maxP,inst.bid);}
+      let range=Math.max(maxP-minP,Math.abs(maxP)*0.00001,0.00001),pad=range*.08;
+      minP-=pad;maxP+=pad;const baseMin=minP,baseMax=maxP;
+      minP-=range*chartView.priceShift;maxP-=range*chartView.priceShift;
+      const priceToY=p=>h-((p-minP)/(maxP-minP))*h;
+      const stepX=chartW/candles.length,bodyW=Math.max(1.5,Math.min(12,stepX*.68));
+      candles.forEach((c,i)=>{
+        const x=i*stepX+stepX/2,bull=c.close>=c.open,color=bull?'#2979FF':'#FF4D4D';
+        ctx.strokeStyle=color;ctx.lineWidth=Math.max(1,Math.min(1.5,stepX*.16));ctx.beginPath();ctx.moveTo(x,priceToY(c.high));ctx.lineTo(x,priceToY(c.low));ctx.stroke();
+        const y1=priceToY(c.open),y2=priceToY(c.close),top=Math.min(y1,y2),bh=Math.max(1,Math.abs(y2-y1));
+        ctx.fillStyle=color;ctx.fillRect(x-bodyW/2,top,bodyW,bh);
       });
-      const pad = (maxP - minP) * 0.15 || 1;
-      minP -= pad;
-      maxP += pad;
-
-      const priceToY = (p) => h - ((p - minP) / (maxP - minP)) * h;
-      const chartW = w - 68;
-      const stepX = chartW / candles.length;
-      const bodyW = Math.max(3, stepX * 0.62);
-
-      // Draw Candlesticks
-      candles.forEach((c, idx) => {
-        const x = idx * stepX + stepX / 2;
-        const isBull = c.close >= c.open;
-        const color = isBull ? '#2979FF' : '#FF4D4D';
-
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.moveTo(x, priceToY(c.high));
-        ctx.lineTo(x, priceToY(c.low));
-        ctx.stroke();
-
-        const yOpen = priceToY(c.open);
-        const yClose = priceToY(c.close);
-        const top = Math.min(yOpen, yClose);
-        const barH = Math.max(2, Math.abs(yClose - yOpen));
-        ctx.fillStyle = color;
-        ctx.fillRect(x - bodyW / 2, top, bodyW, barH);
-      });
-
-      // Price Axis Labels on Right
-      ctx.fillStyle = '#6B7280';
-      ctx.font = '10px JetBrains Mono, monospace';
-      for (let i = 1; i < 6; i++) {
-        const p = maxP - ((maxP - minP) / 6) * i;
-        const y = (h / 6) * i;
-        ctx.fillText(p.toFixed(inst.digits), w - 62, y + 3);
+      function drawLevel(level){
+        const y=priceToY(level.price);if(y<0||y>h)return;
+        ctx.save();ctx.setLineDash(level.dash);ctx.strokeStyle=level.color;ctx.lineWidth=1.25;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(chartW,y);ctx.stroke();ctx.setLineDash([]);
+        ctx.font='10px JetBrains Mono,monospace';const label=level.label.slice(0,34);ctx.fillStyle=level.color;ctx.fillText(label,5,Math.max(11,Math.min(h-4,y-4)));ctx.restore();
       }
-
-      // Current Bid & Ask Horizontal Dashed Lines
-      const bidY = priceToY(inst.bid);
-      ctx.setLineDash([3, 3]);
-      ctx.strokeStyle = '#FF4D4D';
-      ctx.beginPath();
-      ctx.moveTo(0, bidY);
-      ctx.lineTo(w - 64, bidY);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      // Bid Price Pill on Right Axis
-      ctx.fillStyle = '#FF4D4D';
-      ctx.fillRect(w - 64, bidY - 9, 62, 18);
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = 'bold 10px JetBrains Mono, monospace';
-      ctx.fillText(inst.bid.toFixed(inst.digits), w - 60, bidY + 3.5);
+      levels.forEach(drawLevel);
+      if(inst.bid>0){const y=priceToY(inst.bid);ctx.save();ctx.setLineDash([3,3]);ctx.strokeStyle='#F87171';ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(chartW,y);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#F87171';ctx.fillRect(chartW,y-9,70,18);ctx.fillStyle='#fff';ctx.font='bold 10px JetBrains Mono,monospace';ctx.fillText(inst.bid.toFixed(inst.digits),chartW+3,y+3);ctx.restore();}
+      ctx.fillStyle='#8B95A7';ctx.font='10px JetBrains Mono,monospace';
+      for(let i=0;i<=6;i++){const p=maxP-(maxP-minP)*i/6;ctx.fillText(p.toFixed(inst.digits),chartW+3,h*i/6+3);}
     }
 
     // ==========================================
