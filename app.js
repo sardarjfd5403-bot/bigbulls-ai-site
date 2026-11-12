@@ -1136,7 +1136,7 @@ async function submitHandler(e){
   e.preventDefault();
   if(f.dataset.explicitAuthSubmit!=="1")return;
   delete f.dataset.explicitAuthSubmit;
-  const d=new FormData(f),b=f.querySelector('button[type="submit"]');
+  const d=new FormData(f),b=f.querySelector("button");
   if(!sb){message("Account service is unavailable. Refresh the page and try again.",true);return;}
   b.disabled=true;b.textContent="Please wait…";
   try{
@@ -1180,7 +1180,7 @@ async function submitHandler(e){
 
  if(f.id==="bb-admin-user-form"){
   e.preventDefault();if(!isAdmin()){message("Administrator permission required.",true);return;}
-  const d=new FormData(f),email=String(d.get("email")||"").trim(),button=f.querySelector('button[type="submit"]'),out=f.querySelector("[data-page-message]");
+  const d=new FormData(f),email=String(d.get("email")||"").trim(),button=f.querySelector("button"),out=f.querySelector("[data-page-message]");
   button.disabled=true;button.textContent="Granting access…";
   try{const {error}=await sb.rpc("admin_set_user_role",{p_email:email,p_make_admin:true});if(error)throw error;if(out)out.textContent="Administrator access granted. Ask this user to sign out and sign in again.";f.reset();await loadAdminUsers();}
   catch(err){if(out)out.textContent=err.message||"Could not grant admin access.";}
@@ -1190,7 +1190,7 @@ async function submitHandler(e){
  if(f.id==="echo-purchase-form"){e.preventDefault();if(!user||!sb){alert("Please log in before submitting your payment TXID.");return;}const d=new FormData(f),txid=String(d.get("txid")||"").trim(),button=f.querySelector("button[type=submit]"),out=f.querySelector("[data-page-message]");if(txid.length<11){if(out)out.textContent="Enter a valid blockchain TXID.";return;}button.disabled=true;button.textContent="Submitting order…";const {error}=await sb.from("product_orders").insert({user_id:user.id,product_code:"BIGBULLS_AI_ECHO",amount_usd:199,payment_method:"USDT_TRC20",payment_reference:txid,status:"pending"});button.disabled=false;button.textContent="Submit payment for verification";if(out)out.textContent=error?"Order submission failed: "+error.message:"Payment TXID submitted. Your order is pending admin blockchain verification.";if(!error)button.disabled=true;return;}
  if(f.id==="account-deposit-form"){
   e.preventDefault();e.stopPropagation();if(typeof e.stopImmediatePropagation==="function")e.stopImmediatePropagation();
-  const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector('button[type="submit"]'),proof=d.get("proof"),ctx=window.bbFinancialContext,accountId=ctx?.accountId;
+  const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button"),proof=d.get("proof"),ctx=window.bbFinancialContext,accountId=ctx?.accountId;
   const amountUsd=Number(d.get("amount_usd")),amountCrypto=Number(d.get("amount_crypto")),txHash=String(d.get("tx_hash")||"").trim();
   if(!accountId||!ctx||!user){if(out)out.textContent="Your secure account session expired. Refresh and sign in again.";return;}
   const account=(window.bbClientAccounts||[]).find(x=>x.id===accountId);
@@ -1216,7 +1216,7 @@ async function submitHandler(e){
  }
  if(f.id==="account-withdrawal-form"){
   e.preventDefault();
-  const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector('button[type="submit"]'),ctx=window.bbFinancialContext,account=(window.bbClientAccounts||[]).find(x=>x.id===ctx?.accountId);
+  const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button"),ctx=window.bbFinancialContext,account=(window.bbClientAccounts||[]).find(x=>x.id===ctx?.accountId);
   if(!ctx||!account||account.account_mode!=="real"||account.status!=="approved"||account.archived_at||account.deleted_at){if(out)out.textContent="Withdrawals are available only from an active, approved Real account.";return;}
   const method=ctx.methods.find(w=>w.asset===String(d.get("asset"))&&w.network===String(d.get("network")));
   if(!method){if(out)out.textContent="Withdrawal network is no longer active. Reopen the withdrawal form.";return;}
@@ -1249,7 +1249,7 @@ async function submitHandler(e){
   return;
  }
  if(f.id==="bb-main-wallet-withdrawal-form"){
-  e.preventDefault();const d=new FormData(f),button=f.querySelector('button[type="submit"]'),out=f.querySelector("[data-page-message]");
+  e.preventDefault();const d=new FormData(f),button=f.querySelector("button"),out=f.querySelector("[data-page-message]");
   const amount=Number(d.get("amount_usd")),amountCrypto=Number(d.get("amount_crypto")),destination=String(d.get("destination_address")||"").trim(),pair=String(d.get("asset_network")||"").split("|");
   if(!(amount>0)||!(amountCrypto>0)||destination.length<10||pair.length!==2){if(out)out.textContent="Enter a valid amount, payout network and destination address.";return;}
   button.disabled=true;button.textContent="Checking Main Wallet…";
@@ -1273,7 +1273,7 @@ async function submitHandler(e){
  if(f.id==="wallet-form"){e.preventDefault();const d=new FormData(f),kind=String(d.get("kind")||"deposit"),accountId=String(d.get("account_id")||"")||null,walletId=String(d.get("wallet_id")||document.getElementById("deposit-asset")?.value||"");const msg=f.querySelector("[data-page-message]")||f.parentElement.querySelector("[data-page-message]"),amountUsd=Number(d.get("amount_usd")),amountCrypto=Number(d.get("amount_crypto")),txHash=String(d.get("tx_hash")||"").trim();if(kind!=="deposit"||!walletId||!(amountUsd>0)||!(amountCrypto>0)||txHash.length<11){if(msg)msg.textContent="Enter valid USD and crypto amounts, select a payment network and provide a valid blockchain TXID.";return;}const {data:w,error:walletError}=await sb.from("crypto_wallets").select("asset,network,address").eq("id",walletId).eq("active",true).single();if(walletError||!w){if(msg)msg.textContent="The selected deposit method is unavailable.";return;}const {data:tx,error}=await sb.from("wallet_transactions").insert({user_id:user.id,account_id:accountId,kind:"deposit",asset:w.asset,network:w.network,destination_address:w.address,amount_usd:amountUsd,amount_crypto:amountCrypto,tx_hash:txHash,status:"pending"}).select("id,invoice_id").single();if(msg)msg.textContent=error?"Request failed: "+error.message:"Deposit request "+esc(tx?.invoice_id||"") +" submitted for Main Wallet verification.";if(!error){f.reset();await loadPageData();}return;}
  if(f.id==="kyc-form"){
    e.preventDefault();e.stopPropagation();if(typeof e.stopImmediatePropagation==="function")e.stopImmediatePropagation();
-   const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector('button[type="submit"]'),front=d.get("document_front"),back=d.get("document_back"),allowed=["image/jpeg","image/png","image/webp","application/pdf"],minBytes=1024,maxBytes=20*1024*1024;
+   const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button"),front=d.get("document_front"),back=d.get("document_back"),allowed=["image/jpeg","image/png","image/webp","application/pdf"],minBytes=1024,maxBytes=20*1024*1024;
    const mimeForFile=file=>{const ext=String(file?.name||"").split(".").pop().toLowerCase();const byExt={jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",pdf:"application/pdf"};const typed=String(file?.type||"").toLowerCase();if(allowed.includes(typed))return typed;if(typed==="image/jpg"||typed==="image/pjpeg")return "image/jpeg";return byExt[ext]||"";};
    const showKycError=message=>{if(out){out.textContent=message;out.classList.add("error");}};
    if(!button){showKycError("KYC submit control is unavailable. Please refresh once and retry.");return;}
@@ -1309,7 +1309,7 @@ async function submitHandler(e){
   if(f.id==="support-ticket-form"){
   e.preventDefault();
   if(!sb||!user){const out=f.querySelector("[data-page-message]");if(out)out.textContent="Please sign in again before submitting a ticket.";return;}
-  const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector('button[type="submit"]');
+  const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button");
   const subject=String(d.get("subject")||"").trim(),category=String(d.get("category")||"other"),bodyText=String(d.get("message")||"").trim();
   if(subject.length<3||bodyText.length<10){if(out)out.textContent="Enter a clear subject and at least 10 characters describing the issue.";return;}
   button.disabled=true;button.textContent="Submitting…";
@@ -1319,7 +1319,7 @@ async function submitHandler(e){
   return;
  }
  if(f.id==="partner-transfer-form"){
-  e.preventDefault();const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector('button[type="submit"]'),accountId=String(d.get("account_id")||""),amount=Number(d.get("amount"));
+  e.preventDefault();const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button"),accountId=String(d.get("account_id")||""),amount=Number(d.get("amount"));
   if(!accountId||!Number.isFinite(amount)||amount<=0||Math.round(amount*100)!==amount*100){if(out)out.textContent="Choose an approved Real USD account and enter a valid amount.";return;}
   button.disabled=true;button.textContent="Transferring securely…";
   try{const {data,error}=await sb.rpc("partner_transfer_to_real_account",{p_account_id:accountId,p_amount:amount,p_note:"IB commission transfer to Real trading account"});if(error)throw error;if(out)out.textContent="Transfer completed · Reference "+String(data||"");f.reset();await loadPageData();await loadClientTradingAccounts();}
@@ -1328,7 +1328,7 @@ async function submitHandler(e){
   return;
  }
  if(f.id==="partner-payout-form"){
-  e.preventDefault();const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector('button[type="submit"]'),amount=Number(d.get("amount")),method=String(d.get("payout_method")||""),destination=String(d.get("destination")||"").trim();
+  e.preventDefault();const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button"),amount=Number(d.get("amount")),method=String(d.get("payout_method")||""),destination=String(d.get("destination")||"").trim();
   if(!Number.isFinite(amount)||amount<=0||Math.round(amount*100)!==amount*100||destination.length<4||destination.length>500){if(out)out.textContent="Enter a valid payout amount and destination details.";return;}
   button.disabled=true;button.textContent="Submitting payout request…";
   try{const {data,error}=await sb.rpc("partner_request_payout",{p_amount:amount,p_payout_method:method,p_destination:destination});if(error)throw error;if(out)out.textContent="Withdrawal request submitted · Reference "+String(data||"");f.reset();await loadPageData();}
@@ -1337,7 +1337,7 @@ async function submitHandler(e){
   return;
  }
  if(f.id==="admin-ib-adjust-form"){
-  e.preventDefault();if(!isAdmin())return;const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector('button[type="submit"]'),partnerId=String(d.get("partner_user_id")||"").trim(),direction=String(d.get("direction")||""),amount=Number(d.get("amount")),note=String(d.get("note")||"").trim();
+  e.preventDefault();if(!isAdmin())return;const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button"),partnerId=String(d.get("partner_user_id")||"").trim(),direction=String(d.get("direction")||""),amount=Number(d.get("amount")),note=String(d.get("note")||"").trim();
   if(!partnerId||!["credit","debit"].includes(direction)||!Number.isFinite(amount)||amount<=0||Math.round(amount*100)!==amount*100||note.length<4){if(out)out.textContent="Enter a valid partner UUID, amount, direction and audit note.";return;}
   button.disabled=true;button.textContent="Applying audited adjustment…";
   try{const {error}=await sb.rpc("admin_adjust_partner_wallet",{p_partner_user_id:partnerId,p_direction:direction,p_amount:amount,p_note:note});if(error)throw error;if(out)out.textContent="IB wallet adjustment saved with audit record.";f.reset();await loadPageData();}
@@ -1356,7 +1356,7 @@ async function submitHandler(e){
   button.disabled=false;if(out)out.textContent=error?"Commission record failed: "+error.message:"Commission entry saved as pending review.";if(!error){f.reset();loadPageData();}return;
  }
  if(f.id==="bb-account-wizard"){
-  e.preventDefault();const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector('button[type="submit"]');
+  e.preventDefault();const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button");
   const mode=String(d.get("account_mode")),type=String(d.get("account_type")),currency=String(d.get("currency")),name=String(d.get("display_name")||"").trim(),platform=String(d.get("platform")),leverage=String(d.get("leverage"));
   if(name.length<1||name.length>40){if(out)out.textContent="Nickname must be 1–40 characters.";return;}
   button.disabled=true;button.textContent="Creating request…";
@@ -1370,7 +1370,7 @@ async function submitHandler(e){
  }
 
  if(f.id==="account-transfer-form"){
-  e.preventDefault();const d=new FormData(f),fromId=String(d.get("from_account")||""),toId=String(d.get("to_account")||""),amount=Number(d.get("amount")),out=f.querySelector("[data-page-message]"),button=f.querySelector('button[type="submit"]'),accounts=window.bbClientAccounts||[],source=accounts.find(x=>x.id===fromId),target=accounts.find(x=>x.id===toId);
+  e.preventDefault();const d=new FormData(f),fromId=String(d.get("from_account")||""),toId=String(d.get("to_account")||""),amount=Number(d.get("amount")),out=f.querySelector("[data-page-message]"),button=f.querySelector("button"),accounts=window.bbClientAccounts||[],source=accounts.find(x=>x.id===fromId),target=accounts.find(x=>x.id===toId);
   if(!source||!target||fromId===toId||source.status!=="approved"||target.status!=="approved"||source.archived_at||target.archived_at||source.deleted_at||target.deleted_at||source.account_mode!=="real"||target.account_mode!=="real"||source.currency!=="USD"||target.currency!=="USD"||!(amount>0)||amount>Number(source.balance||0)){if(out)out.textContent="Choose two active Real USD accounts and an amount within the available balance.";return;}
   button.disabled=true;button.textContent="Processing securely…";
   const {data,error}=await sb.rpc("client_funds_transfer",{p_from_type:"account",p_from_account_id:fromId,p_to_type:"account",p_to_account_id:toId,p_amount:amount,p_idempotency_key:(f.dataset.idempotencyKey||(f.dataset.idempotencyKey=crypto.randomUUID())),p_note:"Instant account-to-account transfer"});
@@ -1380,7 +1380,7 @@ async function submitHandler(e){
   return;
  }
  if(f.id==="transfer-form"){
-  e.preventDefault();const d=new FormData(f),fromValue=String(d.get("from_account")||""),toValue=String(d.get("to_account")||""),amount=Number(d.get("amount")),out=f.querySelector("[data-page-message]"),button=f.querySelector('button[type="submit"]');
+  e.preventDefault();const d=new FormData(f),fromValue=String(d.get("from_account")||""),toValue=String(d.get("to_account")||""),amount=Number(d.get("amount")),out=f.querySelector("[data-page-message]"),button=f.querySelector("button");
   const decode=v=>v==="wallet"?{type:"wallet",id:null}:{type:"account",id:v.split("|")[1]};
   const from=decode(fromValue),to=decode(toValue);
   if(!fromValue||!toValue||fromValue===toValue||!(amount>0)||!Number.isFinite(amount)){if(out)out.textContent="Choose different source and destination and enter a valid amount.";return;}
