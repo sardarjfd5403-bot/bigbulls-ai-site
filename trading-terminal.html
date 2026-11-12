@@ -1,0 +1,2648 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>BigBulls Global Market — Web Trading Terminal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            bb: {
+              bg: '#0F171E',
+              panel: '#141D24',
+              elevated: '#19232C',
+              hover: '#1F2B36',
+              border: '#222E38',
+              borderLight: '#2D3C48',
+              yellow: '#FFCF01',
+              yellowHover: '#F5C400',
+              sell: '#EB4D3D',
+              sellHover: '#D93F30',
+              buy: '#2196F3',
+              buyHover: '#1982D8',
+              demo: '#10B981',
+              text: '#E6EDF3',
+              muted: '#8492A0',
+              dim: '#586674'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      background-color: #0F171E;
+      color: #E6EDF3;
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      user-select: none;
+    }
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+    /* Custom thin scrollbars */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #0F171E; }
+    ::-webkit-scrollbar-thumb { background: #263440; border-radius: 999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #364959; }
+
+    /* Hide number input arrows */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number] { -moz-appearance: textfield; }
+
+    .price-flash-up { animation: flashBlue 0.45s ease-out; }
+    .price-flash-down { animation: flashRed 0.45s ease-out; }
+    @keyframes flashBlue {
+      0% { color: #60B5FF; }
+      100% { color: inherit; }
+    }
+    @keyframes flashRed {
+      0% { color: #FF7A6E; }
+      100% { color: inherit; }
+    }
+  </style>
+</head>
+<body class="h-screen w-screen flex flex-col bg-bb-bg text-bb-text text-[13px]">
+
+  <!-- ==================== DESKTOP TOP HEADER ==================== -->
+  <header class="hidden md:flex items-center justify-between h-12 px-3 bg-bb-bg border-b border-bb-border shrink-0 z-30">
+    <!-- Left: Brand + Symbol Tabs -->
+    <div class="flex items-center h-full space-x-1 overflow-x-auto no-scrollbar">
+      <!-- Brand Logo -->
+      <div class="flex items-center pr-3 mr-1 border-r border-bb-border cursor-pointer group" onclick="toggleDrawer('mainMenu')">
+        <span class="text-bb-buy font-extrabold text-[21px] tracking-tight leading-none">bigbulls</span>
+        <span class="ml-1.5 text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-bb-elevated text-bb-muted border border-bb-border group-hover:text-bb-buy transition">Globalmarket</span>
+      </div>
+
+      <!-- Instrument Tabs Container -->
+      <div id="desktopSymbolTabs" class="flex items-center h-full space-x-1">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Add Symbol Button -->
+      <div class="relative">
+        <button id="addSymbolBtn" onclick="togglePopover('symbolPickerPopover')" title="Add Instrument" class="w-8 h-8 rounded flex items-center justify-center text-bb-muted hover:text-white hover:bg-bb-elevated transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Right: Account Switcher, Deposit, Utility Icons -->
+    <div class="flex items-center space-x-2 shrink-0">
+      <!-- Account & Balance Switcher Trigger -->
+      <div class="relative">
+        <button id="accountTriggerBtn" onclick="togglePopover('accountPopover')" class="flex items-center space-x-2.5 px-2.5 py-1.5 rounded hover:bg-bb-elevated border border-transparent hover:border-bb-border transition">
+          <span id="topAccountBadge" class="px-1.5 py-0.5 text-[11px] font-semibold rounded bg-bb-demo/15 text-bb-demo border border-bb-demo/30">Demo</span>
+          <span id="topAccountNumber" class="text-xs text-bb-muted font-mono hidden lg:inline">#17000707114</span>
+          <span id="topEquityDisplay" class="font-semibold text-[13px] tabular-nums text-white">500.00 USD</span>
+          <svg class="w-3.5 h-3.5 text-bb-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+
+        <!-- Balance & Account Switcher Popover (Exact replica from video) -->
+        <div id="accountPopover" class="hidden absolute right-0 mt-1.5 w-80 bg-bb-panel border border-bb-borderLight rounded-lg shadow-2xl p-4 z-50">
+          <!-- Main Metrics View -->
+          <div id="accountMetricsView">
+            <div class="space-y-2.5 text-[13px]">
+              <div class="flex justify-between items-center">
+                <span class="text-bb-muted flex items-center gap-1">Balance <span class="text-[10px] w-3.5 h-3.5 rounded-full border border-bb-dim inline-flex items-center justify-center text-bb-dim">i</span></span>
+                <span id="popBalance" class="font-semibold tabular-nums text-white">500.00 USD</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-bb-muted flex items-center gap-1">Equity <span class="text-[10px] w-3.5 h-3.5 rounded-full border border-bb-dim inline-flex items-center justify-center text-bb-dim">i</span></span>
+                <span id="popEquity" class="font-semibold tabular-nums text-white">500.00 USD</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-bb-muted flex items-center gap-1">Margin <span class="text-[10px] w-3.5 h-3.5 rounded-full border border-bb-dim inline-flex items-center justify-center text-bb-dim">i</span></span>
+                <span id="popMargin" class="font-medium tabular-nums text-bb-text">0.00 USD</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-bb-muted flex items-center gap-1">Free margin <span class="text-[10px] w-3.5 h-3.5 rounded-full border border-bb-dim inline-flex items-center justify-center text-bb-dim">i</span></span>
+                <span id="popFreeMargin" class="font-medium tabular-nums text-bb-text">500.00 USD</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-bb-muted flex items-center gap-1">Margin level <span class="text-[10px] w-3.5 h-3.5 rounded-full border border-bb-dim inline-flex items-center justify-center text-bb-dim">i</span></span>
+                <span id="popMarginLevel" class="font-medium tabular-nums text-bb-text">—</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-bb-muted flex items-center gap-1">Account leverage <span class="text-[10px] w-3.5 h-3.5 rounded-full border border-bb-dim inline-flex items-center justify-center text-bb-dim">i</span></span>
+                <span id="popLeverage" class="font-medium tabular-nums text-bb-text">1:2000</span>
+              </div>
+            </div>
+
+            <button onclick="openDepositModal()" class="w-full mt-4 py-2 rounded bg-bb-buy hover:bg-bb-buyHover text-white font-semibold transition">
+              Top Up
+            </button>
+
+            <div class="mt-4 pt-3 border-t border-bb-border space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-bb-text">Hide balance</span>
+                <button id="hideBalanceToggle" onclick="toggleHideBalance()" class="w-9 h-5 rounded-full bg-bb-elevated border border-bb-borderLight relative transition">
+                  <span id="hideBalanceDot" class="w-3.5 h-3.5 rounded-full bg-bb-muted absolute top-0.5 left-0.5 transition-all"></span>
+                </button>
+              </div>
+
+              <button onclick="downloadTradingLog()" class="w-full flex items-center justify-between text-bb-text hover:text-bb-yellow py-1 transition">
+                <span>Download Trading Log</span>
+                <svg class="w-4 h-4 text-bb-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+              </button>
+
+              <button onclick="showSwitchAccountSubView(true)" class="w-full flex items-center justify-between text-bb-text hover:text-bb-yellow py-1 pt-2 border-t border-bb-border transition">
+                <span class="font-medium">Switch account</span>
+                <svg class="w-4 h-4 text-bb-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Switch Account Sub-View (Exact from video) -->
+          <div id="accountSwitchView" class="hidden">
+            <div class="flex items-center space-x-2 pb-3 mb-3 border-b border-bb-border">
+              <button onclick="showSwitchAccountSubView(false)" class="p-1 rounded hover:bg-bb-elevated text-bb-muted hover:text-white">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+              </button>
+              <span class="font-semibold text-white">Switch account</span>
+            </div>
+
+            <div class="space-y-2" id="desktopAccountList">
+              <!-- Populated by JS -->
+            </div>
+
+            <button onclick="openDepositModal(); closeAllPopovers();" class="w-full mt-3 pt-3 border-t border-bb-border flex items-center justify-between text-bb-text hover:text-bb-yellow text-xs py-1">
+              <span>Manage Accounts & Deposit</span>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Deposit Button -->
+      <button id="deskDepositBtn" onclick="openDepositModal()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded bg-bb-buy hover:bg-bb-buyHover text-white font-semibold transition shadow">
+        <svg class="w-3.5 h-3.5 text-current" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+        <span>Deposit</span>
+      </button>
+
+      <!-- Utility Icons -->
+      <button onclick="showToast('Price alerts active for XAU/USD', 'info')" title="Price Alerts" class="w-8 h-8 rounded flex items-center justify-center text-bb-muted hover:text-white hover:bg-bb-elevated transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+      </button>
+      <button onclick="toggleDrawer('mainMenu')" title="Terminal Menu & Profile" class="w-8 h-8 rounded flex items-center justify-center text-bb-muted hover:text-white hover:bg-bb-elevated transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+      </button>
+      <button onclick="toggleDrawer('mainMenu')" title="User Account" class="w-8 h-8 rounded-full bg-bb-elevated border border-bb-borderLight flex items-center justify-center text-bb-yellow font-bold text-xs hover:border-bb-yellow transition">
+        SA
+      </button>
+    </div>
+  </header>
+
+  <!-- ==================== MOBILE TOP HEADER (< 768px) ==================== -->
+  <header class="flex md:hidden flex-col bg-bb-bg border-b border-bb-border shrink-0 z-30">
+    <!-- Row 1: Hamburger, Account Info, Deposit -->
+    <div class="flex items-center justify-between h-12 px-3 border-b border-bb-border">
+      <div class="flex items-center space-x-3">
+        <button onclick="toggleDrawer('mainMenu')" class="p-1.5 -ml-1.5 text-bb-text hover:text-bb-yellow">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <div onclick="openMobileAccountSheet()" class="cursor-pointer">
+          <div class="flex items-center space-x-1.5">
+            <span id="mobAccountBadge" class="px-1.5 py-0.2 text-[10px] font-semibold rounded bg-bb-demo/20 text-bb-demo">Demo</span>
+            <span id="mobAccountType" class="text-[11px] text-bb-muted">Standard</span>
+          </div>
+          <div id="mobEquityDisplay" class="font-bold text-[13px] tabular-nums text-white leading-tight">500.00 USD</div>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <span class="text-bb-buy font-extrabold text-sm tracking-tight">bigbulls</span>
+        <button id="mobDepositBtn" onclick="openDepositModal()" class="px-3 py-1.5 rounded bg-bb-buy hover:bg-bb-buyHover text-white text-xs font-semibold transition shadow">
+          Deposit
+        </button>
+      </div>
+    </div>
+
+    <!-- Row 2: Symbol Selector + Portfolio Bag + Settings -->
+    <div class="flex items-center justify-between h-10 px-3 bg-bb-panel">
+      <button onclick="togglePopover('symbolPickerPopover')" class="flex items-center space-x-2 font-bold text-white text-sm">
+        <span id="mobSymbolIcon" class="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-[10px] font-bold">Au</span>
+        <span id="mobSymbolName">XAU/USD</span>
+        <svg class="w-3.5 h-3.5 text-bb-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+      </button>
+
+      <div class="flex items-center space-x-3">
+        <!-- Portfolio Bag Icon with Open Trade Count Badge -->
+        <button onclick="openMobilePortfolioSheet()" class="relative p-1.5 text-bb-muted hover:text-white">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          <span id="mobOpenCountBadge" class="hidden absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-bb-elevated border border-bb-borderLight text-[10px] font-bold text-white flex items-center justify-center">0</span>
+        </button>
+        <button onclick="openMobileAccountSheet()" class="p-1.5 text-bb-muted hover:text-white">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN WORKSPACE ==================== -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- LEFT & CENTER: CHART + BOTTOM POSITIONS PANEL -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+      <!-- CHART TOOLBAR (Top of Chart) -->
+      <div class="h-9 bg-bb-panel border-b border-bb-border flex items-center justify-between px-2 shrink-0">
+        <div class="flex items-center space-x-1 overflow-x-auto no-scrollbar">
+          <button onclick="togglePopover('symbolPickerPopover')" class="md:hidden p-1.5 text-bb-muted hover:text-white">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+          </button>
+
+          <!-- Timeframe Buttons -->
+          <div id="timeframeSelector" class="flex items-center space-x-0.5">
+            <button data-tf="1m" onclick="setTimeframe('1m')" class="tf-btn px-2 py-1 rounded text-xs font-semibold bg-bb-elevated text-white">1m</button>
+            <button data-tf="5m" onclick="setTimeframe('5m')" class="tf-btn px-2 py-1 rounded text-xs font-medium text-bb-muted hover:text-white">5m</button>
+            <button data-tf="15m" onclick="setTimeframe('15m')" class="tf-btn px-2 py-1 rounded text-xs font-medium text-bb-muted hover:text-white">15m</button>
+            <button data-tf="1h" onclick="setTimeframe('1h')" class="tf-btn px-2 py-1 rounded text-xs font-medium text-bb-muted hover:text-white">1h</button>
+            <button data-tf="4h" onclick="setTimeframe('4h')" class="tf-btn px-2 py-1 rounded text-xs font-medium text-bb-muted hover:text-white">4h</button>
+            <button data-tf="1D" onclick="setTimeframe('1D')" class="tf-btn px-2 py-1 rounded text-xs font-medium text-bb-muted hover:text-white">1D</button>
+          </div>
+
+          <div class="h-4 w-[1px] bg-bb-border mx-1"></div>
+
+          <!-- Candle / Line Toggle -->
+          <button id="chartTypeBtn" onclick="toggleChartType()" title="Switch Candle / Area" class="p-1.5 rounded text-bb-muted hover:text-white hover:bg-bb-elevated">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 4v16M7 8h3v8H7V8zm10-4v16m0-11h3v6h-3V9z"/></svg>
+          </button>
+
+          <!-- Indicators Toggle -->
+          <button id="emaToggleBtn" onclick="toggleEMA()" title="Toggle EMA 20 Indicator" class="flex items-center space-x-1 px-2 py-1 rounded text-xs text-bb-muted hover:text-white hover:bg-bb-elevated">
+            <span class="font-serif italic font-bold text-xs">fx</span>
+            <span class="hidden sm:inline">Indicators</span>
+          </button>
+        </div>
+
+        <!-- Right Chart Controls -->
+        <div class="flex items-center space-x-1">
+          <button onclick="clearDrawings()" title="Clear Chart Drawings" class="p-1.5 rounded text-bb-muted hover:text-white hover:bg-bb-elevated">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+          </button>
+          <button onclick="showToast('Chart layout saved to BigBulls Cloud', 'success')" class="hidden sm:flex items-center space-x-1 px-2 py-1 rounded text-xs text-bb-muted hover:text-white hover:bg-bb-elevated">
+            <span>Save</span>
+          </button>
+          <button onclick="resetChartZoom()" title="Auto Fit Chart" class="p-1.5 rounded text-bb-muted hover:text-white hover:bg-bb-elevated">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- CHART BODY (Left Drawing Bar + Canvas) -->
+      <div class="flex-1 flex min-h-0 relative bg-bb-bg">
+        <!-- Left Drawing Toolbar (Desktop) -->
+        <div class="hidden sm:flex flex-col items-center w-10 py-2 bg-bb-panel border-r border-bb-border space-y-1.5 shrink-0">
+          <button data-tool="crosshair" onclick="setDrawTool('crosshair')" title="Crosshair" class="draw-tool-btn w-7 h-7 rounded flex items-center justify-center bg-bb-elevated text-bb-yellow">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18m9-9H3"/></svg>
+          </button>
+          <button data-tool="trendline" onclick="setDrawTool('trendline')" title="Trend Line (Click two points)" class="draw-tool-btn w-7 h-7 rounded flex items-center justify-center text-bb-muted hover:text-white hover:bg-bb-elevated">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 20L20 4"/><circle cx="4" cy="20" r="1.5" fill="currentColor"/><circle cx="20" cy="4" r="1.5" fill="currentColor"/></svg>
+          </button>
+          <button data-tool="hline" onclick="setDrawTool('hline')" title="Horizontal Price Line" class="draw-tool-btn w-7 h-7 rounded flex items-center justify-center text-bb-muted hover:text-white hover:bg-bb-elevated">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12h18"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>
+          </button>
+          <button data-tool="fib" onclick="setDrawTool('fib')" title="Fib Retracement Zone" class="draw-tool-btn w-7 h-7 rounded flex items-center justify-center text-bb-muted hover:text-white hover:bg-bb-elevated">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+          </button>
+          <button onclick="showToast('Price alert placed at current market level', 'info')" title="Quick Price Alert" class="w-7 h-7 rounded flex items-center justify-center text-bb-muted hover:text-white hover:bg-bb-elevated">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </button>
+          <div class="w-5 h-[1px] bg-bb-border my-1"></div>
+          <button onclick="clearDrawings()" title="Remove All Drawings" class="w-7 h-7 rounded flex items-center justify-center text-bb-muted hover:text-bb-sell hover:bg-bb-elevated">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>
+        </div>
+
+        <!-- Canvas Container -->
+        <div id="chartWrapper" class="flex-1 relative overflow-hidden cursor-crosshair">
+          <!-- Top-Left OHLC Live Legend -->
+          <div class="absolute top-2 left-3 z-10 pointer-events-none flex flex-col space-y-0.5">
+            <div class="flex items-center space-x-2 text-xs">
+              <span class="w-2 h-2 rounded-full bg-bb-demo animate-pulse"></span>
+              <span id="chartTitleText" class="font-semibold text-bb-text">Gold vs US Dollar · 1m · BigBulls</span>
+            </div>
+            <div id="chartOhlcText" class="text-[11px] font-mono tabular-nums text-bb-muted flex flex-wrap gap-x-2">
+              <span>O <b class="text-bb-text font-normal">3973.80</b></span>
+              <span>H <b class="text-bb-text font-normal">3974.90</b></span>
+              <span>L <b class="text-bb-text font-normal">3972.10</b></span>
+              <span>C <b class="text-bb-buy font-normal">3974.12</b></span>
+            </div>
+          </div>
+
+          <!-- Active Tool Indicator Pill -->
+          <div id="activeToolBanner" class="hidden absolute top-2 right-20 z-10 bg-bb-elevated/90 border border-bb-yellow/40 text-bb-yellow text-[11px] px-2.5 py-1 rounded-full flex items-center space-x-2">
+            <span id="activeToolText">Trendline: Click start point</span>
+            <button onclick="setDrawTool('crosshair')" class="text-white hover:text-bb-sell font-bold">×</button>
+          </div>
+
+          <!-- HTML5 Canvas -->
+          <canvas id="tradingCanvas" class="w-full h-full block"></canvas>
+        </div>
+      </div>
+
+      <!-- DESKTOP BOTTOM POSITIONS / PORTFOLIO PANEL -->
+      <div class="hidden md:flex flex-col h-56 bg-bb-panel border-t border-bb-border shrink-0">
+        <!-- Tabs Row -->
+        <div class="flex items-center justify-between px-3 h-9 border-b border-bb-border shrink-0">
+          <div class="flex items-center space-x-5 h-full">
+            <button onclick="setBottomTab('open')" id="tabBtnOpen" class="h-full flex items-center space-x-1.5 border-b-2 border-bb-yellow text-white font-medium text-xs">
+              <span>Open</span>
+              <span id="openPositionsCount" class="px-1.5 py-0.2 rounded-full bg-bb-elevated text-[11px] tabular-nums">1</span>
+            </button>
+            <button onclick="setBottomTab('pending')" id="tabBtnPending" class="h-full flex items-center space-x-1.5 border-b-2 border-transparent text-bb-muted hover:text-white font-medium text-xs">
+              <span>Pending</span>
+              <span id="pendingPositionsCount" class="px-1.5 py-0.2 rounded-full bg-bb-elevated text-[11px] tabular-nums">0</span>
+            </button>
+            <button onclick="setBottomTab('closed')" id="tabBtnClosed" class="h-full flex items-center space-x-1.5 border-b-2 border-transparent text-bb-muted hover:text-white font-medium text-xs">
+              <span>Closed</span>
+              <span id="closedPositionsCount" class="px-1.5 py-0.2 rounded-full bg-bb-elevated text-[11px] tabular-nums">0</span>
+            </button>
+          </div>
+
+          <!-- Right Bulk Action + Total P/L -->
+          <div class="flex items-center space-x-3">
+            <div class="relative">
+              <button onclick="togglePopover('closeAllPopover')" class="flex items-center space-x-1 px-2 py-1 rounded bg-bb-elevated hover:bg-bb-hover text-xs text-bb-text border border-bb-borderLight">
+                <span>Close all</span>
+                <svg class="w-3 h-3 text-bb-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+              </button>
+              <div id="closeAllPopover" class="hidden absolute right-0 bottom-8 w-44 bg-bb-elevated border border-bb-borderLight rounded shadow-xl py-1 z-40 text-xs">
+                <button onclick="closePositionsByFilter('all')" class="w-full text-left px-3 py-1.5 hover:bg-bb-hover text-white">Close all positions</button>
+                <button onclick="closePositionsByFilter('profit')" class="w-full text-left px-3 py-1.5 hover:bg-bb-hover text-bb-demo">Close all profitable</button>
+                <button onclick="closePositionsByFilter('loss')" class="w-full text-left px-3 py-1.5 hover:bg-bb-hover text-bb-sell">Close all losing</button>
+              </div>
+            </div>
+
+            <div class="text-xs text-bb-muted">
+              Total P/L, USD: <span id="bottomTotalPnl" class="font-semibold font-mono tabular-nums text-white">0.00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Positions Table -->
+        <div class="flex-1 overflow-auto">
+          <table class="w-full text-left border-collapse">
+            <thead class="sticky top-0 bg-bb-panel text-[11px] text-bb-muted border-b border-bb-border">
+              <tr>
+                <th class="py-2 px-3 font-medium">Symbol</th>
+                <th class="py-2 px-2 font-medium">Type</th>
+                <th class="py-2 px-2 font-medium">Volume, lot</th>
+                <th class="py-2 px-2 font-medium">Open price</th>
+                <th class="py-2 px-2 font-medium">Current price</th>
+                <th class="py-2 px-2 font-medium">T/P</th>
+                <th class="py-2 px-2 font-medium">S/L</th>
+                <th class="py-2 px-2 font-medium">Position ID</th>
+                <th class="py-2 px-2 font-medium">Open time</th>
+                <th class="py-2 px-2 font-medium">Swap</th>
+                <th class="py-2 px-2 font-medium text-right">P/L, USD</th>
+                <th class="py-2 px-3 font-medium text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="positionsTableBody" class="divide-y divide-bb-border/60 text-xs font-mono tabular-nums">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+          <div id="emptyPositionsMsg" class="hidden py-8 text-center text-bb-muted text-xs">
+            No positions in this category. Click Buy or Sell to open a trade.
+          </div>
+        </div>
+
+        <!-- Bottom Account Status Footer Bar -->
+        <div class="h-7 px-3 bg-bb-bg border-t border-bb-border flex items-center justify-between text-[11px] text-bb-muted shrink-0 tabular-nums">
+          <div class="flex items-center space-x-4 overflow-x-auto no-scrollbar">
+            <span>Equity: <strong id="footerEquity" class="text-white font-semibold">500.00 USD</strong></span>
+            <span>Free Margin: <strong id="footerFreeMargin" class="text-white font-semibold">500.00 USD</strong></span>
+            <span>Balance: <strong id="footerBalance" class="text-white font-semibold">500.00 USD</strong></span>
+            <span>Margin: <strong id="footerMargin" class="text-white font-semibold">0.00 USD</strong></span>
+            <span>Margin level: <strong id="footerMarginLevel" class="text-white font-semibold">—</strong></span>
+          </div>
+          <div class="text-[10px] text-bb-dim hidden lg:block">
+            bigbullsGlobalmarket · Ultra-Low Latency Execution
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== RIGHT ORDER EXECUTION SIDEBAR (DESKTOP) ==================== -->
+    <aside class="hidden md:flex flex-col w-[290px] lg:w-[310px] bg-bb-panel border-l border-bb-border shrink-0 overflow-y-auto">
+      <!-- Instrument Header -->
+      <div class="h-10 px-3 border-b border-bb-border flex items-center justify-between shrink-0">
+        <div class="flex items-center space-x-2">
+          <span id="orderPanelSymbolIcon" class="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-[10px] font-bold">Au</span>
+          <span id="orderPanelSymbolName" class="font-bold text-white text-sm">XAU/USD</span>
+        </div>
+        <span class="text-[11px] text-bb-demo bg-bb-demo/10 px-2 py-0.5 rounded font-medium">Market Open</span>
+      </div>
+
+      <div class="p-3 space-y-3 flex-1 flex flex-col">
+        <!-- Form Mode Dropdown -->
+        <div class="relative">
+          <button onclick="toggleOneClickMode()" id="orderFormModeBtn" class="w-full h-9 px-3 rounded bg-bb-elevated border border-bb-borderLight flex items-center justify-between text-xs text-white hover:border-bb-muted transition">
+            <span id="orderFormModeLabel">Regular form</span>
+            <svg class="w-3.5 h-3.5 text-bb-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+        </div>
+
+        <!-- SELL & BUY DUAL QUOTE CARDS (Exact replica from video) -->
+        <div class="relative">
+          <div class="grid grid-cols-2 gap-2">
+            <!-- SELL CARD -->
+            <button id="deskSellCard" onclick="selectOrderSide('sell')" class="group relative rounded-md p-2.5 text-left bg-bb-elevated border border-bb-sell/60 hover:bg-bb-sell/15 transition overflow-hidden">
+              <div class="text-[11px] font-medium text-bb-sell mb-0.5">Sell</div>
+              <div id="deskSellPrice" class="font-mono font-bold text-[15px] text-bb-sell tabular-nums tracking-tight">
+                3,973.<span class="text-lg">60</span><sup class="text-[10px]">4</sup>
+              </div>
+            </button>
+
+            <!-- BUY CARD -->
+            <button id="deskBuyCard" onclick="selectOrderSide('buy')" class="group relative rounded-md p-2.5 text-right bg-bb-elevated border border-bb-buy/60 hover:bg-bb-buy/15 transition overflow-hidden">
+              <div class="text-[11px] font-medium text-bb-buy mb-0.5">Buy</div>
+              <div id="deskBuyPrice" class="font-mono font-bold text-[15px] text-bb-buy tabular-nums tracking-tight">
+                3,973.<span class="text-lg">84</span><sup class="text-[10px]">4</sup>
+              </div>
+            </button>
+          </div>
+
+          <!-- Center Spread Pill -->
+          <div id="deskSpreadPill" class="absolute left-1/2 bottom-2 -translate-x-1/2 px-1.5 py-0.2 rounded bg-bb-bg border border-bb-borderLight text-[10px] font-mono text-bb-text shadow">
+            0.24 USD
+          </div>
+        </div>
+
+        <!-- Buyer / Seller Sentiment Bar (27% vs 73% from video) -->
+        <div>
+          <div class="h-1 w-full rounded-full overflow-hidden flex bg-bb-elevated">
+            <div id="sentimentSellBar" class="bg-bb-sell h-full transition-all duration-700" style="width: 27%"></div>
+            <div id="sentimentBuyBar" class="bg-bb-buy h-full transition-all duration-700" style="width: 73%"></div>
+          </div>
+          <div class="flex justify-between text-[10px] text-bb-muted mt-1 tabular-nums">
+            <span id="sentimentSellPct">27%</span>
+            <span id="sentimentBuyPct">73%</span>
+          </div>
+        </div>
+
+        <!-- Market / Pending Switcher Tabs -->
+        <div class="grid grid-cols-2 p-0.5 rounded bg-bb-bg border border-bb-border">
+          <button id="deskTabMarket" onclick="setOrderExecutionType('market')" class="py-1.5 rounded text-xs font-semibold bg-bb-elevated text-white transition">
+            Market
+          </button>
+          <button id="deskTabPending" onclick="setOrderExecutionType('pending')" class="py-1.5 rounded text-xs font-medium text-bb-muted hover:text-white transition">
+            Pending
+          </button>
+        </div>
+
+        <!-- Pending Open Price Input (Shown when Pending selected) -->
+        <div id="deskPendingPriceGroup" class="hidden space-y-1">
+          <div class="flex justify-between text-xs text-bb-muted">
+            <span>Open price</span>
+            <span id="pendingOrderTypeLabel" class="text-bb-yellow font-medium">Limit</span>
+          </div>
+          <div class="flex items-center h-9 rounded bg-bb-bg border border-bb-borderLight focus-within:border-bb-yellow">
+            <input id="deskPendingPriceInput" type="number" step="0.01" oninput="updateOrderCalculations()" class="w-full bg-transparent px-2.5 text-xs font-mono text-white focus:outline-none tabular-nums" />
+            <span class="text-[11px] text-bb-muted px-2 border-r border-bb-border">Limit</span>
+            <button onclick="stepInput('deskPendingPriceInput', -0.5)" class="w-8 h-full flex items-center justify-center text-bb-muted hover:text-white">−</button>
+            <button onclick="stepInput('deskPendingPriceInput', 0.5)" class="w-8 h-full flex items-center justify-center text-bb-muted hover:text-white">+</button>
+          </div>
+          <div id="pendingPipsDistance" class="text-[11px] text-bb-muted font-mono tabular-nums">-25.0 pips</div>
+        </div>
+
+        <!-- Volume (Lots) Input -->
+        <div class="space-y-1">
+          <div class="flex justify-between text-xs text-bb-muted">
+            <span>Volume</span>
+            <span id="volumeUnitsPreview" class="text-[11px]">1.00 oz</span>
+          </div>
+          <div class="flex items-center h-9 rounded bg-bb-bg border border-bb-borderLight focus-within:border-bb-yellow">
+            <input id="deskVolumeInput" type="number" value="0.01" min="0.01" max="100" step="0.01" oninput="updateOrderCalculations()" class="w-full bg-transparent px-2.5 text-xs font-mono text-white focus:outline-none tabular-nums" />
+            <span class="text-[11px] text-bb-muted px-2 border-r border-bb-border">Lots</span>
+            <button onclick="stepVolume(-0.01)" class="w-8 h-full flex items-center justify-center text-bb-muted hover:text-white">−</button>
+            <button onclick="stepVolume(0.01)" class="w-8 h-full flex items-center justify-center text-bb-muted hover:text-white">+</button>
+          </div>
+        </div>
+
+        <!-- Take Profit Input -->
+        <div class="space-y-1">
+          <div class="flex justify-between text-xs text-bb-muted">
+            <span>Take Profit</span>
+            <span id="tpPnlPreview" class="text-[11px] text-bb-demo font-mono"></span>
+          </div>
+          <div class="flex items-center h-9 rounded bg-bb-bg border border-bb-borderLight focus-within:border-bb-yellow">
+            <input id="deskTpInput" type="number" step="0.01" placeholder="Not set" oninput="updateOrderCalculations()" class="w-full bg-transparent px-2.5 text-xs font-mono text-white placeholder-bb-dim focus:outline-none tabular-nums" />
+            <button onclick="clearInput('deskTpInput')" title="Clear TP" class="px-1.5 text-bb-dim hover:text-white text-xs">×</button>
+            <span class="text-[11px] text-bb-muted px-2 border-x border-bb-border">Price</span>
+            <button onclick="stepTpSl('tp', -1)" class="w-8 h-full flex items-center justify-center text-bb-muted hover:text-white">−</button>
+            <button onclick="stepTpSl('tp', 1)" class="w-8 h-full flex items-center justify-center text-bb-muted hover:text-white">+</button>
+          </div>
+        </div>
+
+        <!-- Stop Loss Input -->
+        <div class="space-y-1">
+          <div class="flex justify-between text-xs text-bb-muted">
+            <span>Stop Loss</span>
+            <span id="slPnlPreview" class="text-[11px] text-bb-sell font-mono"></span>
+          </div>
+          <div class="flex items-center h-9 rounded bg-bb-bg border border-bb-borderLight focus-within:border-bb-yellow">
+            <input id="deskSlInput" type="number" step="0.01" placeholder="Not set" oninput="updateOrderCalculations()" class="w-full bg-transparent px-2.5 text-xs font-mono text-white placeholder-bb-dim focus:outline-none tabular-nums" />
+            <button onclick="clearInput('deskSlInput')" title="Clear SL" class="px-1.5 text-bb-dim hover:text-white text-xs">×</button>
+            <span class="text-[11px] text-bb-muted px-2 border-x border-bb-border">Price</span>
+            <button onclick="stepTpSl('sl', -1)" class="w-8 h-full flex items-center justify-center text-bb-muted hover:text-white">−</button>
+            <button onclick="stepTpSl('sl', 1)" class="w-8 h-full flex items-center justify-center text-bb-muted hover:text-white">+</button>
+          </div>
+        </div>
+
+        <!-- Confirmation Action Area (Appears when Sell or Buy clicked in Regular Form) -->
+        <div id="deskConfirmBox" class="hidden pt-2 space-y-2">
+          <button id="deskConfirmSubmitBtn" onclick="executeOrder()" class="w-full py-2.5 rounded font-semibold text-white text-xs shadow-lg transition">
+            Confirm Buy 0.01 lots
+          </button>
+          <button onclick="cancelOrderSelection()" class="w-full py-2 rounded bg-bb-elevated hover:bg-bb-hover text-bb-text text-xs font-medium border border-bb-borderLight transition">
+            Cancel
+          </button>
+        </div>
+
+        <!-- Order Margin & Fees Summary (Exact from video) -->
+        <div class="pt-3 mt-auto border-t border-bb-border space-y-1.5 text-xs">
+          <div class="flex justify-between text-bb-muted">
+            <span>Fees:</span>
+            <span id="orderFeesDisplay" class="font-mono text-bb-text tabular-nums">≈ 0.24 USD</span>
+          </div>
+          <div class="flex justify-between text-bb-muted">
+            <span>Leverage:</span>
+            <span id="orderLeverageDisplay" class="font-mono text-bb-text tabular-nums">1:2000</span>
+          </div>
+          <div class="flex justify-between text-bb-muted">
+            <span>Margin:</span>
+            <span id="orderMarginDisplay" class="font-mono text-bb-text tabular-nums">1.99 USD</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ==================== MOBILE STICKY BOTTOM SELL / BUY BAR (< 768px) ==================== -->
+  <div class="md:hidden bg-bb-panel border-t border-bb-border p-2 shrink-0 z-30">
+    <div class="relative grid grid-cols-2 gap-2">
+      <button onclick="openMobileOrderSheet('sell')" class="rounded-md py-2 px-3 bg-bb-sell active:bg-bb-sellHover text-white text-left shadow">
+        <div class="text-[11px] font-medium opacity-90">Sell</div>
+        <div id="mobSellPrice" class="font-mono font-bold text-sm tabular-nums">3,973.60⁴</div>
+      </button>
+
+      <button onclick="openMobileOrderSheet('buy')" class="rounded-md py-2 px-3 bg-bb-buy active:bg-bb-buyHover text-white text-right shadow">
+        <div class="text-[11px] font-medium opacity-90">Buy</div>
+        <div id="mobBuyPrice" class="font-mono font-bold text-sm tabular-nums">3,973.84⁴</div>
+      </button>
+
+      <!-- Spread Badge -->
+      <div id="mobSpreadPill" class="absolute left-1/2 bottom-1.5 -translate-x-1/2 px-1.5 py-0.2 rounded bg-bb-bg/95 border border-bb-borderLight text-[10px] font-mono text-white">
+        0.24 USD
+      </div>
+    </div>
+    <div class="flex justify-between text-[10px] text-bb-muted mt-1 px-0.5 tabular-nums">
+      <span>32%</span>
+      <span>68%</span>
+    </div>
+  </div>
+
+  <!-- ==================== MODALS, DRAWERS & POPOVERS ==================== -->
+
+  <!-- 1. SYMBOL PICKER POPOVER -->
+  <div id="symbolPickerPopover" class="hidden fixed top-12 left-3 md:left-40 w-80 bg-bb-panel border border-bb-borderLight rounded-lg shadow-2xl p-3 z-50">
+    <div class="flex items-center justify-between pb-2 mb-2 border-b border-bb-border">
+      <span class="font-semibold text-white text-xs">Instruments — bigbullsGlobalmarket</span>
+      <button onclick="closeAllPopovers()" class="text-bb-muted hover:text-white text-base leading-none">×</button>
+    </div>
+    <div id="symbolPickerList" class="space-y-1 max-h-64 overflow-y-auto">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+  <!-- 2. "MAKE A DEPOSIT" MODAL (Exact replica from video) -->
+  <div id="depositModal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+    <div class="bg-bb-panel border border-bb-borderLight rounded-xl w-full max-w-xl p-6 shadow-2xl relative">
+      <div class="flex items-center justify-between mb-5">
+        <h2 class="text-xl font-bold text-white">Make a deposit</h2>
+        <button onclick="closeModal('depositModal')" class="w-8 h-8 rounded-full hover:bg-bb-elevated flex items-center justify-center text-bb-muted hover:text-white text-lg">×</button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Demo Card -->
+        <div class="bg-bb-bg border border-bb-borderLight rounded-lg p-5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-base font-bold text-white">Demo</span>
+              <span class="px-2 py-0.5 text-[11px] font-semibold rounded bg-bb-demo/15 text-bb-demo">Virtual</span>
+            </div>
+            <ul class="space-y-2 text-xs text-bb-muted mb-6">
+              <li class="flex items-center space-x-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-bb-demo"></span>
+                <span>Virtual money (Instant refill)</span>
+              </li>
+              <li class="flex items-center space-x-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-bb-demo"></span>
+                <span>Full access to the terminal</span>
+              </li>
+              <li class="flex items-center space-x-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-bb-dim"></span>
+                <span>No withdrawals</span>
+              </li>
+            </ul>
+          </div>
+          <div class="space-y-2">
+            <div class="flex items-center bg-bb-panel border border-bb-borderLight rounded px-2.5 h-9">
+              <span class="text-xs text-bb-muted mr-2">USD</span>
+              <input id="demoTopUpAmount" type="number" value="500" min="10" step="50" class="w-full bg-transparent text-xs font-mono text-white focus:outline-none" />
+            </div>
+            <button onclick="handleTopUp('demo')" class="w-full py-2.5 rounded bg-bb-elevated hover:bg-bb-hover text-white font-semibold text-xs border border-bb-borderLight transition">
+              Top up demo account
+            </button>
+          </div>
+        </div>
+
+        <!-- Real Card -->
+        <div class="bg-bb-bg border border-bb-yellow/40 rounded-lg p-5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-base font-bold text-white">Real</span>
+              <span class="px-2 py-0.5 text-[11px] font-semibold rounded bg-bb-yellow/15 text-bb-yellow">Live Pro</span>
+            </div>
+            <ul class="space-y-2 text-xs text-bb-muted mb-6">
+              <li class="flex items-center space-x-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-bb-yellow"></span>
+                <span>Full access to the terminal</span>
+              </li>
+              <li class="flex items-center space-x-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-bb-yellow"></span>
+                <span>Instant, automated withdrawals</span>
+              </li>
+              <li class="flex items-center space-x-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-bb-yellow"></span>
+                <span>Zero commission on XAU/USD</span>
+              </li>
+            </ul>
+          </div>
+          <div class="space-y-2">
+            <div class="flex items-center bg-bb-panel border border-bb-borderLight rounded px-2.5 h-9">
+              <span class="text-xs text-bb-muted mr-2">USD</span>
+              <input id="realDepositAmount" type="number" value="1000" min="10" step="100" class="w-full bg-transparent text-xs font-mono text-white focus:outline-none" />
+            </div>
+            <button onclick="handleTopUp('real')" class="w-full py-2.5 rounded bg-bb-yellow hover:bg-bb-yellowHover text-black font-bold text-xs transition">
+              Deposit on real account
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. SLIDE-OUT MENU DRAWER (Exact replica from mobile/desktop menu in video) -->
+  <div id="mainMenu" class="hidden fixed inset-0 bg-black/70 z-50 flex">
+    <div class="w-72 max-w-[85vw] bg-bb-bg border-r border-bb-border h-full flex flex-col p-4">
+      <div class="flex items-center justify-between pb-4 border-b border-bb-border">
+        <button onclick="toggleDrawer('mainMenu')" class="p-1 text-bb-muted hover:text-white text-xl leading-none">×</button>
+        <div class="flex items-center">
+          <span class="text-bb-buy font-extrabold text-xl tracking-tight">bigbulls</span>
+          <span class="ml-1 text-[10px] text-bb-muted">Globalmarket</span>
+        </div>
+      </div>
+
+      <!-- User Profile Row -->
+      <div class="py-4 border-b border-bb-border flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-full bg-bb-elevated border border-bb-borderLight flex items-center justify-center text-bb-yellow font-bold">
+          SA
+        </div>
+        <div>
+          <div class="font-semibold text-white text-sm">S***** A******</div>
+          <div class="text-xs text-bb-muted">s****3@bigbulls.global</div>
+        </div>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="py-3 space-y-1 flex-1 text-sm">
+        <button onclick="toggleDrawer('mainMenu'); togglePopover('symbolPickerPopover')" class="w-full flex items-center space-x-3 px-2 py-2.5 rounded hover:bg-bb-elevated text-bb-text">
+          <svg class="w-4 h-4 text-bb-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+          <span>Instruments</span>
+        </button>
+        <button onclick="toggleDrawer('mainMenu'); openMobilePortfolioSheet()" class="w-full flex items-center space-x-3 px-2 py-2.5 rounded hover:bg-bb-elevated text-bb-text">
+          <svg class="w-4 h-4 text-bb-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          <span>Portfolio</span>
+        </button>
+        <button onclick="toggleDrawer('mainMenu'); showToast('High Impact: US CPI Data in 2h 15m', 'info')" class="w-full flex items-center space-x-3 px-2 py-2.5 rounded hover:bg-bb-elevated text-bb-text">
+          <svg class="w-4 h-4 text-bb-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <span>Economic calendar</span>
+        </button>
+        <button onclick="toggleDrawer('mainMenu'); toggleEMA()" class="w-full flex items-center space-x-3 px-2 py-2.5 rounded hover:bg-bb-elevated text-bb-text">
+          <span class="font-mono text-xs text-bb-muted w-4 text-center">{ }</span>
+          <span>Script editor (EMA 20)</span>
+        </button>
+        <button onclick="toggleDrawer('mainMenu'); openDepositModal()" class="w-full flex items-center space-x-3 px-2 py-2.5 rounded hover:bg-bb-elevated text-bb-yellow font-medium">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+          <span>Deposit / Top Up Funds</span>
+        </button>
+      </nav>
+
+      <div class="pt-3 border-t border-bb-border text-[11px] text-bb-dim flex justify-between">
+        <span>BigBulls Terminal v6.13</span>
+        <span class="text-bb-demo">● Connected</span>
+      </div>
+    </div>
+    <div class="flex-1" onclick="toggleDrawer('mainMenu')"></div>
+  </div>
+
+  <!-- 4. MOBILE ORDER EXECUTION BOTTOM SHEET (Exact replica from mobile video) -->
+  <div id="mobileOrderSheet" class="hidden fixed inset-0 bg-black/75 z-50 flex flex-col justify-end md:hidden">
+    <div class="bg-bb-panel border-t border-bb-borderLight rounded-t-2xl p-4 space-y-3 max-h-[90vh] overflow-y-auto">
+      <!-- Top Bar -->
+      <div class="flex items-center justify-between pb-2 border-b border-bb-border">
+        <div class="flex items-center space-x-2">
+          <button onclick="closeModal('mobileOrderSheet')" class="text-bb-muted hover:text-white text-xl leading-none pr-1">×</button>
+          <span id="mobSheetSymbol" class="font-bold text-white text-sm">XAU/USD</span>
+        </div>
+        <div class="flex items-center space-x-2">
+          <span id="mobSheetEquity" class="font-semibold text-xs text-white tabular-nums">500.00 USD</span>
+          <span id="mobSheetBadge" class="px-1.5 py-0.5 text-[10px] font-semibold rounded bg-bb-demo/20 text-bb-demo">Demo</span>
+        </div>
+      </div>
+
+      <!-- Market / Pending Switcher -->
+      <div class="grid grid-cols-2 p-0.5 rounded bg-bb-bg border border-bb-border">
+        <button id="mobTabMarket" onclick="setOrderExecutionType('market')" class="py-1.5 rounded text-xs font-semibold bg-bb-elevated text-white">Market</button>
+        <button id="mobTabPending" onclick="setOrderExecutionType('pending')" class="py-1.5 rounded text-xs font-medium text-bb-muted">Pending</button>
+      </div>
+
+      <!-- Pending Price Input (Mobile) -->
+      <div id="mobPendingPriceGroup" class="hidden space-y-1">
+        <label class="text-xs text-bb-muted">Open price (Limit)</label>
+        <div class="flex items-center h-10 rounded bg-bb-bg border border-bb-borderLight">
+          <input id="mobPendingPriceInput" type="number" step="0.01" class="w-full bg-transparent px-3 text-sm font-mono text-white focus:outline-none" />
+          <button onclick="stepInput('mobPendingPriceInput', -0.5)" class="w-10 h-full text-bb-muted text-lg">−</button>
+          <button onclick="stepInput('mobPendingPriceInput', 0.5)" class="w-10 h-full text-bb-muted text-lg">+</button>
+        </div>
+      </div>
+
+      <!-- Volume -->
+      <div class="space-y-1">
+        <label class="text-xs text-bb-muted">Volume</label>
+        <div class="flex items-center h-10 rounded bg-bb-bg border border-bb-borderLight">
+          <input id="mobVolumeInput" type="number" value="0.01" min="0.01" step="0.01" oninput="syncMobileOrderInputs()" class="w-full bg-transparent px-3 text-sm font-mono text-white focus:outline-none" />
+          <span class="text-xs text-bb-muted px-2 border-r border-bb-border">Lots</span>
+          <button onclick="stepMobileVolume(-0.01)" class="w-10 h-full text-bb-muted text-lg">−</button>
+          <button onclick="stepMobileVolume(0.01)" class="w-10 h-full text-bb-muted text-lg">+</button>
+        </div>
+      </div>
+
+      <!-- Take Profit -->
+      <div class="space-y-1">
+        <label class="text-xs text-bb-muted">Take Profit</label>
+        <div class="flex items-center h-10 rounded bg-bb-bg border border-bb-borderLight">
+          <input id="mobTpInput" type="number" step="0.01" placeholder="Not set" oninput="syncMobileOrderInputs()" class="w-full bg-transparent px-3 text-sm font-mono text-white placeholder-bb-dim focus:outline-none" />
+          <span class="text-xs text-bb-muted px-2 border-r border-bb-border">Price</span>
+          <button onclick="stepMobileTpSl('tp', -1)" class="w-10 h-full text-bb-muted text-lg">−</button>
+          <button onclick="stepMobileTpSl('tp', 1)" class="w-10 h-full text-bb-muted text-lg">+</button>
+        </div>
+      </div>
+
+      <!-- Stop Loss -->
+      <div class="space-y-1">
+        <label class="text-xs text-bb-muted">Stop Loss</label>
+        <div class="flex items-center h-10 rounded bg-bb-bg border border-bb-borderLight">
+          <input id="mobSlInput" type="number" step="0.01" placeholder="Not set" oninput="syncMobileOrderInputs()" class="w-full bg-transparent px-3 text-sm font-mono text-white placeholder-bb-dim focus:outline-none" />
+          <span class="text-xs text-bb-muted px-2 border-r border-bb-border">Price</span>
+          <button onclick="stepMobileTpSl('sl', -1)" class="w-10 h-full text-bb-muted text-lg">−</button>
+          <button onclick="stepMobileTpSl('sl', 1)" class="w-10 h-full text-bb-muted text-lg">+</button>
+        </div>
+      </div>
+
+      <!-- Order Info Line -->
+      <div id="mobOrderInfoLine" class="text-[11px] text-bb-muted font-mono pt-1">
+        Fees: ≈ 0.24 USD | Margin: 1.99 USD | Leverage: 1:2000
+      </div>
+
+      <!-- Cancel & Confirm Buttons -->
+      <div class="grid grid-cols-2 gap-2.5 pt-2">
+        <button onclick="closeModal('mobileOrderSheet')" class="py-3 rounded-lg bg-bb-elevated text-white font-semibold text-xs border border-bb-borderLight">
+          Cancel
+        </button>
+        <button id="mobConfirmOrderBtn" onclick="executeMobileOrder()" class="py-3 rounded-lg bg-bb-buy text-white font-bold text-xs shadow-lg">
+          Confirm Buy 0.01 lots<br><span id="mobConfirmLivePrice" class="font-mono text-[11px] opacity-90">3,974.496</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. MOBILE PORTFOLIO & ACCOUNT FULL SHEET -->
+  <div id="mobilePortfolioSheet" class="hidden fixed inset-0 bg-bb-bg z-50 flex flex-col md:hidden">
+    <div class="h-12 px-3 bg-bb-panel border-b border-bb-border flex items-center justify-between">
+      <div class="flex items-center space-x-2">
+        <button onclick="closeModal('mobilePortfolioSheet')" class="text-bb-muted hover:text-white text-xl pr-2">×</button>
+        <span id="mobSheetTitle" class="font-bold text-white text-sm">Portfolio & Accounts</span>
+      </div>
+      <button onclick="openDepositModal()" class="px-3 py-1 rounded bg-bb-buy hover:bg-bb-buyHover text-white font-bold text-xs">Deposit</button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-4 space-y-5">
+      <!-- Account Switcher Cards -->
+      <div>
+        <div class="text-xs font-semibold text-bb-muted uppercase tracking-wider mb-2">Switch Trading Account</div>
+        <div id="mobileAccountList" class="space-y-2">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Live Account Metrics -->
+      <div class="bg-bb-panel border border-bb-border rounded-lg p-3.5 space-y-2 text-xs">
+        <div class="flex justify-between"><span class="text-bb-muted">Balance</span><span id="mobStatBalance" class="font-mono font-semibold text-white">500.00 USD</span></div>
+        <div class="flex justify-between"><span class="text-bb-muted">Equity</span><span id="mobStatEquity" class="font-mono font-semibold text-white">500.00 USD</span></div>
+        <div class="flex justify-between"><span class="text-bb-muted">Margin</span><span id="mobStatMargin" class="font-mono text-bb-text">0.00 USD</span></div>
+        <div class="flex justify-between"><span class="text-bb-muted">Free Margin</span><span id="mobStatFreeMargin" class="font-mono text-bb-text">500.00 USD</span></div>
+        <div class="flex justify-between"><span class="text-bb-muted">Margin Level</span><span id="mobStatMarginLevel" class="font-mono text-bb-text">—</span></div>
+      </div>
+
+      <!-- Open Positions List on Mobile -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-semibold text-bb-muted uppercase tracking-wider">Open Positions</span>
+          <button onclick="closePositionsByFilter('all')" class="text-xs text-bb-sell hover:underline">Close all</button>
+        </div>
+        <div id="mobilePositionsList" class="space-y-2">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. EDIT TP/SL MODAL -->
+  <div id="editPositionModal" class="hidden fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-50">
+    <div class="bg-bb-panel border border-bb-borderLight rounded-xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 class="font-bold text-white text-sm">Modify Position <span id="editPosIdLabel" class="text-bb-muted font-mono"></span></h3>
+        <button onclick="closeModal('editPositionModal')" class="text-bb-muted hover:text-white text-lg">×</button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs text-bb-muted block mb-1">Take Profit (Price)</label>
+          <input id="editTpInput" type="number" step="0.01" placeholder="Not set" class="w-full h-9 px-3 rounded bg-bb-bg border border-bb-borderLight text-xs font-mono text-white focus:border-bb-yellow focus:outline-none" />
+        </div>
+        <div>
+          <label class="text-xs text-bb-muted block mb-1">Stop Loss (Price)</label>
+          <input id="editSlInput" type="number" step="0.01" placeholder="Not set" class="w-full h-9 px-3 rounded bg-bb-bg border border-bb-borderLight text-xs font-mono text-white focus:border-bb-yellow focus:outline-none" />
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-2 pt-2">
+        <button onclick="closeModal('editPositionModal')" class="py-2 rounded bg-bb-elevated text-bb-text text-xs font-medium">Cancel</button>
+        <button onclick="saveEditedPosition()" class="py-2 rounded bg-bb-yellow text-black text-xs font-bold">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER (Exact dark bottom toast from video) -->
+  <div class="fixed bottom-2 left-2 z-30 px-2 py-1 rounded bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[9px] font-semibold tracking-wide pointer-events-none">TWELVE DATA LIVE FEED · PAPER EXECUTION ONLY</div>
+  <div id="toastContainer" class="fixed bottom-16 md:bottom-10 left-3 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+  <!-- ==================== JAVASCRIPT ENGINE ==================== -->
+  <script>
+    // ==================== STATE & INSTRUMENTS ====================
+    const INSTRUMENTS = {
+      'XAU/USD': {
+        symbol: 'XAU/USD',
+        name: 'Gold vs US Dollar',
+        shortIcon: 'Au',
+        badgeBg: 'bg-amber-500/20 text-amber-400',
+        price: 3973.84,
+        spread: 0.24,
+        digits: 2,
+        pipettes: true,
+        contractSize: 100, // 1 lot = 100 oz -> $1 move = $100 per lot ($1 per 0.01 lot)
+        volatility: 0.42,
+        candles: []
+      },
+      'BTC': {
+        symbol: 'BTC',
+        name: 'Bitcoin vs US Dollar',
+        shortIcon: '₿',
+        badgeBg: 'bg-orange-500/20 text-orange-400',
+        price: 94285.50,
+        spread: 18.00,
+        digits: 2,
+        pipettes: false,
+        contractSize: 1,
+        volatility: 24.0,
+        candles: []
+      },
+      'USOIL': {
+        symbol: 'USOIL',
+        name: 'Crude Oil WTI',
+        shortIcon: 'Oil',
+        badgeBg: 'bg-emerald-500/20 text-emerald-400',
+        price: 68.42,
+        spread: 0.03,
+        digits: 2,
+        pipettes: true,
+        contractSize: 1000,
+        volatility: 0.06,
+        candles: []
+      },
+      'USTEC': {
+        symbol: 'USTEC',
+        name: 'US Tech 100 Index',
+        shortIcon: '100',
+        badgeBg: 'bg-blue-500/20 text-blue-400',
+        price: 20845.25,
+        spread: 1.40,
+        digits: 2,
+        pipettes: false,
+        contractSize: 20,
+        volatility: 4.5,
+        candles: []
+      }
+    };
+
+    const state = {
+      activeSymbol: 'XAU/USD',
+      openTabs: ['BTC', 'USOIL', 'USTEC', 'XAU/USD'],
+      timeframe: '1m',
+      chartType: 'candles', // 'candles' | 'area'
+      showEMA: true,
+      drawTool: 'crosshair',
+      drawings: [],
+      pendingDrawPoint: null,
+      accounts: {
+        demo: {
+          id: '#17000707114',
+          mode: 'Demo',
+          type: 'Standard',
+          balance: 500.00,
+          leverage: 2000
+        },
+        real: {
+          id: '#882910442',
+          mode: 'Real',
+          type: 'Pro',
+          balance: 1250.00,
+          leverage: 2000
+        }
+      },
+      activeAccountKey: 'demo',
+      hideBalance: false,
+      orderFormMode: 'regular', // 'regular' | 'oneclick'
+      selectedSide: null, // 'buy' | 'sell' | null
+      orderExecType: 'market', // 'market' | 'pending'
+      bottomTab: 'open', // 'open' | 'pending' | 'closed'
+      positions: [
+        {
+          id: '49201841',
+          symbol: 'XAU/USD',
+          side: 'buy',
+          volume: 0.01,
+          openPrice: 3973.70,
+          tp: null,
+          sl: null,
+          openTime: new Date(Date.now() - 420000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+          swap: 0.00,
+          status: 'open',
+          closePrice: null,
+          realizedPnl: 0
+        }
+      ],
+      editingPositionId: null,
+      mouse: { x: -1, y: -1, inside: false },
+      pipetteDigit: 4
+    };
+
+    // ==================== INITIALIZE HISTORICAL CANDLES ====================
+    function generateInitialCandles() {
+      Object.values(INSTRUMENTS).forEach(inst => {
+        const list = [];
+        let p = inst.price - inst.volatility * 6;
+        const now = Math.floor(Date.now() / 60000) * 60000;
+        for (let i = 110; i >= 0; i--) {
+          const open = p;
+          const delta = (Math.random() - 0.485) * inst.volatility * 2.2;
+          const close = Number((open + delta).toFixed(inst.digits));
+          const high = Number((Math.max(open, close) + Math.random() * inst.volatility * 1.1).toFixed(inst.digits));
+          const low = Number((Math.min(open, close) - Math.random() * inst.volatility * 1.1).toFixed(inst.digits));
+          list.push({
+            time: now - i * 60000,
+            open,
+            high,
+            low,
+            close
+          });
+          p = close;
+        }
+        inst.candles = list;
+        inst.price = list[list.length - 1].close;
+      });
+    }
+
+    // ==================== FORMATTING HELPERS ====================
+    function formatPriceHtml(price, digits = 2, pipette = 4) {
+      const fixed = price.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+      const parts = fixed.split('.');
+      if (parts.length === 2 && parts[1].length >= 2) {
+        const mainDec = parts[1].slice(0, 2);
+        return `${parts[0]}.<span class="text-[17px]">${mainDec}</span><sup class="text-[10px] ml-0.5">${pipette}</sup>`;
+      }
+      return fixed;
+    }
+
+    function formatPlainPrice(price, digits = 2) {
+      return price.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+    }
+
+    function formatMoney(val) {
+      if (state.hideBalance) return '••••••';
+      return `${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`;
+    }
+
+    // ==================== RENDER TABS & SYMBOL PICKER ====================
+    function renderSymbolTabs() {
+      const container = document.getElementById('desktopSymbolTabs');
+      container.innerHTML = state.openTabs.map(sym => {
+        const inst = INSTRUMENTS[sym];
+        const isActive = sym === state.activeSymbol;
+        return `
+          <div onclick="switchSymbol('${sym}')" class="h-full px-3 flex items-center space-x-2 cursor-pointer border-b-2 transition ${isActive ? 'border-bb-yellow bg-bb-panel text-white' : 'border-transparent text-bb-muted hover:text-white hover:bg-bb-elevated/50'}">
+            <span class="w-4 h-4 rounded-full ${inst.badgeBg} flex items-center justify-center text-[9px] font-bold">${inst.shortIcon}</span>
+            <span class="text-xs font-semibold">${sym}</span>
+            ${state.openTabs.length > 1 ? `<button onclick="event.stopPropagation(); closeSymbolTab('${sym}')" class="text-bb-dim hover:text-white text-xs ml-1">×</button>` : ''}
+          </div>
+        `;
+      }).join('');
+
+      // Mobile header symbol
+      const activeInst = INSTRUMENTS[state.activeSymbol];
+      document.getElementById('mobSymbolName').textContent = activeInst.symbol;
+      document.getElementById('mobSymbolIcon').textContent = activeInst.shortIcon;
+      document.getElementById('orderPanelSymbolName').textContent = activeInst.symbol;
+      document.getElementById('orderPanelSymbolIcon').textContent = activeInst.shortIcon;
+    }
+
+    function renderSymbolPicker() {
+      const list = document.getElementById('symbolPickerList');
+      list.innerHTML = Object.values(INSTRUMENTS).map(inst => {
+        const bid = inst.price;
+        const ask = inst.price + inst.spread;
+        return `
+          <button onclick="switchSymbol('${inst.symbol}'); closeAllPopovers();" class="w-full flex items-center justify-between p-2 rounded hover:bg-bb-elevated text-left transition ${inst.symbol === state.activeSymbol ? 'bg-bb-elevated border border-bb-yellow/40' : ''}">
+            <div class="flex items-center space-x-2.5">
+              <span class="w-6 h-6 rounded-full ${inst.badgeBg} flex items-center justify-center text-[10px] font-bold">${inst.shortIcon}</span>
+              <div>
+                <div class="text-xs font-bold text-white">${inst.symbol}</div>
+                <div class="text-[10px] text-bb-muted">${inst.name}</div>
+              </div>
+            </div>
+            <div class="text-right font-mono text-[11px] tabular-nums">
+              <div class="text-bb-sell">${formatPlainPrice(bid, inst.digits)}</div>
+              <div class="text-bb-buy">${formatPlainPrice(ask, inst.digits)}</div>
+            </div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function switchSymbol(sym) {
+      if (!INSTRUMENTS[sym]) return;
+      if (!state.openTabs.includes(sym)) state.openTabs.push(sym);
+      state.activeSymbol = sym;
+      state.selectedSide = null;
+      document.getElementById('deskConfirmBox').classList.add('hidden');
+      document.getElementById('deskTpInput').value = '';
+      document.getElementById('deskSlInput').value = '';
+      const inst = INSTRUMENTS[sym];
+      document.getElementById('deskPendingPriceInput').value = (inst.price - inst.spread * 3).toFixed(inst.digits);
+      renderSymbolTabs();
+      updateOrderCalculations();
+      drawChart();
+    }
+
+    function closeSymbolTab(sym) {
+      if (state.openTabs.length <= 1) return;
+      state.openTabs = state.openTabs.filter(s => s !== sym);
+      if (state.activeSymbol === sym) {
+        state.activeSymbol = state.openTabs[state.openTabs.length - 1];
+      }
+      renderSymbolTabs();
+      drawChart();
+    }
+
+    // ==================== ACCOUNT SWITCHER & METRICS ====================
+    function renderAccountLists() {
+      const renderCard = (key) => {
+        const acc = state.accounts[key];
+        const isSelected = state.activeAccountKey === key;
+        const badgeClass = key === 'demo'
+          ? 'bg-bb-demo/15 text-bb-demo border-bb-demo/30'
+          : 'bg-bb-sell/15 text-bb-sell border-bb-sell/30';
+        return `
+          <div onclick="switchAccount('${key}')" class="p-2.5 rounded-lg border cursor-pointer transition ${isSelected ? 'bg-bb-elevated border-bb-buy/60' : 'bg-bb-bg border-bb-border hover:border-bb-borderLight'}">
+            <div class="flex items-center justify-between mb-1">
+              <div class="flex items-center space-x-1.5">
+                <span class="px-1.5 py-0.2 text-[10px] font-semibold rounded border ${badgeClass}">${acc.mode}</span>
+                <span class="text-xs font-mono text-bb-muted">${acc.id}</span>
+                <span class="text-[11px] text-bb-dim">${acc.type}</span>
+              </div>
+              ${isSelected ? '<span class="w-2 h-2 rounded-full bg-bb-buy"></span>' : ''}
+            </div>
+            <div class="font-bold text-sm text-white font-mono tabular-nums">${formatMoney(acc.balance)}</div>
+          </div>
+        `;
+      };
+
+      document.getElementById('desktopAccountList').innerHTML = renderCard('demo') + renderCard('real');
+      document.getElementById('mobileAccountList').innerHTML = renderCard('demo') + renderCard('real');
+    }
+
+    function switchAccount(key) {
+      if (!state.accounts[key]) return;
+      state.activeAccountKey = key;
+      const acc = state.accounts[key];
+
+      // Keep account badges and deposit actions consistent on desktop and mobile.
+      const topBadge = document.getElementById('topAccountBadge');
+      if (topBadge) {
+        topBadge.textContent = acc.mode;
+        topBadge.className = key === 'demo'
+          ? 'px-1.5 py-0.5 text-[11px] font-semibold rounded bg-bb-demo/15 text-bb-demo border border-bb-demo/30'
+          : 'px-1.5 py-0.5 text-[11px] font-semibold rounded bg-bb-sell/15 text-bb-sell border border-bb-sell/30';
+      }
+      const topNumber = document.getElementById('topAccountNumber');
+      if (topNumber) topNumber.textContent = acc.id;
+      const mobBadge = document.getElementById('mobAccountBadge');
+      if (mobBadge) {
+        mobBadge.textContent = acc.mode;
+        mobBadge.className = key === 'demo'
+          ? 'px-1.5 py-0.5 text-[10px] font-semibold rounded bg-bb-demo/20 text-bb-demo'
+          : 'px-1.5 py-0.5 text-[10px] font-semibold rounded bg-bb-sell/20 text-bb-sell';
+      }
+      const mobType = document.getElementById('mobAccountType');
+      if (mobType) mobType.textContent = acc.type;
+      const deskDepositBtn = document.getElementById('deskDepositBtn');
+      const mobDepositBtn = document.getElementById('mobDepositBtn');
+      if (deskDepositBtn) deskDepositBtn.className = 'flex items-center space-x-1.5 px-3 py-1.5 rounded bg-bb-buy hover:bg-bb-buyHover text-white font-semibold transition shadow';
+      if (mobDepositBtn) mobDepositBtn.className = 'px-3 py-1.5 rounded bg-bb-buy hover:bg-bb-buyHover text-white text-xs font-semibold transition shadow';
+
+      renderAccountLists();
+      updatePortfolioMetrics();
+      showToast(`Switched to ${acc.mode} account (${acc.id})`, 'info');
+    }
+
+    function showSwitchAccountSubView(showSwitch) {
+      document.getElementById('accountMetricsView').classList.toggle('hidden', showSwitch);
+      document.getElementById('accountSwitchView').classList.toggle('hidden', !showSwitch);
+    }
+
+    function toggleHideBalance() {
+      state.hideBalance = !state.hideBalance;
+      const dot = document.getElementById('hideBalanceDot');
+      const btn = document.getElementById('hideBalanceToggle');
+      if (state.hideBalance) {
+        dot.style.left = '18px';
+        dot.classList.replace('bg-bb-muted', 'bg-bb-yellow');
+        btn.classList.add('border-bb-yellow');
+      } else {
+        dot.style.left = '2px';
+        dot.classList.replace('bg-bb-yellow', 'bg-bb-muted');
+        btn.classList.remove('border-bb-yellow');
+      }
+      updatePortfolioMetrics();
+      renderAccountLists();
+    }
+
+    function handleTopUp(mode) {
+      if (mode === 'demo') {
+        const field = document.getElementById('demoTopUpAmount');
+        const amt = Number(field.value);
+        if (!Number.isFinite(amt) || amt < 10 || amt > 1000000) {
+          showToast('Enter a valid demo top-up amount (10–1,000,000 USD).', 'error');
+          return;
+        }
+        state.accounts.demo.balance += amt;
+        switchAccount('demo');
+        closeModal('depositModal');
+        showToast(`Demo account topped up with +${amt.toFixed(2)} USD (virtual funds)`, 'success');
+      } else {
+        // Never fabricate a real-money deposit: this needs a verified payment gateway callback.
+        showToast('Real deposits are not connected yet. No funds were charged or credited.', 'error');
+      }
+      updatePortfolioMetrics();
+    }
+
+    // ==================== ORDER PANEL & CALCULATIONS ====================
+    function toggleOneClickMode() {
+      state.orderFormMode = state.orderFormMode === 'regular' ? 'oneclick' : 'regular';
+      const label = state.orderFormMode === 'regular' ? 'Regular form' : 'One-click trading';
+      document.getElementById('orderFormModeLabel').textContent = label;
+      if (state.orderFormMode === 'oneclick') {
+        document.getElementById('deskConfirmBox').classList.add('hidden');
+        showToast('One-click trading enabled: Orders execute instantly', 'info');
+      } else {
+        showToast('Regular form enabled: Confirmation step active', 'info');
+      }
+    }
+
+    function setOrderExecutionType(type) {
+      state.orderExecType = type;
+      const inst = INSTRUMENTS[state.activeSymbol];
+
+      // Desktop tabs
+      document.getElementById('deskTabMarket').className = type === 'market'
+        ? 'py-1.5 rounded text-xs font-semibold bg-bb-elevated text-white transition'
+        : 'py-1.5 rounded text-xs font-medium text-bb-muted hover:text-white transition';
+      document.getElementById('deskTabPending').className = type === 'pending'
+        ? 'py-1.5 rounded text-xs font-semibold bg-bb-elevated text-white transition'
+        : 'py-1.5 rounded text-xs font-medium text-bb-muted hover:text-white transition';
+
+      document.getElementById('deskPendingPriceGroup').classList.toggle('hidden', type !== 'pending');
+
+      // Mobile tabs
+      document.getElementById('mobTabMarket').className = type === 'market'
+        ? 'py-1.5 rounded text-xs font-semibold bg-bb-elevated text-white'
+        : 'py-1.5 rounded text-xs font-medium text-bb-muted';
+      document.getElementById('mobTabPending').className = type === 'pending'
+        ? 'py-1.5 rounded text-xs font-semibold bg-bb-elevated text-white'
+        : 'py-1.5 rounded text-xs font-medium text-bb-muted';
+      document.getElementById('mobPendingPriceGroup').classList.toggle('hidden', type !== 'pending');
+
+      if (type === 'pending') {
+        const defaultPending = (inst.price - inst.spread * 4).toFixed(inst.digits);
+        document.getElementById('deskPendingPriceInput').value = defaultPending;
+        document.getElementById('mobPendingPriceInput').value = defaultPending;
+      }
+      updateOrderCalculations();
+    }
+
+    function selectOrderSide(side) {
+      state.selectedSide = side;
+      if (state.orderFormMode === 'oneclick') {
+        executeOrder();
+        return;
+      }
+
+      const confirmBox = document.getElementById('deskConfirmBox');
+      const submitBtn = document.getElementById('deskConfirmSubmitBtn');
+      const vol = parseFloat(document.getElementById('deskVolumeInput').value) || 0.01;
+      const typeLabel = state.orderExecType === 'pending' ? ' Limit' : '';
+
+      confirmBox.classList.remove('hidden');
+      if (side === 'buy') {
+        submitBtn.className = 'w-full py-2.5 rounded font-semibold text-white text-xs shadow-lg bg-bb-buy hover:bg-bb-buyHover transition';
+        submitBtn.textContent = `Confirm Buy${typeLabel} ${vol.toFixed(2)} lots`;
+      } else {
+        submitBtn.className = 'w-full py-2.5 rounded font-semibold text-white text-xs shadow-lg bg-bb-sell hover:bg-bb-sellHover transition';
+        submitBtn.textContent = `Confirm Sell${typeLabel} ${vol.toFixed(2)} lots`;
+      }
+    }
+
+    function cancelOrderSelection() {
+      state.selectedSide = null;
+      document.getElementById('deskConfirmBox').classList.add('hidden');
+    }
+
+    function stepVolume(delta) {
+      const input = document.getElementById('deskVolumeInput');
+      let val = (parseFloat(input.value) || 0.01) + delta;
+      val = Math.max(0.01, Math.min(100, Number(val.toFixed(2))));
+      input.value = val.toFixed(2);
+      updateOrderCalculations();
+    }
+
+    function stepInput(id, delta) {
+      const el = document.getElementById(id);
+      const inst = INSTRUMENTS[state.activeSymbol];
+      const cur = parseFloat(el.value) || inst.price;
+      el.value = (cur + delta).toFixed(inst.digits);
+      updateOrderCalculations();
+    }
+
+    function stepTpSl(which, dir) {
+      const inst = INSTRUMENTS[state.activeSymbol];
+      const input = document.getElementById(which === 'tp' ? 'deskTpInput' : 'deskSlInput');
+      const step = inst.volatility * 2.5 * dir;
+      if (!input.value) {
+        const base = which === 'tp' ? inst.price + inst.volatility * 5 : inst.price - inst.volatility * 5;
+        input.value = base.toFixed(inst.digits);
+      } else {
+        input.value = (parseFloat(input.value) + step).toFixed(inst.digits);
+      }
+      updateOrderCalculations();
+    }
+
+    function clearInput(id) {
+      document.getElementById(id).value = '';
+      updateOrderCalculations();
+    }
+
+    function updateOrderCalculations() {
+      const inst = INSTRUMENTS[state.activeSymbol];
+      const acc = state.accounts[state.activeAccountKey];
+      const vol = Math.max(0.01, parseFloat(document.getElementById('deskVolumeInput').value) || 0.01);
+
+      const margin = (inst.price * inst.contractSize * vol) / acc.leverage;
+      const fees = inst.spread * inst.contractSize * vol;
+
+      document.getElementById('volumeUnitsPreview').textContent = `${(vol * inst.contractSize).toFixed(2)} units`;
+      document.getElementById('orderFeesDisplay').textContent = `≈ ${fees.toFixed(2)} USD`;
+      document.getElementById('orderLeverageDisplay').textContent = `1:${acc.leverage}`;
+      document.getElementById('orderMarginDisplay').textContent = `${margin.toFixed(2)} USD`;
+
+      // TP / SL P&L previews
+      const tpVal = parseFloat(document.getElementById('deskTpInput').value);
+      const slVal = parseFloat(document.getElementById('deskSlInput').value);
+      const tpPrev = document.getElementById('tpPnlPreview');
+      const slPrev = document.getElementById('slPnlPreview');
+
+      if (!isNaN(tpVal) && tpVal > 0) {
+        const diff = Math.abs(tpVal - inst.price) * inst.contractSize * vol;
+        tpPrev.textContent = `+$${diff.toFixed(2)}`;
+      } else {
+        tpPrev.textContent = '';
+      }
+
+      if (!isNaN(slVal) && slVal > 0) {
+        const diff = Math.abs(inst.price - slVal) * inst.contractSize * vol;
+        slPrev.textContent = `-$${diff.toFixed(2)}`;
+      } else {
+        slPrev.textContent = '';
+      }
+
+      // Pending pips distance
+      if (state.orderExecType === 'pending') {
+        const pPrice = parseFloat(document.getElementById('deskPendingPriceInput').value) || inst.price;
+        const pips = ((pPrice - inst.price) * (inst.digits === 2 ? 10 : 100)).toFixed(1);
+        document.getElementById('pendingPipsDistance').textContent = `${pips > 0 ? '+' : ''}${pips} pips`;
+      }
+
+      if (state.selectedSide) {
+        selectOrderSide(state.selectedSide);
+      }
+    }
+
+    function executeOrder() {
+      if (!state.selectedSide) return;
+      if (state.activeAccountKey === 'real') {
+        showToast('Live broker execution is not connected. Switch to Demo to test orders; no real trade was sent.', 'error');
+        return;
+      }
+      const inst = INSTRUMENTS[state.activeSymbol];
+      const vol = Math.max(0.01, parseFloat(document.getElementById('deskVolumeInput').value) || 0.01);
+      const tp = parseFloat(document.getElementById('deskTpInput').value) || null;
+      const sl = parseFloat(document.getElementById('deskSlInput').value) || null;
+
+      const isPending = state.orderExecType === 'pending';
+      const execPrice = isPending
+        ? (parseFloat(document.getElementById('deskPendingPriceInput').value) || inst.price)
+        : (state.selectedSide === 'buy' ? inst.price + inst.spread : inst.price);
+
+      const newPos = {
+        id: Math.floor(10000000 + Math.random() * 90000000).toString(),
+        symbol: inst.symbol,
+        side: state.selectedSide,
+        volume: vol,
+        openPrice: Number(execPrice.toFixed(inst.digits)),
+        tp,
+        sl,
+        openTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        swap: 0.00,
+        status: isPending ? 'pending' : 'open',
+        closePrice: null,
+        realizedPnl: 0
+      };
+
+      state.positions.unshift(newPos);
+      cancelOrderSelection();
+      updatePortfolioMetrics();
+      renderPositionsTable();
+      drawChart();
+
+      const actionWord = isPending ? 'Pending order placed' : 'Position opened';
+      showToast(`${actionWord}: ${newPos.side === 'buy' ? 'Buy' : 'Sell'} ${vol.toFixed(2)} lot ${inst.symbol} at ${formatPlainPrice(newPos.openPrice, inst.digits)}`, 'success');
+    }
+
+    // ==================== MOBILE ORDER SHEET ====================
+    let mobileSheetSide = 'buy';
+
+    function openMobileOrderSheet(side) {
+      mobileSheetSide = side;
+      const inst = INSTRUMENTS[state.activeSymbol];
+      const acc = state.accounts[state.activeAccountKey];
+
+      document.getElementById('mobSheetSymbol').textContent = inst.symbol;
+      document.getElementById('mobSheetEquity').textContent = formatMoney(acc.balance);
+      const mobSheetBadge = document.getElementById('mobSheetBadge');
+      mobSheetBadge.textContent = acc.mode;
+      mobSheetBadge.className = state.activeAccountKey === 'demo'
+        ? 'px-1.5 py-0.5 text-[10px] font-semibold rounded bg-bb-demo/20 text-bb-demo'
+        : 'px-1.5 py-0.5 text-[10px] font-semibold rounded bg-bb-sell/20 text-bb-sell';
+
+      document.getElementById('mobVolumeInput').value = document.getElementById('deskVolumeInput').value;
+      document.getElementById('mobTpInput').value = document.getElementById('deskTpInput').value;
+      document.getElementById('mobSlInput').value = document.getElementById('deskSlInput').value;
+
+      syncMobileOrderInputs();
+      document.getElementById('mobileOrderSheet').classList.remove('hidden');
+    }
+
+    function stepMobileVolume(delta) {
+      const inp = document.getElementById('mobVolumeInput');
+      const v = Math.max(0.01, Number(((parseFloat(inp.value) || 0.01) + delta).toFixed(2)));
+      inp.value = v.toFixed(2);
+      document.getElementById('deskVolumeInput').value = inp.value;
+      syncMobileOrderInputs();
+    }
+
+    function stepMobileTpSl(which, dir) {
+      stepTpSl(which, dir);
+      document.getElementById('mobTpInput').value = document.getElementById('deskTpInput').value;
+      document.getElementById('mobSlInput').value = document.getElementById('deskSlInput').value;
+      syncMobileOrderInputs();
+    }
+
+    function syncMobileOrderInputs() {
+      const inst = INSTRUMENTS[state.activeSymbol];
+      const acc = state.accounts[state.activeAccountKey];
+      const vol = Math.max(0.01, parseFloat(document.getElementById('mobVolumeInput').value) || 0.01);
+      document.getElementById('deskVolumeInput').value = vol.toFixed(2);
+      document.getElementById('deskTpInput').value = document.getElementById('mobTpInput').value;
+      document.getElementById('deskSlInput').value = document.getElementById('mobSlInput').value;
+
+      const margin = (inst.price * inst.contractSize * vol) / acc.leverage;
+      const fees = inst.spread * inst.contractSize * vol;
+      document.getElementById('mobOrderInfoLine').textContent = `Fees: ≈ ${fees.toFixed(2)} USD | Margin: ${margin.toFixed(2)} USD | Leverage: 1:${acc.leverage}`;
+
+      const btn = document.getElementById('mobConfirmOrderBtn');
+      const liveP = mobileSheetSide === 'buy' ? inst.price + inst.spread : inst.price;
+      btn.className = mobileSheetSide === 'buy'
+        ? 'py-3 rounded-lg bg-bb-buy text-white font-bold text-xs shadow-lg'
+        : 'py-3 rounded-lg bg-bb-sell text-white font-bold text-xs shadow-lg';
+      btn.innerHTML = `Confirm ${mobileSheetSide === 'buy' ? 'Buy' : 'Sell'} ${vol.toFixed(2)} lots<br><span id="mobConfirmLivePrice" class="font-mono text-[11px] opacity-90">${formatPlainPrice(liveP, inst.digits)}</span>`;
+    }
+
+    function executeMobileOrder() {
+      state.selectedSide = mobileSheetSide;
+      executeOrder();
+      closeModal('mobileOrderSheet');
+    }
+
+    // ==================== POSITIONS & P/L ENGINE ====================
+    function getPositionLivePrice(pos) {
+      const inst = INSTRUMENTS[pos.symbol];
+      return pos.side === 'buy' ? inst.price : (inst.price + inst.spread);
+    }
+
+    function getPositionPnl(pos) {
+      if (pos.status === 'closed') return pos.realizedPnl;
+      if (pos.status === 'pending') return 0;
+      const inst = INSTRUMENTS[pos.symbol];
+      const cur = getPositionLivePrice(pos);
+      const diff = pos.side === 'buy' ? (cur - pos.openPrice) : (pos.openPrice - cur);
+      return diff * inst.contractSize * pos.volume;
+    }
+
+    function setBottomTab(tab) {
+      state.bottomTab = tab;
+      ['open', 'pending', 'closed'].forEach(t => {
+        const btn = document.getElementById(`tabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        btn.className = t === tab
+          ? 'h-full flex items-center space-x-1.5 border-b-2 border-bb-yellow text-white font-medium text-xs'
+          : 'h-full flex items-center space-x-1.5 border-b-2 border-transparent text-bb-muted hover:text-white font-medium text-xs';
+      });
+      renderPositionsTable();
+    }
+
+    function renderPositionsTable() {
+      const tbody = document.getElementById('positionsTableBody');
+      const filtered = state.positions.filter(p => p.status === state.bottomTab);
+
+      document.getElementById('openPositionsCount').textContent = state.positions.filter(p => p.status === 'open').length;
+      document.getElementById('pendingPositionsCount').textContent = state.positions.filter(p => p.status === 'pending').length;
+      document.getElementById('closedPositionsCount').textContent = state.positions.filter(p => p.status === 'closed').length;
+
+      const openCount = state.positions.filter(p => p.status === 'open').length;
+      const mobBadge = document.getElementById('mobOpenCountBadge');
+      mobBadge.textContent = openCount;
+      mobBadge.classList.toggle('hidden', openCount === 0);
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '';
+        document.getElementById('emptyPositionsMsg').classList.remove('hidden');
+      } else {
+        document.getElementById('emptyPositionsMsg').classList.add('hidden');
+        tbody.innerHTML = filtered.map(pos => {
+          const inst = INSTRUMENTS[pos.symbol];
+          const curPrice = pos.status === 'closed' ? pos.closePrice : getPositionLivePrice(pos);
+          const pnl = getPositionPnl(pos);
+          const pnlClass = pnl > 0 ? 'text-bb-demo' : (pnl < 0 ? 'text-bb-sell' : 'text-bb-text');
+          const typeColor = pos.side === 'buy' ? 'text-bb-buy' : 'text-bb-sell';
+          const typeDot = pos.side === 'buy' ? 'bg-bb-buy' : 'bg-bb-sell';
+
+          return `
+            <tr class="hover:bg-bb-elevated/60 transition">
+              <td class="py-2 px-3 font-sans font-semibold text-white">
+                <div class="flex items-center space-x-2">
+                  <span class="w-4 h-4 rounded-full ${inst.badgeBg} flex items-center justify-center text-[9px] font-bold">${inst.shortIcon}</span>
+                  <span>${pos.symbol}</span>
+                </div>
+              </td>
+              <td class="py-2 px-2 font-sans font-medium ${typeColor}">
+                <span class="inline-block w-1.5 h-1.5 rounded-full ${typeDot} mr-1"></span>${pos.side === 'buy' ? 'Buy' : 'Sell'}${pos.status === 'pending' ? ' Limit' : ''}
+              </td>
+              <td class="py-2 px-2 text-bb-text">${pos.volume.toFixed(2)}</td>
+              <td class="py-2 px-2 text-bb-text">${formatPlainPrice(pos.openPrice, inst.digits)}</td>
+              <td class="py-2 px-2 text-white">${formatPlainPrice(curPrice, inst.digits)}</td>
+              <td class="py-2 px-2 text-bb-muted">${pos.tp ? formatPlainPrice(pos.tp, inst.digits) : 'Not set'}</td>
+              <td class="py-2 px-2 text-bb-muted">${pos.sl ? formatPlainPrice(pos.sl, inst.digits) : 'Not set'}</td>
+              <td class="py-2 px-2 text-bb-dim">#${pos.id}</td>
+              <td class="py-2 px-2 text-bb-muted">${pos.openTime}</td>
+              <td class="py-2 px-2 text-bb-muted">${pos.swap.toFixed(2)}</td>
+              <td class="py-2 px-2 text-right font-semibold ${pnlClass}">${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)}</td>
+              <td class="py-2 px-3 text-right">
+                ${pos.status !== 'closed' ? `
+                  <div class="inline-flex items-center space-x-1.5">
+                    <button onclick="openEditPositionModal('${pos.id}')" title="Edit TP / SL" class="p-1 rounded hover:bg-bb-hover text-bb-muted hover:text-white">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                    </button>
+                    <button onclick="closePositionById('${pos.id}')" title="Close Position" class="p-1 rounded hover:bg-bb-sell/20 text-bb-muted hover:text-bb-sell font-bold text-sm leading-none">×</button>
+                  </div>
+                ` : '<span class="text-[10px] text-bb-dim font-sans">Closed</span>'}
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // Also update Mobile Portfolio list
+      renderMobilePositionsList();
+    }
+
+    function renderMobilePositionsList() {
+      const container = document.getElementById('mobilePositionsList');
+      const openPos = state.positions.filter(p => p.status === 'open');
+      if (openPos.length === 0) {
+        container.innerHTML = '<div class="text-xs text-bb-muted py-4 text-center bg-bb-panel rounded-lg border border-bb-border">No open positions</div>';
+        return;
+      }
+      container.innerHTML = openPos.map(pos => {
+        const inst = INSTRUMENTS[pos.symbol];
+        const pnl = getPositionPnl(pos);
+        const pnlClass = pnl >= 0 ? 'text-bb-demo' : 'text-bb-sell';
+        return `
+          <div class="bg-bb-panel border border-bb-border rounded-lg p-3 flex items-center justify-between">
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="font-bold text-white text-xs">${pos.symbol}</span>
+                <span class="text-[11px] font-semibold ${pos.side === 'buy' ? 'text-bb-buy' : 'text-bb-sell'}">${pos.side.toUpperCase()} ${pos.volume.toFixed(2)}</span>
+              </div>
+              <div class="text-[11px] font-mono text-bb-muted mt-0.5">Open: ${formatPlainPrice(pos.openPrice, inst.digits)}</div>
+            </div>
+            <div class="flex items-center space-x-3">
+              <span class="font-mono font-bold text-xs ${pnlClass}">${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)} USD</span>
+              <button onclick="closePositionById('${pos.id}')" class="w-7 h-7 rounded bg-bb-elevated text-bb-muted hover:text-bb-sell flex items-center justify-center font-bold">×</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function closePositionById(id) {
+      const pos = state.positions.find(p => p.id === id);
+      if (!pos || pos.status === 'closed') return;
+
+      const inst = INSTRUMENTS[pos.symbol];
+      if (pos.status === 'open') {
+        const pnl = getPositionPnl(pos);
+        pos.closePrice = getPositionLivePrice(pos);
+        pos.realizedPnl = pnl;
+        state.accounts[state.activeAccountKey].balance += pnl;
+        showToast(`Closed #${pos.id} (${pos.symbol}): ${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)} USD`, pnl >= 0 ? 'success' : 'info');
+      } else {
+        pos.closePrice = pos.openPrice;
+        pos.realizedPnl = 0;
+        showToast(`Cancelled pending order #${pos.id}`, 'info');
+      }
+      pos.status = 'closed';
+      updatePortfolioMetrics();
+      renderPositionsTable();
+      renderAccountLists();
+      drawChart();
+    }
+
+    function closePositionsByFilter(filter) {
+      closeAllPopovers();
+      const targets = state.positions.filter(p => {
+        if (p.status !== 'open') return false;
+        const pnl = getPositionPnl(p);
+        if (filter === 'profit') return pnl > 0;
+        if (filter === 'loss') return pnl < 0;
+        return true;
+      });
+      if (targets.length === 0) {
+        showToast('No matching open positions to close', 'info');
+        return;
+      }
+      targets.forEach(p => closePositionById(p.id));
+    }
+
+    function openEditPositionModal(id) {
+      const pos = state.positions.find(p => p.id === id);
+      if (!pos) return;
+      state.editingPositionId = id;
+      document.getElementById('editPosIdLabel').textContent = `#${id}`;
+      document.getElementById('editTpInput').value = pos.tp || '';
+      document.getElementById('editSlInput').value = pos.sl || '';
+      document.getElementById('editPositionModal').classList.remove('hidden');
+    }
+
+    function saveEditedPosition() {
+      const pos = state.positions.find(p => p.id === state.editingPositionId);
+      if (pos) {
+        pos.tp = parseFloat(document.getElementById('editTpInput').value) || null;
+        pos.sl = parseFloat(document.getElementById('editSlInput').value) || null;
+        renderPositionsTable();
+        drawChart();
+        showToast(`Updated TP/SL for position #${pos.id}`, 'success');
+      }
+      closeModal('editPositionModal');
+    }
+
+    function updatePortfolioMetrics() {
+      const acc = state.accounts[state.activeAccountKey];
+      const openPositions = state.positions.filter(p => p.status === 'open');
+
+      let floatingPnl = 0;
+      let totalMargin = 0;
+
+      openPositions.forEach(pos => {
+        const inst = INSTRUMENTS[pos.symbol];
+        floatingPnl += getPositionPnl(pos);
+        totalMargin += (pos.openPrice * inst.contractSize * pos.volume) / acc.leverage;
+      });
+
+      const equity = acc.balance + floatingPnl;
+      const freeMargin = equity - totalMargin;
+      const marginLevel = totalMargin > 0 ? ((equity / totalMargin) * 100) : null;
+
+      // Top Header & Mobile Header
+      document.getElementById('topEquityDisplay').textContent = formatMoney(equity);
+      document.getElementById('mobEquityDisplay').textContent = formatMoney(equity);
+
+      // Account Popover
+      document.getElementById('popBalance').textContent = formatMoney(acc.balance);
+      document.getElementById('popEquity').textContent = formatMoney(equity);
+      document.getElementById('popMargin').textContent = formatMoney(totalMargin);
+      document.getElementById('popFreeMargin').textContent = formatMoney(freeMargin);
+      document.getElementById('popMarginLevel').textContent = marginLevel ? `${marginLevel.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %` : '—';
+      document.getElementById('popLeverage').textContent = `1:${acc.leverage}`;
+
+      // Mobile Portfolio Sheet Stats
+      document.getElementById('mobStatBalance').textContent = formatMoney(acc.balance);
+      document.getElementById('mobStatEquity').textContent = formatMoney(equity);
+      document.getElementById('mobStatMargin').textContent = formatMoney(totalMargin);
+      document.getElementById('mobStatFreeMargin').textContent = formatMoney(freeMargin);
+      document.getElementById('mobStatMarginLevel').textContent = marginLevel ? `${marginLevel.toFixed(2)} %` : '—';
+
+      // Bottom Footer Status Bar
+      document.getElementById('footerEquity').textContent = formatMoney(equity);
+      document.getElementById('footerFreeMargin').textContent = formatMoney(freeMargin);
+      document.getElementById('footerBalance').textContent = formatMoney(acc.balance);
+      document.getElementById('footerMargin').textContent = formatMoney(totalMargin);
+      document.getElementById('footerMarginLevel').textContent = marginLevel ? `${marginLevel.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %` : '—';
+
+      // Bottom Total P/L
+      const pnlEl = document.getElementById('bottomTotalPnl');
+      pnlEl.textContent = `${floatingPnl >= 0 ? '+' : ''}${floatingPnl.toFixed(2)}`;
+      pnlEl.className = `font-semibold font-mono tabular-nums ${floatingPnl > 0 ? 'text-bb-demo' : (floatingPnl < 0 ? 'text-bb-sell' : 'text-white')}`;
+    }
+
+    // ==================== REAL-TIME PRICE TICKING & TP/SL CHECK ====================
+    function tickMarketPrices() {
+      state.pipetteDigit = Math.floor(Math.random() * 10);
+
+      Object.values(INSTRUMENTS).forEach(inst => {
+        const move = (Math.random() - 0.495) * inst.volatility * 0.65;
+        inst.price = Number((inst.price + move).toFixed(inst.digits));
+
+        const lastCandle = inst.candles[inst.candles.length - 1];
+        if (lastCandle) {
+          lastCandle.close = inst.price;
+          if (inst.price > lastCandle.high) lastCandle.high = inst.price;
+          if (inst.price < lastCandle.low) lastCandle.low = inst.price;
+        }
+      });
+
+      // Check Pending Triggers & TP / SL Auto Execution
+      state.positions.forEach(pos => {
+        const inst = INSTRUMENTS[pos.symbol];
+        if (pos.status === 'pending') {
+          if (Math.abs(inst.price - pos.openPrice) <= inst.spread * 1.5) {
+            pos.status = 'open';
+            showToast(`Pending order #${pos.id} triggered at ${formatPlainPrice(pos.openPrice, inst.digits)}`, 'success');
+          }
+        } else if (pos.status === 'open') {
+          const cur = getPositionLivePrice(pos);
+          if (pos.tp) {
+            const hitTp = pos.side === 'buy' ? cur >= pos.tp : cur <= pos.tp;
+            if (hitTp) {
+              closePositionById(pos.id);
+              showToast(`Take Profit hit on #${pos.id}!`, 'success');
+            }
+          }
+          if (pos.sl && pos.status === 'open') {
+            const hitSl = pos.side === 'buy' ? cur <= pos.sl : cur >= pos.sl;
+            if (hitSl) {
+              closePositionById(pos.id);
+              showToast(`Stop Loss triggered on #${pos.id}`, 'info');
+            }
+          }
+        }
+      });
+
+      // Update Active Quote Cards (Desktop + Mobile)
+      const activeInst = INSTRUMENTS[state.activeSymbol];
+      const bid = activeInst.price;
+      const ask = activeInst.price + activeInst.spread;
+
+      document.getElementById('deskSellPrice').innerHTML = formatPriceHtml(bid, activeInst.digits, state.pipetteDigit);
+      document.getElementById('deskBuyPrice').innerHTML = formatPriceHtml(ask, activeInst.digits, (state.pipetteDigit + 3) % 10);
+      document.getElementById('deskSpreadPill').textContent = `${activeInst.spread.toFixed(activeInst.digits)} USD`;
+
+      document.getElementById('mobSellPrice').textContent = `${formatPlainPrice(bid, activeInst.digits)}${state.pipetteDigit}`;
+      document.getElementById('mobBuyPrice').textContent = `${formatPlainPrice(ask, activeInst.digits)}${(state.pipetteDigit + 3) % 10}`;
+      document.getElementById('mobSpreadPill').textContent = `${activeInst.spread.toFixed(activeInst.digits)} USD`;
+
+      const mobConfirmPrice = document.getElementById('mobConfirmLivePrice');
+      if (mobConfirmPrice) {
+        const p = mobileSheetSide === 'buy' ? ask : bid;
+        mobConfirmPrice.textContent = formatPlainPrice(p, activeInst.digits);
+      }
+
+      // Update OHLC Top-Left Legend
+      const lc = activeInst.candles[activeInst.candles.length - 1];
+      if (lc) {
+        const isUp = lc.close >= lc.open;
+        document.getElementById('chartTitleText').textContent = `${activeInst.name} · ${state.timeframe} · BigBulls`;
+        document.getElementById('chartOhlcText').innerHTML = `
+          <span>O <b class="${isUp ? 'text-bb-buy' : 'text-bb-sell'} font-normal">${formatPlainPrice(lc.open, activeInst.digits)}</b></span>
+          <span>H <b class="${isUp ? 'text-bb-buy' : 'text-bb-sell'} font-normal">${formatPlainPrice(lc.high, activeInst.digits)}</b></span>
+          <span>L <b class="${isUp ? 'text-bb-buy' : 'text-bb-sell'} font-normal">${formatPlainPrice(lc.low, activeInst.digits)}</b></span>
+          <span>C <b class="${isUp ? 'text-bb-buy' : 'text-bb-sell'} font-normal">${formatPlainPrice(lc.close, activeInst.digits)}</b></span>
+        `;
+      }
+
+      updatePortfolioMetrics();
+      renderPositionsTable();
+      drawChart();
+    }
+
+    // Candle updates now come from the Twelve Data backend, never synthetic timers.
+
+    // ==================== HTML5 CANVAS CANDLESTICK CHART ====================
+    const canvas = document.getElementById('tradingCanvas');
+    const ctx = canvas.getContext('2d');
+    let chartBounds = { minP: 0, maxP: 1, plotW: 0, plotH: 0 };
+
+    function resizeCanvas() {
+      const wrapper = document.getElementById('chartWrapper');
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = wrapper.clientWidth * dpr;
+      canvas.height = wrapper.clientHeight * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawChart();
+    }
+
+    function priceToY(price, minP, maxP, plotH) {
+      return plotH - ((price - minP) / (maxP - minP || 1)) * plotH;
+    }
+
+    function yToPrice(y, minP, maxP, plotH) {
+      return minP + ((plotH - y) / plotH) * (maxP - minP);
+    }
+
+    function drawChart() {
+      const wrapper = document.getElementById('chartWrapper');
+      const W = wrapper.clientWidth;
+      const H = wrapper.clientHeight;
+      if (W === 0 || H === 0) return;
+
+      const rightAxisW = 68;
+      const bottomAxisH = 24;
+      const plotW = W - rightAxisW;
+      const plotH = H - bottomAxisH;
+
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = '#0F171E';
+      ctx.fillRect(0, 0, W, H);
+
+      const inst = INSTRUMENTS[state.activeSymbol];
+      const visibleCount = Math.min(inst.candles.length, Math.max(35, Math.floor(plotW / 9)));
+      const candles = inst.candles.slice(-visibleCount);
+      if (!candles.length) {
+        ctx.fillStyle = '#8492A0';
+        ctx.font = '12px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Connecting to Twelve Data market feed…', plotW / 2, plotH / 2);
+        return;
+      }
+
+      // Compute High/Low range including active position lines
+      let minP = Infinity;
+      let maxP = -Infinity;
+      candles.forEach(c => {
+        if (c.low < minP) minP = c.low;
+        if (c.high > maxP) maxP = c.high;
+      });
+
+      const activePositions = state.positions.filter(p => p.symbol === inst.symbol && p.status !== 'closed');
+      activePositions.forEach(pos => {
+        if (pos.openPrice < minP) minP = pos.openPrice;
+        if (pos.openPrice > maxP) maxP = pos.openPrice;
+        if (pos.tp) { minP = Math.min(minP, pos.tp); maxP = Math.max(maxP, pos.tp); }
+        if (pos.sl) { minP = Math.min(minP, pos.sl); maxP = Math.max(maxP, pos.sl); }
+      });
+
+      const pad = (maxP - minP) * 0.14 || inst.volatility * 3;
+      minP -= pad;
+      maxP += pad;
+      chartBounds = { minP, maxP, plotW, plotH };
+
+      // Grid lines (Horizontal & Vertical)
+      ctx.strokeStyle = '#18222C';
+      ctx.lineWidth = 1;
+      const gridRows = 7;
+      ctx.font = '11px "JetBrains Mono", monospace';
+      ctx.textAlign = 'left';
+
+      for (let i = 0; i <= gridRows; i++) {
+        const y = (plotH / gridRows) * i;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(plotW, y);
+        ctx.stroke();
+
+        const pLabel = yToPrice(y, minP, maxP, plotH);
+        ctx.fillStyle = '#6B7A88';
+        ctx.fillText(formatPlainPrice(pLabel, inst.digits), plotW + 6, y + 4);
+      }
+
+      const stepX = plotW / visibleCount;
+      for (let i = 0; i < visibleCount; i += 10) {
+        const x = i * stepX + stepX / 2;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, plotH);
+        ctx.stroke();
+
+        const t = new Date(candles[i].time);
+        const timeStr = t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        ctx.fillStyle = '#6B7A88';
+        ctx.fillText(timeStr, Math.max(4, x - 14), plotH + 16);
+      }
+
+      // Draw Candles or Area
+      if (state.chartType === 'candles') {
+        const bodyW = Math.max(3, stepX * 0.64);
+        candles.forEach((c, idx) => {
+          const x = idx * stepX + stepX / 2;
+          const isBull = c.close >= c.open;
+          const color = isBull ? '#2196F3' : '#EB4D3D';
+
+          const yOpen = priceToY(c.open, minP, maxP, plotH);
+          const yClose = priceToY(c.close, minP, maxP, plotH);
+          const yHigh = priceToY(c.high, minP, maxP, plotH);
+          const yLow = priceToY(c.low, minP, maxP, plotH);
+
+          // Wick
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.moveTo(x, yHigh);
+          ctx.lineTo(x, yLow);
+          ctx.stroke();
+
+          // Body
+          ctx.fillStyle = color;
+          const top = Math.min(yOpen, yClose);
+          const h = Math.max(1.5, Math.abs(yClose - yOpen));
+          ctx.fillRect(x - bodyW / 2, top, bodyW, h);
+        });
+      } else {
+        // Area Line Chart
+        ctx.beginPath();
+        candles.forEach((c, idx) => {
+          const x = idx * stepX + stepX / 2;
+          const y = priceToY(c.close, minP, maxP, plotH);
+          if (idx === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.strokeStyle = '#2196F3';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.lineTo(plotW, plotH);
+        ctx.lineTo(0, plotH);
+        ctx.closePath();
+        const grad = ctx.createLinearGradient(0, 0, 0, plotH);
+        grad.addColorStop(0, 'rgba(33, 150, 243, 0.25)');
+        grad.addColorStop(1, 'rgba(33, 150, 243, 0.0)');
+        ctx.fillStyle = grad;
+        ctx.fill();
+      }
+
+      // Draw EMA 20 Indicator if enabled
+      if (state.showEMA && candles.length > 5) {
+        ctx.beginPath();
+        let ema = candles[0].close;
+        const k = 2 / (14 + 1);
+        candles.forEach((c, idx) => {
+          ema = c.close * k + ema * (1 - k);
+          const x = idx * stepX + stepX / 2;
+          const y = priceToY(ema, minP, maxP, plotH);
+          if (idx === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.strokeStyle = 'rgba(255, 207, 1, 0.75)';
+        ctx.lineWidth = 1.3;
+        ctx.stroke();
+      }
+
+      // Draw User Drawings (Trendlines / Horizontal Lines / Fib)
+      state.drawings.forEach(d => {
+        ctx.strokeStyle = '#FFCF01';
+        ctx.lineWidth = 1.5;
+        if (d.type === 'hline') {
+          const y = priceToY(d.p1, minP, maxP, plotH);
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(plotW, y);
+          ctx.stroke();
+        } else if (d.type === 'trendline') {
+          const y1 = priceToY(d.p1, minP, maxP, plotH);
+          const y2 = priceToY(d.p2, minP, maxP, plotH);
+          ctx.beginPath();
+          ctx.moveTo(d.x1, y1);
+          ctx.lineTo(d.x2, y2);
+          ctx.stroke();
+        } else if (d.type === 'fib') {
+          const y1 = priceToY(d.p1, minP, maxP, plotH);
+          const y2 = priceToY(d.p2, minP, maxP, plotH);
+          [0, 0.382, 0.5, 0.618, 1].forEach(lvl => {
+            const y = y1 + (y2 - y1) * lvl;
+            ctx.strokeStyle = lvl === 0.5 ? '#2196F3' : 'rgba(255, 207, 1, 0.6)';
+            ctx.beginPath();
+            ctx.moveTo(Math.min(d.x1, d.x2), y);
+            ctx.lineTo(Math.max(d.x1, d.x2), y);
+            ctx.stroke();
+          });
+        }
+      });
+
+      // Draw Active On-Chart Position Markers (Exact replica from video: [0.01 | +0.20 USD | x])
+      activePositions.forEach(pos => {
+        const yEntry = priceToY(pos.openPrice, minP, maxP, plotH);
+        const pnl = getPositionPnl(pos);
+        const lineColor = pos.side === 'buy' ? '#2196F3' : '#EB4D3D';
+
+        // Dashed Entry Line
+        ctx.save();
+        ctx.setLineDash([4, 3]);
+        ctx.strokeStyle = lineColor;
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(0, yEntry);
+        ctx.lineTo(plotW, yEntry);
+        ctx.stroke();
+        ctx.restore();
+
+        // Right Axis Entry Price Tag
+        ctx.fillStyle = lineColor;
+        ctx.fillRect(plotW, yEntry - 9, rightAxisW, 18);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 10px "JetBrains Mono", monospace';
+        ctx.fillText(formatPlainPrice(pos.openPrice, inst.digits), plotW + 5, yEntry + 3.5);
+
+        // On-Chart Floating Position Pill (Centered-left like Exness)
+        const pillX = Math.max(12, plotW * 0.34);
+        const volText = `${pos.side === 'buy' ? '' : '-'}${pos.volume.toFixed(2)}`;
+        const pnlText = `${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)} USD`;
+
+        // Left Volume Box
+        ctx.fillStyle = lineColor;
+        ctx.beginPath();
+        ctx.roundRect(pillX, yEntry - 10, 42, 20, [4, 0, 0, 4]);
+        ctx.fill();
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 10px "JetBrains Mono", monospace';
+        ctx.fillText(volText, pillX + 7, yEntry + 3.5);
+
+        // Middle P&L Box
+        ctx.fillStyle = '#19232C';
+        ctx.strokeStyle = lineColor;
+        ctx.lineWidth = 1;
+        ctx.fillRect(pillX + 42, yEntry - 10, 74, 20);
+        ctx.strokeRect(pillX + 42, yEntry - 10, 74, 20);
+        ctx.fillStyle = pnl >= 0 ? '#10B981' : '#EB4D3D';
+        ctx.fillText(pnlText, pillX + 47, yEntry + 3.5);
+
+        // Close '×' Box
+        ctx.fillStyle = '#19232C';
+        ctx.beginPath();
+        ctx.roundRect(pillX + 116, yEntry - 10, 20, 20, [0, 4, 4, 0]);
+        ctx.fill();
+        ctx.strokeRect(pillX + 116, yEntry - 10, 20, 20);
+        ctx.fillStyle = '#E6EDF3';
+        ctx.fillText('×', pillX + 123, yEntry + 3.5);
+
+        // TP Line if set
+        if (pos.tp) {
+          const yTp = priceToY(pos.tp, minP, maxP, plotH);
+          ctx.save();
+          ctx.setLineDash([3, 3]);
+          ctx.strokeStyle = '#10B981';
+          ctx.beginPath();
+          ctx.moveTo(0, yTp);
+          ctx.lineTo(plotW, yTp);
+          ctx.stroke();
+          ctx.restore();
+          ctx.fillStyle = '#10B981';
+          ctx.fillRect(pillX, yTp - 8, 26, 16);
+          ctx.fillStyle = '#0F171E';
+          ctx.font = 'bold 9px sans-serif';
+          ctx.fillText('TP', pillX + 6, yTp + 3);
+        }
+
+        // SL Line if set
+        if (pos.sl) {
+          const ySl = priceToY(pos.sl, minP, maxP, plotH);
+          ctx.save();
+          ctx.setLineDash([3, 3]);
+          ctx.strokeStyle = '#EB4D3D';
+          ctx.beginPath();
+          ctx.moveTo(0, ySl);
+          ctx.lineTo(plotW, ySl);
+          ctx.stroke();
+          ctx.restore();
+          ctx.fillStyle = '#EB4D3D';
+          ctx.fillRect(pillX, ySl - 8, 26, 16);
+          ctx.fillStyle = '#FFFFFF';
+          ctx.font = 'bold 9px sans-serif';
+          ctx.fillText('SL', pillX + 6, ySl + 3);
+        }
+      });
+
+      // Live Ask & Bid Horizontal Lines + Right Axis Price Badges
+      const bidY = priceToY(inst.price, minP, maxP, plotH);
+      const askY = priceToY(inst.price + inst.spread, minP, maxP, plotH);
+
+      // Ask line (Blue)
+      ctx.strokeStyle = 'rgba(33, 150, 243, 0.6)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, askY);
+      ctx.lineTo(plotW, askY);
+      ctx.stroke();
+      ctx.fillStyle = '#2196F3';
+      ctx.fillRect(plotW, askY - 9, rightAxisW, 18);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 10px "JetBrains Mono", monospace';
+      ctx.fillText(formatPlainPrice(inst.price + inst.spread, inst.digits), plotW + 5, askY + 3.5);
+
+      // Bid line (Red)
+      ctx.strokeStyle = 'rgba(235, 77, 61, 0.75)';
+      ctx.beginPath();
+      ctx.moveTo(0, bidY);
+      ctx.lineTo(plotW, bidY);
+      ctx.stroke();
+      ctx.fillStyle = '#EB4D3D';
+      ctx.fillRect(plotW, bidY - 9, rightAxisW, 18);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillText(formatPlainPrice(inst.price, inst.digits), plotW + 5, bidY + 3.5);
+
+      // Right & Bottom Axis Separators
+      ctx.strokeStyle = '#222E38';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(plotW, 0);
+      ctx.lineTo(plotW, H);
+      ctx.moveTo(0, plotH);
+      ctx.lineTo(W, plotH);
+      ctx.stroke();
+
+      // Crosshair on Mouse Move
+      if (state.mouse.inside && state.mouse.x < plotW && state.mouse.y < plotH) {
+        ctx.save();
+        ctx.setLineDash([4, 4]);
+        ctx.strokeStyle = '#586674';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(state.mouse.x, 0);
+        ctx.lineTo(state.mouse.x, plotH);
+        ctx.moveTo(0, state.mouse.y);
+        ctx.lineTo(plotW, state.mouse.y);
+        ctx.stroke();
+        ctx.restore();
+
+        const hoverPrice = yToPrice(state.mouse.y, minP, maxP, plotH);
+        ctx.fillStyle = '#263440';
+        ctx.fillRect(plotW, state.mouse.y - 9, rightAxisW, 18);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '10px "JetBrains Mono", monospace';
+        ctx.fillText(formatPlainPrice(hoverPrice, inst.digits), plotW + 5, state.mouse.y + 3.5);
+      }
+    }
+
+    // ==================== CHART INTERACTIONS & DRAWING TOOLS ====================
+    function setTimeframe(tf) {
+      state.timeframe = tf;
+      document.querySelectorAll('.tf-btn').forEach(btn => {
+        btn.className = btn.dataset.tf === tf
+          ? 'tf-btn px-2 py-1 rounded text-xs font-semibold bg-bb-elevated text-white'
+          : 'tf-btn px-2 py-1 rounded text-xs font-medium text-bb-muted hover:text-white';
+      });
+      drawChart();
+    }
+
+    function toggleChartType() {
+      state.chartType = state.chartType === 'candles' ? 'area' : 'candles';
+      drawChart();
+    }
+
+    function toggleEMA() {
+      state.showEMA = !state.showEMA;
+      showToast(`EMA 20 Indicator ${state.showEMA ? 'Enabled' : 'Disabled'}`, 'info');
+      drawChart();
+    }
+
+    function setDrawTool(tool) {
+      state.drawTool = tool;
+      state.pendingDrawPoint = null;
+      document.querySelectorAll('.draw-tool-btn').forEach(btn => {
+        btn.className = btn.dataset.tool === tool
+          ? 'draw-tool-btn w-7 h-7 rounded flex items-center justify-center bg-bb-elevated text-bb-yellow'
+          : 'draw-tool-btn w-7 h-7 rounded flex items-center justify-center text-bb-muted hover:text-white hover:bg-bb-elevated';
+      });
+      const banner = document.getElementById('activeToolBanner');
+      if (tool === 'crosshair') {
+        banner.classList.add('hidden');
+      } else {
+        banner.classList.remove('hidden');
+        document.getElementById('activeToolText').textContent = tool === 'hline'
+          ? 'Click chart to place Horizontal Line'
+          : 'Click start point on chart';
+      }
+    }
+
+    function clearDrawings() {
+      state.drawings = [];
+      state.pendingDrawPoint = null;
+      setDrawTool('crosshair');
+      drawChart();
+    }
+
+    function resetChartZoom() {
+      drawChart();
+      showToast('Chart auto-scaled to live price action', 'info');
+    }
+
+    canvas.addEventListener('mousemove', e => {
+      const rect = canvas.getBoundingClientRect();
+      state.mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top, inside: true };
+      drawChart();
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      state.mouse.inside = false;
+      drawChart();
+    });
+
+    canvas.addEventListener('click', e => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const { minP, maxP, plotW, plotH } = chartBounds;
+      if (x > plotW || y > plotH) return;
+
+      // Check if user clicked the '×' on any on-chart position pill
+      const inst = INSTRUMENTS[state.activeSymbol];
+      const activePositions = state.positions.filter(p => p.symbol === inst.symbol && p.status !== 'closed');
+      for (const pos of activePositions) {
+        const yEntry = priceToY(pos.openPrice, minP, maxP, plotH);
+        const pillX = Math.max(12, plotW * 0.34);
+        if (x >= pillX + 114 && x <= pillX + 138 && Math.abs(y - yEntry) <= 12) {
+          closePositionById(pos.id);
+          return;
+        }
+      }
+
+      if (state.drawTool === 'crosshair') return;
+
+      const clickedPrice = yToPrice(y, minP, maxP, plotH);
+      if (state.drawTool === 'hline') {
+        state.drawings.push({ type: 'hline', p1: clickedPrice });
+        setDrawTool('crosshair');
+      } else if (state.drawTool === 'trendline' || state.drawTool === 'fib') {
+        if (!state.pendingDrawPoint) {
+          state.pendingDrawPoint = { x, p: clickedPrice };
+          document.getElementById('activeToolText').textContent = 'Click end point on chart';
+        } else {
+          state.drawings.push({
+            type: state.drawTool,
+            x1: state.pendingDrawPoint.x,
+            p1: state.pendingDrawPoint.p,
+            x2: x,
+            p2: clickedPrice
+          });
+          setDrawTool('crosshair');
+        }
+      }
+      drawChart();
+    });
+
+    // ==================== POPOVERS, MODALS & TOASTS ====================
+    function togglePopover(id) {
+      const el = document.getElementById(id);
+      const wasHidden = el.classList.contains('hidden');
+      closeAllPopovers();
+      if (wasHidden) el.classList.remove('hidden');
+    }
+
+    function closeAllPopovers() {
+      ['accountPopover', 'symbolPickerPopover', 'closeAllPopover'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+      });
+    }
+
+    function openDepositModal() {
+      closeAllPopovers();
+      document.getElementById('depositModal').classList.remove('hidden');
+    }
+
+    function openMobileAccountSheet() {
+      renderAccountLists();
+      renderMobilePositionsList();
+      document.getElementById('mobilePortfolioSheet').classList.remove('hidden');
+    }
+
+    function openMobilePortfolioSheet() {
+      openMobileAccountSheet();
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    function toggleDrawer(id) {
+      document.getElementById(id).classList.toggle('hidden');
+    }
+
+    function downloadTradingLog() {
+      const logLines = [
+        'BigBulls Global Market — Trading Log Export',
+        `Account: ${state.accounts[state.activeAccountKey].id} (${state.accounts[state.activeAccountKey].mode})`,
+        `Balance: ${state.accounts[state.activeAccountKey].balance.toFixed(2)} USD`,
+        '---------------------------------------------',
+        ...state.positions.map(p => `#${p.id} | ${p.symbol} | ${p.side.toUpperCase()} ${p.volume} | Open: ${p.openPrice} | Status: ${p.status}`)
+      ].join('\n');
+
+      const blob = new Blob([logLines], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bigbulls_trading_log_${Date.now()}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Trading log downloaded', 'success');
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      const iconColor = type === 'success' ? 'text-bb-demo' : 'text-bb-yellow';
+      toast.className = 'bg-bb-elevated border border-bb-borderLight text-white px-3.5 py-2.5 rounded-lg shadow-2xl flex items-center space-x-2.5 text-xs max-w-xs transition-all duration-300';
+      toast.innerHTML = `
+        <span class="${iconColor} font-bold text-sm">✓</span>
+        <span>${message}</span>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 3200);
+    }
+
+    // Close popovers on outside click
+    document.addEventListener('click', e => {
+      if (!e.target.closest('#accountTriggerBtn') && !e.target.closest('#accountPopover') &&
+          !e.target.closest('#addSymbolBtn') && !e.target.closest('#symbolPickerPopover') &&
+          !e.target.closest('#closeAllPopover') && !e.target.closest('button')) {
+        closeAllPopovers();
+      }
+    });
+
+    // ==================== BOOTSTRAP ====================
+    window.addEventListener('resize', resizeCanvas);
+    window.onload = () => {
+      generateInitialCandles();
+      renderSymbolTabs();
+      renderSymbolPicker();
+      renderAccountLists();
+      updateOrderCalculations();
+      updatePortfolioMetrics();
+      renderPositionsTable();
+      resizeCanvas();
+      setInterval(tickMarketPrices, 650);
+    };
+  </script>
+
+  <script>
+  // BIGBULLS terminal integration: Twelve Data candles + authenticated Supabase paper execution.
+  (function () {
+    'use strict';
+    const BB_URL = 'https://ztiiyulusburxjkpcfxu.supabase.co';
+    const BB_KEY = 'sb_publishable_5hDwqvbcUHeSJdXFHf9ugw_VPYGN4J_';
+    const BB_SYMBOLS = ['EUR/USD', 'GBP/USD', 'USD/JPY', 'XAU/USD'];
+    const BB_TD_SYMBOL = { 'EUR/USD':'EUR/USD', 'GBP/USD':'GBP/USD', 'USD/JPY':'USD/JPY', 'XAU/USD':'XAU/USD' };
+    const BB_UI_SYMBOL = { EURUSD:'EUR/USD', GBPUSD:'GBP/USD', USDJPY:'USD/JPY', XAUUSD:'XAU/USD' };
+    let bbClient = null, bbSession = null, bbRealAccount = null, bbMarketBusy = false, bbPaperBusy = false;
+    let bbLastCandleKey = '';
+
+    function bbClientInit() {
+      if (window.__bbSupabaseClient && window.__bbSupabaseClient.auth && window.__bbSupabaseClient.functions) {
+        bbClient = window.__bbSupabaseClient;
+      } else if (window.bigbullsSupabase && window.bigbullsSupabase.auth) {
+        bbClient = window.bigbullsSupabase;
+      } else if (window.supabase && typeof window.supabase.createClient === 'function') {
+        bbClient = window.supabase.createClient(BB_URL, BB_KEY, { auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true} });
+      }
+      return bbClient;
+    }
+    function bbToast(msg, type) { if (typeof showToast === 'function') showToast(msg, type || 'info'); }
+    function bbNormalizeCandle(c) { return {time:Number(c.time),open:Number(c.open),high:Number(c.high),low:Number(c.low),close:Number(c.close)}; }
+    function bbMapInstrument(symbol) {
+      const key = BB_UI_SYMBOL[String(symbol || '').toUpperCase()] || symbol;
+      return INSTRUMENTS[key] ? key : null;
+    }
+    function bbSetFeedStatus(text, bad) {
+      const el = document.getElementById('chartTitleText');
+      if (el && text) el.title = text;
+      const badge = document.querySelector('body > div.fixed.bottom-2.left-2');
+      if (badge) {
+        badge.textContent = text || 'TWELVE DATA LIVE FEED · PAPER EXECUTION ONLY';
+        badge.className = 'fixed bottom-2 left-2 z-30 px-2 py-1 rounded border text-[9px] font-semibold tracking-wide pointer-events-none ' + (bad ? 'bg-amber-500/10 border-amber-500/30 text-amber-300' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300');
+      }
+    }
+    async function bbInvokeMarket(body) {
+      const client = bbClientInit();
+      if (!client) throw new Error('Supabase client library is not available.');
+      const {data,error} = await client.functions.invoke('market-data', {body});
+      if (error) throw new Error(data?.error || error.message || 'Market data request failed.');
+      if (data?.error) throw new Error(data.error);
+      return data;
+    }
+    async function bbLoadCandles() {
+      if (bbMarketBusy) return;
+      const symbol = state.activeSymbol;
+      if (!BB_TD_SYMBOL[symbol]) { bbSetFeedStatus('UNSUPPORTED SYMBOL · TWELVE DATA', true); return; }
+      bbMarketBusy = true;
+      const key = symbol + ':' + state.timeframe;
+      try {
+        const data = await bbInvokeMarket({action:'candles',symbol:BB_TD_SYMBOL[symbol],timeframe:state.timeframe,outputsize:160});
+        const inst = INSTRUMENTS[symbol];
+        const candles = (data.candles || []).map(bbNormalizeCandle).filter(c => [c.time,c.open,c.high,c.low,c.close].every(Number.isFinite));
+        if (!candles.length) throw new Error('Twelve Data returned no candle history.');
+        inst.candles = candles;
+        inst.price = Number(data.price || candles[candles.length-1].close);
+        inst.lastProviderUpdate = data.fetched_at;
+        bbLastCandleKey = key;
+        bbSetFeedStatus('● TWELVE DATA · ' + symbol + ' · ' + state.timeframe + ' · ' + new Date(data.fetched_at).toLocaleTimeString(), false);
+        if (typeof tickMarketPrices === 'function') tickMarketPrices();
+      } catch (e) {
+        bbSetFeedStatus('TWELVE DATA FEED ERROR · ' + (e.message || 'retrying'), true);
+        console.error('BIGBULLS market feed:', e);
+      } finally { bbMarketBusy = false; }
+    }
+    async function bbLoadQuotes() {
+      try {
+        const data = await bbInvokeMarket({action:'quotes'});
+        (data.quotes || []).forEach(q => {
+          const key = bbMapInstrument(q.symbol);
+          if (key && Number(q.close) > 0) INSTRUMENTS[key].price = Number(q.close);
+        });
+        if (typeof tickMarketPrices === 'function') tickMarketPrices();
+      } catch (e) { console.warn('BIGBULLS quote refresh:', e.message || e); }
+    }
+    async function bbPaperCall(body) {
+      const client = bbClientInit();
+      if (!client) throw new Error('Supabase client is not ready.');
+      const {data:sessionData,error:sessionError} = await client.auth.getSession();
+      if (sessionError) throw sessionError;
+      bbSession = sessionData?.session || null;
+      if (!bbSession?.access_token) throw new Error('Please sign in to your BIGBULLS client account before paper trading.');
+      const {data,error} = await client.functions.invoke('paper-execution', {body});
+      if (error) throw new Error(data?.error || error.message || 'Paper execution request failed.');
+      if (data?.error) throw new Error(data.error);
+      return data;
+    }
+    async function bbLoadLinkedAccounts() {
+      const client = bbClientInit();
+      if (!client) return;
+      const {data:sessionData} = await client.auth.getSession();
+      bbSession = sessionData?.session || null;
+      if (!bbSession) return;
+      const {data,error} = await client.functions.invoke('trading-gateway', {body:{action:'accounts'}});
+      if (error || data?.error) { console.warn('Trading account lookup:', data?.error || error?.message); return; }
+      const accounts = (data.accounts || []).filter(a => a.account_mode === 'real' && a.status === 'approved' && !a.archived_at && !a.deleted_at);
+      bbRealAccount = accounts[0] || null;
+      state.backendAccountIds = state.backendAccountIds || {};
+      state.backendAccountIds.real = bbRealAccount?.id || null;
+      if (bbRealAccount) {
+        state.accounts.real.id = '#' + (bbRealAccount.account_number || bbRealAccount.display_name || 'REAL');
+        state.accounts.real.type = bbRealAccount.account_type || 'Real';
+      } else {
+        state.accounts.real.id = 'LINK APPROVED REAL ACCOUNT';
+      }
+      if (typeof renderAccountLists === 'function') renderAccountLists();
+    }
+    function bbApplyPaperState(data, mode) {
+      const ledger = data.ledger || {};
+      state.accounts[mode].balance = Number(ledger.virtual_balance ?? ledger.starting_balance ?? state.accounts[mode].balance);
+      const rows = (data.trades || []).map(t => {
+        const symbol = bbMapInstrument(t.symbol);
+        if (!symbol) return null;
+        const open = String(t.status).toUpperCase() === 'OPEN';
+        return {
+          id:String(t.id), symbol, side:String(t.side).toLowerCase(), volume:Number(t.quantity),
+          openPrice:Number(t.entry_price), tp:t.take_profit == null ? null : Number(t.take_profit),
+          sl:t.stop_loss == null ? null : Number(t.stop_loss),
+          openTime:t.opened_at ? new Date(t.opened_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '',
+          swap:0,status:open?'open':'closed',closePrice:t.exit_price == null ? Number(t.mark_price || t.entry_price) : Number(t.exit_price),
+          realizedPnl:Number(t.realized_pnl || 0), backendPaper:true
+        };
+      }).filter(Boolean);
+      state.positions = rows;
+      Object.entries(data.prices || {}).forEach(([sym,price]) => {
+        const key = bbMapInstrument(sym); if (key && Number(price)>0) INSTRUMENTS[key].price=Number(price);
+      });
+      if (typeof updatePortfolioMetrics === 'function') updatePortfolioMetrics();
+      if (typeof renderPositionsTable === 'function') renderPositionsTable();
+      if (typeof renderAccountLists === 'function') renderAccountLists();
+      if (typeof drawChart === 'function') drawChart();
+    }
+    async function bbRefreshPaperState(silent) {
+      if (bbPaperBusy) return;
+      bbPaperBusy = true;
+      try {
+        if (!bbSession) {
+          const client=bbClientInit();
+          const {data} = await client.auth.getSession();
+          bbSession=data?.session||null;
+        }
+        if (!bbSession) { if (!silent) bbToast('Login required for server-saved paper trading.', 'error'); return; }
+        const mode=state.activeAccountKey;
+        await bbLoadLinkedAccounts();
+        const accountId=mode==='real' ? state.backendAccountIds?.real : null;
+        if (mode==='real' && !accountId) { if (!silent) bbToast('No approved Real trading account is linked. Real tab stays paper-only and locked until an approved account is available.', 'error'); return; }
+        const payload={action:'status',account_mode:mode};
+        if (accountId) payload.account_id=accountId;
+        const data=await bbPaperCall(payload);
+        bbApplyPaperState(data,mode);
+        state.accounts[mode].executionLabel='PAPER';
+      } catch(e) {
+        if (!silent) bbToast(e.message || 'Paper account could not be refreshed.', 'error');
+        console.warn('BIGBULLS paper account:',e);
+      } finally { bbPaperBusy=false; }
+    }
+    function bbMapPaperSymbol(symbol) {
+      const key=String(symbol||'').toUpperCase().replace('/','');
+      return ({EURUSD:'EUR/USD',GBPUSD:'GBP/USD',USDJPY:'USD/JPY',XAUUSD:'XAU/USD'})[key] || null;
+    }
+
+    // Replace synthetic candles and random walk with provider candles/quotes.
+    generateInitialCandles = function () {
+      Object.values(INSTRUMENTS).forEach(inst => { inst.candles=[]; });
+    };
+    tickMarketPrices = function () {
+      const active=INSTRUMENTS[state.activeSymbol]; if (!active) return;
+      state.pipetteDigit=0;
+      const bid=active.price, ask=active.price+active.spread;
+      const sell=document.getElementById('deskSellPrice'),buy=document.getElementById('deskBuyPrice');
+      if(sell)sell.innerHTML=formatPriceHtml(bid,active.digits,0);
+      if(buy)buy.innerHTML=formatPriceHtml(ask,active.digits,0);
+      const spread=document.getElementById('deskSpreadPill'); if(spread)spread.textContent=active.spread.toFixed(active.digits)+' USD';
+      const mobSell=document.getElementById('mobSellPrice'); if(mobSell)mobSell.textContent=formatPlainPrice(bid,active.digits);
+      const mobBuy=document.getElementById('mobBuyPrice'); if(mobBuy)mobBuy.textContent=formatPlainPrice(ask,active.digits);
+      const mobSpread=document.getElementById('mobSpreadPill'); if(mobSpread)mobSpread.textContent=active.spread.toFixed(active.digits)+' USD';
+      const last=active.candles[active.candles.length-1];
+      if(last){
+        const up=last.close>=last.open;
+        document.getElementById('chartTitleText').textContent=active.name+' · '+state.timeframe+' · Twelve Data';
+        document.getElementById('chartOhlcText').innerHTML='<span>O <b class="'+(up?'text-bb-buy':'text-bb-sell')+' font-normal">'+formatPlainPrice(last.open,active.digits)+'</b></span><span>H <b class="'+(up?'text-bb-buy':'text-bb-sell')+' font-normal">'+formatPlainPrice(last.high,active.digits)+'</b></span><span>L <b class="'+(up?'text-bb-buy':'text-bb-sell')+' font-normal">'+formatPlainPrice(last.low,active.digits)+'</b></span><span>C <b class="'+(up?'text-bb-buy':'text-bb-sell')+' font-normal">'+formatPlainPrice(last.close,active.digits)+'</b></span>';
+      }
+      updatePortfolioMetrics(); renderPositionsTable(); drawChart();
+    };
+
+    const originalSwitchSymbol=window.switchSymbol;
+    window.switchSymbol=function(symbol){ if(originalSwitchSymbol)originalSwitchSymbol(symbol); bbLoadCandles(); };
+    const originalSetTimeframe=window.setTimeframe;
+    window.setTimeframe=function(tf){ if(originalSetTimeframe)originalSetTimeframe(tf); bbLoadCandles(); };
+    const originalSwitchAccount=window.switchAccount;
+    window.switchAccount=function(mode){
+      if(mode==='real' && !state.backendAccountIds?.real){ bbToast('Real paper testing requires an approved Real account linked to your BIGBULLS login. No real broker orders are sent.', 'error'); return; }
+      if(originalSwitchAccount)originalSwitchAccount(mode);
+      bbRefreshPaperState(false);
+    };
+    window.executeOrder=async function(){
+      if(!state.selectedSide)return;
+      const inst=INSTRUMENTS[state.activeSymbol];
+      if(!BB_TD_SYMBOL[inst.symbol]){bbToast('This instrument is not enabled on the Twelve Data paper feed.', 'error');return;}
+      if(state.orderExecType==='pending'){bbToast('Pending orders are not enabled in this paper backend yet. Use Market order for this test.', 'error');return;}
+      const volume=Math.max(0.01,parseFloat(document.getElementById('deskVolumeInput').value)||0.01);
+      const tp=parseFloat(document.getElementById('deskTpInput').value)||null;
+      const sl=parseFloat(document.getElementById('deskSlInput').value);
+      if(!Number.isFinite(sl)){bbToast('Set a Stop Loss before opening a paper position.', 'error');return;}
+      const mode=state.activeAccountKey;
+      const accountId=mode==='real'?state.backendAccountIds?.real:null;
+      if(mode==='real'&&!accountId){bbToast('No approved Real account is linked for paper testing.', 'error');return;}
+      const btn=document.getElementById('deskConfirmSubmitBtn');
+      if(btn){btn.disabled=true;btn.textContent='Submitting paper order…';}
+      try{
+        const body={action:'open',account_mode:mode,symbol:inst.symbol,side:state.selectedSide.toUpperCase(),quantity:volume,stop_loss:sl,take_profit:tp,source:'TERMINAL_MANUAL'};
+        if(accountId)body.account_id=accountId;
+        const result=await bbPaperCall(body);
+        cancelOrderSelection();
+        bbToast('Paper position opened · '+inst.symbol+' · '+state.selectedSide.toUpperCase(), 'success');
+        await bbRefreshPaperState(true);
+      }catch(e){bbToast(e.message||'Paper order failed.', 'error');}
+      finally{if(btn){btn.disabled=false;btn.textContent='Confirm Order';}}
+    };
+    window.closePositionById=async function(id){
+      const pos=state.positions.find(p=>String(p.id)===String(id)); if(!pos||pos.status==='closed')return;
+      try{
+        await bbPaperCall({action:'close',account_mode:state.activeAccountKey,account_id:state.activeAccountKey==='real'?state.backendAccountIds?.real:undefined,trade_id:String(id),reason:'TERMINAL MANUAL CLOSE'});
+        bbToast('Paper position closed · #'+String(id).slice(0,8),'success');
+        await bbRefreshPaperState(true);
+      }catch(e){bbToast(e.message||'Could not close paper position.','error');}
+    };
+    window.saveEditedPosition=async function(){
+      const pos=state.positions.find(p=>String(p.id)===String(state.editingPositionId)); if(!pos)return;
+      const sl=parseFloat(document.getElementById('editSlInput').value);
+      const tp=parseFloat(document.getElementById('editTpInput').value);
+      if(!Number.isFinite(sl)){bbToast('A valid Stop Loss is required.','error');return;}
+      try{
+        await bbPaperCall({action:'modify',account_mode:state.activeAccountKey,account_id:state.activeAccountKey==='real'?state.backendAccountIds?.real:undefined,trade_id:String(pos.id),stop_loss:sl,take_profit:Number.isFinite(tp)?tp:null});
+        closeModal('editPositionModal'); bbToast('Paper TP/SL updated.','success'); await bbRefreshPaperState(true);
+      }catch(e){bbToast(e.message||'TP/SL update failed.','error');}
+    };
+    window.closePositionsByFilter=async function(filter){
+      closeAllPopovers();
+      const targets=state.positions.filter(p=>p.status==='open').filter(p=>{const pnl=getPositionPnl(p);return filter==='profit'?pnl>0:filter==='loss'?pnl<0:true;});
+      if(!targets.length){bbToast('No matching open paper positions.','info');return;}
+      for(const p of targets){try{await bbPaperCall({action:'close',account_mode:state.activeAccountKey,account_id:state.activeAccountKey==='real'?state.backendAccountIds?.real:undefined,trade_id:String(p.id),reason:'TERMINAL BULK CLOSE'});}catch(e){bbToast(e.message||'A paper position could not be closed.','error');}}
+      await bbRefreshPaperState(true);
+    };
+    window.handleTopUp=function(){bbToast('Paper balances are maintained by the backend ledger. No deposit or payment has been made.', 'info');};
+
+    async function bbStart() {
+      // Keep the original terminal layout, but only show instruments enabled by the Twelve Data + paper backend.
+      delete INSTRUMENTS.BTC; delete INSTRUMENTS.USOIL; delete INSTRUMENTS.USTEC;
+      INSTRUMENTS['EUR/USD']={symbol:'EUR/USD',name:'Euro vs US Dollar',shortIcon:'€',badgeBg:'bg-blue-500/20 text-blue-400',price:1.08,spread:0.00012,digits:5,pipettes:true,contractSize:100000,volatility:0.001,candles:[]};
+      INSTRUMENTS['GBP/USD']={symbol:'GBP/USD',name:'British Pound vs US Dollar',shortIcon:'£',badgeBg:'bg-indigo-500/20 text-indigo-400',price:1.27,spread:0.00015,digits:5,pipettes:true,contractSize:100000,volatility:0.001,candles:[]};
+      INSTRUMENTS['USD/JPY']={symbol:'USD/JPY',name:'US Dollar vs Japanese Yen',shortIcon:'¥',badgeBg:'bg-purple-500/20 text-purple-400',price:150,spread:0.015,digits:3,pipettes:true,contractSize:100000,volatility:0.1,candles:[]};
+      state.openTabs=['EUR/USD','GBP/USD','USD/JPY','XAU/USD'];
+      state.activeSymbol='XAU/USD';
+      state.positions=[]; // Remove the original illustrative sample trade; positions now load from the paper ledger.
+      state.backendAccountIds={demo:null,real:null};
+      bbClientInit();
+      if(bbClient){
+        try{const {data}=await bbClient.auth.getSession();bbSession=data?.session||null;}catch(e){console.warn('Session lookup:',e);}
+      }
+      renderSymbolTabs(); renderSymbolPicker(); renderAccountLists(); drawChart();
+      await bbLoadCandles(); await bbLoadQuotes();
+      if(bbSession){await bbLoadLinkedAccounts();await bbRefreshPaperState(true);}
+      else bbSetFeedStatus('TWELVE DATA LIVE · SIGN IN FOR PAPER TRADING',false);
+      window.setInterval(()=>{bbLoadQuotes();bbLoadCandles();},15000);
+      window.setInterval(()=>{if(bbSession)bbRefreshPaperState(true);},20000);
+      if(bbClient?.auth?.onAuthStateChange){
+        bbClient.auth.onAuthStateChange((_event,session)=>{bbSession=session||null;if(session){bbLoadLinkedAccounts().then(()=>bbRefreshPaperState(true));}else{state.positions=[];renderPositionsTable();bbSetFeedStatus('TWELVE DATA LIVE · SIGN IN FOR PAPER TRADING',false);}});
+      }
+    }
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>bbStart().catch(e=>{console.error(e);bbSetFeedStatus('TERMINAL CONNECTION ERROR',true);}));
+    else bbStart().catch(e=>{console.error(e);bbSetFeedStatus('TERMINAL CONNECTION ERROR',true);});
+  })();
+  </script>
+
+</body>
+</html>
