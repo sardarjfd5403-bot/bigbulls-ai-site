@@ -1,0 +1,224 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.0";
+
+const ORIGIN = "https://bigbullsglobalmarket.is-an.ai";
+const cors = {
+  "Access-Control-Allow-Origin": ORIGIN,
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Vary": "Origin",
+  "X-Content-Type-Options": "nosniff",
+};
+const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
+  status, headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" },
+});
+const SYMBOLS = new Set(["EURUSD","GBPUSD","USDJPY","XAUUSD","BTCUSDT","ETHUSDT","BNBUSDT","SOLUSDT","XRPUSDT","DOGEUSDT"]);
+const normalize = (v: unknown) => String(v || "").toUpperCase().replaceAll("/", "").trim();
+const contractSize = (s: string) => ["EURUSD","GBPUSD","USDJPY"].includes(s) ? 100000 : s === "XAUUSD" ? 100 : 1;
+const category = (s: string) => s === "XAUUSD" ? "XAUUSD" : s.endsWith("USDT") ? "CRYPTO" : "FX";
+const num = (v: unknown, label: string) => {
+  const n = Number(v);
+  if (!Number.isFinite(n)) throw new Error(label + " must be a valid number.");
+  return n;
+};
+const adminCheck = async (auth: any) => {
+  const { data, error } = await auth.rpc("is_bigbulls_admin");
+  if (error) throw error;
+  if (data !== true) throw new Error("Admin permission required.");
+};
+
+async function quote(symbol: string, settings: any, url: string, anon: string) {
+  if (!SYMBOLS.has(symbol)) throw new Error("Instrument is not enabled for B-Book execution.");
+  let mid = 0, provider = "";
+  if (symbol.endsWith("USDT")) {
+    const r = await fetch("https://data-api.binance.vision/api/v3/ticker/price?symbol=" + encodeURIComponent(symbol), { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) throw new Error("Crypto reference feed unavailable (" + r.status + ").");
+    const d = await r.json();
+    mid = Number(d.price); provider = "Binance Spot Reference";
+  } else {
+    const map: Record<string,string> = { EURUSD:"EUR/USD", GBPUSD:"GBP/USD", USDJPY:"USD/JPY", XAUUSD:"XAU/USD" };
+    const r = await fetch(url + "/functions/v1/market-data", {
+      method: "POST",
+      headers: { "Content-Type":"application/json", apikey:anon, Authorization:"Bearer " + anon },
+      body: JSON.stringify({ action:"quote", symbol:map[symbol] }),
+      signal: AbortSignal.timeout(12000),
+    });
+    if (!r.ok) throw new Error("Market reference feed unavailable (" + r.status + ").");
+    const d = await r.json();
+    mid = Number(d.price); provider = "Twelve Data Indicative Reference";
+  }
+  if (!(mid > 0) || !Number.isFinite(mid)) throw new Error("A valid market reference price was not returned.");
+  const spreads = settings.spread_bps || {};
+  const bps = Math.max(0, Math.min(100, Number(spreads[category(symbol)] ?? 2)));
+  const half = bps / 20000;
+  const bid = mid * (1 - half), ask = mid * (1 + half);
+  return { symbol, mid, bid, ask, spread_bps:bps, provider, quote_time:new Date().toISOString() };
+}
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers:cors });
+  if (req.method !== "POST") return json({ error:"POST required." },405);
+  try {
+    const url = Deno.env.get("SUPABASE_URL");
+    const anon = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
+    const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SECRET_KEY");
+    if (!url || !anon || !service) return json({ error:"Server credentials are not configured." },503);
+    const token = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i,"");
+    if (!token) return json({ error:"Authentication required." },401);
+    const auth = createClient(url,anon,{auth:{persistSession:false,autoRefreshToken:false},global:{headers:{Authorization:"Bearer "+token}}});
+    const { data: authData, error: authError } = await auth.auth.getUser(token);
+    if (authError || !authData.user) return json({ error:"Invalid or expired session." },401);
+    const user = authData.user;
+    const db = createClient(url,service,{auth:{persistSession:false,autoRefreshToken:false}});
+    const body = await req.json().catch(()=>({}));
+    const action = String(body.action || "status");
+    const { data: settings, error: settingsError } = await db.from("bb_bbook_settings").select("*").eq("singleton",true).single();
+    if (settingsError) throw settingsError;
+
+    if (action.startsWith("admin_")) {
+      await adminCheck(auth);
+      if (action === "admin_status") {
+        const [{data:pool,error:poolError},{data:positions,error:posError}] = await Promise.all([
+          db.from("bb_bbook_liquidity_pool").select("*").eq("singleton",true).single(),
+          db.from("bb_bbook_positions").select("*,trading_accounts(account_number,display_name)").eq("status","OPEN").order("opened_at",{ascending:false}).limit(500),
+        ]);
+        if (poolError || posError) throw poolError || posError;
+        const exposure = (positions || []).reduce((n:any,p:any)=>n + Number(p.entry_price)*Number(p.quantity)*Number(p.contract_size),0);
+        const floating = (positions || []).reduce((n:any,p:any)=>n + Number(p.floating_pnl||0),0);
+        const {data:ledger,error:ledgerError} = await db.from("bb_bbook_liquidity_ledger").select("*").order("created_at",{ascending:false}).limit(100);
+        if (ledgerError) throw ledgerError;
+        return json({settings,pool,positions:positions||[],ledger:ledger||[],metrics:{open_positions:(positions||[]).length,gross_exposure:exposure,floating_client_pnl:floating,house_net_pnl:-floating}});
+      }
+      if (action === "admin_adjust_liquidity") {
+        const amount = num(body.amount,"Amount");
+        const direction = String(body.direction||"").toUpperCase();
+        if (!(amount>0) || !["DEPOSIT","WITHDRAWAL"].includes(direction)) return json({error:"Choose a valid deposit or withdrawal amount."},400);
+        const {data,error} = await db.rpc("bb_bbook_adjust_liquidity",{p_amount:amount,p_direction:direction,p_actor:user.id,p_note:String(body.note||"Admin liquidity adjustment").slice(0,250)});
+        if(error)throw error;
+        return json({success:true,pool:data});
+      }
+      if (action === "admin_update_settings") {
+        const patch:any = {updated_at:new Date().toISOString(),updated_by:user.id};
+        if(body.default_leverage!==undefined){const v=Math.floor(num(body.default_leverage,"Default leverage"));if(v<1||v>500)throw new Error("Default leverage must be between 1 and 500.");patch.default_leverage=v;}
+        if(body.max_leverage!==undefined){const v=Math.floor(num(body.max_leverage,"Maximum leverage"));if(v<1||v>1000)throw new Error("Maximum leverage must be between 1 and 1000.");patch.max_leverage=v;}
+        if(body.spread_bps!==undefined){
+          const spread=body.spread_bps;
+          if(!spread||typeof spread!=="object")throw new Error("Spread configuration must be an object.");
+          for(const k of ["FX","XAUUSD","CRYPTO"])if(spread[k]!==undefined&&(!Number.isFinite(Number(spread[k]))||Number(spread[k])<0||Number(spread[k])>100))throw new Error("Spread markup must be between 0 and 100 bps.");
+          patch.spread_bps={...settings.spread_bps,...spread};
+        }
+        if(body.margin_call_level_pct!==undefined){const v=num(body.margin_call_level_pct,"Margin call level");if(v<50||v>1000)throw new Error("Margin call level must be 50–1000%.");patch.margin_call_level_pct=v;}
+        if(body.stop_out_level_pct!==undefined){const v=num(body.stop_out_level_pct,"Stop-out level");if(v<10||v>100)throw new Error("Stop-out level must be 10–100%.");patch.stop_out_level_pct=v;}
+        if(body.enabled===true){
+          const {data:execution,error}=await db.from("bb_execution_settings").select("live_execution_enabled,global_halt,live_readiness").eq("singleton",true).single();
+          if(error)throw error;
+          const checks=execution.live_readiness||{};
+          const required=["liquidity_verified","settlement_verified","regulatory_authorized","client_funds_controls_verified","reconciliation_verified"];
+          if(execution.live_execution_enabled!==true||execution.global_halt||required.some(k=>checks[k]!==true)||Deno.env.get("BBOOK_LIVE_EXECUTION_ADAPTER_READY")!=="true"){
+            throw new Error("B-Book cannot be enabled: live execution, regulatory, liquidity, settlement, client-funds, reconciliation and adapter checks must all be verified.");
+          }
+          patch.enabled=true;
+        }
+        if(body.enabled===false)patch.enabled=false;
+        const {data,error}=await db.from("bb_bbook_settings").update(patch).eq("singleton",true).select("*").single();
+        if(error)throw error;
+        await db.from("bb_trade_audit_events").insert({actor_user_id:user.id,event_type:"BBOOK_SETTINGS_UPDATED",entity_type:"bbook_settings",details:patch});
+        return json({success:true,settings:data});
+      }
+      return json({error:"Unsupported B-Book admin action."},400);
+    }
+
+    if (action === "quote") {
+      const symbol=normalize(body.symbol);
+      const q=await quote(symbol,settings,url,anon);
+      await db.from("bb_bbook_quotes").upsert({symbol:q.symbol,mid:q.mid,bid:q.bid,ask:q.ask,spread_bps:q.spread_bps,provider:q.provider,quote_time:q.quote_time,updated_at:new Date().toISOString()});
+      return json({quote:q,execution_mode:"BBOOK_REFERENCE"});
+    }
+
+    const accountId=String(body.account_id||"");
+    if(!accountId)return json({error:"A linked REAL account is required."},400);
+    const {data:account,error:accountError}=await auth.from("trading_accounts")
+      .select("id,user_id,account_mode,status,currency,balance,requested_leverage,archived_at,deleted_at")
+      .eq("id",accountId).eq("user_id",user.id).maybeSingle();
+    if(accountError)throw accountError;
+    if(!account||account.account_mode!=="real"||account.status!=="approved"||account.archived_at||account.deleted_at)return json({error:"Approved REAL account not found."},403);
+
+    if(action==="open"){
+      if(!settings.enabled)return json({error:"In-house B-Book REAL execution is locked by Admin and compliance controls.",code:"BBOOK_LOCKED"},423);
+      const symbol=normalize(body.symbol),side=String(body.side||"").toUpperCase(),quantity=num(body.quantity,"Lot size");
+      const sl=num(body.stop_loss,"Stop Loss"),tp=num(body.take_profit,"Take Profit");
+      if(!["BUY","SELL"].includes(side)||quantity<=0)return json({error:"Invalid side or lot size."},400);
+      const q=await quote(symbol,settings,url,anon);
+      const size=contractSize(symbol);
+      const spreadCost=(q.ask-q.bid)*quantity*size;
+      const {data,error}=await db.rpc("bb_bbook_open_position",{p:{user_id:user.id,account_id:accountId,symbol,side,quantity,contract_size:size,mid:q.mid,bid:q.bid,ask:q.ask,stop_loss:sl,take_profit:tp,spread_cost:spreadCost}});
+      if(error)throw error;
+      await db.from("bb_bbook_quotes").upsert({symbol,mid:q.mid,bid:q.bid,ask:q.ask,spread_bps:q.spread_bps,provider:q.provider,quote_time:q.quote_time,updated_at:new Date().toISOString()});
+      return json({success:true,...data,quote:q});
+    }
+
+    if(action==="close"){
+      const positionId=String(body.position_id||"");
+      const {data:position,error}=await auth.from("bb_bbook_positions").select("id,symbol,side,quantity,contract_size").eq("id",positionId).eq("account_id",accountId).eq("user_id",user.id).eq("status","OPEN").maybeSingle();
+      if(error)throw error;
+      if(!position)return json({error:"Open B-Book position not found."},404);
+      const q=await quote(position.symbol,settings,url,anon);
+      const exit=position.side==="BUY"?q.bid:q.ask;
+      const {data,error:closeError}=await db.rpc("bb_bbook_close_position",{p:{user_id:user.id,position_id:positionId,exit_price:exit,bid:q.bid,ask:q.ask,reason:String(body.reason||"MANUAL CLOSE").slice(0,100)}});
+      if(closeError)throw closeError;
+      return json({success:true,...data,quote:q});
+    }
+
+    if(action==="status"||action==="refresh"){
+      const {data:positions,error:positionsError}=await db.from("bb_bbook_positions").select("*").eq("account_id",accountId).eq("user_id",user.id).order("opened_at",{ascending:false}).limit(500);
+      if(positionsError)throw positionsError;
+      const open=(positions||[]).filter((p:any)=>p.status==="OPEN");
+      const quotes:any={};
+      for(const symbol of [...new Set(open.map((p:any)=>p.symbol))] as string[]){
+        try{quotes[symbol]=await quote(symbol,settings,url,anon);await db.from("bb_bbook_quotes").upsert({symbol,mid:quotes[symbol].mid,bid:quotes[symbol].bid,ask:quotes[symbol].ask,spread_bps:quotes[symbol].spread_bps,provider:quotes[symbol].provider,quote_time:quotes[symbol].quote_time,updated_at:new Date().toISOString()});}catch(e){console.warn("B-Book quote:",symbol,e);}
+      }
+      for(const p of open){
+        const q=quotes[p.symbol];if(!q)continue;
+        const exit=p.side==="BUY"?q.bid:q.ask;
+        const floating=(p.side==="BUY"?exit-Number(p.entry_price):Number(p.entry_price)-exit)*Number(p.quantity)*Number(p.contract_size);
+        const hitSl=p.side==="BUY"?exit<=Number(p.stop_loss):exit>=Number(p.stop_loss);
+        const hitTp=p.side==="BUY"?exit>=Number(p.take_profit):exit<=Number(p.take_profit);
+        if(hitSl||hitTp){
+          const {error}=await db.rpc("bb_bbook_close_position",{p:{user_id:user.id,position_id:p.id,exit_price:exit,bid:q.bid,ask:q.ask,reason:hitSl?"STOP LOSS":"TAKE PROFIT"}});
+          if(error)console.error("B-Book automatic close failed:",p.id,error);
+        }else{
+          const {error}=await db.from("bb_bbook_positions").update({mark_price:q.mid,bid_price:q.bid,ask_price:q.ask,floating_pnl:floating}).eq("id",p.id).eq("status","OPEN").eq("user_id",user.id);
+          if(error)throw error;
+        }
+      }
+      const {data:fresh,error:freshError}=await db.from("bb_bbook_positions").select("*").eq("account_id",accountId).eq("user_id",user.id).order("opened_at",{ascending:false}).limit(500);
+      if(freshError)throw freshError;
+      const active=(fresh||[]).filter((p:any)=>p.status==="OPEN");
+      const floating=active.reduce((n:number,p:any)=>n+Number(p.floating_pnl||0),0);
+      const margin=active.reduce((n:number,p:any)=>n+Number(p.margin_used||0),0);
+      const balance=Number(account.balance||0),equity=balance+floating;
+      const marginLevel=margin>0?equity/margin*100:0;
+      if(active.length&&margin>0&&marginLevel<=Number(settings.stop_out_level_pct||50)){
+        for(const p of [...active].sort((a:any,b:any)=>Number(a.floating_pnl)-Number(b.floating_pnl))){
+          const q=quotes[p.symbol]||await quote(p.symbol,settings,url,anon);
+          const exit=p.side==="BUY"?q.bid:q.ask;
+          const {error}=await db.rpc("bb_bbook_close_position",{p:{user_id:user.id,position_id:p.id,exit_price:exit,bid:q.bid,ask:q.ask,reason:"MARGIN STOP OUT"}});
+          if(error)console.error("B-Book stop-out close failed:",p.id,error);
+        }
+      }
+      const {data:latestAccount,error:latestAccountError}=await db.from("trading_accounts").select("balance,currency,requested_leverage").eq("id",accountId).single();
+      if(latestAccountError)throw latestAccountError;
+      const remaining=(fresh||[]).filter((p:any)=>p.status==="OPEN");
+      const latestFloating=remaining.reduce((n:number,p:any)=>n+Number(p.floating_pnl||0),0);
+      const latestMargin=remaining.reduce((n:number,p:any)=>n+Number(p.margin_used||0),0);
+      const latestBalance=Number(latestAccount.balance||0),latestEquity=latestBalance+latestFloating;
+      return json({account:{id:accountId,account_mode:"real",currency:latestAccount.currency||"USD"},
+        execution:{mode:"BBOOK",label:"BigBulls In-House B-Book",broker_routing:false,enabled:settings.enabled},
+        positions:fresh||[],quotes,metrics:{balance:latestBalance,equity:latestEquity,margin:latestMargin,free_margin:latestEquity-latestMargin,margin_level_pct:latestMargin>0?latestEquity/latestMargin*100:0,floating_pnl:latestFloating},
+        generated_at:new Date().toISOString()});
+    }
+    return json({error:"Unsupported B-Book action."},400);
+  }catch(e){
+    console.error("bbook-engine:",e);
+    return json({error:e instanceof Error?e.message:"B-Book engine error."},400);
+  }
+});
