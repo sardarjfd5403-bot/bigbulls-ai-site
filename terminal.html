@@ -1994,7 +1994,9 @@ async function loadBiQuoteCatalog(){
   for(const row of rows){
    const provider=String(row.name||row.symbol||'').toUpperCase().trim();if(!provider||row.hasData===false)continue;
    const known=mapSymbol(provider),ui=known||provider,type=String(row.type||'').toLowerCase();
-   const category=type==='forex'?'Forex':type==='crypto'?'Crypto':type==='index'||type==='stock'?'Indices':'Commodities';
+   if(type==='stock')continue;
+   const isMetal=/^(XAU|XAG|XPT|XPD)/.test(provider);
+   const category=type==='forex'?'Forex':type==='crypto'?'Crypto':type==='index'?'Indices':isMetal?'Metals':'Commodities';
    if(!state.instruments[ui]){
     state.instruments[ui]={symbol:ui,providerSymbol:provider,name:row.description||row.name||provider,category,bid:0,ask:0,spread:0,change:0,digits:Number(row.digits)||2,contractSize:Number(row.contractSize)||1,tickSize:Number(row.tickSize)||null,tickValue:Number(row.tickValue)||null,currency:row.currency||'USD',iconBg:'#475569',iconText:provider.slice(0,3),candles:[],tradeEnabled:!!PAPER[ui]};
     extra.push(provider);
