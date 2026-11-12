@@ -161,10 +161,28 @@ Deno.serve(async (req: Request) => {
     if(accountError)throw accountError;
     if(!account||account.account_mode!=="real"||account.status!=="approved"||account.archived_at||account.deleted_at)return json({error:"Approved REAL account not found."},403);
 
+    if(action==="pending"){
+      if(!settings.enabled)return json({error:"B-Book execution is not enabled."},423);
+      const symbol=normalize(body.symbol),side=String(body.side||"").toUpperCase();
+      const orderType=String(body.order_type||"").toUpperCase(),quantity=num(body.quantity,"Lot size");
+      const target=num(body.target_price,"Target price");
+      const sl=body.stop_loss==null||body.stop_loss===""?null:num(body.stop_loss,"Stop Loss");
+      const tp=body.take_profit==null||body.take_profit===""?null:num(body.take_profit,"Take Profit");
+      if(!["BUY","SELL"].includes(side)||quantity<=0)return json({error:"Invalid side or lot size."},400);
+      const q=await quote(symbol,settings,url,anon),size=contractSize(symbol);
+      const {data,error}=await db.rpc("bb_bbook_create_pending_order",{p:{
+        user_id:user.id,account_id:accountId,symbol,side,order_type:orderType,quantity,
+        contract_size:size,target_price:target,stop_loss:sl,take_profit:tp
+      }});
+      if(error)throw error;
+      await db.from("bb_bbook_quotes").upsert({symbol,mid:q.mid,bid:q.bid,ask:q.ask,spread_bps:q.spread_bps,provider:q.provider,quote_time:q.quote_time,updated_at:new Date().toISOString()});
+      return json({success:true,...data,quote:q});
+    }
+
     if(action==="open"){
       if(!settings.enabled)return json({error:"In-house B-Book REAL execution is locked by Admin and compliance controls.",code:"BBOOK_LOCKED"},423);
       const symbol=normalize(body.symbol),side=String(body.side||"").toUpperCase(),quantity=num(body.quantity,"Lot size");
-      const sl=num(body.stop_loss,"Stop Loss"),tp=num(body.take_profit,"Take Profit");
+      const sl=body.stop_loss==null||body.stop_loss===""?null:num(body.stop_loss,"Stop Loss"),tp=body.take_profit==null||body.take_profit===""?null:num(body.take_profit,"Take Profit");
       if(!["BUY","SELL"].includes(side)||quantity<=0)return json({error:"Invalid side or lot size."},400);
       const q=await quote(symbol,settings,url,anon);
       const size=contractSize(symbol);
