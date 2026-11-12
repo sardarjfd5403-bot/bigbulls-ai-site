@@ -241,3 +241,10 @@ body.app-mode>.public-header,body.app-mode>main,body.app-mode>footer{display:non
 #portal-modal #portal-body .notice{padding:10px 12px;border:1px solid #dce9fb;border-radius:10px;background:#f2f7ff;color:#355579;font-size:10px;line-height:1.6}
 #portal-modal #portal-body .copy-wallet{border:0;background:transparent;color:#3569ae;font-size:11px;font-weight:750;padding:7px;cursor:pointer}
 @media(max-width:600px){#portal-modal.modal-backdrop{padding:8px}#portal-modal .modal{width:100%;max-height:calc(100dvh - 16px);padding:19px;border-radius:16px}#portal-modal .modal>.close{right:9px;top:9px}}
+
+/* Instant wallet transfer controls */
+.bb-transfer-quick{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0}
+.bb-transfer-quick span{margin-right:auto;color:#64748b;font-size:11px;font-weight:750}
+.bb-transfer-quick button{min-width:54px;padding:7px 12px;border:1px solid #d6e3f3;border-radius:999px;background:#f4f8ff;color:#225ca8;font-size:11px;font-weight:800;cursor:pointer}
+.bb-transfer-quick button:active{background:#e5efff}
+#bb-transfer-available{display:block;color:#64748b;font-size:11px;font-weight:700}
