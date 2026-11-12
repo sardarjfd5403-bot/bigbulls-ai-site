@@ -285,7 +285,8 @@ Deno.serve(async (req: Request) => {
         const hitSl=p.stop_loss!=null&&(p.side==="BUY"?exit<=Number(p.stop_loss):exit>=Number(p.stop_loss));
         const hitTp=p.take_profit!=null&&(p.side==="BUY"?exit>=Number(p.take_profit):exit<=Number(p.take_profit));
         if(hitSl||hitTp){
-          const {error}=await db.rpc("bb_bbook_close_position",{p:{user_id:user.id,position_id:p.id,exit_price:exit,bid:q.bid,ask:q.ask,reason:hitSl?"STOP LOSS":"TAKE PROFIT"}});
+          const conversionRate=p.symbol.endsWith("JPY")&&p.symbol!=="USDJPY"?quotes["USDJPY"]?.mid:p.symbol==="EURGBP"?quotes["GBPUSD"]?.mid:null;
+          const {error}=await db.rpc("bb_bbook_close_position",{p:{user_id:user.id,position_id:p.id,exit_price:exit,bid:q.bid,ask:q.ask,conversion_rate:conversionRate,reason:hitSl?"STOP LOSS":"TAKE PROFIT"}});
           if(error)console.error("B-Book automatic close failed:",p.id,error);
         }else{
           const {error}=await db.from("bb_bbook_positions").update({mark_price:q.mid,bid_price:q.bid,ask_price:q.ask,floating_pnl:floating}).eq("id",p.id).eq("status","OPEN").eq("user_id",user.id);
@@ -303,7 +304,8 @@ Deno.serve(async (req: Request) => {
         for(const p of [...active].sort((a:any,b:any)=>Number(a.floating_pnl)-Number(b.floating_pnl))){
           const q=quotes[p.symbol]||await quote(p.symbol,settings,url,anon,db);
           const exit=p.side==="BUY"?q.bid:q.ask;
-          const {error}=await db.rpc("bb_bbook_close_position",{p:{user_id:user.id,position_id:p.id,exit_price:exit,bid:q.bid,ask:q.ask,reason:"MARGIN STOP OUT"}});
+          const conversionRate=p.symbol.endsWith("JPY")&&p.symbol!=="USDJPY"?quotes["USDJPY"]?.mid:p.symbol==="EURGBP"?quotes["GBPUSD"]?.mid:null;
+          const {error}=await db.rpc("bb_bbook_close_position",{p:{user_id:user.id,position_id:p.id,exit_price:exit,bid:q.bid,ask:q.ask,conversion_rate:conversionRate,reason:"MARGIN STOP OUT"}});
           if(error)console.error("B-Book stop-out close failed:",p.id,error);
         }
         const refreshed=await db.from("bb_bbook_positions").select("*").eq("account_id",accountId).eq("user_id",user.id).order("opened_at",{ascending:false}).limit(500);
