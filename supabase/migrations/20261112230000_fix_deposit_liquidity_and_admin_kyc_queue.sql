@@ -89,16 +89,19 @@ begin
         'Admin-approved verified Real-account deposit');
     end if;
 
-    -- Verified deposits are incoming broker funding; pool capital must increase atomically.
+    -- Client deposit approval credits the client account and debits allocated B-Book pool capital.
+    -- Preserve payout reserves and settle the client ledger + liquidity ledger atomically.
     select * into v_pool from public.bb_bbook_liquidity_pool where singleton=true for update;
-    if not found then raise exception 'Master B-Book pool is unavailable; deposit approval rolled back'; end if;
+    if not found or v_pool.capital_balance-v_pool.reserved_payout<v_tx.amount_usd then
+      raise exception 'Master B-Book pool has insufficient unreserved capital for this deposit allocation';
+    end if;
     update public.bb_bbook_liquidity_pool
-      set capital_balance=capital_balance+v_tx.amount_usd,updated_at=now()
+      set capital_balance=capital_balance-v_tx.amount_usd,updated_at=now()
       where singleton=true;
     insert into public.bb_bbook_liquidity_ledger(entry_type,direction,amount,balance_before,balance_after,reserved_before,reserved_after,actor_user_id,note)
-    values('DEPOSIT','CREDIT',v_tx.amount_usd,v_pool.capital_balance,v_pool.capital_balance+v_tx.amount_usd,
+    values('DEPOSIT','DEBIT',v_tx.amount_usd,v_pool.capital_balance,v_pool.capital_balance-v_tx.amount_usd,
       v_pool.reserved_payout,v_pool.reserved_payout,auth.uid(),
-      'Verified client deposit credited · '||coalesce(v_tx.invoice_id,v_tx.id::text));
+      'Client deposit allocated from B-Book pool · '||coalesce(v_tx.invoice_id,v_tx.id::text)||' · tx='||v_tx.id::text);
 
     update public.wallet_transactions set status='approved',admin_note=p_admin_note,reviewed_by=auth.uid(),reviewed_at=now()
       where id=p_transaction_id;
@@ -106,7 +109,7 @@ begin
     values(auth.uid(),'wallet_deposit_approved','wallet_transaction',p_transaction_id::text,
       jsonb_build_object('amount_usd',v_tx.amount_usd,'invoice_id',v_tx.invoice_id,'account_id',v_tx.account_id,
         'credited_to',case when v_tx.account_id is null then 'main_wallet' else 'trading_account' end,
-        'liquidity_pool_credit',v_tx.amount_usd,'liquidity_pool_balance_after',v_pool.capital_balance+v_tx.amount_usd));
+        'liquidity_pool_debit',v_tx.amount_usd,'liquidity_pool_balance_after',v_pool.capital_balance-v_tx.amount_usd));
     return;
   end if;
 
@@ -159,6 +162,69 @@ begin
       'account_id',v_tx.account_id,'pool_reserved_amount',v_tx.amount_usd));
 end;
 $function$;
+
+
+-- One-time, idempotent reconciliation for deposits whose client credit exists
+-- but whose historical B-Book pool debit/ledger entry is missing.
+do $reconcile$
+declare
+  v_tx public.wallet_transactions%rowtype;
+  v_pool public.bb_bbook_liquidity_pool%rowtype;
+begin
+  for v_tx in
+    select t.*
+    from public.wallet_transactions t
+    where t.kind='deposit'
+      and t.status='approved'
+      and t.amount_usd>0
+      and (
+        (t.account_id is not null and exists (
+          select 1 from public.account_balance_ledger a
+          where a.transaction_id=t.id and a.entry_type='deposit_credit' and a.amount=t.amount_usd
+        ))
+        or
+        (t.account_id is null and exists (
+          select 1 from public.client_wallet_ledger w
+          where w.reference_id=t.id and w.entry_type='deposit_credit' and w.amount=t.amount_usd
+        ))
+      )
+      and not exists (
+        select 1 from public.bb_bbook_liquidity_ledger l
+        where l.entry_type='DEPOSIT'
+          and (
+            position(('tx='||t.id::text) in coalesce(l.note,''))>0
+            or (t.invoice_id is not null and position(t.invoice_id in coalesce(l.note,''))>0)
+          )
+      )
+    order by t.reviewed_at,t.created_at
+  loop
+    select * into v_pool from public.bb_bbook_liquidity_pool where singleton=true for update;
+    if not found or v_pool.capital_balance-v_pool.reserved_payout<v_tx.amount_usd then
+      raise exception 'Insufficient unreserved pool capital to reconcile approved deposit %',v_tx.id;
+    end if;
+    update public.bb_bbook_liquidity_pool
+      set capital_balance=capital_balance-v_tx.amount_usd,updated_at=now()
+      where singleton=true;
+    insert into public.bb_bbook_liquidity_ledger(
+      entry_type,direction,amount,balance_before,balance_after,
+      reserved_before,reserved_after,actor_user_id,note
+    ) values (
+      'DEPOSIT','DEBIT',v_tx.amount_usd,
+      v_pool.capital_balance,v_pool.capital_balance-v_tx.amount_usd,
+      v_pool.reserved_payout,v_pool.reserved_payout,v_tx.reviewed_by,
+      'Historical approved deposit pool debit reconciliation · '||
+        coalesce(v_tx.invoice_id,v_tx.id::text)||' · tx='||v_tx.id::text
+    );
+    if v_tx.reviewed_by is not null then
+      insert into public.admin_audit_logs(actor_user_id,action,entity_type,entity_id,details)
+      values(v_tx.reviewed_by,'wallet_deposit_pool_debit_reconciled','wallet_transaction',v_tx.id::text,
+        jsonb_build_object('amount_usd',v_tx.amount_usd,'invoice_id',v_tx.invoice_id,
+          'liquidity_pool_debit',v_tx.amount_usd,
+          'liquidity_pool_balance_after',v_pool.capital_balance-v_tx.amount_usd));
+    end if;
+  end loop;
+end;
+$reconcile$;
 
 grant select on table public.kyc_submissions to authenticated;
 drop policy if exists "admins read all kyc submissions" on public.kyc_submissions;
