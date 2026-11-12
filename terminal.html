@@ -2004,6 +2004,7 @@ async function loadBiQuoteCatalog(){
     inst.tickSize=Number(row.tickSize)||inst.tickSize||null;inst.tickValue=Number(row.tickValue)||inst.tickValue||null;inst.currency=row.currency||inst.currency||'USD';
     inst.tradeEnabled=!!PAPER[ui];
    }
+   if(!BIQUOTE_STREAM_SYMBOLS.includes(provider))extra.push(provider);
    MARKET[ui]=provider;
   }
   if(extra.length)BIQUOTE_STREAM_SYMBOLS=[...new Set([...BIQUOTE_STREAM_SYMBOLS,...extra])];
