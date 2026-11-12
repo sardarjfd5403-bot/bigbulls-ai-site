@@ -11,10 +11,19 @@ const cors = {
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
   status, headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" },
 });
-const SYMBOLS = new Set(["EURUSD","GBPUSD","USDJPY","XAUUSD","BTCUSDT","ETHUSDT","BNBUSDT","SOLUSDT","XRPUSDT","DOGEUSDT"]);
+const CONTRACT_SIZES: Record<string,number> = {
+  EURUSD:100000,GBPUSD:100000,USDJPY:100000,
+  USDCAD:1,AUDUSD:1,NZDUSD:1,USDCHF:1,EURGBP:1,EURJPY:1,GBPJPY:1,
+  XAUUSD:100,XAGUSD:5000,XPTUSD:1,XPDUSD:1,
+  US30:1,USTEC:1,US500:1,DE30:1,UK100:1,JP225:1,DXY:1,
+  USOIL:1,UKOIL:1,NATGASUSDT:1,
+  BTCUSDT:1,ETHUSDT:1,SOLUSDT:1,XRPUSDT:1,BNBUSDT:1
+};
+const CRYPTO_SYMBOLS = new Set(["BTCUSDT","ETHUSDT","SOLUSDT","XRPUSDT","BNBUSDT"]);
+const SYMBOLS = new Set(Object.keys(CONTRACT_SIZES));
 const normalize = (v: unknown) => String(v || "").toUpperCase().replaceAll("/", "").trim();
-const contractSize = (s: string) => ["EURUSD","GBPUSD","USDJPY"].includes(s) ? 100000 : s === "XAUUSD" ? 100 : 1;
-const category = (s: string) => s === "XAUUSD" ? "XAUUSD" : s.endsWith("USDT") ? "CRYPTO" : "FX";
+const contractSize = (s: string) => CONTRACT_SIZES[s] || 0;
+const category = (s: string) => CRYPTO_SYMBOLS.has(s) ? "CRYPTO" : ["XAUUSD","XAGUSD","XPTUSD","XPDUSD"].includes(s) ? "XAUUSD" : ["USOIL","UKOIL","NATGASUSDT"].includes(s) ? "COMMODITY" : ["US30","USTEC","US500","DE30","UK100","JP225","DXY"].includes(s) ? "INDEX" : "FX";
 const num = (v: unknown, label: string) => {
   const n = Number(v);
   if (!Number.isFinite(n)) throw new Error(label + " must be a valid number.");
@@ -26,32 +35,68 @@ const adminCheck = async (auth: any) => {
   if (data !== true) throw new Error("Admin permission required.");
 };
 
-async function quote(symbol: string, settings: any, url: string, anon: string) {
+async function quote(symbol: string, settings: any, url: string, anon: string, db: any) {
   if (!SYMBOLS.has(symbol)) throw new Error("Instrument is not enabled for B-Book execution.");
-  let mid = 0, provider = "";
-  if (symbol.endsWith("USDT")) {
-    const r = await fetch("https://data-api.binance.vision/api/v3/ticker/price?symbol=" + encodeURIComponent(symbol), { signal: AbortSignal.timeout(8000) });
-    if (!r.ok) throw new Error("Crypto reference feed unavailable (" + r.status + ").");
-    const d = await r.json();
-    mid = Number(d.price); provider = "Binance Spot Reference";
-  } else {
-    const map: Record<string,string> = { EURUSD:"EUR/USD", GBPUSD:"GBP/USD", USDJPY:"USD/JPY", XAUUSD:"XAU/USD" };
-    const r = await fetch(url + "/functions/v1/market-data", {
-      method: "POST",
-      headers: { "Content-Type":"application/json", apikey:anon, Authorization:"Bearer " + anon },
-      body: JSON.stringify({ action:"quote", symbol:map[symbol] }),
-      signal: AbortSignal.timeout(12000),
-    });
-    if (!r.ok) throw new Error("Market reference feed unavailable (" + r.status + ").");
-    const d = await r.json();
-    mid = Number(d.price); provider = "Twelve Data Indicative Reference";
+  try {
+    let mid = 0, provider = "";
+    if (CRYPTO_SYMBOLS.has(symbol)) {
+      const r = await fetch("https://data-api.binance.vision/api/v3/ticker/price?symbol=" + encodeURIComponent(symbol), { signal: AbortSignal.timeout(8000) });
+      if (!r.ok) throw new Error("Crypto reference feed unavailable (" + r.status + ").");
+      const d = await r.json();
+      mid = Number(d.price); provider = "Binance Spot Reference";
+    } else {
+      const map: Record<string,string> = { EURUSD:"EUR/USD",GBPUSD:"GBP/USD",USDJPY:"USD/JPY",USDCAD:"USD/CAD",AUDUSD:"AUD/USD",NZDUSD:"NZD/USD",USDCHF:"USD/CHF",EURGBP:"EUR/GBP",EURJPY:"EUR/JPY",GBPJPY:"GBP/JPY",XAUUSD:"XAU/USD",XAGUSD:"XAG/USD",XPTUSD:"XPT/USD",XPDUSD:"XPD/USD",US30:"US30",USTEC:"USTEC",US500:"US500",DE30:"DE30",UK100:"UK100",JP225:"JP225",DXY:"DXY",USOIL:"USOIL",UKOIL:"UKOIL",NATGASUSDT:"NATGASUSDT" };
+      const request = {
+        method: "POST",
+        headers: { "Content-Type":"application/json", apikey:anon, Authorization:"Bearer " + anon },
+        body: JSON.stringify({ action:"quote", symbol:map[symbol] }),
+        signal: AbortSignal.timeout(12000),
+      };
+      let lastFailure = "Market reference feed unavailable.";
+      let r: Response | null = null;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          r = await fetch(url + "/functions/v1/market-data", request);
+          if (r.ok || r.status < 500 || attempt === 1) break;
+          lastFailure = "Market reference feed unavailable (" + r.status + ").";
+        } catch (fetchError) {
+          lastFailure = "Market reference feed request failed: " + (fetchError instanceof Error ? fetchError.message : "network error");
+          if (attempt === 1) throw new Error(lastFailure);
+        }
+      }
+      if (!r || !r.ok) throw new Error(lastFailure);
+      const d = await r.json();
+      mid = Number(d.price); provider = String(d.provider || "Twelve Data Indicative Reference");
+    }
+    if (!(mid > 0) || !Number.isFinite(mid)) throw new Error("A valid market reference price was not returned.");
+    const spreads = settings.spread_bps || {};
+    const bps = Math.max(0, Math.min(100, Number(spreads[category(symbol)] ?? 2)));
+    const half = bps / 20000;
+    const bid = mid * (1 - half), ask = mid * (1 + half);
+    return { symbol, mid, bid, ask, spread_bps:bps, provider, quote_time:new Date().toISOString(), fallback:provider.includes("Cache Fallback") };
+  } catch (feedError) {
+    const reason = feedError instanceof Error ? feedError.message : "upstream market feed failure";
+    const { data: cached, error: cacheError } = await db.from("bb_bbook_quotes")
+      .select("symbol,mid,bid,ask,spread_bps,provider,quote_time")
+      .eq("symbol", symbol).maybeSingle();
+    const quoteAgeMs = cached?.quote_time ? Date.now() - Date.parse(cached.quote_time) : Number.POSITIVE_INFINITY;
+    const maxCacheAgeMs = 90_000;
+    const validCached = !cacheError && cached &&
+      Number(cached.mid) > 0 && Number(cached.bid) > 0 && Number(cached.ask) > 0 &&
+      Number(cached.bid) <= Number(cached.mid) && Number(cached.mid) <= Number(cached.ask) &&
+      Number.isFinite(quoteAgeMs) && quoteAgeMs >= 0 && quoteAgeMs <= maxCacheAgeMs;
+    if (validCached) {
+      console.warn("B-Book using fresh quote-cache fallback", { symbol, quote_age_ms:quoteAgeMs, upstream_error:reason });
+      return {
+        symbol, mid:Number(cached.mid), bid:Number(cached.bid), ask:Number(cached.ask),
+        spread_bps:Number(cached.spread_bps || 0),
+        provider:"Supabase Quote Cache Fallback (" + String(cached.provider || "last valid provider") + ")",
+        quote_time:cached.quote_time, fallback:true, quote_age_ms:quoteAgeMs,
+      };
+    }
+    const ageText = Number.isFinite(quoteAgeMs) ? Math.round(quoteAgeMs) + "ms" : "unavailable";
+    throw new Error(reason + "; no valid quote cache within 90 seconds (cache age: " + ageText + "). Execution safely stopped rather than using stale pricing.");
   }
-  if (!(mid > 0) || !Number.isFinite(mid)) throw new Error("A valid market reference price was not returned.");
-  const spreads = settings.spread_bps || {};
-  const bps = Math.max(0, Math.min(100, Number(spreads[category(symbol)] ?? 2)));
-  const half = bps / 20000;
-  const bid = mid * (1 - half), ask = mid * (1 + half);
-  return { symbol, mid, bid, ask, spread_bps:bps, provider, quote_time:new Date().toISOString() };
 }
 
 Deno.serve(async (req: Request) => {
@@ -148,7 +193,7 @@ Deno.serve(async (req: Request) => {
 
     if (action === "quote") {
       const symbol=normalize(body.symbol);
-      const q=await quote(symbol,settings,url,anon);
+      const q=await quote(symbol,settings,url,anon,db);
       await db.from("bb_bbook_quotes").upsert({symbol:q.symbol,mid:q.mid,bid:q.bid,ask:q.ask,spread_bps:q.spread_bps,provider:q.provider,quote_time:q.quote_time,updated_at:new Date().toISOString()});
       return json({quote:q,execution_mode:"BBOOK_REFERENCE"});
     }
@@ -169,7 +214,7 @@ Deno.serve(async (req: Request) => {
       const sl=body.stop_loss==null||body.stop_loss===""?null:num(body.stop_loss,"Stop Loss");
       const tp=body.take_profit==null||body.take_profit===""?null:num(body.take_profit,"Take Profit");
       if(!["BUY","SELL"].includes(side)||quantity<=0)return json({error:"Invalid side or lot size."},400);
-      const q=await quote(symbol,settings,url,anon),size=contractSize(symbol);
+      const q=await quote(symbol,settings,url,anon,db),size=contractSize(symbol);
       const {data,error}=await db.rpc("bb_bbook_create_pending_order",{p:{
         user_id:user.id,account_id:accountId,symbol,side,order_type:orderType,quantity,
         contract_size:size,target_price:target,stop_loss:sl,take_profit:tp
@@ -184,7 +229,7 @@ Deno.serve(async (req: Request) => {
       const symbol=normalize(body.symbol),side=String(body.side||"").toUpperCase(),quantity=num(body.quantity,"Lot size");
       const sl=body.stop_loss==null||body.stop_loss===""?null:num(body.stop_loss,"Stop Loss"),tp=body.take_profit==null||body.take_profit===""?null:num(body.take_profit,"Take Profit");
       if(!["BUY","SELL"].includes(side)||quantity<=0)return json({error:"Invalid side or lot size."},400);
-      const q=await quote(symbol,settings,url,anon);
+      const q=await quote(symbol,settings,url,anon,db);
       const size=contractSize(symbol);
       const spreadCost=(q.ask-q.bid)*quantity*size;
       const {data,error}=await db.rpc("bb_bbook_open_position",{p:{user_id:user.id,account_id:accountId,symbol,side,quantity,contract_size:size,mid:q.mid,bid:q.bid,ask:q.ask,stop_loss:sl,take_profit:tp,spread_cost:spreadCost}});
@@ -198,9 +243,12 @@ Deno.serve(async (req: Request) => {
       const {data:position,error}=await auth.from("bb_bbook_positions").select("id,symbol,side,quantity,contract_size").eq("id",positionId).eq("account_id",accountId).eq("user_id",user.id).eq("status","OPEN").maybeSingle();
       if(error)throw error;
       if(!position)return json({error:"Open B-Book position not found."},404);
-      const q=await quote(position.symbol,settings,url,anon);
+      const q=await quote(position.symbol,settings,url,anon,db);
       const exit=position.side==="BUY"?q.bid:q.ask;
-      const {data,error:closeError}=await db.rpc("bb_bbook_close_position",{p:{user_id:user.id,position_id:positionId,exit_price:exit,bid:q.bid,ask:q.ask,reason:String(body.reason||"MANUAL CLOSE").slice(0,100)}});
+      let conversionRate:number|null=null;
+      if(position.symbol.endsWith("JPY")&&position.symbol!=="USDJPY")conversionRate=(await quote("USDJPY",settings,url,anon,db)).mid;
+      else if(position.symbol==="EURGBP")conversionRate=(await quote("GBPUSD",settings,url,anon,db)).mid;
+      const {data,error:closeError}=await db.rpc("bb_bbook_close_position",{p:{user_id:user.id,position_id:positionId,exit_price:exit,bid:q.bid,ask:q.ask,conversion_rate:conversionRate,reason:String(body.reason||"MANUAL CLOSE").slice(0,100)}});
       if(closeError)throw closeError;
       return json({success:true,...data,quote:q});
     }
@@ -222,13 +270,18 @@ Deno.serve(async (req: Request) => {
       if(positionsError)throw positionsError;
       const open=(positions||[]).filter((p:any)=>p.status==="OPEN");
       const quotes:any={};
-      for(const symbol of [...new Set(open.map((p:any)=>p.symbol))] as string[]){
-        try{quotes[symbol]=await quote(symbol,settings,url,anon);await db.from("bb_bbook_quotes").upsert({symbol,mid:quotes[symbol].mid,bid:quotes[symbol].bid,ask:quotes[symbol].ask,spread_bps:quotes[symbol].spread_bps,provider:quotes[symbol].provider,quote_time:quotes[symbol].quote_time,updated_at:new Date().toISOString()});}catch(e){console.warn("B-Book quote:",symbol,e);}
+      const quoteSymbols=[...new Set(open.map((p:any)=>p.symbol))] as string[];
+      if(open.some((p:any)=>p.symbol.endsWith("JPY")&&p.symbol!=="USDJPY"))quoteSymbols.push("USDJPY");
+      if(open.some((p:any)=>p.symbol==="EURGBP"))quoteSymbols.push("GBPUSD");
+      for(const symbol of [...new Set(quoteSymbols)]){
+        try{quotes[symbol]=await quote(symbol,settings,url,anon,db);await db.from("bb_bbook_quotes").upsert({symbol,mid:quotes[symbol].mid,bid:quotes[symbol].bid,ask:quotes[symbol].ask,spread_bps:quotes[symbol].spread_bps,provider:quotes[symbol].provider,quote_time:quotes[symbol].quote_time,updated_at:new Date().toISOString()});}catch(e){console.warn("B-Book quote:",symbol,e);}
       }
       for(const p of open){
         const q=quotes[p.symbol];if(!q)continue;
         const exit=p.side==="BUY"?q.bid:q.ask;
-        let floating=(p.side==="BUY"?exit-Number(p.entry_price):Number(p.entry_price)-exit)*Number(p.quantity)*Number(p.contract_size);if(p.symbol==="USDJPY"&&exit>0)floating/=exit;
+        let floating=(p.side==="BUY"?exit-Number(p.entry_price):Number(p.entry_price)-exit)*Number(p.quantity)*Number(p.contract_size);if(p.symbol==="USDJPY"||p.symbol==="USDCAD"||p.symbol==="USDCHF"){if(exit>0)floating/=exit;}
+        else if(p.symbol.endsWith("JPY")){const fx=quotes["USDJPY"]?.mid;if(Number(fx)>0)floating/=Number(fx);}
+        else if(p.symbol==="EURGBP"){const fx=quotes["GBPUSD"]?.mid;if(Number(fx)>0)floating*=Number(fx);}
         const hitSl=p.stop_loss!=null&&(p.side==="BUY"?exit<=Number(p.stop_loss):exit>=Number(p.stop_loss));
         const hitTp=p.take_profit!=null&&(p.side==="BUY"?exit>=Number(p.take_profit):exit<=Number(p.take_profit));
         if(hitSl||hitTp){
@@ -248,7 +301,7 @@ Deno.serve(async (req: Request) => {
       const marginLevel=margin>0?equity/margin*100:0;
       if(active.length&&margin>0&&marginLevel<=Number(settings.stop_out_level_pct||50)){
         for(const p of [...active].sort((a:any,b:any)=>Number(a.floating_pnl)-Number(b.floating_pnl))){
-          const q=quotes[p.symbol]||await quote(p.symbol,settings,url,anon);
+          const q=quotes[p.symbol]||await quote(p.symbol,settings,url,anon,db);
           const exit=p.side==="BUY"?q.bid:q.ask;
           const {error}=await db.rpc("bb_bbook_close_position",{p:{user_id:user.id,position_id:p.id,exit_price:exit,bid:q.bid,ask:q.ask,reason:"MARGIN STOP OUT"}});
           if(error)console.error("B-Book stop-out close failed:",p.id,error);
@@ -271,6 +324,14 @@ Deno.serve(async (req: Request) => {
     return json({error:"Unsupported B-Book action."},400);
   }catch(e){
     console.error("bbook-engine:",e);
-    return json({error:e instanceof Error?e.message:"B-Book engine error."},400);
+    const message = e instanceof Error ? e.message : "B-Book engine error.";
+    const locked = /readiness checks are incomplete|execution is locked|locked by platform controls|compliance controls/i.test(message);
+    const kycRequired = /approved KYC is required/i.test(message);
+    const feedUnavailable = /reference feed unavailable|reference feed request failed/i.test(message);
+    const status = kycRequired ? 403 : locked ? 423 : feedUnavailable ? 503 : 500;
+    return json({
+      error: message,
+      code: kycRequired ? "KYC_REQUIRED" : locked ? "EXECUTION_LOCKED" : feedUnavailable ? "MARKET_DATA_UNAVAILABLE" : "BBOOK_EXECUTION_ERROR"
+    }, status);
   }
 });
