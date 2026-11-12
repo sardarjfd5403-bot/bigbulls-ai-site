@@ -1184,10 +1184,10 @@ async function submitHandler(e){
   e.preventDefault();const d=new FormData(f),fromId=String(d.get("from_account")||""),toId=String(d.get("to_account")||""),amount=Number(d.get("amount")),out=f.querySelector("[data-page-message]"),button=f.querySelector('button[type="submit"]'),accounts=window.bbClientAccounts||[],source=accounts.find(x=>x.id===fromId),target=accounts.find(x=>x.id===toId);
   if(!source||!target||fromId===toId||source.status!=="approved"||target.status!=="approved"||source.archived_at||target.archived_at||source.deleted_at||target.deleted_at||source.account_mode!=="real"||target.account_mode!=="real"||source.currency!=="USD"||target.currency!=="USD"||!(amount>0)||amount>Number(source.balance||0)){if(out)out.textContent="Choose two active Real USD accounts and an amount within the available balance.";return;}
   button.disabled=true;button.textContent="Processing securely…";
-  const {data,error}=await sb.rpc("client_funds_transfer",{p_from_type:"account",p_from_account_id:fromId,p_to_type:"account",p_to_account_id:toId,p_amount:amount,p_idempotency_key:crypto.randomUUID(),p_note:"Instant account-to-account transfer"});
+  const {data,error}=await sb.rpc("client_funds_transfer",{p_from_type:"account",p_from_account_id:fromId,p_to_type:"account",p_to_account_id:toId,p_amount:amount,p_idempotency_key:(f.dataset.idempotencyKey||(f.dataset.idempotencyKey=crypto.randomUUID())),p_note:"Instant account-to-account transfer"});
   button.disabled=false;button.textContent="Confirm Instant Transfer";
   if(out)out.textContent=error?"Transfer failed: "+error.message:"Transfer completed instantly · Reference "+data;
-  if(!error){await loadClientTradingAccounts();await loadPageData();}
+  if(!error){delete f.dataset.idempotencyKey;await loadClientTradingAccounts();await loadPageData();}
   return;
  }
  if(f.id==="transfer-form"){
@@ -1196,11 +1196,11 @@ async function submitHandler(e){
   const from=decode(fromValue),to=decode(toValue);
   if(!fromValue||!toValue||fromValue===toValue||!(amount>0)||!Number.isFinite(amount)){if(out)out.textContent="Choose different source and destination and enter a valid amount.";return;}
   button.disabled=true;button.textContent="Processing securely…";
-  const {data,error}=await sb.rpc("client_funds_transfer",{p_from_type:from.type,p_from_account_id:from.id,p_to_type:to.type,p_to_account_id:to.id,p_amount:amount,p_idempotency_key:crypto.randomUUID(),p_note:"Client internal transfer"});
+  const {data,error}=await sb.rpc("client_funds_transfer",{p_from_type:from.type,p_from_account_id:from.id,p_to_type:to.type,p_to_account_id:to.id,p_amount:amount,p_idempotency_key:(f.dataset.idempotencyKey||(f.dataset.idempotencyKey=crypto.randomUUID())),p_note:"Client internal transfer"});
   button.disabled=false;button.textContent="Confirm Instant Transfer";
   if(error){if(out)out.textContent="Transfer failed: "+error.message;return;}
   if(out)out.textContent="Transfer completed instantly · Reference "+data;
-  await loadClientTradingAccounts();await loadPageData();renderWalletTransfer();return;
+  delete f.dataset.idempotencyKey;await loadClientTradingAccounts();await loadPageData();renderWalletTransfer();return;
  }
  if(f.id==="admin-wallet-form"){e.preventDefault();if(!isAdmin())return;const d=new FormData(f),asset=String(d.get("asset")),network=String(d.get("network"));const {error}=await sb.from("crypto_wallets").upsert({asset,network,label:String(d.get("label")||""),address:String(d.get("address")).trim(),active:true},{onConflict:"asset,network"});const out=f.parentElement.querySelector("[data-page-message]");if(out)out.textContent=error?error.message:"Wallet address saved.";if(!error){f.reset();loadPageData();}return;}
  if(f.id==="admin-package-form"){e.preventDefault();if(!isAdmin())return;const d=new FormData(f),file=d.get("package"),out=f.querySelector("[data-page-message]"),button=f.querySelector("button[type=submit]");if(!(file instanceof File)||!file.size||!file.name.toLowerCase().endsWith(".zip")){out.textContent="Select a valid ZIP package.";return;}if(file.size>104857600){out.textContent="Package must be 100 MB or smaller.";return;}button.disabled=true;button.textContent="Uploading privately…";const path="echo-system/latest-package.zip";const {error:uploadError}=await sb.storage.from("product-downloads").upload(path,file,{upsert:true,contentType:"application/zip"});if(uploadError){out.textContent="Upload failed: "+uploadError.message;button.disabled=false;button.textContent="Upload / replace private package";return;}const {error:updateError}=await sb.from("licenses").update({download_path:path}).eq("status","active");if(updateError){out.textContent="Package uploaded, but license link update failed: "+updateError.message;}else{out.textContent="Private Echo System package uploaded. Active licenses can now download it.";f.reset();}button.disabled=false;button.textContent="Upload / replace private package";return;}
