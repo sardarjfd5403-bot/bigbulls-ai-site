@@ -2440,7 +2440,18 @@
         const data = await bbInvokeMarket({action:'quotes'});
         (data.quotes || []).forEach(q => {
           const key = bbMapInstrument(q.symbol);
-          if (key && Number(q.close) > 0) INSTRUMENTS[key].price = Number(q.close);
+          const price = Number(q.close);
+          if (key && price > 0) {
+            const inst = INSTRUMENTS[key];
+            inst.price = price;
+            // Keep the active one-minute candle moving with the latest Twelve Data quote.
+            const last = inst.candles && inst.candles[inst.candles.length - 1];
+            if (last && Number.isFinite(price)) {
+              last.close = price;
+              last.high = Math.max(Number(last.high), price);
+              last.low = Math.min(Number(last.low), price);
+            }
+          }
         });
         if (typeof tickMarketPrices === 'function') tickMarketPrices();
       } catch (e) { console.warn('BIGBULLS quote refresh:', e.message || e); }
