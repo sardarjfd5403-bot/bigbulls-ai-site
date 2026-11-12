@@ -893,20 +893,44 @@ if(activePage==="admin"&&isAdmin()){
   if(history)history.innerHTML=error?'<p>'+esc(error.message)+'</p>':(data||[]).map(x=>'<div class="admin-row"><span><b>KYC · '+esc(x.status==="approved"?"VERIFIED":x.status.toUpperCase())+'</b><small>'+new Date(x.created_at).toLocaleString()+(x.rejection_reasons?.length?' · '+x.rejection_reasons.map(k=>reasonLabels[k]||k).join("; "):"")+(x.admin_note?' · Admin: '+esc(x.admin_note):"")+'</small></span></div>').join("")||"No KYC submission history.";
  }
  if(activePage==="partner"){
-  const {data:application,error}=await sb.from("partner_applications").select("*").eq("user_id",user.id).maybeSingle();
-  const status=document.getElementById("partner-current-status"),link=document.getElementById("partner-referral-link"),form=document.getElementById("partner-form");
-  if(status)status.textContent=error?"● STATUS UNAVAILABLE":application?"● STATUS: "+application.status.toUpperCase():"● NOT APPLIED";
-  if(form&&application){Array.from(form.elements).forEach(el=>{if(el.name&&application[el.name]!==null&&application[el.name]!==undefined)el.value=application[el.name];});form.querySelector("button").disabled=true;form.querySelector("button").textContent="Application already submitted";}
-  const referralUrl=application?.referral_code?location.origin+location.pathname+"?ref="+encodeURIComponent(application.referral_code):"";if(link)link.innerHTML=application?.referral_code?'<code>'+esc(referralUrl)+'</code><button type="button" data-copy-address="'+esc(referralUrl)+'">Copy referral link</button>':application?"Referral code will appear after approval.":"Apply to receive a referral code after approval.";
-  const [refs,comm]=await Promise.all([
-   sb.from("partner_referrals").select("id,referred_user_id,created_at").eq("partner_user_id",user.id).order("created_at",{ascending:false}),
-   sb.from("partner_commission_ledger").select("id,source_reference,verified_lots,commission_usd,status,created_at").eq("partner_user_id",user.id).order("created_at",{ascending:false})
+  const [{data:application,error:applicationError},{data:snapshot,error:snapshotError}]=await Promise.all([
+   sb.from("partner_applications").select("*").eq("user_id",user.id).maybeSingle(),
+   sb.rpc("partner_dashboard_snapshot")
   ]);
-  const rb=document.getElementById("partner-referrals"),cb=document.getElementById("partner-commissions");
-  if(rb)rb.innerHTML=refs.error?esc(refs.error.message):(refs.data||[]).map(x=>'<div class="admin-row"><span>Client '+esc(x.referred_user_id)+'<small>'+new Date(x.created_at).toLocaleDateString()+'</small></span></div>').join("")||"No referred clients recorded.";
-  if(cb)cb.innerHTML=comm.error?esc(comm.error.message):(comm.data||[]).map(x=>'<div class="admin-row"><span><b>$'+Number(x.commission_usd||0).toFixed(2)+' · '+esc(x.status)+'</b><small>'+Number(x.verified_lots||0).toFixed(2)+' lots · '+esc(x.source_reference||"")+'</small></span></div>').join("")||"No commission records yet.";
+  const status=document.getElementById("partner-current-status"),link=document.getElementById("partner-referral-link"),form=document.getElementById("partner-form");
+  const partner=snapshot?.partner||null,wallet=snapshot?.wallet||{},metrics=snapshot?.metrics||{};
+  const code=partner?.referral_code||application?.referral_code||"";
+  const approved=partner?.status==="approved";
+  if(status)status.textContent=applicationError||snapshotError?"● STATUS UNAVAILABLE":application?"● STATUS: "+String(application.status).toUpperCase():"● NOT APPLIED";
+  if(form&&application){Array.from(form.elements).forEach(el=>{if(el.name&&application[el.name]!==null&&application[el.name]!==undefined)el.value=application[el.name];});form.querySelector("button").disabled=true;form.querySelector("button").textContent="Application already submitted";}
+  const referralUrl=code?location.origin+location.pathname+"?ref="+encodeURIComponent(code):"";
+  window.__bbPartnerReferralUrl=referralUrl;window.__bbPartnerReferralCode=code;
+  if(link)link.innerHTML=code?'<div><small>YOUR UNIQUE CODE</small><b>'+esc(code)+'</b></div><code>'+esc(referralUrl)+'</code><button type="button" data-copy-address="'+esc(referralUrl)+'">Copy partner link</button>':application?"Referral code will appear after approval.":"Apply to receive your unique referral code.";
+  const qr=document.getElementById("partner-referral-qr");if(qr&&referralUrl)renderDepositQr(qr,referralUrl);else if(qr)qr.textContent="QR code becomes available after partner approval.";
+  const setText=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value;};
+  setText("partner-wallet-balance","$"+Number(wallet.available_balance||0).toFixed(2));
+  setText("partner-total-earned","$"+Number(wallet.total_earned||0).toFixed(2));
+  setText("partner-active-clients",String(metrics.active_clients||0));
+  setText("partner-referred-count",String(metrics.total_referred||0)+" total referrals");
+  setText("partner-total-lots",Number(metrics.total_lots||0).toFixed(2));
+  const rateBox=document.getElementById("partner-tier-rate");
+  if(rateBox&&partner?.tier){
+   const {data:rate}=await sb.from("partner_commission_rates").select("commission_per_lot,enabled").eq("tier",partner.tier).maybeSingle();
+   rateBox.textContent=String(partner.tier).toUpperCase()+" tier · "+(rate?.enabled?"$"+Number(rate.commission_per_lot||0).toFixed(2)+" per Real lot":"commission rate currently disabled");
   }
-  if(activePage==="accounts"){ await loadClientTradingAccounts(); }
+  const refs=snapshot?.referrals||[],comm=snapshot?.commissions||[];
+  const rb=document.getElementById("partner-referrals"),cb=document.getElementById("partner-commissions");
+  if(rb)rb.innerHTML=snapshotError?'<div class="notice error">'+esc(snapshotError.message)+'</div>':refs.map(x=>'<div class="admin-row"><span><b>'+esc(x.masked_email||"Client")+'</b><small>Joined '+new Date(x.joined_at).toLocaleDateString()+' · '+(x.active?"Active Real client":"Not active")+'</small><small>'+Number(x.total_lots||0).toFixed(2)+' lots · $'+Number(x.commission_usd||0).toFixed(2)+' earned</small></span></div>').join("")||"No referred clients recorded yet.";
+  if(cb)cb.innerHTML=snapshotError?'<div class="notice error">'+esc(snapshotError.message)+'</div>':comm.map(x=>'<div class="admin-row"><span><b>$'+Number(x.commission_usd||0).toFixed(2)+' · '+esc(x.symbol||"B-Book trade")+'</b><small>'+esc(x.masked_account||"Account ••••")+' · '+Number(x.lots||0).toFixed(2)+' lots · '+esc(x.status||"credited")+'</small><small>'+new Date(x.created_at).toLocaleString()+'</small></span></div>').join("")||"No Real B-Book commission records yet.";
+  const transferSelect=document.getElementById("partner-transfer-account");
+  if(transferSelect){
+   const {data:realAccounts,error:realAccountsError}=await sb.from("trading_accounts").select("id,account_number,display_name,balance,currency").eq("user_id",user.id).eq("account_mode","real").eq("status","approved").is("archived_at",null).is("deleted_at",null).eq("currency","USD").order("created_at",{ascending:false});
+   transferSelect.innerHTML=realAccountsError?'<option value="">Accounts unavailable</option>':'<option value="">Select a Real USD account</option>'+(realAccounts||[]).map(x=>'<option value="'+esc(x.id)+'">'+esc(x.display_name||"Real account")+' · #'+esc(x.account_number||"—")+' · $'+Number(x.balance||0).toFixed(2)+'</option>').join("");
+  }
+  const payoutBox=document.getElementById("partner-payout-history");
+  if(payoutBox)payoutBox.innerHTML=(snapshot?.payouts||[]).map(x=>'<div class="admin-row"><span><b>$'+Number(x.amount||0).toFixed(2)+' · '+esc(x.status.toUpperCase())+'</b><small>'+esc(x.method)+' · '+new Date(x.created_at).toLocaleString()+(x.admin_note?' · '+esc(x.admin_note):"")+'</small></span></div>').join("")||"No payout requests yet.";
+  for(const id of ["partner-transfer-form","partner-payout-form"]){const el=document.getElementById(id);if(el)el.hidden=!approved;}
+ }if(activePage==="accounts"){ await loadClientTradingAccounts(); }
  }
 async function loadClientTradingAccounts(){
  const box=document.getElementById("my-trading-accounts");if(!box||!sb||!user)return;
