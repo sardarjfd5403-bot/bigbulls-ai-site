@@ -53,3 +53,29 @@
     font-size:9px;
   }
 }
+/* BIGBULLS IB partner workspace */
+.partner-kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:18px 0}
+.partner-kpi-grid>.client-panel{display:flex;flex-direction:column;gap:8px;margin:0}
+.partner-kpi-grid small,.partner-kpi-grid span{color:#64748b;font-size:12px}
+.partner-kpi-grid b{font-size:25px;letter-spacing:-.04em;color:#101828}
+.partner-dashboard-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.partner-dashboard-grid>.client-panel{min-width:0}
+.partner-referral-qr{display:flex;justify-content:center;align-items:center;min-height:180px;margin:12px auto;max-width:220px;padding:10px;background:#fff;border:1px solid #e5e7eb;border-radius:14px}
+.partner-referral-qr img,.partner-referral-qr canvas{max-width:100%;height:auto}
+.partner-action-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.partner-action-row button,.ib-rate-row button,.ib-partner-row button{border:1px solid #dbe3ef;border-radius:10px;background:#f8fafc;color:#172033;padding:9px 12px;font-weight:650;cursor:pointer}
+.partner-action-row button:hover,.ib-rate-row button:hover,.ib-partner-row button:hover{border-color:#0066ff;color:#0052cc}
+.partner-dashboard-grid .client-form{margin-top:12px}
+.partner-dashboard-grid .client-form[hidden]{display:none!important}
+.partner-dashboard-grid .referral-preview{display:grid;gap:8px;overflow-wrap:anywhere}
+.partner-dashboard-grid .referral-preview b{font-size:20px;color:#0066ff}
+.partner-dashboard-grid .referral-preview code{white-space:normal;overflow-wrap:anywhere}
+.ib-rate-row{display:grid;grid-template-columns:1fr minmax(110px,160px) minmax(90px,130px) auto;gap:12px;align-items:center}
+.ib-rate-row label{display:flex;align-items:center;gap:6px;color:#64748b;font-size:12px}
+.ib-rate-row input[type=number]{width:100%;min-width:0}
+.ib-rate-row input[type=checkbox]{width:auto}
+.ib-partner-row{margin:10px 0}
+.ib-partner-row .partner-action-row{margin-bottom:0}
+#admin-ib-adjust-form{max-width:680px;margin:20px 0}
+@media(max-width:900px){.partner-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.partner-dashboard-grid{grid-template-columns:1fr}.partner-kpi-grid{gap:9px}.partner-kpi-grid b{font-size:21px}.ib-rate-row{grid-template-columns:1fr 1fr}.ib-rate-row>span{grid-column:1/-1}.ib-rate-row button{grid-column:1/-1}}
