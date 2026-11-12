@@ -52,13 +52,36 @@ Deno.serve(async (req: Request) => {
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
+      const demoRows = (data || []).filter((a: any) => a.account_mode === "demo" && a.status === "approved" && !a.archived_at && !a.deleted_at);
+      if (demoRows.length) {
+        const { error: seedError } = await admin.from("bb_paper_execution_accounts").upsert(
+          demoRows.map((a: any) => ({ user_id: user.id, account_id: a.id, account_mode: "demo" })),
+          { onConflict: "user_id,account_mode,account_id", ignoreDuplicates: true }
+        );
+        if (seedError) throw seedError;
+      }
+      const { data: demoLedgers, error: demoLedgerError } = await admin.from("bb_paper_execution_accounts")
+        .select("account_id,virtual_balance").eq("user_id", user.id).eq("account_mode", "demo");
+      if (demoLedgerError) throw demoLedgerError;
+      const demoBalanceByAccount = new Map((demoLedgers || []).map((x: any) => [x.account_id, Number(x.virtual_balance || 0)]));
+      const { data: paperTrades, error: paperTradesError } = await admin.from("bb_paper_execution_trades")
+        .select("account_id,unrealized_pnl,status").eq("user_id", user.id).eq("account_mode", "demo").eq("status", "OPEN");
+      if (paperTradesError) throw paperTradesError;
+      const demoFloatingByAccount = new Map<string, number>();
+      for (const trade of paperTrades || []) demoFloatingByAccount.set(trade.account_id, (demoFloatingByAccount.get(trade.account_id) || 0) + Number(trade.unrealized_pnl || 0));
+      const enrichedAccounts = (data || []).map((a: any) => {
+        if (a.account_mode !== "demo") return a;
+        const balance = demoBalanceByAccount.get(a.id) ?? Number(a.balance || 0);
+        const floating = demoFloatingByAccount.get(a.id) || 0;
+        return { ...a, balance, virtual_balance: balance, floating_pnl: floating, equity: balance + floating };
+      });
       const { data: control, error: controlError } = await admin.from("bb_execution_settings").select("demo_execution_enabled,live_execution_enabled,global_halt,halt_reason,live_readiness").eq("singleton", true).single();
       if (controlError) throw controlError;
       const checks = control.live_readiness || {};
       const missing = LIVE_CHECKS.filter(key => checks[key] !== true);
       const adapterReady = Deno.env.get("LIVE_EXECUTION_ADAPTER_READY") === "true";
       return json({
-        accounts: data || [],
+        accounts: enrichedAccounts,
         active_modes: ["demo", "real"],
         execution: {
           demo_enabled: control.demo_execution_enabled === true && control.global_halt !== true,
