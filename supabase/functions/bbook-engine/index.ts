@@ -86,7 +86,24 @@ Deno.serve(async (req: Request) => {
         const floating = (positions || []).reduce((n:any,p:any)=>n + Number(p.floating_pnl||0),0);
         const {data:ledger,error:ledgerError} = await db.from("bb_bbook_liquidity_ledger").select("*").order("created_at",{ascending:false}).limit(100);
         if (ledgerError) throw ledgerError;
-        return json({settings,pool,positions:positions||[],ledger:ledger||[],metrics:{open_positions:(positions||[]).length,gross_exposure:exposure,floating_client_pnl:floating,house_net_pnl:-floating}});
+        const {data:worker,error:workerError} = await db.from("bb_bbook_worker_config")
+          .select("enabled,last_run_at,last_error,last_processed,last_closed,margin_call_accounts")
+          .eq("singleton",true).single();
+        if (workerError) throw workerError;
+        return json({settings,pool,worker,positions:positions||[],ledger:ledger||[],metrics:{open_positions:(positions||[]).length,gross_exposure:exposure,floating_client_pnl:floating,house_net_pnl:-floating}});
+      }
+      if (action === "admin_worker_toggle") {
+        const enabled = body.enabled === true;
+        const {data:worker,error} = await db.from("bb_bbook_worker_config")
+          .update({enabled,updated_at:new Date().toISOString()})
+          .eq("singleton",true)
+          .select("enabled,last_run_at,last_error,last_processed,last_closed,margin_call_accounts").single();
+        if (error) throw error;
+        await db.from("bb_trade_audit_events").insert({
+          actor_user_id:user.id,event_type:enabled?"BBOOK_RISK_WORKER_ENABLED":"BBOOK_RISK_WORKER_PAUSED",
+          entity_type:"bbook_worker_config",details:{enabled}
+        });
+        return json({success:true,worker});
       }
       if (action === "admin_adjust_liquidity") {
         const amount = num(body.amount,"Amount");
