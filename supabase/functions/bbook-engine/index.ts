@@ -190,7 +190,7 @@ Deno.serve(async (req: Request) => {
           if(error)throw error;
         }
       }
-      const {data:fresh,error:freshError}=await db.from("bb_bbook_positions").select("*").eq("account_id",accountId).eq("user_id",user.id).order("opened_at",{ascending:false}).limit(500);
+      let {data:fresh,error:freshError}=await db.from("bb_bbook_positions").select("*").eq("account_id",accountId).eq("user_id",user.id).order("opened_at",{ascending:false}).limit(500);
       if(freshError)throw freshError;
       const active=(fresh||[]).filter((p:any)=>p.status==="OPEN");
       const floating=active.reduce((n:number,p:any)=>n+Number(p.floating_pnl||0),0);
@@ -204,6 +204,9 @@ Deno.serve(async (req: Request) => {
           const {error}=await db.rpc("bb_bbook_close_position",{p:{user_id:user.id,position_id:p.id,exit_price:exit,bid:q.bid,ask:q.ask,reason:"MARGIN STOP OUT"}});
           if(error)console.error("B-Book stop-out close failed:",p.id,error);
         }
+        const refreshed=await db.from("bb_bbook_positions").select("*").eq("account_id",accountId).eq("user_id",user.id).order("opened_at",{ascending:false}).limit(500);
+        if(refreshed.error)throw refreshed.error;
+        fresh=refreshed.data;
       }
       const {data:latestAccount,error:latestAccountError}=await db.from("trading_accounts").select("balance,currency,requested_leverage").eq("id",accountId).single();
       if(latestAccountError)throw latestAccountError;
