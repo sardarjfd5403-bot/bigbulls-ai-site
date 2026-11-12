@@ -167,6 +167,7 @@ function startFinancialRealtime(){
   channel.on("postgres_changes",{event:"UPDATE",schema:"public",table:"wallet_transactions",filter:"user_id=eq."+user.id},payload=>{showFinancialNotice(payload.new);if(activePage==="accounts"){loadClientTradingAccounts();const tools=document.getElementById("bb-account-tools");if(tools?.dataset.accountTool==="transactions")showAccountTool(tools.dataset.accountId,"transactions");}});
   channel.on("postgres_changes",{event:"UPDATE",schema:"public",table:"trading_accounts",filter:"user_id=eq."+user.id},payload=>{if(activePage==="accounts")loadClientTradingAccounts();if(payload.new&&payload.old&&Number(payload.new.balance)!==Number(payload.old.balance))showAccountBalanceNotice(payload.new);});
   channel.on("postgres_changes",{event:"*",schema:"public",table:"account_transfers",filter:"user_id=eq."+user.id},()=>{if(activePage==="accounts"){loadClientTradingAccounts();const tools=document.getElementById("bb-account-tools");if(tools?.dataset.accountTool==="transactions")showAccountTool(tools.dataset.accountId,"transactions");}});
+  channel.on("postgres_changes",{event:"*",schema:"public",table:"kyc_submissions",filter:"user_id=eq."+user.id},payload=>{if(payload.new?.status==="approved"){const toast=document.createElement("div");toast.className="bb-financial-toast";toast.textContent="Account verified — client features unlocked.";document.body.append(toast);setTimeout(()=>toast.remove(),9000);}if(activePage==="verification")loadPageData();});
   channel.on("postgres_changes",{event:"INSERT",schema:"public",table:"client_notifications",filter:"user_id=eq."+user.id},()=>{loadClientNotifications();});
  }
  financialChannel=channel.subscribe();
@@ -248,6 +249,20 @@ async function showApp(page){
   if(host){const note=document.createElement("div");note.className="notice error";note.setAttribute("role","alert");note.textContent="Live page data could not be loaded: "+(error?.message||"Please refresh and try again.");host.prepend(note);}
  });
  Promise.resolve(loadClientNotifications()).catch(error=>console.error("Notifications loading failed:",error));
+ if(!isAdmin())window.setTimeout(()=>maybeOpenKycOnboarding(),650);
+}
+
+async function maybeOpenKycOnboarding(){
+ if(!user||isAdmin()||modal?.classList.contains("show"))return;
+ try{
+  const {data,error}=await sb.from("kyc_submissions").select("status").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1).maybeSingle();
+  if(error||data?.status==="approved"||data?.status==="pending")return;
+  const key="bb:kyc-onboarding:"+user.id;
+  try{if(sessionStorage.getItem(key)==="shown")return;sessionStorage.setItem(key,"shown");}catch(_){}
+  body.innerHTML='<p class="eyebrow">WELCOME TO BIGBULLS</p><h2>Verify your profile</h2><p class="muted">Complete KYC to unlock Real accounts, deposits, withdrawals and restricted services. You can explore Demo while verification is pending.</p><div class="notice">Email: '+esc(user.email||"")+' · '+(user.email_confirmed_at?"Verified":"Email verification required")+'</div><button class="portal-primary" type="button" id="bb-start-kyc">Start KYC verification</button><button class="copy-wallet" type="button" data-close>Explore Demo first</button>';
+  showModal();
+  document.getElementById("bb-start-kyc")?.addEventListener("click",()=>{body.innerHTML=pageContent("verification",window.__bbUserName)+'<button class="copy-wallet" type="button" data-close>Close and continue with Demo</button>';});
+ }catch(error){console.warn("KYC onboarding prompt unavailable:",error);}
 }
 async function loadClientNotifications(){
  if(!sb||!user||isAdmin())return;
@@ -937,6 +952,16 @@ async function openAccountFinancialModal(accountId,action,providedMethods){
 function renderWithdrawalDetails(account,method){
  body.innerHTML='<p class="eyebrow">WITHDRAWAL DETAILS · #'+esc(account.account_number)+'</p><h2>'+esc(method.asset)+' · '+esc(method.network)+'</h2><form id="account-withdrawal-form" class="client-form"><input type="hidden" name="asset" value="'+esc(method.asset)+'"><input type="hidden" name="network" value="'+esc(method.network)+'"><label>Amount (USD)<input name="amount_usd" type="number" min="1" step=".01" max="'+Number(account.balance||0).toFixed(2)+'" required></label><label>Amount in crypto<input name="amount_crypto" type="number" min="0.00000001" step="any" required></label><label>Your receiving wallet address / Binance ID<input name="destination_address" minlength="6" maxlength="180" placeholder="Paste your own address or Binance Pay ID" required></label><button class="portal-primary" type="submit">Submit withdrawal request</button><div data-page-message></div></form><div class="notice">Available account balance: '+esc(account.currency)+' '+Number(account.balance||0).toFixed(2)+'. Payout is sent manually by Admin after review.</div><button type="button" class="copy-wallet" data-financial-back>Back to methods</button>';
 }
+async function openAccountWizard(){
+ if(!sb||!user){message("Please sign in to create an account.",true);return;}
+ const {data:kyc,error}=await sb.from("kyc_submissions").select("status").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1).maybeSingle();
+ if(error){message("KYC status could not be checked. Please retry.",true);return;}
+ const verified=isAdmin()||kyc?.status==="approved";
+ const initial=window.bbAccountMode==="demo"?"demo":"real";
+ body.innerHTML=`<p class="eyebrow">ACCOUNT CENTRE · NEW ACCOUNT</p><h2>Configure your trading account</h2><p class="muted">Choose an environment and account profile.</p><form id="bb-account-wizard" class="client-form"><label>Account environment<select name="account_mode"><option value="demo" ${initial==="demo"||!verified?"selected":""}>Demo · Practice</option><option value="real" ${initial==="real"&&verified?"selected":""} ${!verified?"disabled":""}>Real · Live account</option></select></label>${!verified?'<div class="notice">Real account creation unlocks after Admin approves your KYC. Demo requests are available now.</div>':""}<label>Account type<select name="account_type"><option value="Pro">Standard Account</option><option value="Speed">Pro Account</option><option value="Zero">Raw Spread / Zero Account</option><option value="Cent">Cent Account</option></select></label><label>Trading platform<select name="platform"><option value="MT5">MetaTrader 5</option><option value="MT4">MetaTrader 4</option></select></label><label>Maximum leverage<select name="leverage"><option>1:200</option><option>1:500</option><option>1:1000</option><option>1:2000</option><option>1:100</option></select></label><label>Account currency<select name="currency"><option value="USD">USD</option></select></label><label>Account nickname<input name="display_name" maxlength="40" required placeholder="e.g. Gold Scalping"></label><div class="notice">This creates a BIGBULLS portal account request. It does not provision an MT4/MT5 broker login. Admin approval and broker integration are still required before live broker trading.</div><button class="portal-primary" type="submit">Create account request</button><div data-page-message role="status" aria-live="polite"></div></form><button class="copy-wallet" type="button" data-close>Cancel</button>`;
+ showModal();
+}
+
 async function manageClientAccount(id,action){
  let displayName=null;
  if(action==="rename"){displayName=prompt("Enter a new display name (1–40 characters):");if(displayName===null)return;displayName=displayName.trim();if(!displayName||displayName.length>40){alert("Name must contain 1–40 characters.");return;}}
