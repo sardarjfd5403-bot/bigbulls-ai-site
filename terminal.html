@@ -1923,7 +1923,7 @@
 (function(){
 'use strict';
 const BB_URL='https://ztiiyulusburxjkpcfxu.supabase.co',BB_KEY='sb_publishable_5hDwqvbcUHeSJdXFHf9ugw_VPYGN4J_';
-const MARKET={'XAU/USD':'XAU/USD','EUR/USD':'EUR/USD','GBP/USD':'GBP/USD','BTC':'BTCUSDT'};
+const MARKET={'XAU/USD':'XAU/USD','EUR/USD':'EUR/USD','GBP/USD':'GBP/USD','BTC':'BTCUSDT','USOIL':'WTI/USD','USTEC':'NDX'};
 const PAPER={'XAU/USD':'XAUUSD','EUR/USD':'EURUSD','GBP/USD':'GBPUSD','BTC':'BTCUSDT'};
 let session=null,ready=false,busy=false,lastAccount='',lastMarket='';
 const notify=(t,s='',type='info')=>{if(typeof showToast==='function')showToast(t,s,type);};
@@ -1935,7 +1935,7 @@ function client(){
 }
 async function call(fn,body){const r=await client().functions.invoke(fn,{body});if(r.error)throw new Error(r.data?.error||r.error.message||fn+' request failed.');if(r.data?.error)throw new Error(r.data.error);return r.data||{};}
 const mode=a=>String(a?.type||'Demo').toLowerCase()==='real'?'real':'demo';
-function mapSymbol(s){return({XAUUSD:'XAU/USD',EURUSD:'EUR/USD',GBPUSD:'GBP/USD',BTCUSDT:'BTC',BTC:'BTC'})[String(s||'').toUpperCase().replaceAll('/','')]||null;}
+function mapSymbol(s){return({XAUUSD:'XAU/USD',EURUSD:'EUR/USD',GBPUSD:'GBP/USD',BTCUSDT:'BTC',BTC:'BTC',WTIUSD:'USOIL',WTI:'USOIL',NDX:'USTEC'})[String(s||'').toUpperCase().replaceAll('/','')]||null;}
 function applyQuote(s,p){const i=state.instruments[s];if(!i||!(Number(p)>0))return;i.bid=Number(p);i.ask=Number((i.bid+Number(i.spread||0)).toFixed(i.digits));}
 async function accounts(){
  const d=await call('trading-gateway',{action:'accounts'});
