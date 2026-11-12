@@ -54,8 +54,8 @@
     .mobile-shell {
       width: 100%;
       max-width: 430px;
-      height: calc(100vh - 52px);
-      max-height: 880px;
+      height: 100dvh;
+      max-height: none;
       background-color: #0E1117;
       border: 1px solid #262C3A;
       border-radius: 28px;
@@ -65,10 +65,10 @@
       flex-direction: column;
       position: relative;
     }
-    @media (max-width: 640px) {
+    @media (max-width: 767px) {
       .mobile-shell {
         max-width: 100%;
-        height: calc(100vh - 46px);
+        height: 100dvh;
         max-height: none;
         border-radius: 0;
         border: none;
@@ -112,9 +112,9 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="h-screen min-h-screen flex flex-col overflow-hidden">
 
-  <!-- TOP PREVIEW BAR (Switch between Mobile & Desktop View seamlessly) -->
+  <!-- MAIN VIEWPORT STAGE -->
   <header class="w-full bg-[#131722] border-b border-[#262C3A] px-3 py-2 flex items-center justify-between z-50 shrink-0">
     <div class="flex items-center gap-2.5">
       <div class="w-7 h-7 rounded-lg bg-bullBlue flex items-center justify-center text-white font-extrabold text-sm shadow">
@@ -147,8 +147,7 @@
     </div>
   </header>
 
-  <!-- MAIN VIEWPORT STAGE -->
-  <main id="appStage" class="flex-1 flex items-center justify-center p-0 sm:p-3 overflow-hidden">
+  <main id="appStage" class="flex-1 flex items-stretch justify-stretch w-full min-h-0 p-0 overflow-hidden">
     <!-- Rendered dynamically by JS for either Mobile Shell or Full Desktop Terminal -->
   </main>
 
@@ -168,7 +167,7 @@
 // 1. APPLICATION STATE & MOCK LIVE MARKET DATA
     // ==========================================
     const state = {
-      viewportMode: 'mobile', // 'mobile' | 'desktop'
+      viewportMode: window.innerWidth < 768 ? 'mobile' : 'desktop', // automatically follows viewport width
       activeTab: 'accounts',  // 'accounts' | 'trade' | 'insights' | 'performance'
       tradeSubView: 'list',   // 'list' | 'chart' (in mobile)
       selectedSymbol: 'XAU/USD',
@@ -589,22 +588,6 @@
     // ==========================================
     // 4. NAVIGATION, MODALS & TRADING ACTIONS
     // ==========================================
-    function setViewportMode(mode) {
-      state.viewportMode = mode;
-      const btnM = document.getElementById('btnViewMobile');
-      const btnD = document.getElementById('btnViewDesktop');
-      if (btnM && btnD) {
-        if (mode === 'mobile') {
-          btnM.className = 'flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition bg-bullBlue text-white';
-          btnD.className = 'flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition text-gray-400 hover:text-white';
-        } else {
-          btnD.className = 'flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition bg-bullBlue text-white';
-          btnM.className = 'flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition text-gray-400 hover:text-white';
-        }
-      }
-      renderApp();
-    }
-
     function switchTab(tab) {
       state.activeTab = tab;
       if (tab === 'trade' && state.viewportMode === 'mobile') {
@@ -1585,7 +1568,7 @@
       const timeframes = ['5y', '1y', '6m', '3m', '1m', '5d', '1d'];
 
       return `
-        <div class="w-full h-[calc(100vh-52px)] bg-[#0E1117] flex flex-col overflow-hidden select-none">
+        <div class="w-full h-full min-h-0 bg-[#0E1117] flex flex-col overflow-hidden select-none">
           <!-- 1. Top Web Terminal Header Bar (Logo, Account Dropdown, Deposit, Navigation) -->
           <div class="h-11 bg-[#131722] border-b border-[#262C3A] px-3 flex items-center justify-between shrink-0">
             <div class="flex items-center gap-4">
@@ -1852,6 +1835,8 @@
     // ==========================================
     function renderApp() {
       const stage = document.getElementById('appStage');
+      // Preserve all application state; only switch the presentation at the 768px breakpoint.
+      state.viewportMode = window.innerWidth < 768 ? 'mobile' : 'desktop';
 
       if (state.viewportMode === 'desktop') {
         stage.innerHTML = renderDesktopWorkspace();
@@ -1949,9 +1934,19 @@
       window.addEventListener('touchend', onEnd);
     }
 
-    window.addEventListener('resize', () => {
-      drawChartCanvas();
-    });
+    let lastResponsiveMode = window.innerWidth < 768 ? 'mobile' : 'desktop';
+    function syncResponsiveLayout() {
+      const nextMode = window.innerWidth < 768 ? 'mobile' : 'desktop';
+      if (nextMode !== lastResponsiveMode) {
+        lastResponsiveMode = nextMode;
+        state.viewportMode = nextMode;
+        renderApp();
+      } else {
+        drawChartCanvas();
+      }
+    }
+    window.addEventListener('resize', syncResponsiveLayout, { passive: true });
+    window.addEventListener('orientationchange', syncResponsiveLayout, { passive: true });
 
     window.onload = function() {};
   </script>
@@ -2030,7 +2025,7 @@ async function start(){
  try{const c=client(),auth=await c.auth.getSession();if(auth.error)throw auth.error;session=auth.data?.session||null;if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}
  await accounts();Object.values(state.instruments).forEach(i=>{i.candles=[];i.bid=0;i.ask=0;});state.openOrders=[];state.pendingOrders=[];state.closedOrders=[];ready=true;lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();
  try{await quotes();}catch(e){console.warn('Market quotes:',e.message);}try{await candles();}catch(e){notify('Market feed unavailable',e.message||'Provider candles could not be loaded.','error');}
- await refresh(true);setInterval(()=>{if(!document.hidden)quotes().catch(()=>{});},15000);setInterval(()=>{if(!document.hidden)refresh(true);},20000);
+ await refresh(true);setInterval(()=>{if(!document.hidden)quotes().catch(()=>{});},15000);setInterval(async()=>{if(document.hidden)return;const symbol=MARKET[state.selectedSymbol];if(!symbol)return;try{const q=await call('market-data',{action:'quote',symbol});applyQuote(state.selectedSymbol,q.price);updateLiveDOMElements();}catch(e){console.warn('Selected symbol live quote:',e.message);}},10000);setInterval(()=>{if(!document.hidden)refresh(true);},20000);
  c.auth.onAuthStateChange((_event,s)=>{session=s||null;if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}accounts().then(()=>{ready=true;lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();refresh(true);}).catch(e=>notify('Account refresh failed',e.message,'error'));});
  }catch(e){console.error('BIGBULLS terminal startup:',e);notify('Terminal connection failed',e.message||'Unable to connect to the trading backend.','error');}
 }
