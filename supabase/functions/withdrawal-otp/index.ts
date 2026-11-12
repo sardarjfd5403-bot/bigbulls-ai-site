@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
   const { data: tx, error: txError } = await admin.from("wallet_transactions")
     .select("id,user_id,kind,status,account_id,amount_usd,asset,network,destination_address,invoice_id,otp_verified_at")
     .eq("id", transactionId).eq("user_id", user.id).single();
-  if (txError || !tx || tx.kind !== "withdrawal" || !tx.account_id || !["pending", "otp_pending"].includes(tx.status))
+  if (txError || !tx || tx.kind !== "withdrawal" || !["pending", "otp_pending"].includes(tx.status))
     return json({ error: "Withdrawal request not found or not eligible" }, 404);
 
   if (body.action === "request") {

@@ -1,0 +1,4 @@
+project_id = "ztiiyulusburxjkpcfxu"
+
+[functions.bbook-worker]
+verify_jwt = false

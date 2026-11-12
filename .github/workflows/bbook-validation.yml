@@ -1,0 +1,33 @@
+name: BIGBULLS B-Book validation
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feature/native-bbook-pool-admin]
+
+jobs:
+  syntax-and-types:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check browser JavaScript syntax
+        run: |
+          node --check app.js
+          node --check admin-backoffice-shell.js
+          node --check admin-client-management.js
+          node --check v3-portal.js
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Check changed Supabase Edge Functions
+        run: |
+          deno check supabase/functions/bbook-engine/index.ts
+          deno check supabase/functions/bbook-worker/index.ts
+          deno check supabase/functions/withdrawal-otp/index.ts
