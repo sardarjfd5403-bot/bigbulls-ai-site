@@ -1,126 +1,2042 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="en" class="dark">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#090e18"><title>BIGBULLS Trading Terminal</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
-<style>
-:root{color-scheme:dark;--bg:#090e18;--panel:#101827;--panel2:#0d1522;--line:#202c3d;--muted:#8391a6;--blue:#287cff;--green:#16c784;--red:#ea3943}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#e7edf6;font-family:Inter,system-ui,sans-serif;font-size:12px}button,input,select{font:inherit}button{cursor:pointer}.terminal{height:100dvh;min-height:600px;display:flex;flex-direction:column;overflow:hidden}.top{height:54px;flex:none;position:relative;z-index:60;background:#0d1420;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 16px;gap:12px}.topbrand{display:flex;align-items:center;gap:11px;min-width:0}.menu-toggle{width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--line);border-radius:7px;background:#111d2d;color:#e7edf6;font-size:20px;line-height:1;flex:none}.terminal-drawer{position:fixed;z-index:55;left:0;top:98px;bottom:0;width:270px;max-width:86vw;background:#0d1522;border-right:1px solid var(--line);box-shadow:12px 0 35px #0008;transform:translateX(-105%);transition:transform .25s ease;pointer-events:none;display:flex;flex-direction:column}.terminal-drawer.open{transform:translateX(0);pointer-events:auto}.terminal-drawer-head{display:flex;align-items:center;justify-content:space-between;padding:14px;border-bottom:1px solid var(--line);font-weight:800;letter-spacing:.06em}.drawer-close{width:34px;height:34px;border:1px solid var(--line);border-radius:7px;background:#142238;color:#e7edf6;font-size:22px;line-height:1}.terminal-drawer-nav{overflow:auto;padding:9px;display:grid;gap:4px}.terminal-drawer-nav button{width:100%;text-align:left;border:1px solid transparent;border-radius:6px;padding:11px 12px;background:transparent;color:#aebbd0;font-weight:600}.terminal-drawer-nav button:hover,.terminal-drawer-nav button.active{background:#14243a;border-color:#24466f;color:#fff}.terminal-drawer-overlay{display:none;position:fixed;z-index:50;left:0;right:0;top:98px;bottom:0;background:#0009;backdrop-filter:blur(2px)}.terminal-drawer-overlay.open{display:block}.brand{font-weight:800;letter-spacing:.08em;color:#fff}.brand b{color:#4c96ff}.topstats{display:flex;gap:20px;align-items:center;color:var(--muted)}.topstats strong{display:block;color:#f2f6fc;font-size:13px;margin-top:3px}.topright{display:flex;align-items:center;gap:10px}.pill{border:1px solid var(--line);background:#111d2d;border-radius:7px;padding:7px 10px;color:#d8e1ee}.statusdot{width:7px;height:7px;border-radius:50%;display:inline-block;background:#f0b64b;margin-right:6px}.tabs{height:44px;flex:none;background:#0b121d;border-bottom:1px solid var(--line);display:flex;align-items:stretch;overflow:auto;padding:0 10px;gap:3px}.tab{white-space:nowrap;background:transparent;border:0;border-bottom:2px solid transparent;color:#91a0b5;padding:0 13px;font-weight:600}.tab.active{color:#fff;border-bottom-color:var(--blue);background:#14243a}.workspace{min-height:0;flex:1;display:grid;grid-template-columns:minmax(0,1fr) 300px;grid-template-rows:minmax(300px,1fr) 220px;gap:1px;background:var(--line)}.panel{background:var(--panel);min-width:0;min-height:0}.chartpanel{display:flex;flex-direction:column}.charthead{height:45px;display:flex;align-items:center;gap:10px;padding:0 12px;border-bottom:1px solid var(--line);flex:none}.charthead strong{font-size:14px}.toolbar{display:flex;align-items:center;gap:5px;overflow:auto}.smallbtn{border:1px solid var(--line);background:#111d2d;color:#aebbd0;border-radius:5px;padding:6px 8px;white-space:nowrap}.smallbtn.active{background:#17345b;border-color:#2b6fc8;color:white}.chartwrap{flex:1;min-height:0;position:relative;background:#0b121d}.chartnote{position:absolute;z-index:2;right:12px;top:9px;color:#8493a8;font-size:10px;background:#0c1521cc;padding:5px 8px;border-radius:4px}.orderpanel{padding:13px;overflow:auto}.sectiontitle{font-size:11px;letter-spacing:.1em;font-weight:800;color:#9eacc0;text-transform:uppercase;margin:0 0 12px}.field{display:block;margin:10px 0}.field span{display:block;color:#93a1b5;font-size:10px;margin-bottom:5px}.field input,.field select{width:100%;border:1px solid var(--line);border-radius:6px;background:#0b121d;color:#eaf0f8;padding:9px;outline:none}.field input:focus,.field select:focus{border-color:#347fe4}.twocol{display:grid;grid-template-columns:1fr 1fr;gap:9px}.tradebuttons{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.buy,.sell{border:0;border-radius:7px;padding:12px 8px;color:#fff;font-weight:800}.buy{background:#087d5b}.sell{background:#b52d3b}.subtle{color:var(--muted);font-size:10px;line-height:1.5}.lower{grid-column:1/3;display:flex;flex-direction:column;min-height:0}.lowerhead{height:40px;display:flex;align-items:center;gap:4px;padding:0 10px;border-bottom:1px solid var(--line);overflow:auto;flex:none}.lowerbody{overflow:auto;flex:1}.lower-tab{border:0;background:transparent;color:#8796aa;padding:8px 10px;white-space:nowrap}.lower-tab.active{color:white;background:#1a2b42;border-radius:5px}.data-table{width:100%;border-collapse:collapse;white-space:nowrap}.data-table th{color:#77879c;text-align:left;font-size:10px;font-weight:600;padding:10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#101827}.data-table td{padding:10px;border-bottom:1px solid #1b2737;color:#d2dbe8}.green{color:var(--green)!important}.red{color:var(--red)!important}.muted{color:var(--muted)!important}.page{display:none;min-height:0;overflow:auto;padding:16px;background:var(--bg)}.page.active{display:block}.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.metric{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px}.metric label{display:block;color:var(--muted);font-size:10px}.metric strong{display:block;font-size:20px;margin-top:8px}.grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:12px;margin-top:14px}.box{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;min-width:0}.box h3{font-size:12px;margin:0 0 12px}.symbolrow{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)}.notice{padding:10px;border:1px solid #624d26;background:#2b2416;color:#f3cc7a;border-radius:6px;font-size:11px;line-height:1.5}.action{border:1px solid var(--line);background:#142238;color:#dce8f7;padding:8px 11px;border-radius:6px}.hidden{display:none!important}.footerhint{padding:8px 12px;color:#728198;border-top:1px solid var(--line);font-size:10px}.toast{position:fixed;right:16px;bottom:16px;background:#17253a;border:1px solid #345274;padding:12px 16px;border-radius:8px;z-index:20;max-width:340px;box-shadow:0 10px 30px #0008}
-@media(max-width:900px){.workspace{grid-template-columns:minmax(0,1fr) 260px}.topstats{gap:10px}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:680px){.terminal{min-height:560px}.top{height:50px;padding:0 9px}.terminal-drawer{top:92px}.terminal-drawer-overlay{top:92px}.topstats{display:none}.topright .pill{padding:6px}.tabs{height:42px;padding:0 4px}.tab{padding:0 10px}.workspace{display:flex;flex-direction:column;overflow:auto}.chartpanel{height:390px;flex:none}.orderpanel{height:auto;flex:none}.lower{height:230px;flex:none}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:1fr}.page{padding:10px}}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>BigBull Terminal — Pro Trading Platform</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            bgDark: '#0E1117',
+            surface: '#1A1F29',
+            surfaceHover: '#232936',
+            surfaceLight: '#262C3A',
+            borderDark: '#262C3A',
+            bullYellow: '#2979FF',
+            bullYellowHover: '#1D63DC',
+            bullGreen: '#00C076',
+            bullRed: '#FF4D4D',
+            bullBlue: '#2979FF',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      background-color: #07090D;
+      color: #F3F4F6;
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #2D3545; border-radius: 9999px; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Mobile Frame Shadow on Desktop */
+    .mobile-shell {
+      width: 100%;
+      max-width: 430px;
+      height: calc(100vh - 52px);
+      max-height: 880px;
+      background-color: #0E1117;
+      border: 1px solid #262C3A;
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(41, 121, 255, 0.14);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    @media (max-width: 640px) {
+      .mobile-shell {
+        max-width: 100%;
+        height: calc(100vh - 46px);
+        max-height: none;
+        border-radius: 0;
+        border: none;
+      }
+    }
+
+    /* Range slider styling */
+    input[type=range] {
+      -webkit-appearance: none;
+      background: transparent;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 18px;
+      width: 18px;
+      border-radius: 50%;
+      background: #2979FF;
+      cursor: pointer;
+      margin-top: -7px;
+      box-shadow: 0 0 0 3px rgba(41, 121, 255, 0.3);
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 4px;
+      cursor: pointer;
+      background: #2D3545;
+      border-radius: 2px;
+    }
+
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(0.85); }
+    }
+    .live-dot { animation: pulseDot 1.6s infinite ease-in-out; }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0.5; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .sheet-animate { animation: slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1); }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body>
-<div class="terminal">
-<header class="top">
- <div class="topbrand"><button id="terminalMenuToggle" class="menu-toggle" type="button" aria-label="Open navigation menu" aria-controls="terminalDrawer" aria-expanded="false">≡</button><a class="brand" href="dashboard.html" style="text-decoration:none">BIGBULLS <b>TERMINAL</b></a><span class="muted" style="font-size:10px">PRO WORKSPACE</span></div>
- <div class="topstats"><div>Paper balance<strong id="balance">—</strong></div><div>Equity<strong id="equity">—</strong></div><div>Margin data<strong id="freeMargin">N/A</strong></div><div>Floating P/L<strong id="floating">—</strong></div></div>
- <div class="topright"><select id="accountSelect" class="pill" aria-label="Trading account"><option>Loading accounts…</option></select><span class="pill"><i class="statusdot" id="connectionDot"></i><span id="connectionText">Connecting</span></span><a class="pill" href="dashboard.html" style="text-decoration:none">← Website</a></div>
-</header>
-<div id="terminalDrawerOverlay" class="terminal-drawer-overlay" aria-hidden="true"></div>
-<aside id="terminalDrawer" class="terminal-drawer" aria-label="Terminal navigation" aria-hidden="true"><div class="terminal-drawer-head"><span>BIGBULLS MENU</span><button id="terminalDrawerClose" class="drawer-close" type="button" aria-label="Close navigation menu">×</button></div><nav class="terminal-drawer-nav" id="terminalDrawerNav"><button type="button" data-page="overview">Overview</button><button type="button" data-page="trade">Trade & Order Ticket</button><button type="button" data-page="charts">Charts</button><button type="button" data-page="markets">Markets</button><button type="button" data-page="watchlist">Watchlist</button><button type="button" data-page="portfolio">Portfolio</button><button type="button" data-page="orders">Orders</button><button type="button" data-page="positions">Positions</button><button type="button" data-page="history">Trade History</button><button type="button" data-page="analysis">AI Analysis</button><button type="button" data-page="strategy">Strategy Lab</button><button type="button" data-page="journal">Journal</button><button type="button" data-page="settings">Settings</button></nav></aside>
-<nav class="tabs" id="mainTabs">
- <button class="tab active" data-page="overview">Overview</button><button class="tab" data-page="trade">Trade</button><button class="tab" data-page="charts">Charts</button><button class="tab" data-page="markets">Markets</button><button class="tab" data-page="watchlist">Watchlist</button><button class="tab" data-page="portfolio">Portfolio</button><button class="tab" data-page="orders">Orders</button><button class="tab" data-page="positions">Positions</button><button class="tab" data-page="history">Trade History</button><button class="tab" data-page="analysis">Analysis</button><button class="tab" data-page="strategy">Strategy Lab</button><button class="tab" data-page="journal">Journal</button><button class="tab" data-page="settings">Settings</button>
-</nav>
-<main id="tradingApp" class="workspace">
- <section class="panel chartpanel">
-  <div class="charthead"><strong id="symbolTitle">XAUUSD</strong><span id="lastPrice" class="muted">—</span><div class="toolbar" style="margin-left:auto"><button class="smallbtn active" data-tf="1m">1m</button><button class="smallbtn" data-tf="5m">5m</button><button class="smallbtn" data-tf="15m">15m</button><button class="smallbtn" data-tf="30m">30m</button><button class="smallbtn" data-tf="1h">1H</button><button class="smallbtn" data-tf="4h">4H</button><button class="smallbtn" data-tf="1D">1D</button><select id="chartTypeSelect" class="smallbtn"><option value="candles">Candles</option><option value="line">Line</option><option value="area">Area</option></select><select id="indicatorSelect" class="smallbtn"><option value="none">Indicators</option><option value="sma">SMA 20</option><option value="ema">EMA 20</option><option value="bb">Bollinger Bands</option></select></div></div>
-  <div class="chartwrap"><div class="chartnote" id="chartStatus">Loading provider candles…</div><div id="priceChart" style="position:absolute;inset:0"></div></div>
- </section>
- <aside class="panel orderpanel">
-  <h2 class="sectiontitle">Order ticket <span id="execLabel" style="float:right;color:#e9bd68">PAPER</span></h2>
-  <div class="field"><span>Instrument</span><select id="symbolSelect"><option>XAUUSD</option><option>EURUSD</option><option>GBPUSD</option><option>USDJPY</option><option>BTCUSDT</option><option>ETHUSDT</option><option>BNBUSDT</option><option>SOLUSDT</option><option>XRPUSDT</option><option>DOGEUSDT</option></select></div>
-  <div class="twocol"><label class="field"><span>Order type</span><select id="orderType"><option value="MARKET">Market</option></select></label><label class="field"><span>Volume (lots/units)</span><input id="quantity" type="number" min="0.01" step="0.01" value="0.01"></label></div>
-  <div class="twocol"><label class="field"><span>Stop Loss</span><input id="stopLoss" type="number" step="any" placeholder="Required"></label><label class="field"><span>Take Profit</span><input id="takeProfit" type="number" step="any" placeholder="Optional"></label></div>
-  <label class="field"><span>Trailing distance (price)</span><input id="trailing" type="number" min="0" step="any" placeholder="0 = disabled"></label>
-  <div class="notice" id="executionNotice">Demo orders are routed to BIGBULLS paper execution only. No external broker order is sent.</div>
-  <div class="tradebuttons"><button class="sell" id="sellBtn">SELL</button><button class="buy" id="buyBtn">BUY</button></div>
-  <p class="subtle" style="margin-top:10px">Quotes are indicative provider market data, not executable broker bid/ask. Confirm risk before submitting.</p>
- </aside>
- <section class="panel lower">
-  <div class="lowerhead" id="lowerTabs"><button class="lower-tab active" data-lower="positions">Open positions</button><button class="lower-tab" data-lower="orders">Pending orders</button><button class="lower-tab" data-lower="history">History</button><button class="lower-tab" data-lower="fills">Execution fills</button><button class="lower-tab" data-lower="account">Account details</button></div>
-  <div class="lowerbody" id="lowerContent"></div>
-  <div class="footerhint" id="lowerHint">Execution engine: paper mode · broker routing disabled</div>
- </section>
-</main>
-<section class="page" id="page-overview"><div class="cards"><div class="metric"><label>Paper ledger balance</label><strong id="ovBalance">—</strong></div><div class="metric"><label>Equity (paper ledger)</label><strong id="ovEquity">—</strong></div><div class="metric"><label>Open positions</label><strong id="ovPositions">0</strong></div><div class="metric"><label>Floating P/L</label><strong id="ovPnl">—</strong></div></div><div class="grid2"><div class="box"><h3>Market watch</h3><div id="overviewMarkets" class="muted">Loading market data…</div></div><div class="box"><h3>Execution status</h3><div id="overviewStatus" class="notice">Checking authentication and account permissions…</div></div></div></section>
-<section class="page" id="page-trade"><div class="notice">Use the order ticket in the main workspace. Demo orders use the isolated paper ledger. Real-account live routing is locked until a verified broker adapter and operational readiness checks are configured.</div></section>
-<section class="page" id="page-charts"><div class="box"><h3>Advanced chart workspace</h3><p class="subtle">Candlestick data is loaded from the configured market-data provider. Available intervals depend on provider coverage. Chart drawings, multi-chart layouts, replay and custom scripts are not enabled in this release.</p><button class="action" id="goChart">Open chart workspace</button></div></section>
-<section class="page" id="page-markets"><div class="box"><h3>Markets</h3><div id="marketsList"></div></div><div class="box" style="margin-top:12px"><div style="display:flex;justify-content:space-between;align-items:center"><h3>Economic calendar · next 7 days</h3><button class="action" id="refreshCalendar">Refresh</button></div><div id="calendarList" class="subtle">Calendar not loaded yet.</div><p class="subtle">Times are UTC. Events may change; this is an informational feed, not financial advice.</p></div></section>
-<section class="page" id="page-watchlist"><div class="box"><h3>Watchlist</h3><div id="watchlistList"></div></div></section>
-<section class="page" id="page-portfolio"><div class="cards" id="portfolioCards"></div><div class="box" style="margin-top:12px"><h3>Portfolio exposure</h3><div id="portfolioBody" class="muted">No open exposure.</div></div></section>
-<section class="page" id="page-orders"><div class="box"><h3>Orders</h3><p class="subtle">The currently enabled paper engine supports market-position opens and closes. Pending order routing is not enabled in this build.</p><div id="ordersPage"></div></div></section>
-<section class="page" id="page-positions"><div class="box"><h3>Open positions</h3><div id="positionsPage"></div></div></section>
-<section class="page" id="page-history"><div class="box"><h3>Closed trade history</h3><div id="historyPage"></div></div></section>
-<section class="page" id="page-analysis"><div class="grid2"><div class="box"><h3>Trade planner</h3><div class="twocol"><label class="field"><span>Account balance</span><input id="planBalance" type="number" value="10000"></label><label class="field"><span>Risk %</span><input id="planRisk" type="number" value="1" step=".1"></label><label class="field"><span>Entry</span><input id="planEntry" type="number" step="any"></label><label class="field"><span>Stop Loss</span><input id="planStop" type="number" step="any"></label></div><button class="action" id="calcRisk">Calculate risk</button><p id="riskResult" class="subtle">Enter entry and stop values to calculate position risk.</p></div><div class="box"><h3>Risk controls</h3><div id="riskControls" class="notice">Server-side account risk limits are enforced by the execution service.</div></div></div><div class="box" style="margin-top:12px"><div style="display:flex;justify-content:space-between;align-items:center"><h3>BIGBULLS AI Market Brain</h3><button class="action" id="refreshBrain">Refresh analysis</button></div><div id="brainSignals" class="subtle">AI research is available to approved-KYC clients and administrators.</div></div></section>
-<section class="page" id="page-strategy"><div class="box"><h3>Strategy Lab · Historical research</h3><p class="subtle">Read-only historical strategy results from BIGBULLS AI Market Brain. These are research simulations, not broker execution or guaranteed future performance.</p><div id="strategyResults">Run AI analysis from the Analysis tab to load available backtests.</div></div></section>
-<section class="page" id="page-journal"><div class="box"><h3>Trading journal</h3><p class="subtle">Executed paper trades are recorded in the server-side trade ledger. Notes and screenshot attachments are not yet persisted.</p><div id="journalPage"></div></div></section>
-<section class="page" id="page-settings"><div class="box"><h3>Workspace settings</h3><p class="subtle">Your selected terminal section is reflected in the URL hash. Refreshing preserves the current section and authentication session.</p><label class="field"><span>Default chart timeframe</span><select id="defaultTf"><option>1m</option><option selected>5m</option><option>15m</option><option>30m</option><option>1h</option><option>4h</option><option>1D</option></select></label><button class="action" id="saveSettings">Save preference</button></div><div class="box hidden" id="adminControlBox" style="margin-top:12px"><h3>Administrator · Execution controls</h3><div id="adminControls" class="notice">Administrator access check not run.</div><div class="cards" style="margin-top:10px"><label class="field"><span>Max risk per trade %</span><input id="adminRiskTrade" type="number" min=".1" max="5" step=".1"></label><label class="field"><span>Max daily loss %</span><input id="adminRiskDaily" type="number" min=".1" max="10" step=".1"></label><label class="field"><span>Max aggregate risk %</span><input id="adminRiskAggregate" type="number" min=".1" max="15" step=".1"></label><label class="field"><span>Max open positions</span><input id="adminMaxPositions" type="number" min="1" max="100" step="1"></label><label class="field"><span>Max leverage</span><input id="adminMaxLeverage" type="number" min="1" max="2000" step="1"></label></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="action" id="saveAdminRisk">Save risk limits</button><button class="action" id="toggleGlobalHalt">Emergency halt</button></div><div id="liveReadiness" class="subtle" style="margin-top:10px"></div></div></section>
-<div id="toast" class="toast hidden"></div>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-config.js"></script>
+<body class="min-h-screen flex flex-col">
+
+  <!-- TOP PREVIEW BAR (Switch between Mobile & Desktop View seamlessly) -->
+  <header class="w-full bg-[#131722] border-b border-[#262C3A] px-3 py-2 flex items-center justify-between z-50 shrink-0">
+    <div class="flex items-center gap-2.5">
+      <div class="w-7 h-7 rounded-lg bg-bullBlue flex items-center justify-center text-white font-extrabold text-sm shadow">
+        BB
+      </div>
+      <div>
+        <div class="flex items-center gap-1.5">
+          <span class="font-bold text-sm tracking-tight text-white">BigBull Terminal</span>
+          <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-bullBlue/15 text-bullBlue border border-bullBlue/30">v2.5 LIVE</span>
+        </div>
+        <p class="text-[10px] text-gray-400 hidden sm:block">BigBulls FX Academy • Interactive Workflow Preview</p>
+      </div>
+    </div>
+
+    <!-- View Mode Switcher -->
+    <div class="flex items-center bg-[#0E1117] p-1 rounded-xl border border-[#262C3A]">
+      <button id="btnViewMobile" onclick="setViewportMode('mobile')" class="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition bg-bullBlue text-white">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg>
+        Mobile View
+      </button>
+      <button id="btnViewDesktop" onclick="setViewportMode('desktop')" class="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition text-gray-400 hover:text-white">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        Desktop Terminal
+      </button>
+    </div>
+
+    <div class="hidden md:flex items-center gap-2 text-xs text-gray-400">
+      <span class="w-2 h-2 rounded-full bg-bullGreen live-dot"></span>
+      <span>BigBulls-MT5 Feed Connected</span>
+    </div>
+  </header>
+
+  <!-- MAIN VIEWPORT STAGE -->
+  <main id="appStage" class="flex-1 flex items-center justify-center p-0 sm:p-3 overflow-hidden">
+    <!-- Rendered dynamically by JS for either Mobile Shell or Full Desktop Terminal -->
+  </main>
+
+  <!-- TOAST NOTIFICATION BANNER -->
+  <div id="toastContainer" class="fixed top-14 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 w-[90%] max-w-[390px] pointer-events-none"></div>
+
+  <!-- GLOBAL MODAL / BOTTOM SHEET BACKDROP -->
+  <div id="modalBackdrop" class="fixed inset-0 bg-black/75 backdrop-blur-[2px] z-[80] hidden items-end sm:items-center justify-center p-0 sm:p-4" onclick="closeModalOnBackdrop(event)">
+    <div id="modalContent" class="w-full max-w-[430px] bg-[#1A1F29] border-t sm:border border-[#2D3545] rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl sheet-animate max-h-[90vh] flex flex-col">
+      <!-- Dynamic Modal Inner Content -->
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    <script>(function(){const native=window.setInterval.bind(window);window.setInterval=function(fn,delay,...args){if(delay===900||delay===12000)return 0;return native(fn,delay,...args);};})();</script>
+// 1. APPLICATION STATE & MOCK LIVE MARKET DATA
+    // ==========================================
+    const state = {
+      viewportMode: 'mobile', // 'mobile' | 'desktop'
+      activeTab: 'accounts',  // 'accounts' | 'trade' | 'insights' | 'performance'
+      tradeSubView: 'list',   // 'list' | 'chart' (in mobile)
+      selectedSymbol: 'XAU/USD',
+      timeframe: '5m',
+      oneClickTrade: true,
+      ordersSubTab: 'open',   // 'open' | 'pending' | 'closed'
+      watchlistTab: 'Favorites',
+      perfAccountFilter: 'all_demo', // 'all_real' | 'all_demo' | accountId
+      perfPeriodFilter: 'Last 7 days',
+      showAccountMenu: false,
+      showChartAccountMenu: false,
+      bottomPanelHeight: 185, // Desktop resizable bottom orders panel height in px
+
+      // Accounts State
+      activeAccountId: '474909030',
+      accounts: [
+        {
+          id: '474909030',
+          nickname: 'BigBull_Pro.',
+          type: 'Demo',
+          platform: 'MT5',
+          accountClass: 'Standard',
+          balance: 5000.00,
+          leverage: '1:2000',
+          server: 'BigBulls-MT5Trial15',
+          archived: false
+        },
+        {
+          id: '16339655',
+          nickname: 'BigBull_Real',
+          type: 'Real',
+          platform: 'MT4',
+          accountClass: 'Standard',
+          balance: 0.00,
+          leverage: '1:2000',
+          server: 'BigBulls-MT4Real2',
+          archived: false
+        },
+        {
+          id: '17000707114',
+          nickname: 'Standard',
+          type: 'Real',
+          platform: 'MT5',
+          accountClass: 'Standard',
+          balance: 488.58,
+          leverage: '1:2000',
+          server: 'BigBulls-MT5Real8',
+          archived: false
+        },
+        {
+          id: '11840467',
+          nickname: 'Standard',
+          type: 'Real',
+          platform: 'MT4',
+          accountClass: 'Standard',
+          balance: 0.00,
+          leverage: '1:1000',
+          server: 'BigBulls-MT4Real1',
+          archived: true
+        }
+      ],
+
+      // Market Instruments
+      instruments: {
+        'XAU/USD': {
+          symbol: 'XAU/USD',
+          name: 'Gold vs US Dollar',
+          category: 'Metals',
+          bid: 3969.490,
+          ask: 3969.730,
+          spread: 0.24,
+          change: -0.25,
+          digits: 3,
+          contractSize: 100,
+          iconBg: '#F59E0B',
+          iconText: 'Au',
+          candles: []
+        },
+        'USOIL': {
+          symbol: 'USOIL',
+          name: 'Crude Oil WTI',
+          category: 'Metals',
+          bid: 84.620,
+          ask: 84.650,
+          spread: 0.03,
+          change: 0.17,
+          digits: 3,
+          contractSize: 1000,
+          iconBg: '#10B981',
+          iconText: 'OIL',
+          candles: []
+        },
+        'BTC': {
+          symbol: 'BTC',
+          name: 'Bitcoin vs US Dollar',
+          category: 'Crypto',
+          bid: 73482.43,
+          ask: 73508.90,
+          spread: 26.47,
+          change: -0.57,
+          digits: 2,
+          contractSize: 1,
+          iconBg: '#F7931A',
+          iconText: '₿',
+          candles: []
+        },
+        'USTEC': {
+          symbol: 'USTEC',
+          name: 'US Tech 100 Index',
+          category: 'Indices',
+          bid: 28118.04,
+          ask: 28120.54,
+          spread: 2.50,
+          change: -0.04,
+          digits: 2,
+          contractSize: 1,
+          iconBg: '#3B82F6',
+          iconText: '100',
+          candles: []
+        },
+        'DXY': {
+          symbol: 'DXY',
+          name: 'US Dollar Index',
+          category: 'Majors',
+          bid: 103.007,
+          ask: 103.022,
+          spread: 0.015,
+          change: 0.13,
+          digits: 3,
+          contractSize: 1000,
+          iconBg: '#10B981',
+          iconText: '$',
+          candles: []
+        },
+        'EUR/USD': {
+          symbol: 'EUR/USD',
+          name: 'Euro vs US Dollar',
+          category: 'Majors',
+          bid: 1.10767,
+          ask: 1.10775,
+          spread: 0.00008,
+          change: 0.15,
+          digits: 5,
+          contractSize: 100000,
+          iconBg: '#2563EB',
+          iconText: '€',
+          candles: []
+        },
+        'GBP/USD': {
+          symbol: 'GBP/USD',
+          name: 'Great Britain Pound vs US Dollar',
+          category: 'Majors',
+          bid: 1.32549,
+          ask: 1.32559,
+          spread: 0.00010,
+          change: 0.16,
+          digits: 5,
+          contractSize: 100000,
+          iconBg: '#8B5CF6',
+          iconText: '£',
+          candles: []
+        }
+      },
+
+      // Orders State
+      openOrders: [],
+      pendingOrders: [],
+      closedOrders: [],
+
+      // Order Ticket Form State
+      orderTicket: {
+        mode: 'Market', // 'Market' | 'Pending'
+        side: 'Buy',    // 'Buy' | 'Sell'
+        lots: 0.01,
+        pendingType: 'Limit', // 'Limit' | 'Stop'
+        targetPrice: 3969.261,
+        sl: '',
+        tp: '',
+        showSlTp: false,
+        riskBased: false
+      }
+    };
+
+    // Initialize realistic historical candles for each instrument
+    function initCandles() {
+      Object.values(state.instruments).forEach(inst => {
+        let price = inst.bid;
+        const step = inst.digits === 5 ? 0.0004 : inst.digits === 3 && inst.bid < 200 ? 0.04 : inst.digits === 3 ? 2.2 : 35;
+        const arr = [];
+        for (let i = 0; i < 42; i++) {
+          const open = price;
+          const delta = (Math.random() - 0.51) * step;
+          const close = Number((open + delta).toFixed(inst.digits));
+          const high = Number((Math.max(open, close) + Math.random() * step * 0.6).toFixed(inst.digits));
+          const low = Number((Math.min(open, close) - Math.random() * step * 0.6).toFixed(inst.digits));
+          arr.push({ open, high, low, close, time: i });
+          price = close;
+        }
+        inst.candles = arr;
+        inst.bid = price;
+        inst.ask = Number((price + inst.spread).toFixed(inst.digits));
+      });
+    }
+    Object.values(state.instruments).forEach(inst=>{inst.candles=[];});
+
+    // ==========================================
+    // 2. HELPERS & CALCULATIONS
+    // ==========================================
+    function getActiveAccount() {
+      return state.accounts.find(a => a.id === state.activeAccountId) || state.accounts[0];
+    }
+
+    function formatMoney(num) {
+      return Number(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function calculateOrderPL(order) {
+      const inst = state.instruments[order.symbol];
+      if (!inst) return 0;
+      const currentPrice = order.side === 'Buy' ? inst.bid : inst.ask;
+      const diff = order.side === 'Buy' ? (currentPrice - order.openPrice) : (order.openPrice - currentPrice);
+      const pl = diff * order.lots * inst.contractSize;
+      return Number(pl.toFixed(2));
+    }
+
+    function getAccountMetrics() {
+      const acc = getActiveAccount();
+      const accountOpenOrders = state.openOrders.filter(o => o.accountId === acc.id);
+      let floatingPL = 0;
+      let usedMargin = 0;
+
+      accountOpenOrders.forEach(o => {
+        floatingPL += calculateOrderPL(o);
+        const inst = state.instruments[o.symbol];
+        const lev = parseInt(acc.leverage.split(':')[1]) || 2000;
+        usedMargin += (o.lots * inst.contractSize * o.openPrice) / lev;
+      });
+
+      const equity = acc.balance + floatingPL;
+      const freeMargin = Math.max(0, equity - usedMargin);
+      const marginLevel = usedMargin > 0 ? (equity / usedMargin) * 100 : 0;
+
+      return {
+        balance: acc.balance,
+        equity,
+        floatingPL,
+        usedMargin,
+        freeMargin,
+        marginLevel,
+        openCount: accountOpenOrders.length,
+        pendingCount: state.pendingOrders.filter(o => o.accountId === acc.id).length
+      };
+    }
+
+    function showToast(title, subtitle = '', type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const el = document.createElement('div');
+      const iconColor = type === 'success' ? 'text-bullGreen' : type === 'error' ? 'text-bullRed' : 'text-bullYellow';
+      const iconSvg = type === 'success'
+        ? `<svg class="w-5 h-5 ${iconColor} shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`
+        : type === 'error'
+        ? `<svg class="w-5 h-5 ${iconColor} shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`
+        : `<svg class="w-5 h-5 ${iconColor} shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
+
+      el.className = 'bg-[#1F2532] border border-[#323B4E] rounded-2xl p-3.5 shadow-2xl flex items-start gap-3 pointer-events-auto transition-all duration-300';
+      el.innerHTML = `
+        ${iconSvg}
+        <div class="flex-1 min-w-0">
+          <div class="text-xs font-bold text-white">${title}</div>
+          ${subtitle ? `<div class="text-[11px] text-gray-300 mt-0.5 truncate">${subtitle}</div>` : ''}
+        </div>
+      `;
+      container.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(-10px)';
+        setTimeout(() => el.remove(), 300);
+      }, 3200);
+    }
+
+    // ==========================================
+    // 3. LIVE MARKET TICK SIMULATION (EVERY 900ms)
+    // ==========================================
+    setInterval(() => {
+      Object.values(state.instruments).forEach(inst => {
+        const volatility = inst.digits === 5 ? 0.00018 : inst.digits === 3 && inst.bid < 200 ? 0.015 : inst.digits === 3 ? 0.65 : 14.0;
+        const delta = (Math.random() - 0.495) * volatility;
+        inst.bid = Number((inst.bid + delta).toFixed(inst.digits));
+        inst.ask = Number((inst.bid + inst.spread).toFixed(inst.digits));
+
+        // Update latest candle
+        const lastCandle = inst.candles[inst.candles.length - 1];
+        if (lastCandle) {
+          lastCandle.close = inst.bid;
+          if (inst.bid > lastCandle.high) lastCandle.high = inst.bid;
+          if (inst.bid < lastCandle.low) lastCandle.low = inst.bid;
+        }
+      });
+
+      // Check Pending Orders Execution
+      for (let i = state.pendingOrders.length - 1; i >= 0; i--) {
+        const pOrder = state.pendingOrders[i];
+        const inst = state.instruments[pOrder.symbol];
+        if (!inst) continue;
+        const execPrice = pOrder.side === 'Buy' ? inst.ask : inst.bid;
+        const triggered = Math.abs(execPrice - pOrder.targetPrice) <= (inst.spread * 2.5);
+        if (triggered) {
+          state.pendingOrders.splice(i, 1);
+          const newTrade = {
+            id: pOrder.id,
+            accountId: pOrder.accountId,
+            symbol: pOrder.symbol,
+            side: pOrder.side,
+            lots: pOrder.lots,
+            openPrice: execPrice,
+            sl: pOrder.sl,
+            tp: pOrder.tp,
+            openTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+          };
+          state.openOrders.unshift(newTrade);
+          showToast(
+            'Pending order executed',
+            `Your ${pOrder.side.toUpperCase()} order #${pOrder.id} for ${pOrder.lots} lot(s) ${pOrder.symbol} opened`,
+            'success'
+          );
+        }
+      }
+
+      // Check TP / SL Hit on Open Orders
+      for (let i = state.openOrders.length - 1; i >= 0; i--) {
+        const o = state.openOrders[i];
+        const inst = state.instruments[o.symbol];
+        if (!inst) continue;
+        const curr = o.side === 'Buy' ? inst.bid : inst.ask;
+        if (o.tp && ((o.side === 'Buy' && curr >= parseFloat(o.tp)) || (o.side === 'Sell' && curr <= parseFloat(o.tp)))) {
+          executeCloseOrder(o.id, true, 'Take Profit Hit');
+        } else if (o.sl && ((o.side === 'Buy' && curr <= parseFloat(o.sl)) || (o.side === 'Sell' && curr >= parseFloat(o.sl)))) {
+          executeCloseOrder(o.id, true, 'Stop Loss Hit');
+        }
+      }
+
+      updateLiveDOMElements();
+    }, 900);
+
+    // Add a new candle every 12 seconds
+    setInterval(() => {
+      Object.values(state.instruments).forEach(inst => {
+        const prev = inst.candles[inst.candles.length - 1];
+        const open = prev ? prev.close : inst.bid;
+        inst.candles.push({ open, high: open, low: open, close: open, time: Date.now() });
+        if (inst.candles.length > 50) inst.candles.shift();
+      });
+    }, 12000);
+
+    function updateLiveDOMElements() {
+      const metrics = getAccountMetrics();
+      const acc = getActiveAccount();
+
+      // Update live equity/balance displays
+      document.querySelectorAll('[data-live-equity]').forEach(el => {
+        el.textContent = `${formatMoney(metrics.equity)} USD`;
+      });
+      document.querySelectorAll('[data-live-balance]').forEach(el => {
+        el.textContent = `${formatMoney(metrics.balance)} USD`;
+      });
+      document.querySelectorAll('[data-live-pl]').forEach(el => {
+        const sign = metrics.floatingPL >= 0 ? '+' : '';
+        el.textContent = `${sign}${formatMoney(metrics.floatingPL)} USD`;
+        el.className = metrics.floatingPL >= 0 ? 'text-bullGreen font-mono font-semibold' : 'text-bullRed font-mono font-semibold';
+      });
+
+      // Update individual instrument prices
+      Object.values(state.instruments).forEach(inst => {
+        document.querySelectorAll(`[data-bid="${inst.symbol}"]`).forEach(el => {
+          el.textContent = inst.bid.toFixed(inst.digits);
+        });
+        document.querySelectorAll(`[data-ask="${inst.symbol}"]`).forEach(el => {
+          el.textContent = inst.ask.toFixed(inst.digits);
+        });
+      });
+
+      // Update Desktop Bottom Account Metrics Bar (Equity, Free Margin, Balance, Margin)
+      document.querySelectorAll('[data-metric-equity]').forEach(el => {
+        el.textContent = `${formatMoney(metrics.equity)} USD`;
+      });
+      document.querySelectorAll('[data-metric-freemargin]').forEach(el => {
+        el.textContent = `${formatMoney(metrics.freeMargin)} USD`;
+      });
+      document.querySelectorAll('[data-metric-balance]').forEach(el => {
+        el.textContent = `${formatMoney(metrics.balance)} USD`;
+      });
+      document.querySelectorAll('[data-metric-margin]').forEach(el => {
+        el.textContent = `${formatMoney(metrics.usedMargin)} USD`;
+      });
+
+      // Update individual open trade P/L rows
+      state.openOrders.forEach(o => {
+        const pl = calculateOrderPL(o);
+        const inst = state.instruments[o.symbol];
+        const curr = o.side === 'Buy' ? inst.bid : inst.ask;
+        document.querySelectorAll(`[data-order-pl="${o.id}"]`).forEach(el => {
+          el.textContent = `${pl >= 0 ? '+' : ''}${formatMoney(pl)} USD`;
+          el.className = pl >= 0 ? 'text-bullGreen font-mono font-bold text-sm' : 'text-bullRed font-mono font-bold text-sm';
+        });
+        document.querySelectorAll(`[data-order-pill-pl="${o.id}"]`).forEach(el => {
+          el.textContent = `${pl >= 0 ? '+' : ''}${formatMoney(pl)} USD`;
+          el.className = pl >= 0 ? 'text-bullGreen font-mono font-semibold text-xs' : 'text-bullRed font-mono font-semibold text-xs';
+        });
+        document.querySelectorAll(`[data-order-curr="${o.id}"]`).forEach(el => {
+          el.textContent = curr.toFixed(inst.digits);
+        });
+      });
+
+      // Redraw canvas chart if visible
+      drawChartCanvas();
+    }
+
+    // ==========================================
+    // 4. NAVIGATION, MODALS & TRADING ACTIONS
+    // ==========================================
+    function setViewportMode(mode) {
+      state.viewportMode = mode;
+      const btnM = document.getElementById('btnViewMobile');
+      const btnD = document.getElementById('btnViewDesktop');
+      if (btnM && btnD) {
+        if (mode === 'mobile') {
+          btnM.className = 'flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition bg-bullBlue text-white';
+          btnD.className = 'flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition text-gray-400 hover:text-white';
+        } else {
+          btnD.className = 'flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition bg-bullBlue text-white';
+          btnM.className = 'flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition text-gray-400 hover:text-white';
+        }
+      }
+      renderApp();
+    }
+
+    function switchTab(tab) {
+      state.activeTab = tab;
+      if (tab === 'trade' && state.viewportMode === 'mobile') {
+        state.tradeSubView = 'list';
+      }
+      renderApp();
+    }
+
+    function openSymbolChart(sym) {
+      state.selectedSymbol = sym;
+      state.activeTab = 'trade';
+      state.tradeSubView = 'chart';
+      const inst = state.instruments[sym];
+      if (inst) state.orderTicket.targetPrice = inst.ask;
+      renderApp();
+    }
+
+    function openModal(html) {
+      const backdrop = document.getElementById('modalBackdrop');
+      const content = document.getElementById('modalContent');
+      content.innerHTML = html;
+      backdrop.classList.remove('hidden');
+      backdrop.classList.add('flex');
+    }
+
+    function closeModal() {
+      const backdrop = document.getElementById('modalBackdrop');
+      backdrop.classList.add('hidden');
+      backdrop.classList.remove('flex');
+    }
+
+    function closeModalOnBackdrop(e) {
+      if (e.target.id === 'modalBackdrop') closeModal();
+    }
+
+    function openSwitchAccountModal() {
+      const activeAcc = getActiveAccount();
+      const renderList = (type) => {
+        const list = state.accounts.filter(a => a.type === type && !a.archived);
+        return list.map(a => `
+          <div onclick="state.activeAccountId='${a.id}'; closeModal(); renderApp(); showToast('Account Switched', '${a.nickname} (#${a.id}) active', 'info')"
+               class="p-3.5 rounded-2xl border ${a.id === activeAcc.id ? 'border-bullBlue bg-bullBlue/10' : 'border-[#2D3545] bg-[#131722] hover:bg-[#1E2430]'} cursor-pointer transition flex items-center justify-between mb-2">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-sm text-white">${a.nickname}</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-[#262C3A] text-gray-300 font-semibold">${a.platform}</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-[#262C3A] text-gray-300 font-semibold">${a.accountClass}</span>
+              </div>
+              <div class="text-xs font-mono text-gray-400 mt-1"># ${a.id}</div>
+            </div>
+            <div class="font-mono font-bold text-sm text-white">${formatMoney(a.balance)} USD</div>
+          </div>
+        `).join('');
+      };
+
+      openModal(`
+        <div class="p-4 border-b border-[#262C3A] flex items-center justify-between">
+          <h3 class="font-bold text-base text-white">Switch Account</h3>
+          <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#262C3A] text-gray-300 flex items-center justify-center">✕</button>
+        </div>
+        <div class="p-4 overflow-y-auto space-y-4">
+          <div>
+            <div class="text-xs font-bold uppercase tracking-wider text-bullBlue mb-2">Demo Accounts</div>
+            ${renderList('Demo')}
+          </div>
+          <div>
+            <div class="text-xs font-bold uppercase tracking-wider text-bullGreen mb-2">Real Accounts</div>
+            ${renderList('Real')}
+          </div>
+          <button onclick="openNewAccountModal()" class="w-full py-3 rounded-xl bg-bullBlue hover:bg-bullYellowHover text-white font-bold text-sm transition">
+            + Open new account
+          </button>
+        </div>
+      `);
+    }
+
+    function openNewAccountModal() {
+      openModal(`
+        <div class="p-4 border-b border-[#262C3A] flex items-center justify-between">
+          <h3 class="font-bold text-base text-white">Open New Account</h3>
+          <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#262C3A] text-gray-300 flex items-center justify-center">✕</button>
+        </div>
+        <div class="p-4 space-y-3">
+          <div>
+            <label class="text-xs text-gray-400 block mb-1">Account Type</label>
+            <select id="newAccType" class="w-full bg-[#0E1117] border border-[#2D3545] rounded-xl px-3 py-2.5 text-sm text-white">
+              <option value="Demo">Demo (Virtual Funds)</option>
+              <option value="Real">Real (Live Trading)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-gray-400 block mb-1">Platform</label>
+            <select id="newAccPlatform" class="w-full bg-[#0E1117] border border-[#2D3545] rounded-xl px-3 py-2.5 text-sm text-white">
+              <option value="MT5">MetaTrader 5 (MT5)</option>
+              <option value="MT4">MetaTrader 4 (MT4)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-gray-400 block mb-1">Nickname</label>
+            <input id="newAccName" type="text" value="BigBull_Trader" class="w-full bg-[#0E1117] border border-[#2D3545] rounded-xl px-3 py-2.5 text-sm text-white" />
+          </div>
+          <button onclick="createNewAccount()" class="w-full py-3 rounded-xl bg-bullBlue hover:bg-bullYellowHover text-white font-bold text-sm mt-2">
+            Create Account
+          </button>
+        </div>
+      `);
+    }
+
+    function createNewAccount() {
+      const type = document.getElementById('newAccType').value;
+      const platform = document.getElementById('newAccPlatform').value;
+      const nickname = document.getElementById('newAccName').value || 'BigBull_Pro';
+      const newId = String(Math.floor(100000000 + Math.random() * 900000000));
+      state.accounts.unshift({
+        id: newId,
+        nickname,
+        type,
+        platform,
+        accountClass: 'Standard',
+        balance: type === 'Demo' ? 10000.00 : 0.00,
+        leverage: '1:2000',
+        server: `BigBulls-${platform}${type}1`,
+        archived: false
+      });
+      state.activeAccountId = newId;
+      closeModal();
+      renderApp();
+      showToast('Account Created', `${type} ${platform} #${newId} is ready`, 'success');
+    }
+
+    function openDepositModal() {
+      const acc = getActiveAccount();
+      openModal(`
+        <div class="p-4 border-b border-[#262C3A] flex items-center justify-between">
+          <h3 class="font-bold text-base text-white">Deposit — ${acc.type}</h3>
+          <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#262C3A] text-gray-300 flex items-center justify-center">✕</button>
+        </div>
+        <div class="p-4 space-y-4">
+          <div class="bg-[#131722] p-3 rounded-xl border border-[#262C3A] flex justify-between text-xs">
+            <span class="text-gray-400">Target Account</span>
+            <span class="font-mono font-bold text-white">${acc.nickname} (#${acc.id})</span>
+          </div>
+          <div>
+            <label class="text-xs text-gray-400 block mb-1.5">Enter deposit amount (USD)</label>
+            <input id="depositAmountInput" type="number" value="5000" min="1" class="w-full bg-[#0E1117] border border-[#2D3545] focus:border-bullBlue rounded-xl px-3.5 py-3 text-xl font-mono font-bold text-white outline-none" />
+            <div class="flex gap-2 mt-2">
+              ${[500, 1000, 5000, 10000].map(amt => `
+                <button onclick="document.getElementById('depositAmountInput').value=${amt}" class="flex-1 py-1.5 rounded-lg bg-[#262C3A] hover:bg-bullBlue text-xs font-mono font-semibold text-white transition">+${amt}</button>
+              `).join('')}
+            </div>
+          </div>
+          <button onclick="submitDeposit()" class="w-full py-3.5 rounded-xl bg-bullBlue hover:bg-bullYellowHover text-white font-bold text-sm transition">
+            Continue
+          </button>
+        </div>
+      `);
+    }
+
+    function submitDeposit() {
+      const val = parseFloat(document.getElementById('depositAmountInput').value);
+      if (!val || val <= 0) return;
+      const acc = getActiveAccount();
+      acc.balance = Number((acc.balance + val).toFixed(2));
+      openModal(`
+        <div class="p-5 text-center space-y-4">
+          <div class="w-12 h-12 rounded-full bg-bullGreen/20 text-bullGreen flex items-center justify-center mx-auto text-2xl font-bold">✓</div>
+          <div>
+            <h3 class="font-bold text-lg text-white">Deposit is in Your Account!</h3>
+            <p class="text-xs text-gray-400 mt-1">Your deposit is accepted. You can start trading now.</p>
+          </div>
+          <div class="bg-[#131722] rounded-2xl p-3.5 border border-[#262C3A] space-y-2 text-xs">
+            <div class="flex justify-between">
+              <span class="text-gray-400">Status</span>
+              <span class="text-bullGreen font-bold">● Accepted</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-400">Transaction amount</span>
+              <span class="font-mono font-bold text-white">${formatMoney(val)} USD</span>
+            </div>
+          </div>
+          <button onclick="closeModal(); renderApp()" class="w-full py-3 rounded-xl bg-bullBlue text-white font-bold text-sm">Done</button>
+        </div>
+      `);
+    }
+
+    function openWithdrawModal() {
+      const acc = getActiveAccount();
+      openModal(`
+        <div class="p-4 border-b border-[#262C3A] flex items-center justify-between">
+          <h3 class="font-bold text-base text-white">Withdraw Funds</h3>
+          <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#262C3A] text-gray-300 flex items-center justify-center">✕</button>
+        </div>
+        <div class="p-4 space-y-4">
+          <div class="text-xs text-gray-400">Available balance: <span class="font-mono font-bold text-white">${formatMoney(acc.balance)} USD</span></div>
+          <input id="withdrawAmountInput" type="number" value="100" min="1" max="${acc.balance}" class="w-full bg-[#0E1117] border border-[#2D3545] rounded-xl px-3.5 py-3 text-xl font-mono font-bold text-white outline-none" />
+          <button onclick="submitWithdraw()" class="w-full py-3.5 rounded-xl bg-bullBlue hover:bg-bullYellowHover text-white font-bold text-sm">Confirm Withdrawal</button>
+        </div>
+      `);
+    }
+
+    function submitWithdraw() {
+      const val = parseFloat(document.getElementById('withdrawAmountInput').value);
+      const acc = getActiveAccount();
+      if (!val || val <= 0 || val > acc.balance) {
+        showToast('Invalid Amount', 'Insufficient balance for withdrawal', 'error');
+        return;
+      }
+      acc.balance = Number((acc.balance - val).toFixed(2));
+      closeModal();
+      renderApp();
+      showToast('Withdrawal Processed', `${formatMoney(val)} USD deducted from #${acc.id}`, 'success');
+    }
+
+    function openAccountSettingsModal(tab = 'Settings') {
+      const acc = getActiveAccount();
+      const m = getAccountMetrics();
+      openModal(`
+        <div class="p-4 border-b border-[#262C3A] flex items-center justify-between">
+          <h3 class="font-bold text-base text-white">${acc.nickname}</h3>
+          <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#262C3A] text-gray-300 flex items-center justify-center">✕</button>
+        </div>
+        <div class="grid grid-cols-2 border-b border-[#262C3A] text-xs font-bold">
+          <button onclick="openAccountSettingsModal('Funds')" class="py-2.5 border-b-2 ${tab==='Funds'?'border-bullBlue text-white':'border-transparent text-gray-400'}">Funds</button>
+          <button onclick="openAccountSettingsModal('Settings')" class="py-2.5 border-b-2 ${tab==='Settings'?'border-bullBlue text-white':'border-transparent text-gray-400'}">Settings</button>
+        </div>
+        <div class="p-4 overflow-y-auto space-y-3 text-xs">
+          ${tab === 'Funds' ? `
+            <div class="bg-[#131722] rounded-2xl p-3.5 border border-[#262C3A] space-y-2.5">
+              <div class="flex justify-between"><span class="text-gray-400">Balance</span><span class="font-mono font-bold text-white">${formatMoney(m.balance)} USD</span></div>
+              <div class="flex justify-between"><span class="text-gray-400">Equity</span><span class="font-mono font-bold text-white">${formatMoney(m.equity)} USD</span></div>
+              <div class="flex justify-between"><span class="text-gray-400">Floating P/L</span><span class="font-mono font-bold ${m.floatingPL>=0?'text-bullGreen':'text-bullRed'}">${m.floatingPL>=0?'+':''}${formatMoney(m.floatingPL)} USD</span></div>
+              <div class="flex justify-between"><span class="text-gray-400">Margin</span><span class="font-mono font-bold text-white">${formatMoney(m.usedMargin)} USD</span></div>
+              <div class="flex justify-between"><span class="text-gray-400">Free margin</span><span class="font-mono font-bold text-white">${formatMoney(m.freeMargin)} USD</span></div>
+              <div class="flex justify-between"><span class="text-gray-400">Leverage</span><span class="font-mono font-bold text-white">${acc.leverage}</span></div>
+            </div>
+          ` : `
+            <div class="bg-[#131722] rounded-2xl p-3.5 border border-[#262C3A] space-y-2.5">
+              <div class="flex justify-between"><span class="text-gray-400">Type</span><span class="font-bold text-white">${acc.platform} · ${acc.accountClass} · ${acc.type}</span></div>
+              <div class="flex justify-between"><span class="text-gray-400">Number</span><span class="font-mono font-bold text-white">#${acc.id}</span></div>
+              <div class="flex justify-between"><span class="text-gray-400">Max leverage</span><span class="font-mono font-bold text-white">${acc.leverage}</span></div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-400">Server</span>
+                <button onclick="copyText('${acc.server}')" class="font-mono font-bold text-bullBlue hover:underline">${acc.server} 📋</button>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-400">Login</span>
+                <button onclick="copyText('${acc.id}')" class="font-mono font-bold text-bullBlue hover:underline">${acc.id} 📋</button>
+              </div>
+            </div>
+          `}
+        </div>
+      `);
+    }
+
+    function openChartPreferencesModal() {
+      openModal(`
+        <div class="p-4 border-b border-[#262C3A] flex items-center justify-between">
+          <h3 class="font-bold text-base text-white">Chart Preferences</h3>
+          <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#262C3A] text-gray-300 flex items-center justify-center">✕</button>
+        </div>
+        <div class="p-4 space-y-3 text-xs">
+          <div class="bg-[#131722] p-3.5 rounded-2xl border border-[#262C3A] flex items-center justify-between">
+            <div>
+              <div class="font-bold text-white">One-Click Trading</div>
+              <div class="text-gray-400 mt-0.5">Execute market orders immediately without confirmation</div>
+            </div>
+            <input type="checkbox" ${state.oneClickTrade ? 'checked' : ''} onchange="state.oneClickTrade=this.checked; renderApp()" class="w-5 h-5 accent-bullBlue" />
+          </div>
+          <div class="bg-[#131722] p-3.5 rounded-2xl border border-[#262C3A] flex justify-between">
+            <span class="text-gray-400">Chart Provider</span>
+            <span class="font-bold text-white">BigBulls TradingView Engine</span>
+          </div>
+        </div>
+      `);
+    }
+
+    function copyText(txt) {
+      const el = document.createElement('textarea');
+      el.value = txt;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      showToast('Copied to Clipboard', txt, 'success');
+    }
+
+    function openOrderTicketModal(side = 'Buy', mode = 'Market') {
+      const inst = state.instruments[state.selectedSymbol];
+      state.orderTicket.side = side;
+      state.orderTicket.mode = mode;
+      state.orderTicket.targetPrice = side === 'Buy' ? inst.ask : inst.bid;
+
+      const renderTicketHTML = () => {
+        const m = state.orderTicket;
+        const acc = getActiveAccount();
+        const lev = parseInt(acc.leverage.split(':')[1]) || 2000;
+        const execPrice = m.mode === 'Market' ? (m.side === 'Buy' ? inst.ask : inst.bid) : parseFloat(m.targetPrice || inst.ask);
+        const marginReq = ((m.lots * inst.contractSize * execPrice) / lev).toFixed(2);
+
+        return `
+          <div class="p-4 border-b border-[#262C3A] flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white" style="background:${inst.iconBg}">${inst.iconText}</span>
+              <h3 class="font-bold text-sm text-white">${inst.symbol} Order</h3>
+            </div>
+            <button onclick="closeModal()" class="w-7 h-7 rounded-full bg-[#262C3A] text-gray-300 flex items-center justify-center text-xs">✕</button>
+          </div>
+          <div class="grid grid-cols-2 border-b border-[#262C3A] text-xs font-bold">
+            <button onclick="state.orderTicket.mode='Market'; openModal(renderTicketInner())" class="py-2.5 border-b-2 ${m.mode==='Market'?'border-bullBlue text-white':'border-transparent text-gray-400'}">Market</button>
+            <button onclick="state.orderTicket.mode='Pending'; openModal(renderTicketInner())" class="py-2.5 border-b-2 ${m.mode==='Pending'?'border-bullBlue text-white':'border-transparent text-gray-400'}">Pending</button>
+          </div>
+          <div class="p-4 space-y-3.5 text-xs">
+            <div class="grid grid-cols-2 gap-2">
+              <button onclick="state.orderTicket.side='Sell'; openModal(renderTicketInner())" class="py-2.5 rounded-xl font-bold border ${m.side==='Sell' ? 'bg-bullRed border-bullRed text-white' : 'bg-[#131722] border-[#2D3545] text-gray-400'}">
+                Sell <span class="font-mono block text-sm">${inst.bid.toFixed(inst.digits)}</span>
+              </button>
+              <button onclick="state.orderTicket.side='Buy'; openModal(renderTicketInner())" class="py-2.5 rounded-xl font-bold border ${m.side==='Buy' ? 'bg-bullBlue border-bullBlue text-white' : 'bg-[#131722] border-[#2D3545] text-gray-400'}">
+                Buy <span class="font-mono block text-sm">${inst.ask.toFixed(inst.digits)}</span>
+              </button>
+            </div>
+
+            ${m.mode === 'Pending' ? `
+              <div>
+                <label class="text-gray-400 block mb-1">Order Price (${m.pendingType})</label>
+                <input id="ticketTargetPrice" type="number" step="any" value="${m.targetPrice}" oninput="state.orderTicket.targetPrice=parseFloat(this.value)" class="w-full bg-[#0E1117] border border-[#2D3545] rounded-xl px-3 py-2 font-mono font-bold text-white" />
+              </div>
+            ` : ''}
+
+            <div>
+              <div class="flex justify-between text-gray-400 mb-1">
+                <span>Volume, lots</span>
+                <span class="font-mono text-white font-bold">${m.lots.toFixed(2)}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="state.orderTicket.lots=Math.max(0.01, Number((state.orderTicket.lots-0.01).toFixed(2))); openModal(renderTicketInner())" class="w-10 h-10 rounded-xl bg-[#262C3A] text-white font-bold text-base">−</button>
+                <input type="number" step="0.01" min="0.01" value="${m.lots}" oninput="state.orderTicket.lots=Math.max(0.01, parseFloat(this.value)||0.01)" class="flex-1 bg-[#0E1117] border border-[#2D3545] rounded-xl h-10 text-center font-mono font-bold text-sm text-white" />
+                <button onclick="state.orderTicket.lots=Number((state.orderTicket.lots+0.01).toFixed(2)); openModal(renderTicketInner())" class="w-10 h-10 rounded-xl bg-[#262C3A] text-white font-bold text-base">+</button>
+              </div>
+              <div class="flex gap-1.5 mt-2">
+                ${[0.01, 0.05, 0.10, 0.50, 1.00].map(l => `
+                  <button onclick="state.orderTicket.lots=${l}; openModal(renderTicketInner())" class="flex-1 py-1 rounded-lg bg-[#131722] border border-[#2D3545] hover:border-bullBlue font-mono text-[11px] text-gray-300">${l.toFixed(2)}</button>
+                `).join('')}
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-gray-400 block mb-1">Stop Loss (SL)</label>
+                <input id="ticketSL" type="number" step="any" placeholder="Not set" value="${m.sl}" oninput="state.orderTicket.sl=this.value" class="w-full bg-[#0E1117] border border-[#2D3545] rounded-xl px-3 py-2 font-mono text-white" />
+              </div>
+              <div>
+                <label class="text-gray-400 block mb-1">Take Profit (TP)</label>
+                <input id="ticketTP" type="number" step="any" placeholder="Not set" value="${m.tp}" oninput="state.orderTicket.tp=this.value" class="w-full bg-[#0E1117] border border-[#2D3545] rounded-xl px-3 py-2 font-mono text-white" />
+              </div>
+            </div>
+
+            <div class="flex justify-between text-[11px] text-gray-400 pt-1">
+              <span>Margin required: <strong class="text-white font-mono">${marginReq} USD</strong></span>
+              <span>Leverage: <strong class="text-white font-mono">${acc.leverage}</strong></span>
+            </div>
+
+            <button onclick="submitOrderExecution()" class="w-full py-3.5 rounded-xl font-bold text-sm text-white transition shadow-lg ${m.side==='Buy' ? 'bg-bullBlue hover:bg-bullYellowHover' : 'bg-bullRed hover:bg-red-600'}">
+              Confirm ${m.side} ${m.lots.toFixed(2)} lots
+            </button>
+          </div>
+        `;
+      };
+      window.renderTicketInner = renderTicketHTML;
+      openModal(renderTicketHTML());
+    }
+
+    function submitOrderExecution() {
+      const acc = getActiveAccount();
+      const m = state.orderTicket;
+      const inst = state.instruments[state.selectedSymbol];
+      const execPrice = m.mode === 'Market' ? (m.side === 'Buy' ? inst.ask : inst.bid) : parseFloat(m.targetPrice);
+      const lev = parseInt(acc.leverage.split(':')[1]) || 2000;
+      const marginReq = (m.lots * inst.contractSize * execPrice) / lev;
+
+      if (marginReq > getAccountMetrics().freeMargin) {
+        showToast('Order is not placed', 'Request rejected — Insufficient free margin', 'error');
+        return;
+      }
+
+      const orderId = Math.floor(2752610000 + Math.random() * 89999);
+      if (m.mode === 'Market') {
+        state.openOrders.unshift({
+          id: orderId,
+          accountId: acc.id,
+          symbol: inst.symbol,
+          side: m.side,
+          lots: m.lots,
+          openPrice: execPrice,
+          sl: m.sl || '',
+          tp: m.tp || '',          openTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        });
+        showToast('Order opened', `${inst.symbol} ${m.side} ${m.lots.toFixed(2)} lot at ${execPrice.toFixed(inst.digits)}`, 'success');
+      } else {
+        state.pendingOrders.unshift({
+          id: orderId,
+          accountId: acc.id,
+          symbol: inst.symbol,
+          side: m.side,
+          pendingType: m.pendingType,
+          lots: m.lots,
+          targetPrice: execPrice,
+          sl: m.sl || '',
+          tp: m.tp || ''
+        });
+        showToast('Pending order placed', `${inst.symbol} ${m.side} Limit ${m.lots.toFixed(2)} lot at ${execPrice.toFixed(inst.digits)}`, 'info');
+      }
+
+      closeModal();
+      renderApp();
+    }
+
+    function openClosePositionModal(orderId) {
+      const order = state.openOrders.find(o => o.id === orderId);
+      if (!order) return;
+      const pl = calculateOrderPL(order);
+      const inst = state.instruments[order.symbol];
+      const closePrice = order.side === 'Buy' ? inst.bid : inst.ask;
+
+      openModal(`
+        <div class="p-4 border-b border-[#262C3A] flex items-center justify-between">
+          <h3 class="font-bold text-sm text-white">Close position #${order.id} ?</h3>
+          <button onclick="closeModal()" class="w-7 h-7 rounded-full bg-[#262C3A] text-gray-300 flex items-center justify-center text-xs">✕</button>
+        </div>
+        <div class="p-4 space-y-3 text-xs">
+          <div class="flex justify-between"><span class="text-gray-400">Lots</span><span class="font-mono font-bold text-white">${order.lots.toFixed(2)}</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Closing price</span><span class="font-mono font-bold text-white">${closePrice.toFixed(inst.digits)}</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Profit / Loss</span><span class="font-mono font-bold ${pl>=0?'text-bullGreen':'text-bullRed'}">${pl>=0?'+':''}${formatMoney(pl)} USD</span></div>
+          <button onclick="executeCloseOrder(${order.id}, false)" class="w-full py-3 rounded-xl bg-bullBlue hover:bg-bullYellowHover text-white font-bold text-sm mt-2">Confirm</button>
+          <button onclick="closeModal()" class="w-full py-2.5 rounded-xl bg-[#262C3A] text-gray-300 font-bold text-xs">Cancel</button>
+        </div>
+      `);
+    }
+
+    function executeCloseOrder(orderId, silent = false, reason = 'Closed manually') {
+      const idx = state.openOrders.findIndex(o => o.id === orderId);
+      if (idx === -1) return;
+      const order = state.openOrders[idx];
+      const acc = state.accounts.find(a => a.id === order.accountId) || getActiveAccount();
+      const inst = state.instruments[order.symbol];
+      const closePrice = order.side === 'Buy' ? inst.bid : inst.ask;
+      const realizedPL = calculateOrderPL(order);
+
+      acc.balance = Number((acc.balance + realizedPL).toFixed(2));
+      state.openOrders.splice(idx, 1);
+      state.closedOrders.unshift({
+        ...order,
+        closePrice: closePrice.toFixed(inst.digits),
+        realizedPL,
+        closeTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+
+      if (!silent) closeModal();
+      renderApp();
+      showToast(
+        `${reason} (#${order.id})`,
+        `${order.symbol} ${order.side} ${order.lots.toFixed(2)} lot • ${realizedPL >= 0 ? '+' : ''}${formatMoney(realizedPL)} USD`,
+        realizedPL >= 0 ? 'success' : 'info'
+      );
+    }
+
+    function closeAllOpenOrders() {
+      const acc = getActiveAccount();
+      const ids = state.openOrders.filter(o => o.accountId === acc.id).map(o => o.id);
+      ids.forEach(id => executeCloseOrder(id, true, 'Closed all'));
+    }
+
+    function cancelPendingOrder(id) {
+      const idx = state.pendingOrders.findIndex(o => o.id === id);
+      if (idx > -1) {
+        state.pendingOrders.splice(idx, 1);
+        renderApp();
+        showToast('Pending Order Cancelled', `Order #${id} removed`, 'info');
+      }
+    }
+
+    // ==========================================
+    // 5. LIVE CANDLESTICK CHART CANVAS RENDERER
+    // ==========================================
+    function drawChartCanvas() {
+      const canvas = document.getElementById('liveChartCanvas');
+      if (!canvas) return;
+      const rect = canvas.parentElement.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+
+      const w = rect.width;
+      const h = rect.height;
+      const inst = state.instruments[state.selectedSymbol];
+      const candles = inst.candles;
+
+      // Dark chart background
+      ctx.fillStyle = '#0E1117';
+      ctx.fillRect(0, 0, w, h);
+
+      // Subtle grid lines
+      ctx.strokeStyle = '#191F2C';
+      ctx.lineWidth = 1;
+      for (let i = 1; i < 6; i++) {
+        const y = (h / 6) * i;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w - 64, y);
+        ctx.stroke();
+      }
+      for (let j = 1; j < 7; j++) {
+        const x = ((w - 64) / 7) * j;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+        ctx.stroke();
+      }
+
+      if (!candles || candles.length === 0) return;
+
+      let minP = Infinity, maxP = -Infinity;
+      candles.forEach(c => {
+        if (c.low < minP) minP = c.low;
+        if (c.high > maxP) maxP = c.high;
+      });
+      const pad = (maxP - minP) * 0.15 || 1;
+      minP -= pad;
+      maxP += pad;
+
+      const priceToY = (p) => h - ((p - minP) / (maxP - minP)) * h;
+      const chartW = w - 68;
+      const stepX = chartW / candles.length;
+      const bodyW = Math.max(3, stepX * 0.62);
+
+      // Draw Candlesticks
+      candles.forEach((c, idx) => {
+        const x = idx * stepX + stepX / 2;
+        const isBull = c.close >= c.open;
+        const color = isBull ? '#2979FF' : '#FF4D4D';
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(x, priceToY(c.high));
+        ctx.lineTo(x, priceToY(c.low));
+        ctx.stroke();
+
+        const yOpen = priceToY(c.open);
+        const yClose = priceToY(c.close);
+        const top = Math.min(yOpen, yClose);
+        const barH = Math.max(2, Math.abs(yClose - yOpen));
+        ctx.fillStyle = color;
+        ctx.fillRect(x - bodyW / 2, top, bodyW, barH);
+      });
+
+      // Price Axis Labels on Right
+      ctx.fillStyle = '#6B7280';
+      ctx.font = '10px JetBrains Mono, monospace';
+      for (let i = 1; i < 6; i++) {
+        const p = maxP - ((maxP - minP) / 6) * i;
+        const y = (h / 6) * i;
+        ctx.fillText(p.toFixed(inst.digits), w - 62, y + 3);
+      }
+
+      // Current Bid & Ask Horizontal Dashed Lines
+      const bidY = priceToY(inst.bid);
+      ctx.setLineDash([3, 3]);
+      ctx.strokeStyle = '#FF4D4D';
+      ctx.beginPath();
+      ctx.moveTo(0, bidY);
+      ctx.lineTo(w - 64, bidY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Bid Price Pill on Right Axis
+      ctx.fillStyle = '#FF4D4D';
+      ctx.fillRect(w - 64, bidY - 9, 62, 18);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 10px JetBrains Mono, monospace';
+      ctx.fillText(inst.bid.toFixed(inst.digits), w - 60, bidY + 3.5);
+    }
+
+    // ==========================================
+    // 6. MOBILE TABS: ACCOUNTS, TRADE, INSIGHTS, PERFORMANCE
+    // ==========================================
+    function renderAccountsTab() {
+      const acc = getActiveAccount();
+      const m = getAccountMetrics();
+      const accOpenOrders = state.openOrders.filter(o => o.accountId === acc.id);
+      const accPendingOrders = state.pendingOrders.filter(o => o.accountId === acc.id);
+      const accClosedOrders = state.closedOrders.filter(o => o.accountId === acc.id);
+      const quickPairs = ['XAU/USD', 'BTC', 'USTEC'];
+
+      return `
+        <div class="flex-1 overflow-y-auto px-4 pt-4 pb-6 space-y-4">
+          <!-- Header -->
+          <div class="flex items-center justify-between">
+            <h1 class="text-2xl font-extrabold text-white tracking-tight">Accounts</h1>
+            <div class="flex items-center gap-2">
+              <button onclick="showToast('No new notifications', 'All systems operational', 'info')" class="w-9 h-9 rounded-full bg-[#1A1F29] flex items-center justify-center text-gray-300 text-sm">🔔</button>
+              <button onclick="openSwitchAccountModal()" class="w-9 h-9 rounded-full bg-[#1A1F29] flex items-center justify-center text-white font-bold">⋮</button>
+            </div>
+          </div>
+
+          <!-- Active Account Summary Card -->
+          <div class="bg-[#1A1F29] border border-[#262C3A] rounded-3xl p-4 space-y-4">
+            <div class="flex items-center justify-between">
+              <div onclick="openSwitchAccountModal()" class="cursor-pointer">
+                <div class="text-xs font-bold text-white flex items-center gap-1.5">
+                  <span>${acc.nickname}</span>
+                  <span class="font-mono text-gray-400"># ${acc.id}</span>
+                  <span class="text-gray-400">▾</span>
+                </div>
+                <div class="flex items-center gap-1.5 mt-1.5">
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-md ${acc.type==='Demo' ? 'bg-bullGreen/15 text-bullGreen' : 'bg-bullBlue/15 text-bullBlue'}">${acc.type}</span>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#262C3A] text-gray-300">${acc.platform}</span>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#262C3A] text-gray-300">${acc.accountClass}</span>
+                </div>
+              </div>
+              <button onclick="openAccountSettingsModal('Settings')" class="w-9 h-9 rounded-full bg-[#262C3A] hover:bg-bullBlue text-gray-300 hover:text-white flex items-center justify-center transition">⚙️</button>
+            </div>
+
+            <div data-live-equity class="text-3xl font-extrabold font-mono text-white tracking-tight">
+              ${formatMoney(m.equity)} USD
+            </div>
+
+            <!-- Primary Circular Action Buttons: Trade | Deposit | Withdraw -->
+            <div class="grid grid-cols-3 gap-2 pt-1">
+              <button onclick="switchTab('trade')" class="flex flex-col items-center gap-1.5 group">
+                <div class="w-12 h-12 rounded-full bg-bullBlue group-hover:bg-bullYellowHover text-white flex items-center justify-center text-lg font-bold shadow-lg shadow-bullBlue/25 transition">📊</div>
+                <span class="text-xs font-semibold text-white">Trade</span>
+              </button>
+              <button onclick="openDepositModal()" class="flex flex-col items-center gap-1.5 group">
+                <div class="w-12 h-12 rounded-full bg-[#262C3A] group-hover:bg-bullBlue text-white flex items-center justify-center text-lg font-bold transition">↓</div>
+                <span class="text-xs font-semibold text-gray-300">Deposit</span>
+              </button>
+              <button onclick="openWithdrawModal()" class="flex flex-col items-center gap-1.5 group">
+                <div class="w-12 h-12 rounded-full bg-[#262C3A] group-hover:bg-bullBlue text-white flex items-center justify-center text-lg font-bold transition">↗</div>
+                <span class="text-xs font-semibold text-gray-300">Withdraw</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Orders Sub-Tabs: Open | Pending | Closed -->
+          <div>
+            <div class="flex items-center justify-between border-b border-[#262C3A] pb-2">
+              <div class="flex items-center gap-5 text-xs font-bold">
+                <button onclick="state.ordersSubTab='open'; renderApp()" class="pb-1.5 border-b-2 ${state.ordersSubTab==='open' ? 'border-bullBlue text-white' : 'border-transparent text-gray-400'}">
+                  Open ${accOpenOrders.length > 0 ? `<span class="ml-1 px-1.5 py-0.5 rounded-full bg-[#262C3A] text-[10px]">${accOpenOrders.length}</span>` : ''}
+                </button>
+                <button onclick="state.ordersSubTab='pending'; renderApp()" class="pb-1.5 border-b-2 ${state.ordersSubTab==='pending' ? 'border-bullBlue text-white' : 'border-transparent text-gray-400'}">
+                  Pending ${accPendingOrders.length > 0 ? `<span class="ml-1 px-1.5 py-0.5 rounded-full bg-[#262C3A] text-[10px]">${accPendingOrders.length}</span>` : ''}
+                </button>
+                <button onclick="state.ordersSubTab='closed'; renderApp()" class="pb-1.5 border-b-2 ${state.ordersSubTab==='closed' ? 'border-bullBlue text-white' : 'border-transparent text-gray-400'}">
+                  Closed
+                </button>
+              </div>
+              <span class="text-gray-400 text-xs">⇅</span>
+            </div>
+
+            <!-- Orders List or Empty State -->
+            <div class="mt-3 space-y-2.5">
+              ${state.ordersSubTab === 'open' ? (
+                accOpenOrders.length > 0 ? `
+                  <div class="flex justify-between text-xs px-1">
+                    <span class="text-gray-400">Total P/L</span>
+                    <span data-live-pl class="font-mono font-bold ${m.floatingPL>=0?'text-bullGreen':'text-bullRed'}">${m.floatingPL>=0?'+':''}${formatMoney(m.floatingPL)} USD</span>
+                  </div>
+                  ${accOpenOrders.map(o => {
+                    const pl = calculateOrderPL(o);
+                    const inst = state.instruments[o.symbol];
+                    return `
+                      <div onclick="openClosePositionModal(${o.id})" class="bg-[#1A1F29] border border-[#262C3A] rounded-2xl p-3.5 flex items-center justify-between cursor-pointer hover:border-bullBlue transition">
+                        <div>
+                          <div class="font-bold text-sm text-white">${o.symbol}</div>
+                          <div class="text-xs font-semibold ${o.side==='Buy'?'text-bullBlue':'text-bullRed'} mt-0.5">${o.side} ${o.lots.toFixed(2)} lot at ${o.openPrice.toFixed(inst.digits)}</div>
+                        </div>
+                        <div class="text-right">
+                          <div data-order-pl="${o.id}" class="font-mono font-bold text-sm ${pl>=0?'text-bullGreen':'text-bullRed'}">${pl>=0?'+':''}${formatMoney(pl)} USD</div>
+                          <div data-order-curr="${o.id}" class="text-xs font-mono text-gray-400 mt-0.5">${(o.side==='Buy'?inst.bid:inst.ask).toFixed(inst.digits)}</div>
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                ` : `
+                  <div class="text-xs text-gray-400 py-2">No open orders. Find your next trade:</div>
+                  <div class="grid grid-cols-3 gap-2">
+                    ${quickPairs.map(sym => {
+                      const item = state.instruments[sym];
+                      return `
+                        <div onclick="openSymbolChart('${sym}')" class="bg-[#1A1F29] border border-[#262C3A] hover:border-bullBlue rounded-2xl p-3 text-center cursor-pointer transition">
+                          <div class="text-xs font-bold text-white">${sym}</div>
+                          <div class="w-8 h-8 rounded-full mx-auto my-2 flex items-center justify-center text-xs font-extrabold text-white" style="background:${item.iconBg}">${item.iconText}</div>
+                          <div data-bid="${sym}" class="font-mono font-bold text-xs text-white">${item.bid.toFixed(item.digits)}</div>
+                          <div class="mt-1 inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${item.change>=0?'bg-bullGreen/15 text-bullGreen':'bg-bullRed/15 text-bullRed'}">${item.change>=0?'↑':'↓'} ${Math.abs(item.change)}%</div>
+                        </div>
+                      `;
+                    }).join('')}
+                  </div>
+                `
+              ) : state.ordersSubTab === 'pending' ? (
+                accPendingOrders.length > 0 ? accPendingOrders.map(o => `
+                  <div class="bg-[#1A1F29] border border-[#262C3A] rounded-2xl p-3.5 flex items-center justify-between">
+                    <div>
+                      <div class="font-bold text-sm text-white">${o.symbol}</div>
+                      <div class="text-xs text-bullBlue">${o.side} ${o.pendingType} ${o.lots.toFixed(2)} lot @ ${o.targetPrice}</div>
+                    </div>
+                    <button onclick="cancelPendingOrder(${o.id})" class="px-3 py-1 rounded-lg bg-bullRed/20 text-bullRed text-xs font-bold">Cancel</button>
+                  </div>
+                `).join('') : `<div class="text-xs text-gray-400 py-4 text-center">No pending orders.</div>`
+              ) : (
+                accClosedOrders.length > 0 ? accClosedOrders.map(o => `
+                  <div class="bg-[#1A1F29] border border-[#262C3A] rounded-2xl p-3.5 flex items-center justify-between">
+                    <div>
+                      <div class="font-bold text-sm text-white">${o.symbol}</div>
+                      <div class="text-xs text-gray-400">${o.side} ${o.lots.toFixed(2)} lot • ${o.openPrice} → ${o.closePrice}</div>
+                    </div>
+                    <div class="font-mono font-bold text-sm ${o.realizedPL>=0?'text-bullGreen':'text-bullRed'}">${o.realizedPL>=0?'+':''}${formatMoney(o.realizedPL)} USD</div>
+                  </div>
+                `).join('') : `<div class="text-xs text-gray-400 py-4 text-center">No closed positions yet.</div>`
+              )}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderTradeTab() {
+      const acc = getActiveAccount();
+      const m = getAccountMetrics();
+      const inst = state.instruments[state.selectedSymbol];
+
+      if (state.tradeSubView === 'chart') {
+        const symOrders = state.openOrders.filter(o => o.accountId === acc.id && o.symbol === inst.symbol);
+        return `
+          <div class="flex-1 flex flex-col overflow-hidden bg-[#0E1117]">
+            <!-- Top Chart Bar -->
+            <div class="px-3 py-2.5 border-b border-[#262C3A] flex items-center justify-between shrink-0">
+              <button onclick="state.tradeSubView='list'; renderApp()" class="w-8 h-8 rounded-full bg-[#1A1F29] text-white flex items-center justify-center font-bold">←</button>
+              <button onclick="openSwitchAccountModal()" class="flex items-center gap-1.5 bg-[#1A1F29] px-3 py-1 rounded-full border border-[#2D3545] text-xs">
+                <span class="text-bullGreen font-bold">${acc.type}</span>
+                <span data-live-equity class="font-mono font-bold text-white">${formatMoney(m.equity)} USD</span>
+                <span class="text-gray-400">⋮</span>
+              </button>
+              <button onclick="openChartPreferencesModal()" class="w-8 h-8 rounded-full bg-[#1A1F29] text-gray-300 flex items-center justify-center text-xs">⚙️</button>
+            </div>
+
+            <!-- Symbol Header & Open Trade Pill -->
+            <div class="px-3 py-2 flex items-center justify-between shrink-0">
+              <div onclick="state.tradeSubView='list'; renderApp()" class="flex items-center gap-2 cursor-pointer">
+                <span class="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white" style="background:${inst.iconBg}">${inst.iconText}</span>
+                <span class="font-bold text-sm text-white">${inst.symbol} ▾</span>
+              </div>
+              ${symOrders.length > 0 ? `
+                <div onclick="openClosePositionModal(${symOrders[0].id})" class="flex items-center gap-2 bg-[#1A1F29] border border-[#2D3545] px-2.5 py-1 rounded-lg text-xs cursor-pointer">
+                  <span class="px-1.5 py-0.5 rounded bg-bullBlue text-white font-mono font-bold text-[10px]">${symOrders[0].lots.toFixed(2)}</span>
+                  <span data-order-pill-pl="${symOrders[0].id}" class="font-mono font-bold">${calculateOrderPL(symOrders[0])>=0?'+':''}${formatMoney(calculateOrderPL(symOrders[0]))} USD</span>
+                  <span class="text-gray-400">✕</span>
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Live Canvas -->
+            <div class="flex-1 relative">
+              <canvas id="liveChartCanvas" class="w-full h-full block"></canvas>
+            </div>
+
+            <!-- Timeframes & Buy/Sell Footer -->
+            <div class="p-3 bg-[#131722] border-t border-[#262C3A] space-y-2.5 shrink-0">
+              <div class="flex items-center gap-2 text-xs">
+                ${['1m', '5m', '15m', '1h', '4h'].map(tf => `
+                  <button onclick="state.timeframe='${tf}'; renderApp()" class="px-2.5 py-1 rounded-lg font-bold ${state.timeframe===tf ? 'bg-[#262C3A] text-white' : 'text-gray-400'}">${tf}</button>
+                `).join('')}
+              </div>
+              <div class="grid grid-cols-2 gap-2 relative">
+                <button onclick="openOrderTicketModal('Sell', 'Market')" class="py-2.5 rounded-xl bg-bullRed hover:bg-red-600 text-white text-center shadow">
+                  <div class="text-[11px] font-semibold opacity-90">Sell</div>
+                  <div data-bid="${inst.symbol}" class="font-mono font-bold text-sm">${inst.bid.toFixed(inst.digits)}</div>
+                </button>
+                <button onclick="openOrderTicketModal('Buy', 'Market')" class="py-2.5 rounded-xl bg-bullBlue hover:bg-blue-600 text-white text-center shadow">
+                  <div class="text-[11px] font-semibold opacity-90">Buy</div>
+                  <div data-ask="${inst.symbol}" class="font-mono font-bold text-sm">${inst.ask.toFixed(inst.digits)}</div>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Watchlist View
+      return `
+        <div class="flex-1 overflow-y-auto px-4 pt-4 pb-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h1 class="text-2xl font-extrabold text-white">Trade</h1>
+            <button onclick="openSwitchAccountModal()" class="flex items-center gap-1.5 bg-[#1A1F29] px-3 py-1 rounded-full border border-[#2D3545] text-xs">
+              <span class="text-bullGreen font-bold">${acc.type}</span>
+              <span data-live-equity class="font-mono font-bold text-white">${formatMoney(m.equity)} USD</span>
+            </button>
+          </div>
+
+          <div class="flex gap-2 overflow-x-auto no-scrollbar text-xs font-bold">
+            ${['Favorites', 'Most traded', 'Top Movers', 'Metals', 'Crypto'].map(t => `
+              <button onclick="state.watchlistTab='${t}'; renderApp()" class="px-3 py-1.5 rounded-full shrink-0 ${state.watchlistTab===t ? 'bg-bullBlue text-white' : 'bg-[#1A1F29] text-gray-400'}">${t}</button>
+            `).join('')}
+          </div>
+
+          <div class="space-y-2">
+            ${Object.values(state.instruments).map(item => `
+              <div onclick="openSymbolChart('${item.symbol}')" class="bg-[#1A1F29] border border-[#262C3A] hover:border-bullBlue rounded-2xl p-3.5 flex items-center justify-between cursor-pointer transition">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-extrabold text-white" style="background:${item.iconBg}">${item.iconText}</div>
+                  <div>
+                    <div class="font-bold text-sm text-white">${item.symbol}</div>
+                    <div class="text-[11px] text-gray-400">${item.name}</div>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div data-bid="${item.symbol}" class="font-mono font-bold text-sm text-white">${item.bid.toFixed(item.digits)}</div>
+                  <div class="text-[11px] font-bold ${item.change>=0?'text-bullGreen':'text-bullRed'}">${item.change>=0?'↑':'↓'} ${Math.abs(item.change)}%</div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderInsightsTab() {
+      const acc = getActiveAccount();
+      const m = getAccountMetrics();
+      const signals = [
+        { pair: 'DXY', title: 'DXY: key resistance at 103.10', dir: 'Intraday', down: true },
+        { pair: 'UKOIL', title: 'UKOIL: under pressure', dir: 'Intraday', down: true },
+        { pair: 'AUD/NZD', title: 'AUD/NZD: Watch 1.2343', dir: 'Intraday', down: false }
+      ];
+      const news = [
+        { title: 'WTI declines below $85.00 on hopes for Ukraine peace talks', tag: 'USOIL +0.17%', time: 'Today, 11:15' },
+        { title: 'Bitcoin Price Forecast: BTC under pressure as MSCI reviews index', tag: 'BTC -0.62%', time: 'Today, 11:05' },
+        { title: "BoJ's Asada warns rate hikes could push down underlying inflation", tag: 'USD/JPY', time: 'Today, 10:59' }
+      ];
+
+      return `
+        <div class="flex-1 overflow-y-auto px-4 pt-4 pb-6 space-y-5">
+          <div class="flex items-center justify-between">
+            <h1 class="text-2xl font-extrabold text-white">Insights</h1>
+            <div class="bg-[#1A1F29] px-3 py-1 rounded-full border border-[#2D3545] text-xs">
+              <span class="text-bullGreen font-bold">${acc.type}</span>
+              <span data-live-equity class="font-mono font-bold text-white ml-1">${formatMoney(m.equity)} USD</span>
+            </div>
+          </div>
+
+          <div>
+            <h2 class="text-sm font-bold text-white mb-2.5">Trading signals</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              ${signals.map(s => `
+                <div onclick="switchTab('trade')" class="bg-[#1A1F29] border border-[#262C3A] rounded-2xl p-3.5 cursor-pointer hover:border-bullBlue transition">
+                  <div class="text-[10px] font-bold text-gray-400 uppercase">${s.pair} • 30 MIN</div>
+                  <div class="font-bold text-xs text-white mt-1.5">${s.title}</div>
+                  <div class="mt-2.5 inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${s.down ? 'bg-bullRed/15 text-bullRed' : 'bg-bullGreen/15 text-bullGreen'}">
+                    ${s.down ? '↓' : '↑'} ${s.dir}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <div>
+            <h2 class="text-sm font-bold text-white mb-2.5">Upcoming events</h2>
+            <div class="bg-[#1A1F29] border border-[#262C3A] rounded-2xl divide-y divide-[#262C3A] text-xs">
+              <div class="p-3 flex justify-between items-center">
+                <div><div class="font-bold text-white">🇬🇧 UK Balance of Trade</div><div class="text-gray-400 text-[11px]">12:00 — In 10 minutes</div></div>
+                <span class="px-2 py-0.5 rounded bg-bullRed/20 text-bullRed font-bold text-[10px]">High Impact</span>
+              </div>
+              <div class="p-3 flex justify-between items-center">
+                <div><div class="font-bold text-white">🇬🇧 UK GDP Growth Rate YoY</div><div class="text-gray-400 text-[11px]">12:00 — In 10 minutes</div></div>
+                <span class="px-2 py-0.5 rounded bg-bullRed/20 text-bullRed font-bold text-[10px]">High Impact</span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h2 class="text-sm font-bold text-white mb-2.5">Top news</h2>
+            <div class="space-y-2">
+              ${news.map(n => `
+                <div class="bg-[#1A1F29] border border-[#262C3A] rounded-2xl p-3.5">
+                  <div class="font-bold text-xs text-white leading-snug">${n.title}</div>
+                  <div class="flex items-center gap-2 mt-2 text-[11px] text-gray-400">
+                    <span>${n.time}</span>
+                    <span>•</span>
+                    <span class="text-bullBlue font-semibold">${n.tag}</span>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderPerformanceTab() {
+      const acc = getActiveAccount();
+      const closed = state.closedOrders.filter(o => o.accountId === acc.id);
+      const totalPL = closed.reduce((sum, o) => sum + o.realizedPL, 0);
+      const wins = closed.filter(o => o.realizedPL > 0).length;
+      const winRate = closed.length > 0 ? Math.round((wins / closed.length) * 100) : 0;
+
+      return `
+        <div class="flex-1 overflow-y-auto px-4 pt-4 pb-6 space-y-4">
+          <h1 class="text-2xl font-extrabold text-white">Performance</h1>
+          <div class="text-[11px] text-gray-400 bg-[#1A1F29] p-3 rounded-2xl border border-[#262C3A]">
+            ⓘ All times on this page use UTC (GMT+0) and may differ from your local time
+          </div>
+
+          <div class="flex gap-2">
+            <button onclick="openSwitchAccountModal()" class="px-3 py-1.5 rounded-full bg-[#1A1F29] border border-[#2D3545] text-xs font-bold text-white">
+              ${acc.nickname} (#${acc.id}) ▾
+            </button>
+            <span class="px-3 py-1.5 rounded-full bg-[#1A1F29] border border-[#2D3545] text-xs font-bold text-gray-300">Last 7 days</span>
+          </div>
+
+          ${closed.length === 0 ? `
+            <div class="py-12 text-center space-y-3">
+              <div class="text-3xl">⚠️</div>
+              <div class="font-bold text-base text-white">No trading activity found</div>
+              <div class="text-xs text-gray-400">Close a trade in the terminal to view your profit/loss analytics.</div>
+              <button onclick="switchTab('trade')" class="px-6 py-2.5 rounded-xl bg-bullBlue text-white font-bold text-xs">Trade</button>
+            </div>
+          ` : `
+            <div class="grid grid-cols-3 gap-2">
+              <div class="bg-[#1A1F29] border border-[#262C3A] rounded-2xl p-3">
+                <div class="text-[11px] text-gray-400">Net Profit</div>
+                <div class="font-mono font-bold text-sm mt-1 ${totalPL>=0?'text-bullGreen':'text-bullRed'}">${totalPL>=0?'+':''}${formatMoney(totalPL)}</div>
+              </div>
+              <div class="bg-[#1A1F29] border border-[#262C3A] rounded-2xl p-3">
+                <div class="text-[11px] text-gray-400">Closed Orders</div>
+                <div class="font-mono font-bold text-sm text-white mt-1">${closed.length}</div>
+              </div>
+              <div class="bg-[#1A1F29] border border-[#262C3A] rounded-2xl p-3">
+                <div class="text-[11px] text-gray-400">Win Rate</div>
+                <div class="font-mono font-bold text-sm text-bullBlue mt-1">${winRate}%</div>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <div class="text-xs font-bold text-gray-400">Trade History</div>
+              ${closed.map(o => `
+                <div class="bg-[#1A1F29] border border-[#262C3A] rounded-2xl p-3.5 flex items-center justify-between">
+                  <div>
+                    <div class="font-bold text-sm text-white">${o.symbol}</div>
+                    <div class="text-xs text-gray-400">${o.side} ${o.lots.toFixed(2)} lot • ${o.openPrice} → ${o.closePrice}</div>
+                  </div>
+                  <div class="font-mono font-bold text-sm ${o.realizedPL>=0?'text-bullGreen':'text-bullRed'}">${o.realizedPL>=0?'+':''}${formatMoney(o.realizedPL)} USD</div>
+                </div>
+              `).join('')}
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    // ==========================================
+    // 9. DESKTOP TERMINAL WORKSPACE RENDERER (EXACT EXNESS WEB TERMINAL LAYOUT)
+    // ==========================================
+    function renderDesktopWorkspace() {
+      const acc = getActiveAccount();
+      const m = getAccountMetrics();
+      const inst = state.instruments[state.selectedSymbol];
+      const symOpenOrders = state.openOrders.filter(o => o.accountId === acc.id && o.symbol === state.selectedSymbol);
+      const accOpenOrders = state.openOrders.filter(o => o.accountId === acc.id);
+      const accPendingOrders = state.pendingOrders.filter(o => o.accountId === acc.id);
+      const accClosedOrders = state.closedOrders.filter(o => o.accountId === acc.id);
+
+      const topTabs = ['BTC', 'USOIL', 'USTEC', 'XAU/USD'];
+      const timeframes = ['5y', '1y', '6m', '3m', '1m', '5d', '1d'];
+
+      return `
+        <div class="w-full h-[calc(100vh-52px)] bg-[#0E1117] flex flex-col overflow-hidden select-none">
+          <!-- 1. Top Web Terminal Header Bar (Logo, Account Dropdown, Deposit, Navigation) -->
+          <div class="h-11 bg-[#131722] border-b border-[#262C3A] px-3 flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-4">
+              <div class="flex items-center gap-2">
+                <span class="text-bullBlue font-extrabold text-base tracking-tight">bigbulls</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-bullBlue/15 text-bullBlue font-bold">WEB TERMINAL</span>
+              </div>
+              <div class="hidden md:flex items-center gap-1 text-xs">
+                <button onclick="switchTab('trade')" class="px-2.5 py-1 rounded-lg font-bold ${state.activeTab==='trade' ? 'bg-[#262C3A] text-white' : 'text-gray-400 hover:text-white'}">Terminal</button>
+                <button onclick="switchTab('accounts')" class="px-2.5 py-1 rounded-lg font-bold ${state.activeTab==='accounts' ? 'bg-[#262C3A] text-white' : 'text-gray-400 hover:text-white'}">Accounts</button>
+                <button onclick="switchTab('insights')" class="px-2.5 py-1 rounded-lg font-bold ${state.activeTab==='insights' ? 'bg-[#262C3A] text-white' : 'text-gray-400 hover:text-white'}">Insights</button>
+                <button onclick="switchTab('performance')" class="px-2.5 py-1 rounded-lg font-bold ${state.activeTab==='performance' ? 'bg-[#262C3A] text-white' : 'text-gray-400 hover:text-white'}">Performance</button>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2.5">
+              <!-- Account Selector Pill (Exact Reference Style) -->
+              <button onclick="openSwitchAccountModal()" class="flex items-center gap-2 bg-[#1A1F29] hover:bg-[#232936] border border-[#2D3545] px-3 py-1 rounded-lg text-xs transition">
+                <span class="px-1.5 py-0.2 rounded ${acc.type==='Demo' ? 'bg-bullGreen/20 text-bullGreen' : 'bg-bullBlue/20 text-bullBlue'} font-bold text-[10px]">${acc.type}</span>
+                <span class="font-mono text-gray-300">#${acc.id}</span>
+                <span data-live-equity class="font-mono font-bold text-white">${formatMoney(m.equity)} USD</span>
+                <span class="text-gray-400 text-[10px]">▾</span>
+              </button>
+
+              <button onclick="openDepositModal()" class="bg-[#262C3A] hover:bg-bullBlue text-white font-bold text-xs px-3.5 py-1.5 rounded-lg border border-[#323B4E] transition">
+                Deposit
+              </button>
+              <button onclick="openAccountSettingsModal('Settings')" class="w-8 h-8 rounded-lg bg-[#1A1F29] hover:bg-[#262C3A] text-gray-300 flex items-center justify-center text-xs">
+                ⚙️
+              </button>
+            </div>
+          </div>
+
+          ${state.activeTab !== 'trade' ? `
+            <div class="flex-1 overflow-hidden flex flex-col max-w-5xl w-full mx-auto">
+              ${state.activeTab === 'accounts' ? renderAccountsTab() : state.activeTab === 'insights' ? renderInsightsTab() : renderPerformanceTab()}
+            </div>
+          ` : `
+            <!-- 2. Symbol Tabs Strip (BTC | USOIL | USTEC | XAU/USD | +) -->
+            <div class="h-9 bg-[#131722] border-b border-[#262C3A] px-2 flex items-center gap-1 shrink-0 overflow-x-auto no-scrollbar">
+              ${topTabs.map(sym => {
+                const item = state.instruments[sym];
+                const isSelected = state.selectedSymbol === sym;
+                return `
+                  <button onclick="openSymbolChart('${sym}')" class="flex items-center gap-2 px-3 py-1.5 rounded-t-lg text-xs font-bold border-b-2 transition ${isSelected ? 'bg-[#1A1F29] border-bullBlue text-white' : 'text-gray-400 border-transparent hover:text-gray-200 hover:bg-[#1A1F29]/50'}">
+                    <span class="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-extrabold text-white" style="background:${item.iconBg}">${item.iconText}</span>
+                    <span>${sym}</span>
+                  </button>
+                `;
+              }).join('')}
+              <button onclick="openOrderTicketModal('Buy', 'Market')" title="New Order" class="w-7 h-7 rounded-lg hover:bg-[#262C3A] text-gray-400 hover:text-white flex items-center justify-center text-sm font-bold ml-1">+</button>
+            </div>
+
+            <!-- 3. Chart Action & Quick Order Toolbar -->
+            <div class="h-10 bg-[#0E1117] border-b border-[#1E2430] px-3 flex items-center justify-between shrink-0">
+              <div class="flex items-center gap-3 text-xs">
+                <span class="font-bold text-white flex items-center gap-1.5">
+                  <span class="w-4 h-4 rounded-full inline-flex items-center justify-center text-[8px] text-white" style="background:${inst.iconBg}">${inst.iconText}</span>
+                  ${inst.name} · ${state.timeframe}
+                </span>
+                <span class="hidden lg:inline font-mono text-[11px] text-gray-400">
+                  O <span class="text-bullBlue">${inst.candles[inst.candles.length-1]?.open.toFixed(inst.digits)}</span>
+                  H <span class="text-bullBlue">${inst.candles[inst.candles.length-1]?.high.toFixed(inst.digits)}</span>
+                  L <span class="text-bullRed">${inst.candles[inst.candles.length-1]?.low.toFixed(inst.digits)}</span>
+                  C <span class="text-white">${inst.bid.toFixed(inst.digits)}</span>
+                </span>
+              </div>
+
+              <!-- Inline Floating P/L + Sell / Spread / Buy Execution Buttons (Exact Reference Top-Right) -->
+              <div class="flex items-center gap-2">
+                <span data-live-pl class="font-mono text-xs font-bold mr-2 ${m.floatingPL >= 0 ? 'text-bullGreen' : 'text-bullRed'}">
+                  ${m.floatingPL >= 0 ? '+' : ''}${formatMoney(m.floatingPL)} USD
+                </span>
+                <button onclick="openOrderTicketModal('Sell', 'Market')" class="bg-bullRed hover:bg-red-600 text-white font-mono font-bold text-xs px-3 py-1 rounded-md flex items-center gap-1.5 transition shadow">
+                  <span class="font-sans font-semibold text-[11px] opacity-90">Sell</span>
+                  <span data-bid="${inst.symbol}">${inst.bid.toFixed(inst.digits)}</span>
+                </button>
+                <span class="text-[10px] font-mono text-gray-400 px-1">${inst.spread}</span>
+                <button onclick="openOrderTicketModal('Buy', 'Market')" class="bg-bullBlue hover:bg-blue-600 text-white font-mono font-bold text-xs px-3 py-1 rounded-md flex items-center gap-1.5 transition shadow">
+                  <span class="font-sans font-semibold text-[11px] opacity-90">Buy</span>
+                  <span data-ask="${inst.symbol}">${inst.ask.toFixed(inst.digits)}</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 4. Main Chart Area with Left Drawing Tools Strip -->
+            <div class="flex-1 flex overflow-hidden relative">
+              <!-- Left Vertical Drawing Toolbar -->
+              <div class="w-10 bg-[#131722] border-r border-[#1E2430] flex flex-col items-center py-2.5 gap-3.5 text-gray-400 text-xs shrink-0">
+                <button onclick="showToast('Crosshair Tool', 'Active on chart', 'info')" class="hover:text-white">╋</button>
+                <button onclick="showToast('Trend Line', 'Click chart to draw trendline', 'info')" class="hover:text-white">╱</button>
+                <button onclick="showToast('Horizontal Line', 'Price level marker active', 'info')" class="hover:text-white">―</button>
+                <button onclick="showToast('Fibonacci Retracement', 'Fib levels ready', 'info')" class="hover:text-white">☰</button>
+                <button onclick="openOrderTicketModal('Buy', 'Pending')" title="Pending Order" class="hover:text-bullBlue font-bold">⏰</button>
+                <button onclick="openChartPreferencesModal()" title="Chart Settings" class="mt-auto hover:text-white">⚙️</button>
+              </div>
+
+              <!-- Live Candlestick Canvas -->
+              <div class="flex-1 relative">
+                <canvas id="liveChartCanvas" class="w-full h-full block"></canvas>
+
+                <!-- Floating Position Tag on Chart -->
+                ${symOpenOrders.length > 0 ? `
+                  <div class="absolute right-20 top-6 flex flex-col gap-1.5 z-10">
+                    ${symOpenOrders.slice(0, 3).map(o => {
+                      const pl = calculateOrderPL(o);
+                      return `
+                        <div class="flex items-center bg-[#131722]/95 border border-[#2D3545] rounded-md overflow-hidden shadow-xl text-[11px] font-mono">
+                          <span class="px-2 py-1 font-bold ${o.side==='Buy' ? 'bg-bullBlue text-white' : 'bg-bullRed text-white'}">${o.side === 'Buy' ? '+' : '-'}${o.lots.toFixed(2)}</span>
+                          <span data-order-pill-pl="${o.id}" class="px-2.5 py-1 font-bold ${pl >= 0 ? 'text-bullGreen' : 'text-bullRed'}">${pl >= 0 ? '+' : ''}${formatMoney(pl)} USD</span>
+                          <button onclick="openClosePositionModal(${o.id})" class="px-2 py-1 text-gray-400 hover:bg-bullRed hover:text-white transition">✕</button>
+                        </div>
+                      `;
+                    }).join('')}
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+
+            <!-- 5. Bottom Timeframe Selector Bar (5y 1y 6m 3m 1m 5d 1d) + Chart Size Controls -->
+            <div class="h-7 bg-[#131722] border-t border-[#1E2430] px-3 flex items-center justify-between text-[11px] shrink-0">
+              <div class="flex items-center gap-3">
+                ${timeframes.map(tf => `
+                  <button onclick="state.timeframe='${tf}'; renderApp()" class="font-semibold transition ${state.timeframe===tf ? 'text-bullBlue font-bold' : 'text-gray-400 hover:text-white'}">${tf}</button>
+                `).join('')}
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="flex items-center gap-1 bg-[#0E1117] px-1.5 py-0.5 rounded border border-[#262C3A]">
+                  <span class="text-[10px] text-gray-500 mr-1">Chart Size:</span>
+                  <button onclick="setDesktopChartPreset('compact')" title="Smaller Chart" class="px-1.5 rounded text-[10px] font-bold transition ${state.bottomPanelHeight >= 290 ? 'bg-bullBlue text-white' : 'text-gray-400 hover:text-white'}">Small</button>
+                  <button onclick="setDesktopChartPreset('default')" title="Balanced Chart" class="px-1.5 rounded text-[10px] font-bold transition ${state.bottomPanelHeight > 110 && state.bottomPanelHeight < 290 ? 'bg-bullBlue text-white' : 'text-gray-400 hover:text-white'}">Medium</button>
+                  <button onclick="setDesktopChartPreset('expanded')" title="Larger Chart" class="px-1.5 rounded text-[10px] font-bold transition ${state.bottomPanelHeight <= 110 ? 'bg-bullBlue text-white' : 'text-gray-400 hover:text-white'}">Large</button>
+                </div>
+                <div class="font-mono text-gray-400 text-[10px]">UTC • auto</div>
+              </div>
+            </div>
+
+            <!-- Draggable Resize Handle (Drag up/down to make Chart smaller or larger) -->
+            <div onmousedown="startDesktopChartResize(event)" ontouchstart="startDesktopChartResize(event)" title="Drag up or down to resize chart" class="h-2 bg-[#1A1F29] hover:bg-bullBlue/60 border-t border-[#262C3A] cursor-ns-resize flex items-center justify-center transition shrink-0 group">
+              <div class="w-10 h-0.5 rounded-full bg-gray-500 group-hover:bg-white"></div>
+            </div>
+
+            <!-- 6. Bottom Orders & Positions Panel (Resizable Height) -->
+            <div id="desktopBottomPanel" style="height: ${state.bottomPanelHeight}px;" class="bg-[#131722] flex flex-col shrink-0">
+              <!-- Sub-Tabs Header -->
+              <div class="h-8 px-3 border-b border-[#1E2430] flex items-center justify-between text-xs shrink-0">
+                <div class="flex items-center gap-5">
+                  <button onclick="state.ordersSubTab='open'; renderApp()" class="h-8 flex items-center gap-1.5 font-bold border-b-2 transition ${state.ordersSubTab==='open' ? 'border-bullBlue text-white' : 'border-transparent text-gray-400 hover:text-white'}">
+                    Open <span class="px-1.5 py-0.2 rounded-full bg-[#262C3A] text-[10px]">${accOpenOrders.length}</span>
+                  </button>
+                  <button onclick="state.ordersSubTab='pending'; renderApp()" class="h-8 flex items-center gap-1.5 font-bold border-b-2 transition ${state.ordersSubTab==='pending' ? 'border-bullBlue text-white' : 'border-transparent text-gray-400 hover:text-white'}">
+                    Pending <span class="px-1.5 py-0.2 rounded-full bg-[#262C3A] text-[10px]">${accPendingOrders.length}</span>
+                  </button>
+                  <button onclick="state.ordersSubTab='closed'; renderApp()" class="h-8 flex items-center gap-1.5 font-bold border-b-2 transition ${state.ordersSubTab==='closed' ? 'border-bullBlue text-white' : 'border-transparent text-gray-400 hover:text-white'}">
+                    Closed <span class="px-1.5 py-0.2 rounded-full bg-[#262C3A] text-[10px]">${accClosedOrders.length}</span>
+                  </button>
+                </div>
+                <button onclick="openOrderTicketModal('Buy', 'Market')" class="text-[11px] font-bold text-bullBlue hover:underline">+ Place Order</button>
+              </div>
+
+              <!-- Orders Table Body -->
+              <div class="flex-1 overflow-y-auto px-3 py-1">
+                ${state.ordersSubTab === 'open' ? (
+                  accOpenOrders.length > 0 ? `
+                    <table class="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr class="text-[10px] text-gray-500 border-b border-[#1E2430]">
+                          <th class="py-1 font-medium">Symbol</th>
+                          <th class="py-1 font-medium">Type</th>
+                          <th class="py-1 font-medium">Volume, lot</th>
+                          <th class="py-1 font-medium">Open price</th>
+                          <th class="py-1 font-medium">Current price</th>
+                          <th class="py-1 font-medium">S/L · T/P</th>
+                          <th class="py-1 font-medium text-right">P/L, USD</th>
+                          <th class="py-1 w-8"></th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-[#1E2430]/60 font-mono text-[11px]">
+                        ${accOpenOrders.map(o => {
+                          const pl = calculateOrderPL(o);
+                          const item = state.instruments[o.symbol];
+                          const curr = o.side === 'Buy' ? item.bid : item.ask;
+                          return `
+                            <tr class="hover:bg-[#1A1F29] transition">
+                              <td class="py-1.5 font-sans font-bold text-white flex items-center gap-1.5">
+                                <span class="w-4 h-4 rounded-full inline-flex items-center justify-center text-[8px] text-white" style="background:${item.iconBg}">${item.iconText}</span>
+                                ${o.symbol}
+                              </td>
+                              <td class="py-1.5 font-sans font-bold ${o.side==='Buy' ? 'text-bullBlue' : 'text-bullRed'}">● ${o.side}</td>
+                              <td class="py-1.5 text-white">${o.lots.toFixed(2)}</td>
+                              <td class="py-1.5 text-gray-300">${o.openPrice.toFixed(item.digits)}</td>
+                              <td data-order-curr="${o.id}" class="py-1.5 text-white">${curr.toFixed(item.digits)}</td>
+                              <td class="py-1.5 text-gray-400">${o.sl || '--'} / ${o.tp || '--'}</td>
+                              <td data-order-pl="${o.id}" class="py-1.5 text-right font-bold ${pl >= 0 ? 'text-bullGreen' : 'text-bullRed'}">${pl >= 0 ? '+' : ''}${formatMoney(pl)}</td>
+                              <td class="py-1.5 text-right">
+                                <button onclick="openClosePositionModal(${o.id})" class="px-1.5 py-0.5 rounded hover:bg-bullRed text-gray-400 hover:text-white transition">✕</button>
+                              </td>
+                            </tr>
+                          `;
+                        }).join('')}
+                      </tbody>
+                    </table>
+                  ` : `<div class="h-full flex items-center justify-center text-xs text-gray-500">No open positions. Use Sell / Buy above to open a trade.</div>`
+                ) : state.ordersSubTab === 'pending' ? (
+                  accPendingOrders.length > 0 ? `
+                    <table class="w-full text-left text-xs">
+                      <tbody class="divide-y divide-[#1E2430] font-mono text-[11px]">
+                        ${accPendingOrders.map(o => `
+                          <tr>
+                            <td class="py-1.5 font-sans font-bold text-white">${o.symbol}</td>
+                            <td class="py-1.5 font-sans text-bullBlue">${o.side} ${o.pendingType}</td>
+                            <td class="py-1.5 text-white">${o.lots.toFixed(2)} lot</td>
+                            <td class="py-1.5 text-gray-300">@ ${o.targetPrice}</td>
+                            <td class="py-1.5 text-right"><button onclick="cancelPendingOrder(${o.id})" class="text-bullRed hover:underline font-sans font-bold">Cancel</button></td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                  ` : `<div class="h-full flex items-center justify-center text-xs text-gray-500">No pending orders.</div>`
+                ) : (
+                  accClosedOrders.length > 0 ? `
+                    <table class="w-full text-left text-xs">
+                      <tbody class="divide-y divide-[#1E2430] font-mono text-[11px]">
+                        ${accClosedOrders.map(o => `
+                          <tr>
+                            <td class="py-1.5 font-sans font-bold text-white">${o.symbol}</td>
+                            <td class="py-1.5 font-sans ${o.side==='Buy'?'text-bullBlue':'text-bullRed'}">${o.side} ${o.lots.toFixed(2)}</td>
+                            <td class="py-1.5 text-gray-400">${o.openPrice} → ${o.closePrice}</td>
+                            <td class="py-1.5 text-right font-bold ${o.realizedPL>=0?'text-bullGreen':'text-bullRed'}">${o.realizedPL>=0?'+':''}${formatMoney(o.realizedPL)} USD</td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                  ` : `<div class="h-full flex items-center justify-center text-xs text-gray-500">No closed orders yet.</div>`
+                )}
+              </div>
+
+              <!-- 7. Bottom Status Bar: Close All Button + Equity / Free Margin / Balance / Margin -->
+              <div class="h-8 bg-[#0E1117] border-t border-[#262C3A] px-3 flex items-center justify-between text-[11px] shrink-0">
+                <div class="flex items-center gap-4 text-gray-400 font-mono overflow-x-auto no-scrollbar">
+                  <span>Equity: <strong data-metric-equity class="text-white">${formatMoney(m.equity)} USD</strong></span>
+                  <span>Free Margin: <strong data-metric-freemargin class="text-white">${formatMoney(m.freeMargin)} USD</strong></span>
+                  <span>Balance: <strong data-metric-balance class="text-white">${formatMoney(m.balance)} USD</strong></span>
+                  <span>Margin: <strong data-metric-margin class="text-white">${formatMoney(m.usedMargin)} USD</strong></span>
+                </div>
+
+                <div class="flex items-center gap-3 shrink-0">
+                  ${accOpenOrders.length > 0 ? `
+                    <button onclick="closeAllOpenOrders()" class="px-2.5 py-0.5 rounded bg-[#262C3A] hover:bg-bullRed text-white font-bold text-[11px] transition">
+                      Close all ▾
+                    </button>
+                  ` : ''}
+                  <span class="font-mono text-gray-400">Total P/L, USD <strong data-live-pl class="${m.floatingPL>=0?'text-bullGreen':'text-bullRed'}">${m.floatingPL>=0?'+':''}${formatMoney(m.floatingPL)}</strong></span>
+                </div>
+              </div>
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    // ==========================================
+    // 10. MAIN RENDER LOOP (MOBILE 4-TAB SHELL OR DESKTOP)
+    // ==========================================
+    function renderApp() {
+      const stage = document.getElementById('appStage');
+
+      if (state.viewportMode === 'desktop') {
+        stage.innerHTML = renderDesktopWorkspace();
+        setTimeout(drawChartCanvas, 20);
+        return;
+      }
+
+      // Mobile View with exact 4-item Bottom Tab Bar (Profile omitted per video instruction!)
+      let mainBody = '';
+      if (state.activeTab === 'accounts') mainBody = renderAccountsTab();
+      else if (state.activeTab === 'trade') mainBody = renderTradeTab();
+      else if (state.activeTab === 'insights') mainBody = renderInsightsTab();
+      else if (state.activeTab === 'performance') mainBody = renderPerformanceTab();
+
+      const tabs = [
+        {
+          id: 'accounts',
+          label: 'Accounts',
+          svg: `<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>`
+        },
+        {
+          id: 'trade',
+          label: 'Trade',
+          svg: `<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="6" y1="4" x2="6" y2="20"/><rect x="4" y="8" width="4" height="7" rx="1" fill="currentColor"/><line x1="18" y1="4" x2="18" y2="20"/><rect x="16" y="10" width="4" height="6" rx="1"/></svg>`
+        },
+        {
+          id: 'insights',
+          label: 'Insights',
+          svg: `<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="3.6" y1="9" x2="20.4" y2="9"/><line x1="3.6" y1="15" x2="20.4" y2="15"/><path d="M11.5 3a17 17 0 0 0 0 18"/><path d="M12.5 3a17 17 0 0 1 0 18"/></svg>`
+        },
+        {
+          id: 'performance',
+          label: 'Performance',
+          svg: `<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`
+        }
+      ];
+
+      stage.innerHTML = `
+        <div class="mobile-shell">
+          ${mainBody}
+
+          <!-- Bottom 4-Tab Navigation Bar -->
+          <nav class="bg-[#131722] border-t border-[#262C3A] px-2 py-2 grid grid-cols-4 shrink-0 z-20">
+            ${tabs.map(t => {
+              const active = state.activeTab === t.id;
+              return `
+                <button onclick="switchTab('${t.id}')" class="flex flex-col items-center justify-center gap-1 py-1 rounded-xl transition ${active ? 'text-white' : 'text-gray-500 hover:text-gray-300'}">
+                  <div class="${active ? 'text-bullYellow' : ''}">${t.svg}</div>
+                  <span class="text-[11px] font-semibold">${t.label}</span>
+                </button>
+              `;
+            }).join('')}
+          </nav>
+        </div>
+      `;
+
+      setTimeout(drawChartCanvas, 20);
+    }
+
+    // Initial render & resize handler
+    function setDesktopChartPreset(preset) {
+      if (preset === 'compact') state.bottomPanelHeight = 320;
+      else if (preset === 'expanded') state.bottomPanelHeight = 82;
+      else state.bottomPanelHeight = 185;
+      renderApp();
+    }
+
+    function startDesktopChartResize(e) {
+      e.preventDefault();
+      const startY = e.touches ? e.touches[0].clientY : e.clientY;
+      const startHeight = state.bottomPanelHeight;
+      const maxH = Math.max(260, window.innerHeight - 230);
+
+      const onMove = (moveEvent) => {
+        const currentY = moveEvent.touches ? moveEvent.touches[0].clientY : moveEvent.clientY;
+        const deltaY = startY - currentY;
+        const nextHeight = Math.min(maxH, Math.max(76, startHeight + deltaY));
+        state.bottomPanelHeight = nextHeight;
+        const panel = document.getElementById('desktopBottomPanel');
+        if (panel) panel.style.height = `${nextHeight}px`;
+        drawChartCanvas();
+      };
+
+      const onEnd = () => {
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onEnd);
+        window.removeEventListener('touchmove', onMove);
+        window.removeEventListener('touchend', onEnd);
+        renderApp();
+      };
+
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onEnd);
+      window.addEventListener('touchmove', onMove, { passive: false });
+      window.addEventListener('touchend', onEnd);
+    }
+
+    window.addEventListener('resize', () => {
+      drawChartCanvas();
+    });
+
+    window.onload = function() {};
+  </script>
+
 <script>
-(()=> {
-const $=id=>document.getElementById(id), fmt=(n,d=2)=>Number(n||0).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}), money=n=>'$'+fmt(n), state={user:null,accounts:[],account:null,mode:'demo',tf:'1m',symbol:'XAUUSD',trades:[],ledger:null,prices:{},chart:null,candleSeries:null,indicators:[],chartType:'candles',lastChartType:null,activeLower:'positions',marketQuotes:[],brainData:null,admin:false,adminExecution:null};
-const watchSymbols=['XAUUSD','EURUSD','GBPUSD','USDJPY','BTCUSDT','ETHUSDT','BNBUSDT','SOLUSDT','XRPUSDT','DOGEUSDT'];
-function esc(v){return String(v??'').replace(/[&<>\"']/g,ch=>ch==='&'?'&amp;':ch==='<'?'&lt;':ch==='>'?'&gt;':ch==='\"'?'&quot;':'&#39;')}function toast(s){$('toast').textContent=s;$('toast').classList.remove('hidden');setTimeout(()=>$('toast').classList.add('hidden'),4200)}
-function call(fn,body){return bbSupabase.functions.invoke(fn,{body});}
-async function loadAdminControls(){const box=$('adminControlBox'),el=$('adminControls');el.textContent='Checking administrator permissions…';const {data,error}=await call('trading-gateway',{action:'admin_status'});if(error||data?.error){box.classList.add('hidden');state.admin=false;return}state.admin=true;state.adminExecution=data.execution||{};box.classList.remove('hidden');const x=state.adminExecution,r=x.risk_limits||{};$('adminRiskTrade').value=r.max_risk_per_trade_pct??1;$('adminRiskDaily').value=r.max_daily_loss_pct??3;$('adminRiskAggregate').value=r.max_aggregate_risk_pct??3;$('adminMaxPositions').value=r.max_open_positions??5;$('adminMaxLeverage').value=r.max_leverage??100;el.textContent='Demo: '+(x.demo_enabled?'Enabled':'Disabled')+' · Global halt: '+(x.global_halt?'ACTIVE':'Clear')+' · Live execution: '+(x.live_status||'LOCKED')+' · Accounts: '+(data.totals?.accounts??'—')+' · Orders: '+(data.totals?.orders??'—')+' · Open positions: '+(data.totals?.open_positions??'—');$('toggleGlobalHalt').textContent=x.global_halt?'Resume demo execution':'Emergency halt';const checks=x.readiness||{},missing=x.missing_requirements||[];$('liveReadiness').textContent='Live execution remains locked. Verified readiness: '+Object.entries(checks).filter(([k,v])=>v===true).map(([k])=>k).join(', ')+' · Missing: '+missing.join(', ')+' · Execution adapter: '+(x.adapter_ready?'ready':'not configured')+'.'}async function saveAdminRisk(){const values={max_risk_per_trade_pct:Number($('adminRiskTrade').value),max_daily_loss_pct:Number($('adminRiskDaily').value),max_aggregate_risk_pct:Number($('adminRiskAggregate').value),max_open_positions:Number($('adminMaxPositions').value),max_leverage:Number($('adminMaxLeverage').value)};const {data,error}=await call('trading-gateway',{action:'set_global_risk',...values});if(error||data?.error)return toast(data?.error||error.message);toast('Global risk limits saved and audited.');await loadAdminControls()}async function toggleGlobalHalt(){if(!state.admin)return;const enabling=!state.adminExecution?.global_halt;if(!confirm(enabling?'Emergency halt will block new paper execution globally. Continue?':'Resume paper execution globally? Continue?'))return;const reason=enabling?(prompt('Reason for emergency halt:')||'Administrator emergency halt'):'Administrator resumed paper execution';if(enabling&&!reason.trim())return;const {data,error}=await call('trading-gateway',{action:'set_global_halt',enabled:enabling,reason});if(error||data?.error)return toast(data?.error||error.message);toast(enabling?'Global execution halt activated.':'Global execution resumed.');await loadAdminControls()}function setPage(page){document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.page===page));$('tradingApp').classList.toggle('hidden',page!=='trade'&&page!=='charts');document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+page));if(page==='charts')$('tradingApp').classList.remove('hidden');if(page==='trade')$('tradingApp').classList.remove('hidden');if(page==='settings')loadAdminControls();history.replaceState(null,'','#'+page)}
-function activePage(){const p=location.hash.replace('#','');return document.querySelector('#mainTabs [data-page="'+p+'"]')?p:'overview'}
-function toggleTerminalSidebar(force){const drawer=$('terminalDrawer'),overlay=$('terminalDrawerOverlay'),toggle=$('terminalMenuToggle');if(!drawer||!overlay)return;const open=typeof force==='boolean'?force:!drawer.classList.contains('open');drawer.classList.toggle('open',open);overlay.classList.toggle('open',open);drawer.setAttribute('aria-hidden',String(!open));overlay.setAttribute('aria-hidden',String(!open));toggle?.setAttribute('aria-expanded',String(open));toggle?.setAttribute('aria-label',open?'Close navigation menu':'Open navigation menu');if(open)$('terminalDrawerClose')?.focus({preventScroll:true});else toggle?.focus({preventScroll:true})}
-function navigateTerminalPage(page){setPage(page);document.querySelectorAll('#terminalDrawerNav [data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page));toggleTerminalSidebar(false);if(page==='charts')setTimeout(loadCandles,50);if(page==='markets')loadCalendar();if(page==='analysis')loadMarketBrain()}
-function renderTable(rows,kind){if(!rows?.length)return '<div class="muted" style="padding:18px">No records for this account.</div>';let cols=kind==='positions'?['symbol','side','quantity','entry_price','mark_price','stop_loss','take_profit','unrealized_pnl','opened_at']:kind==='history'?['symbol','side','quantity','entry_price','exit_price','realized_pnl','close_reason','closed_at']:['symbol','side','quantity','status','opened_at'];return '<table class="data-table"><thead><tr>'+cols.map(c=>'<th>'+c.replaceAll('_',' ').toUpperCase()+'</th>').join('')+(kind==='positions'?'<th>ACTION</th>':'')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+cols.map(c=>'<td class="'+(c.includes('pnl')?(Number(r[c])>=0?'green':'red'):'')+'">'+(c.includes('_at')?(r[c]?esc(new Date(r[c]).toLocaleString()):'—'):esc(r[c]??'—'))+'</td>').join('')+(kind==='positions'?'<td><button class="smallbtn" data-modify="'+r.id+'">Modify</button> <button class="smallbtn" data-close="'+r.id+'">Close</button></td>':'')+'</tr>').join('')+'</tbody></table>'}
-function bindPositionActions(root){root.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>closeTrade(b.dataset.close));root.querySelectorAll('[data-modify]').forEach(b=>b.onclick=()=>modifyTrade(b.dataset.modify))}function drawLower(){const open=state.trades.filter(t=>t.status==='OPEN'),closed=state.trades.filter(t=>t.status==='CLOSED');let html='';if(state.activeLower==='positions')html=renderTable(open,'positions');else if(state.activeLower==='history')html=renderTable(closed,'history');else if(state.activeLower==='orders')html='<div class="muted" style="padding:18px">No pending orders. Pending order execution is not enabled.</div>';else if(state.activeLower==='fills')html='<div class="muted" style="padding:18px">Fill details are available in the execution journal when present.</div>';else html='<div style="padding:14px">Account: '+(state.account?.account_number||'—')+' · '+(state.mode||'—').toUpperCase()+' · Currency '+(state.account?.currency||'USD')+' · Status '+(state.account?.status||'—')+'</div>';$('lowerContent').innerHTML=html;$('lowerHint').textContent='Execution engine: PAPER · Broker routing disabled · '+(state.account?.account_mode||'').toUpperCase();bindPositionActions($('lowerContent'))}
-function stats(){const open=state.trades.filter(t=>t.status==='OPEN'),float=open.reduce((a,t)=>a+Number(t.unrealized_pnl||0),0),realized=state.trades.filter(t=>t.status==='CLOSED').reduce((a,t)=>a+Number(t.realized_pnl||0),0),bal=state.ledger?Number(state.ledger.virtual_balance):NaN,equity=bal+float;$('balance').textContent=Number.isFinite(bal)?money(bal):'—';$('equity').textContent=Number.isFinite(equity)?money(equity):'—';$('freeMargin').textContent='N/A';$('floating').textContent=money(float);$('floating').className=float>=0?'green':'red';$('ovBalance').textContent=money(bal);$('ovEquity').textContent=money(equity);$('ovPositions').textContent=open.length;$('ovPnl').textContent=money(float);$('ovPnl').className=float>=0?'green':'red';$('portfolioCards').innerHTML=['Balance|'+money(bal),'Equity|'+money(equity),'Floating P/L|'+money(float),'Realized P/L|'+money(realized)].map(x=>'<div class="metric"><label>'+x.split('|')[0]+'</label><strong>'+x.split('|')[1]+'</strong></div>').join('');$('portfolioBody').textContent=open.length?open.map(t=>t.symbol+' '+t.side+' · '+fmt(t.quantity,4)+' · '+money(t.unrealized_pnl)).join(' | '):'No open exposure.'}
-async function refresh(){if(!state.account)return;const {data,error}=await call('paper-execution',{action:'status',account_id:state.account.id,account_mode:state.mode});if(error||data?.error){$('connectionText').textContent='Service issue';$('connectionDot').style.background='#e4a63d';return toast(data?.error||error.message)}state.ledger=data.ledger;state.trades=data.trades||[];state.prices=data.prices||{};state.trades.forEach(t=>{if(t.mark_price)state.prices[t.symbol]=Number(t.mark_price)});$('connectionText').textContent='Provider connected';$('connectionDot').style.background='#16c784';stats();drawLower();renderPages();if(state.account.account_mode==='real'){$('executionNotice').textContent='REAL ACCOUNT SELECTED — LIVE ROUTING LOCKED. No real order is sent and this account balance is not changed.';$('buyBtn').disabled=$('sellBtn').disabled=true;}else{$('executionNotice').textContent='DEMO PAPER EXECUTION — orders use the isolated BIGBULLS virtual ledger. No broker order is sent.';$('buyBtn').disabled=$('sellBtn').disabled=false;}}
-function renderPages(){$('positionsPage').innerHTML=renderTable(state.trades.filter(t=>t.status==='OPEN'),'positions');bindPositionActions($('positionsPage'));$('historyPage').innerHTML=renderTable(state.trades.filter(t=>t.status==='CLOSED'),'history');$('ordersPage').innerHTML='<p class="subtle">Market orders only in the current paper execution service. Pending orders are not active.</p>';$('journalPage').innerHTML=renderTable(state.trades.filter(t=>t.status==='CLOSED'),'history');$('riskControls').textContent='Per-trade, daily loss, aggregate risk and max-position controls are checked server-side. Account-specific limits apply.'}
-async function loadAccounts(){const {data,error}=await call('trading-gateway',{action:'accounts'});if(error||data?.error)throw new Error(data?.error||error.message);state.accounts=data.accounts||[];const allowed=state.accounts.filter(a=>a.status==='approved'&&!a.archived_at&&!a.deleted_at);$('accountSelect').innerHTML=allowed.map(a=>'<option value="'+a.id+'">'+(a.account_mode||'').toUpperCase()+' · '+(a.account_number||a.id.slice(0,8))+'</option>').join('')||'<option value="">No approved accounts</option>';if(!allowed.length){$('overviewStatus').textContent='No approved trading account is available. Submit or complete account approval in your client area.';return}const requestedId=new URLSearchParams(location.search).get('account_id');state.account=allowed.find(a=>a.id===requestedId)||allowed[0];state.mode=state.account.account_mode;$('accountSelect').value=state.account.id;$('execLabel').textContent=state.mode==='demo'?'PAPER DEMO':'REAL ROUTING LOCKED';$('overviewStatus').textContent=state.mode==='demo'?'Demo account loaded. Orders use the isolated paper ledger only.':'Real brokerage account selected. Live routing is locked; this terminal does not send real orders or change brokerage funds.';await refresh()}
-async function switchAccount(id){const a=state.accounts.find(x=>x.id===id);if(!a)return;state.account=a;state.mode=a.account_mode;await refresh()}
-async function loadCandles(){
- const el=$('priceChart'),type=$('chartTypeSelect').value;
- if(!state.chart){
-  state.chart=LightweightCharts.createChart(el,{layout:{background:{color:'#0b121d'},textColor:'#9aa9bc'},grid:{vertLines:{color:'#172333'},horzLines:{color:'#172333'}},rightPriceScale:{borderColor:'#263448'},timeScale:{borderColor:'#263448',timeVisible:true,secondsVisible:false},crosshair:{mode:0},width:el.clientWidth,height:el.clientHeight});
-  new ResizeObserver(()=>state.chart?.applyOptions({width:el.clientWidth,height:el.clientHeight})).observe(el);
- }
- if(state.lastChartType!==type){
-  if(state.candleSeries)state.chart.removeSeries(state.candleSeries);
-  state.candleSeries=type==='candles'?state.chart.addCandlestickSeries({upColor:'#16c784',downColor:'#ea3943',borderUpColor:'#16c784',borderDownColor:'#ea3943',wickUpColor:'#16c784',wickDownColor:'#ea3943'}):type==='area'?state.chart.addAreaSeries({lineColor:'#4c96ff',topColor:'rgba(40,124,255,.32)',bottomColor:'rgba(40,124,255,.02)',lineWidth:2}):state.chart.addLineSeries({color:'#4c96ff',lineWidth:2});
-  state.lastChartType=type;
- }
- $('chartStatus').textContent='Loading '+state.symbol+' '+state.tf+'…';
- const {data,error}=await call('market-data',{action:'candles',symbol:state.symbol,timeframe:state.tf,outputsize:180});
- if(error||data?.error||!data?.candles?.length){$('chartStatus').textContent='Market data unavailable';return toast(data?.error||error?.message||'No candle data returned')}
- const candles=data.candles.map(x=>({time:Math.floor(x.time/1000),open:Number(x.open),high:Number(x.high),low:Number(x.low),close:Number(x.close)}));
- state.candleSeries.setData(type==='candles'?candles:candles.map(x=>({time:x.time,value:x.close})));
- state.chart.timeScale().fitContent();
- const last=candles[candles.length-1];$('lastPrice').textContent=fmt(last.close,last.close<10?5:2);
- $('chartStatus').textContent=data.provider+' · '+data.timeframe+' · '+new Date(data.fetched_at).toLocaleTimeString();
- state.indicators.forEach(s=>state.chart.removeSeries(s));state.indicators=[];
- const indicator=$('indicatorSelect').value,n=20;
- if(indicator==='sma'||indicator==='ema'){
-  const values=[];
-  for(let i=n-1;i<candles.length;i++){const slice=candles.slice(i-n+1,i+1);let val;
-   if(indicator==='sma')val=slice.reduce((a,x)=>a+x.close,0)/n;
-   else{let ema=slice[0].close,k=2/(n+1);for(let j=1;j<slice.length;j++)ema=slice[j].close*k+ema*(1-k);val=ema}
-   values.push({time:candles[i].time,value:val});
-  }
-  const s=state.chart.addLineSeries({color:'#f2bd55',lineWidth:2,priceLineVisible:false});s.setData(values);state.indicators.push(s);
- }else if(indicator==='bb'){
-  const upper=[],middle=[],lower=[];
-  for(let i=n-1;i<candles.length;i++){const slice=candles.slice(i-n+1,i+1),mean=slice.reduce((a,x)=>a+x.close,0)/n,variance=slice.reduce((a,x)=>a+Math.pow(x.close-mean,2),0)/n,sd=Math.sqrt(variance),time=candles[i].time;upper.push({time,value:mean+2*sd});middle.push({time,value:mean});lower.push({time,value:mean-2*sd})}
-  for(const [values,color] of [[upper,'#e5a84b'],[middle,'#7f8da3'],[lower,'#e5a84b']]){const s=state.chart.addLineSeries({color,lineWidth:1,priceLineVisible:false,lastValueVisible:false});s.setData(values);state.indicators.push(s)}
- }
+(function(){
+'use strict';
+const BB_URL='https://ztiiyulusburxjkpcfxu.supabase.co',BB_KEY='sb_publishable_5hDwqvbcUHeSJdXFHf9ugw_VPYGN4J_';
+const MARKET={'XAU/USD':'XAU/USD','EUR/USD':'EUR/USD','GBP/USD':'GBP/USD','BTC':'BTCUSDT'};
+const PAPER={'XAU/USD':'XAUUSD','EUR/USD':'EURUSD','GBP/USD':'GBPUSD','BTC':'BTCUSDT'};
+let session=null,ready=false,busy=false,lastAccount='',lastMarket='';
+const notify=(t,s='',type='info')=>{if(typeof showToast==='function')showToast(t,s,type);};
+function client(){
+ if(window.__bbSupabaseClient?.auth&&window.__bbSupabaseClient?.functions)return window.__bbSupabaseClient;
+ if(window.bigbullsSupabase?.auth&&window.bigbullsSupabase?.functions)return window.bigbullsSupabase;
+ if(window.supabase?.createClient){window.__bbSupabaseClient=window.supabase.createClient(BB_URL,BB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});return window.__bbSupabaseClient;}
+ throw new Error('Supabase client library is unavailable.');
 }
-$('chartStatus').textContent='Loading '+state.symbol+' '+state.tf+'…';const sym=state.symbol==='BTCUSDT'?'BTC/USDT':state.symbol;const {data,error}=await call('market-data',{action:'candles',symbol:sym,timeframe:state.tf,outputsize:180});if(error||data?.error||!data?.candles?.length){$('chartStatus').textContent='Market data unavailable';return toast(data?.error||error?.message||'No candle data returned')}const candles=data.candles.map(c=>({time:Math.floor(c.time/1000),open:c.open,high:c.high,low:c.low,close:c.close}));state.candleSeries.setData(candles);state.chart.timeScale().fitContent();const last=candles[candles.length-1];$('lastPrice').textContent=fmt(last.close, last.close<10?5:2);$('chartStatus').textContent=data.provider+' · '+data.timeframe+' · '+new Date(data.fetched_at).toLocaleTimeString();if(state.indicator){if(state.indicator.remove)state.chart.removeSeries(state.indicator);state.indicator=null}const indicator=$('indicatorSelect').value;if(indicator!=='none'){const n=20,values=[];for(let i=n-1;i<candles.length;i++){const slice=candles.slice(i-n+1,i+1);let val;if(indicator==='sma')val=slice.reduce((a,c)=>a+c.close,0)/n;else{let ema=slice[0].close,k=2/(n+1);for(let j=1;j<slice.length;j++)ema=slice[j].close*k+ema*(1-k);val=ema}values.push({time:candles[i].time,value:val})}state.indicator=state.chart.addLineSeries({color:'#f2bd55',lineWidth:2,priceLineVisible:false});state.indicator.setData(values)}}
-async function loadCalendar(){const el=$('calendarList');el.textContent='Loading economic events…';const {data,error}=await call('economic-calendar',{});if(error||data?.error){el.textContent=data?.error||error.message||'Calendar unavailable.';return}const events=data.events||[];if(!events.length){el.textContent='No events returned by the calendar provider.';return}el.innerHTML='<table class=\"data-table\"><thead><tr><th>UTC TIME</th><th>CCY</th><th>IMPACT</th><th>EVENT</th><th>ACTUAL</th><th>FORECAST</th><th>PREVIOUS</th></tr></thead><tbody>'+events.map(e=>'<tr><td>'+esc(new Date(Number(e.timestamp)*1000).toLocaleString('en-GB',{timeZone:'UTC'}))+'</td><td>'+esc(e.currency)+'</td><td>'+esc(String(e.impact||'').toUpperCase())+'</td><td>'+esc(e.title)+'</td><td>'+esc(e.actual||'—')+'</td><td>'+esc(e.forecast||'—')+'</td><td>'+esc(e.previous||'—')+'</td></tr>').join('')+'</tbody></table>'}async function loadMarketBrain(){const el=$('brainSignals');el.textContent='Running provider-backed market analysis…';const {data,error}=await call('market-brain',{});if(error||data?.error){el.textContent=data?.error||error.message||'AI analysis unavailable. Approved KYC may be required.';return}state.brainData=data;const signals=data.signals||[];el.innerHTML=signals.length?signals.map(s=>'<div class=\"metric\" style=\"margin-top:8px\"><div style=\"display:flex;justify-content:space-between;gap:8px\"><b>'+esc(s.name||s.symbol)+'</b><b class=\"'+(s.direction==='BUY'?'green':s.direction==='SELL'?'red':'muted')+'\">'+esc(s.direction)+' · '+esc(s.score??0)+'/100</b></div><div class=\"subtle\">'+esc(s.setup_status||s.data_status||'')+' · Price '+(s.price==null?'N/A':esc(fmt(s.price,5)))+'</div><div class=\"subtle\">Entry '+(s.entry_low==null?'—':esc(fmt(s.entry_low,5))+' – '+esc(fmt(s.entry_high,5)))+' · SL '+(s.stop_loss==null?'—':esc(fmt(s.stop_loss,5)))+' · TP '+(s.take_profit==null?'—':esc(fmt(s.take_profit,5)))+'</div><div class=\"subtle\">'+(s.reasons||[]).map(esc).join(' · ')+'</div></div>').join(''):'No signal records returned.';const bt=data.backtests||[];$('strategyResults').innerHTML=bt.length?'<table class=\"data-table\"><thead><tr><th>SYMBOL</th><th>STRATEGY</th><th>TRADES</th><th>WIN RATE</th><th>PROFIT FACTOR</th><th>MAX DD (R)</th><th>NET (R)</th></tr></thead><tbody>'+bt.map(x=>'<tr><td>'+esc(x.symbol)+'</td><td>'+esc(x.strategy)+'</td><td>'+esc(x.trades)+'</td><td>'+esc(x.win_rate)+'%</td><td>'+esc(x.profit_factor)+'</td><td>'+esc(x.max_drawdown)+'</td><td>'+esc(x.net_r)+'</td></tr>').join('')+'</tbody></table><p class=\"subtle\">'+esc(bt[0]?.cost_model||'')+'</p>':'No backtest results returned.'}async function marketQuotes(){const {data,error}=await call('market-data',{action:'quotes'});if(error||!data?.quotes)return;state.marketQuotes=data.quotes;const html=data.quotes.map(q=>'<div class="symbolrow"><b>'+esc(q.symbol)+'</b><span>'+(q.close?fmt(q.close, q.close<10?5:2):'Unavailable')+'</span><span class="'+(Number(q.change)>=0?'green':'red')+'">'+(q.percent_change??'—')+'%</span></div>').join('');$('overviewMarkets').innerHTML=html;$('marketsList').innerHTML=html;$('watchlistList').innerHTML=html}
-async function place(side){if(!state.account)return toast('Select an approved trading account first.');if(state.mode!=='demo')return toast('Real-account execution is locked. No live broker adapter is configured.');const quantity=Number($('quantity').value),sl=Number($('stopLoss').value),tp=$('takeProfit').value,trailing=Number($('trailing').value||0);if(!(quantity>0)||!(sl>0))return toast('Enter a valid quantity and a stop-loss price.');$('buyBtn').disabled=$('sellBtn').disabled=true;const {data,error}=await call('paper-execution',{action:'open',account_id:state.account.id,account_mode:'demo',symbol:state.symbol,side,quantity,stop_loss:sl,take_profit:tp===''?null:Number(tp),trailing_distance:trailing,source:'MANUAL_TERMINAL'});$('buyBtn').disabled=$('sellBtn').disabled=false;if(error||data?.error)return toast(data?.error||error.message);toast('Paper position opened. No broker order was sent.');await refresh()}
-async function modifyTrade(id){if(state.mode!=='demo')return toast('Only demo paper positions can be modified from this terminal.');const t=state.trades.find(x=>x.id===id);if(!t)return;const sl=prompt('New Stop Loss price:',String(t.stop_loss??''));if(sl===null)return;const tp=prompt('New Take Profit price (leave blank to remove):',String(t.take_profit??''));if(tp===null)return;const {data,error}=await call('paper-execution',{action:'modify',account_id:state.account.id,account_mode:'demo',trade_id:id,stop_loss:Number(sl),take_profit:tp.trim()===''?null:Number(tp)});if(error||data?.error)return toast(data?.error||error.message);toast('Paper position protection updated.');await refresh()}async function closeTrade(id){if(state.mode!=='demo')return toast('Real-account routing is locked; no real positions can be closed here.');if(!confirm('Close this paper position at the latest available provider quote?'))return;const {data,error}=await call('paper-execution',{action:'close',account_id:state.account.id,account_mode:'demo',trade_id:id,reason:'MANUAL CLOSE'});if(error||data?.error)return toast(data?.error||error.message);toast('Paper position closed.');await refresh()}
-$('mainTabs').addEventListener('click',e=>{const b=e.target.closest('[data-page]');if(b){navigateTerminalPage(b.dataset.page)}});$('terminalDrawerNav').addEventListener('click',e=>{const b=e.target.closest('[data-page]');if(b)navigateTerminalPage(b.dataset.page)});$('terminalMenuToggle').addEventListener('click',()=>toggleTerminalSidebar());$('terminalDrawerClose').addEventListener('click',()=>toggleTerminalSidebar(false));$('terminalDrawerOverlay').addEventListener('click',()=>toggleTerminalSidebar(false));document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('terminalDrawer').classList.contains('open'))toggleTerminalSidebar(false)});$('lowerTabs').addEventListener('click',e=>{const b=e.target.closest('[data-lower]');if(b){state.activeLower=b.dataset.lower;document.querySelectorAll('.lower-tab').forEach(x=>x.classList.toggle('active',x===b));drawLower()}});$('accountSelect').onchange=e=>switchAccount(e.target.value);$('symbolSelect').onchange=e=>{state.symbol=e.target.value;$('symbolTitle').textContent=state.symbol;loadCandles()};document.querySelectorAll('[data-tf]').forEach(b=>b.onclick=()=>{state.tf=b.dataset.tf;document.querySelectorAll('[data-tf]').forEach(x=>x.classList.toggle('active',x===b));loadCandles()});$('indicatorSelect').onchange=loadCandles;$('refreshCalendar').onclick=loadCalendar;$('refreshBrain').onclick=loadMarketBrain;$('chartTypeSelect').onchange=loadCandles;$('buyBtn').onclick=()=>place('BUY');$('sellBtn').onclick=()=>place('SELL');$('goChart').onclick=()=>{setPage('trade');setTimeout(loadCandles,50)};$('calcRisk').onclick=()=>{const bal=Number($('planBalance').value),risk=Number($('planRisk').value),entry=Number($('planEntry').value),stop=Number($('planStop').value);if(!(bal>0&&risk>0&&entry>0&&stop>0&&entry!==stop))return toast('Enter valid planner values.');$('riskResult').textContent='Risk budget: '+money(bal*risk/100)+' · Stop distance: '+fmt(Math.abs(entry-stop),5)+' · Size estimate: '+fmt((bal*risk/100)/Math.abs(entry-stop),4)+' units (contract specification required before execution).'};$('saveSettings').onclick=()=>{localStorage.setItem('bb-terminal-tf',$('defaultTf').value);toast('Timeframe preference saved on this device.')};$('saveAdminRisk').onclick=saveAdminRisk;$('toggleGlobalHalt').onclick=toggleGlobalHalt;$('defaultTf').value=localStorage.getItem('bb-terminal-tf')||'5m';$('defaultTf').onchange=e=>{state.tf=e.target.value};
-async function init(){try{if(!window.bbSupabase)throw new Error('Supabase client configuration unavailable.');const {data:{session}}=await bbSupabase.auth.getSession();if(!session){location.href='auth.html?mode=login';return}state.user=session.user;await loadAccounts();await marketQuotes();await loadCandles();setPage(activePage());}catch(e){$('connectionText').textContent='Unavailable';$('connectionDot').style.background='#ea3943';toast(e.message);$('overviewStatus').textContent=e.message}}
-window.addEventListener('hashchange',()=>setPage(activePage()));document.addEventListener('visibilitychange',()=>{if(!document.hidden&&state.account)refresh()});init();setInterval(()=>{if(state.account&&!document.hidden)refresh()},15000);setInterval(()=>{if(!document.hidden)marketQuotes()},30000);
+async function call(fn,body){const r=await client().functions.invoke(fn,{body});if(r.error)throw new Error(r.data?.error||r.error.message||fn+' request failed.');if(r.data?.error)throw new Error(r.data.error);return r.data||{};}
+const mode=a=>String(a?.type||'Demo').toLowerCase()==='real'?'real':'demo';
+function mapSymbol(s){return({XAUUSD:'XAU/USD',EURUSD:'EUR/USD',GBPUSD:'GBP/USD',BTCUSDT:'BTC',BTC:'BTC'})[String(s||'').toUpperCase().replaceAll('/','')]||null;}
+function applyQuote(s,p){const i=state.instruments[s];if(!i||!(Number(p)>0))return;i.bid=Number(p);i.ask=Number((i.bid+Number(i.spread||0)).toFixed(i.digits));}
+async function accounts(){
+ const d=await call('trading-gateway',{action:'accounts'});
+ const approved=(d.accounts||[]).filter(a=>['demo','real'].includes(String(a.account_mode).toLowerCase())&&a.status==='approved'&&!a.archived_at&&!a.deleted_at).map(a=>({id:String(a.account_number||a.id),backendId:a.id,nickname:a.display_name||a.account_type||a.account_mode.toUpperCase(),type:a.account_mode==='real'?'Real':'Demo',platform:a.platform||'MT5',accountClass:a.account_type||'Standard',balance:Number(a.balance||0),leverage:a.requested_leverage||'1:100',server:a.server_name||'BigBulls',archived:false,status:a.status,currency:a.currency||'USD'}));
+ const demos=approved.filter(a=>mode(a)==='demo'),reals=approved.filter(a=>mode(a)==='real');
+ const demoDefault={id:'__demo_default__',backendId:null,nickname:'BigBull Demo',type:'Demo',platform:'MT5',accountClass:'Standard',balance:10000,leverage:'1:1000',server:'BigBulls Paper',archived:false,status:'approved'};
+ state.accounts=[...(demos.length?demos:[demoDefault]),...reals];
+ let preferred='demo',selected=null;const launch=new URLSearchParams(location.search).get('account_id');
+ if(launch)selected=state.accounts.find(a=>a.backendId===launch)||null;
+ try{const sm=sessionStorage.getItem('bb:terminal:active-mode:'+session.user.id);if(sm==='demo'||sm==='real')preferred=sm;const sid=sessionStorage.getItem('bb:terminal:selected-account:'+session.user.id+':'+preferred);if(!selected&&sid)selected=state.accounts.find(a=>a.id===sid||a.backendId===sid)||null;}catch(_){}
+ if(!selected)selected=state.accounts.find(a=>mode(a)===preferred)||state.accounts[0];
+ state.activeAccountId=selected.id;lastAccount=selected.id;
+ try{sessionStorage.setItem('bb:terminal:active-mode:'+session.user.id,mode(selected));if(selected.backendId)sessionStorage.setItem('bb:terminal:selected-account:'+session.user.id+':'+mode(selected),selected.backendId);}catch(_){}
+}
+async function quotes(){const d=await call('market-data',{action:'quotes'});(d.quotes||[]).forEach(q=>applyQuote(mapSymbol(q.symbol),q.close??q.price));updateLiveDOMElements();}
+async function candles(){
+ const s=state.selectedSymbol,p=MARKET[s],i=state.instruments[s];if(!p||!i){notify('Market data unavailable',s+' is not enabled by the connected provider.','error');return;}
+ const d=await call('market-data',{action:'candles',symbol:p,timeframe:state.timeframe,outputsize:160});
+ const rows=(d.candles||[]).map(c=>({time:Number(c.time),open:Number(c.open),high:Number(c.high),low:Number(c.low),close:Number(c.close)})).filter(c=>[c.open,c.high,c.low,c.close].every(Number.isFinite));
+ if(!rows.length)throw new Error('The market provider returned no candles for '+s+'.');i.candles=rows;applyQuote(s,d.price||rows[rows.length-1].close);drawChartCanvas();updateLiveDOMElements();
+}
+function mapTrade(t,n,accountId){const s=mapSymbol(t.symbol);if(!s)return null;const open=String(t.status).toUpperCase()==='OPEN',tm=v=>v?new Date(v).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}):'';return{id:n+1,backendTradeId:t.id,accountId,symbol:s,side:String(t.side).toUpperCase()==='BUY'?'Buy':'Sell',lots:Number(t.quantity),openPrice:Number(t.entry_price),sl:t.stop_loss==null?'':String(t.stop_loss),tp:t.take_profit==null?'':String(t.take_profit),openTime:tm(t.opened_at),closeTime:tm(t.closed_at),closePrice:t.exit_price==null?Number(t.mark_price||t.entry_price):Number(t.exit_price),realizedPL:Number(t.realized_pnl||0),status:open?'open':'closed'};}
+async function refresh(silent=true){
+ if(busy)return;busy=true;
+ try{const a=getActiveAccount(),m=mode(a);if(!a)throw new Error('No trading account is selected.');if(m==='real'&&!a.backendId)throw new Error('No approved Real account is linked to this client.');
+ const body={action:'status',account_mode:m};if(a.backendId)body.account_id=a.backendId;
+ const d=await call('paper-execution',body),ledger=d.ledger||{};a.balance=Number(ledger.virtual_balance??ledger.starting_balance??a.balance);
+ const rows=(d.trades||[]).map((t,n)=>mapTrade(t,n,a.id)).filter(Boolean);state.openOrders=rows.filter(t=>t.status==='open');state.closedOrders=rows.filter(t=>t.status==='closed');state.pendingOrders=[];
+ Object.entries(d.prices||{}).forEach(([s,p])=>applyQuote(mapSymbol(s),p));updateLiveDOMElements();renderApp();
+ }catch(e){if(!silent)notify('Trading connection error',e.message||'Paper ledger could not be refreshed.','error');console.error('BIGBULLS terminal backend:',e);}finally{busy=false;}
+}
+async function place(){
+ const a=getActiveAccount(),m=state.orderTicket,s=state.selectedSymbol;if(!a)return;
+ if(m.mode!=='Market'){notify('Pending orders unavailable','The connected paper-execution service currently supports market positions only. No order was created.','error');return;}
+ if(!session){notify('Login required','Sign in to your client account before trading.','error');return;}
+ const symbol=PAPER[s],quantity=Number(m.lots),sl=Number(m.sl),tp=m.tp===''||m.tp==null?null:Number(m.tp);
+ if(!symbol){notify('Instrument unavailable','This instrument is not enabled by the connected execution service.','error');return;}
+ if(!(quantity>0)||!(sl>0)){notify('Stop Loss required','Enter a valid Stop Loss before placing this paper trade.','error');return;}
+ if(tp!==null&&!(tp>0)){notify('Invalid Take Profit','Enter a valid Take Profit or leave it empty.','error');return;}
+ try{const b={action:'open',account_mode:mode(a),symbol,side:m.side.toUpperCase(),quantity,stop_loss:sl,take_profit:tp};if(a.backendId)b.account_id=a.backendId;const d=await call('paper-execution',b);closeModal();await refresh(true);notify('Paper position opened',s+' '+m.side+' '+quantity.toFixed(2)+' lots · '+String(d.trade?.id||'').slice(0,8),'success');}catch(e){notify('Order not placed',e.message||'Paper execution rejected the order.','error');}
+}
+async function closePosition(id,silent=false,reason='Closed manually'){
+ const o=state.openOrders.find(x=>String(x.id)===String(id));if(!o)return;const a=getActiveAccount(),b={action:'close',account_mode:mode(a),trade_id:o.backendTradeId,reason};if(a.backendId)b.account_id=a.backendId;
+ try{await call('paper-execution',b);if(!silent)closeModal();await refresh(true);if(!silent)notify('Position closed',o.symbol+' '+o.side+' '+o.lots.toFixed(2)+' lots','success');}catch(e){notify('Close failed',e.message||'The paper position could not be closed.','error');}
+}
+const originalRender=window.renderApp;
+if(typeof originalRender==='function')window.renderApp=function(){originalRender();if(!ready)return;const a=getActiveAccount(),ak=a?.id||'',mk=state.selectedSymbol+':'+state.timeframe;if(ak&&ak!==lastAccount){lastAccount=ak;try{sessionStorage.setItem('bb:terminal:active-mode:'+session.user.id,mode(a));if(a.backendId)sessionStorage.setItem('bb:terminal:selected-account:'+session.user.id+':'+mode(a),a.backendId);}catch(_){}refresh(true);}if(mk!==lastMarket){lastMarket=mk;candles().catch(e=>console.warn('Market candles:',e.message));}};
+window.submitOrderExecution=place;window.executeCloseOrder=closePosition;
+window.closeAllOpenOrders=async()=>{const a=getActiveAccount(),rows=[...state.openOrders];for(const o of rows){const b={action:'close',account_mode:mode(a),trade_id:o.backendTradeId,reason:'Closed all positions'};if(a.backendId)b.account_id=a.backendId;try{await call('paper-execution',b);}catch(e){notify('Close failed',e.message||'A position could not be closed.','error');}}await refresh(true);};
+window.cancelPendingOrder=()=>notify('Pending orders unavailable','No pending-order backend is enabled.','error');
+window.submitDeposit=()=>notify('Funding managed in Client Area','No terminal balance was changed. Open the Client Area to submit a deposit.','info');
+window.submitWithdraw=()=>notify('Withdrawals managed in Client Area','No terminal balance was changed. Open the Client Area to submit a withdrawal.','info');
+window.createNewAccount=()=>{notify('Account creation managed in Client Area','Open My Accounts in the Client Area to create a trading account.','info');location.href='dashboard.html';};
+async function start(){
+ try{const c=client(),auth=await c.auth.getSession();if(auth.error)throw auth.error;session=auth.data?.session||null;if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}
+ await accounts();Object.values(state.instruments).forEach(i=>{i.candles=[];});state.openOrders=[];state.pendingOrders=[];state.closedOrders=[];ready=true;lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();
+ try{await quotes();}catch(e){console.warn('Market quotes:',e.message);}try{await candles();}catch(e){notify('Market feed unavailable',e.message||'Provider candles could not be loaded.','error');}
+ await refresh(true);setInterval(()=>{if(!document.hidden)quotes().catch(()=>{});},15000);setInterval(()=>{if(!document.hidden)refresh(true);},20000);
+ c.auth.onAuthStateChange((_event,s)=>{session=s||null;if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}accounts().then(()=>{ready=true;lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();refresh(true);}).catch(e=>notify('Account refresh failed',e.message,'error'));});
+ }catch(e){console.error('BIGBULLS terminal startup:',e);notify('Terminal connection failed',e.message||'Unable to connect to the trading backend.','error');}
+}
+window.addEventListener('load',start,{once:true});
 })();
 </script>
-</body></html>
+
+</body>
+</html>
