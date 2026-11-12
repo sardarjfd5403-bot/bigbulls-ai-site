@@ -15,7 +15,9 @@ const SYMBOLS: Record<string,string> = {
 };
 const INTERVALS: Record<string,string> = {
   "1m":"1min", "5m":"5min", "15m":"15min", "30m":"30min",
-  "1h":"1h", "2h":"2h", "4h":"4h", "1d":"1day", "1D":"1day",
+  "1h":"1h", "2h":"2h", "4h":"4h",
+  "1d":"1day", "1D":"1day", "1w":"1week", "1W":"1week",
+  "1M":"1month",
 };
 const cache = new Map<string,{at:number,payload:unknown}>();
 const json = (body:unknown,status=200) => new Response(JSON.stringify(body),{
@@ -25,7 +27,7 @@ async function td(path:string,params:Record<string,string>,key:string) {
   const u=new URL("https://api.twelvedata.com/"+path);
   for(const [k,v] of Object.entries(params))u.searchParams.set(k,v);
   u.searchParams.set("apikey",key);
-  const r=await fetch(u,{headers:{Accept:"application/json"},signal:AbortSignal.timeout(12000)});
+  const r=await fetch(u,{headers:{Accept:"application/json"},signal:AbortSignal.timeout(20000)});
   const d=await r.json();
   if(!r.ok || d.status==="error" || d.code) throw new Error(d.message || "Twelve Data request failed ("+r.status+").");
   return d;
@@ -41,22 +43,28 @@ Deno.serve(async(req:Request)=>{
     if(action==="candles"){
       const input=String(body.symbol||"XAU/USD").toUpperCase();
       const symbol=SYMBOLS[input];
-      const interval=INTERVALS[String(body.timeframe||"1m")];
+      const requestedTimeframe=String(body.timeframe||"1m");
+      const interval=INTERVALS[requestedTimeframe];
       if(!symbol || symbol==="NDX")return json({error:"Unsupported chart symbol. Use EUR/USD, GBP/USD, USD/JPY or XAU/USD."},400);
-      if(!interval)return json({error:"Unsupported timeframe. Use 1m, 5m, 15m, 30m, 1h, 2h, 4h or 1D."},400);
-      const outputsize=Math.min(500,Math.max(50,Number(body.outputsize)||160));
+      if(!interval)return json({error:"Unsupported timeframe. Use 1m, 5m, 15m, 30m, 1h, 2h, 4h, 1d, 1w or 1M."},400);
+      // Twelve Data supports up to 5,000 bars per request. Always request deep
+      // history on daily/weekly/monthly charts so 1Y+ analysis is available.
+      const isLongTerm=["1day","1week","1month"].includes(interval);
+      const requestedSize=Number(body.outputsize)||500;
+      const outputsize=isLongTerm?5000:Math.min(5000,Math.max(50,requestedSize));
       const cacheKey="c:"+symbol+":"+interval+":"+outputsize;
       const cached=cache.get(cacheKey);
-      if(cached&&Date.now()-cached.at<12000)return json(cached.payload);
+      if(cached&&Date.now()-cached.at<(isLongTerm?60000:12000))return json(cached.payload);
       const d=await td("time_series",{symbol,interval,outputsize:String(outputsize),order:"asc",timezone:"UTC"},key);
       const candles=(d.values||[]).map((v:any)=>({
         time:Date.parse(String(v.datetime).replace(" ","T")+"Z"),
         open:Number(v.open),high:Number(v.high),low:Number(v.low),close:Number(v.close),
         volume:v.volume==null?null:Number(v.volume)
       })).filter((v:any)=>Number.isFinite(v.time)&&[v.open,v.high,v.low,v.close].every(Number.isFinite));
-      if(!candles.length)throw new Error("Twelve Data returned no OHLC candles for "+symbol+".");
-      const payload={provider:"Twelve Data",symbol,interval,timeframe:String(body.timeframe||"1m"),candles,
-        price:candles[candles.length-1].close,fetched_at:new Date().toISOString(),
+      if(!candles.length)throw new Error("Twelve Data returned no OHLC candles for "+symbol+" ("+requestedTimeframe+").");
+      const payload={provider:"Twelve Data",symbol,interval,timeframe:requestedTimeframe,candles,
+        history_bars:candles.length,requested_bars:outputsize,price:candles[candles.length-1].close,
+        fetched_at:new Date().toISOString(),
         note:"Market data feed for paper testing; not broker bid/ask or executable pricing."};
       cache.set(cacheKey,{at:Date.now(),payload});
       return json(payload);
