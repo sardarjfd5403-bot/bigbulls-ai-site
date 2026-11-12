@@ -1928,7 +1928,7 @@ let chartPaintQueued=false;
 function queueChartPaint(){if(chartPaintQueued)return;chartPaintQueued=true;requestAnimationFrame(()=>{chartPaintQueued=false;drawChartCanvas();updateLiveDOMElements();});}
 function updateCandleFromTick(symbol,bid,stamp=Date.now()){
  const inst=state.instruments[symbol];if(!inst||!(bid>0))return;
- const sec=TF_SECONDS[state.timeframe]||300,bucket=Math.floor((Number(stamp)>1e12?Number(stamp)/1000:Number(stamp))/sec)*sec;
+ const sec=TF_SECONDS[state.timeframe]||300,raw=Number(stamp),parsed=Number.isFinite(raw)?raw:(Date.parse(stamp)/1000),epoch=Number.isFinite(parsed)?(parsed>1e12?parsed/1000:parsed):Date.now()/1000,bucket=Math.floor(epoch/sec)*sec;
  let rows=inst.candles||[],last=rows[rows.length-1];
  if(!last||Number(last.time)<bucket){last={time:bucket,open:bid,high:bid,low:bid,close:bid};rows.push(last);if(rows.length>5000)rows.shift();inst.candles=rows;}
  else if(Number(last.time)===bucket){last.close=bid;last.high=Math.max(Number(last.high),bid);last.low=Math.min(Number(last.low),bid);}
