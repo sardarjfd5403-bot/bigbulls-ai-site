@@ -64,7 +64,7 @@
 (()=> {
 const $=id=>document.getElementById(id), fmt=(n,d=2)=>Number(n||0).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}), money=n=>'$'+fmt(n), state={user:null,accounts:[],account:null,mode:'demo',tf:'1m',symbol:'XAUUSD',trades:[],ledger:null,prices:{},chart:null,candleSeries:null,indicators:[],chartType:'candles',lastChartType:null,activeLower:'positions',marketQuotes:[],brainData:null,admin:false};
 const watchSymbols=['XAUUSD','EURUSD','GBPUSD','USDJPY','BTCUSDT','ETHUSDT','BNBUSDT','SOLUSDT','XRPUSDT','DOGEUSDT'];
-function esc(v){return String(v??'').replace(/[&<>\"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[ch]))}function toast(s){$('toast').textContent=s;$('toast').classList.remove('hidden');setTimeout(()=>$('toast').classList.add('hidden'),4200)}
+function esc(v){return String(v??'').replace(/[&<>\"']/g,ch=>ch==='&'?'&amp;':ch==='<'?'&lt;':ch==='>'?'&gt;':ch==='\"'?'&quot;':'&#39;')}function toast(s){$('toast').textContent=s;$('toast').classList.remove('hidden');setTimeout(()=>$('toast').classList.add('hidden'),4200)}
 function call(fn,body){return bbSupabase.functions.invoke(fn,{body});}
 function setPage(page){document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.page===page));$('tradingApp').classList.toggle('hidden',page!=='trade'&&page!=='charts');document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+page));if(page==='charts')$('tradingApp').classList.remove('hidden');if(page==='trade')$('tradingApp').classList.remove('hidden');history.replaceState(null,'','#'+page)}
 function activePage(){const p=location.hash.replace('#','');return document.querySelector('[data-page="'+p+'"]')?p:'overview'}
