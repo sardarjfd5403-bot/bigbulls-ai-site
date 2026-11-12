@@ -55,15 +55,17 @@ function connectSupabase(){
   if(event==="SIGNED_OUT")hideApp();
  });
  // Restore the persisted session outside the auth callback.
- sb.auth.getSession().then(({data,error})=>{
+ sb.auth.getSession().then(async({data,error})=>{
   if(error)throw error;
   user=data?.session?.user||null;
   updateHeader();
-  if(user)showApp(getSavedClientPage(user.id)||"dashboard");
+  if(user)await showApp(getSavedClientPage(user.id)||"dashboard");
   else hideApp();
+  document.documentElement.classList.remove("bb-auth-boot-pending");
  }).catch(error=>{
   console.error("Unable to restore the client session:",error);
   user=null;updateHeader();hideApp();
+  document.documentElement.classList.remove("bb-auth-boot-pending");
   console.error("Could not restore client session:",error);
  });
 }
