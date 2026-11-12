@@ -164,7 +164,7 @@
 
   <script>
     // ==========================================
-    <script>(function(){const native=window.setInterval.bind(window);window.setInterval=function(fn,delay,...args){if(delay===900||delay===12000)return 0;return native(fn,delay,...args);};})();</script>
+    (function(){const native=window.setInterval.bind(window);window.setInterval=function(fn,delay,...args){if(delay===900||delay===12000)return 0;return native(fn,delay,...args);};})();
 // 1. APPLICATION STATE & MOCK LIVE MARKET DATA
     // ==========================================
     const state = {
