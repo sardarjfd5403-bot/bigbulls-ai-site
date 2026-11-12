@@ -160,18 +160,18 @@
           id: '474909030',
           nickname: 'BigBull_Pro.',
           type: 'Demo',
-          platform: 'MT5',
+          platform: 'BigBulls Paper',
           accountClass: 'Standard',
           balance: 5000.00,
           leverage: '1:2000',
-          server: 'BigBulls-MT5Trial15',
+          server: 'BigBulls-Demo',
           archived: false
         },
         {
           id: '16339655',
           nickname: 'BigBull_Real',
           type: 'Real',
-          platform: 'MT4',
+          platform: 'BigBulls Native',
           accountClass: 'Standard',
           balance: 0.00,
           leverage: '1:2000',
@@ -182,18 +182,18 @@
           id: '17000707114',
           nickname: 'Standard',
           type: 'Real',
-          platform: 'MT5',
+          platform: 'BigBulls Paper',
           accountClass: 'Standard',
           balance: 488.58,
           leverage: '1:2000',
-          server: 'BigBulls-MT5Real8',
+          server: 'BigBulls-Real',
           archived: false
         },
         {
           id: '11840467',
           nickname: 'Standard',
           type: 'Real',
-          platform: 'MT4',
+          platform: 'BigBulls Native',
           accountClass: 'Standard',
           balance: 0.00,
           leverage: '1:1000',
@@ -1940,7 +1940,8 @@ function client(){
 async function call(fn,body){const r=await client().functions.invoke(fn,{body});if(r.error)throw new Error(r.data?.error||r.error.message||fn+' request failed.');if(r.data?.error)throw new Error(r.data.error);return r.data||{};}
 const mode=a=>String(a?.type||'Demo').toLowerCase()==='real'?'real':'demo';
 function mapSymbol(s){return({XAUUSD:'XAU/USD',EURUSD:'EUR/USD',GBPUSD:'GBP/USD',USDJPY:'USD/JPY',BTCUSDT:'BTC',BTC:'BTC',WTIUSD:'USOIL',WTI:'USOIL',NDX:'USTEC'})[String(s||'').toUpperCase().replaceAll('/','')]||null;}
-function applyQuote(s,p){const i=state.instruments[s];if(!i||!(Number(p)>0))return;i.bid=Number(p);i.ask=Number((i.bid+Number(i.spread||0)).toFixed(i.digits));}\nfunction applyBookQuote(s,q){const i=state.instruments[s];if(!i||!q)return;const bid=Number(q.bid),ask=Number(q.ask);if(bid>0&&ask>=bid){i.bid=bid;i.ask=ask;}}
+function applyQuote(s,p){const i=state.instruments[s];if(!i||!(Number(p)>0))return;i.bid=Number(p);i.ask=Number((i.bid+Number(i.spread||0)).toFixed(i.digits));}
+function applyBookQuote(s,q){const i=state.instruments[s];if(!i||!q)return;const bid=Number(q.bid),ask=Number(q.ask);if(bid>0&&ask>=bid){i.bid=bid;i.ask=ask;}}
 async function accounts(){
  const d=await call('trading-gateway',{action:'accounts'});
  const approved=(d.accounts||[]).filter(a=>['demo','real'].includes(String(a.account_mode).toLowerCase())&&a.status==='approved'&&!a.archived_at&&!a.deleted_at).map(a=>({id:String(a.account_number||a.id),backendId:a.id,nickname:a.display_name||a.account_type||a.account_mode.toUpperCase(),type:a.account_mode==='real'?'Real':'Demo',platform:a.account_mode==='real'?'BigBulls B-Book':'BigBulls Paper',accountClass:a.account_type||'Standard',balance:Number(a.balance||0),leverage:a.requested_leverage||'1:100',server:a.server_name||'BigBulls',archived:false,status:a.status,currency:a.currency||'USD'}));
