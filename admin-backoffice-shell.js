@@ -103,9 +103,22 @@ function decorate(){
  activate("overview");
  top.querySelector("[data-bb-admin-notice]").addEventListener("click",()=>{
    const existing=document.getElementById("bb-admin-notice-dialog");if(existing){existing.remove();return;}
-   const d=document.createElement("div");d.id="bb-admin-notice-dialog";d.className="client-panel";d.style.marginTop="12px";
-   d.innerHTML='<h3>Notice Centre</h3><p>Broadcast delivery is not enabled yet. This control is intentionally not presenting a fake sent status. Connect the admin announcement workflow before sending client-wide notices.</p><button type="button" class="copy-wallet" data-close-bb-notice>Close</button>';
-   root.insertBefore(d,frame);d.querySelector("[data-close-bb-notice]").addEventListener("click",()=>d.remove());
+   const d=document.createElement("section");d.id="bb-admin-notice-dialog";d.className="client-panel";d.style.marginTop="12px";
+   d.innerHTML='<h3>Client Notice Broadcast</h3><p>Send an announcement to registered client accounts. Each recipient receives an item in their in-app Notification Centre. This action is recorded in the Admin Audit Log.</p><form id="bb-admin-broadcast-form" class="client-form"><label>Notice title<input name="title" required minlength="3" maxlength="120" placeholder="Platform maintenance update"></label><label>Message<textarea name="message" required minlength="3" maxlength="2000" rows="4" placeholder="Write the client announcement…"></textarea></label><div data-bb-broadcast-status class="notice">Review the message before sending. Broadcasts cannot be recalled.</div><button type="submit" class="portal-primary">Send to all registered clients</button><button type="button" class="copy-wallet" data-close-bb-notice>Cancel</button></form>';
+   root.insertBefore(d,frame);
+   d.querySelector("[data-close-bb-notice]").addEventListener("click",()=>d.remove());
+   d.querySelector("form").addEventListener("submit",async e=>{
+     e.preventDefault();const form=e.currentTarget,button=form.querySelector('button[type="submit"]'),status=form.querySelector("[data-bb-broadcast-status]");
+     const title=String(form.elements.title.value||"").trim(),message=String(form.elements.message.value||"").trim();
+     if(!title||!message)return;
+     const client=window.__bbSupabaseClient;if(!client){status.textContent="Secure database connection unavailable. Nothing was sent.";return;}
+     button.disabled=true;status.textContent="Sending announcement securely…";
+     try{const result=await client.rpc("admin_broadcast_client_notice",{p_title:title,p_message:message});
+       if(result.error)throw result.error;
+       status.textContent="Sent successfully to "+Number(result.data||0).toLocaleString()+" registered client accounts. Audit record created.";
+       form.reset();button.textContent="Broadcast sent";button.disabled=true;
+     }catch(err){status.textContent="Broadcast failed: "+(err?.message||"Unknown error")+". No success was reported.";button.disabled=false;}
+   });
  });
 }
 const observer=new MutationObserver(()=>{if(document.getElementById("client-page")&&!document.getElementById(ROOT_ID))decorate();});
