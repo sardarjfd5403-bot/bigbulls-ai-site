@@ -361,13 +361,20 @@
       if (!inst) return 0;
       const currentPrice = order.side === 'Buy' ? inst.bid : inst.ask;
       const diff = order.side === 'Buy' ? (currentPrice - order.openPrice) : (order.openPrice - currentPrice);
-      const pl = diff * order.lots * inst.contractSize;
+      let pl = diff * order.lots * inst.contractSize;
+      if(order.symbol==='USD/JPY'&&currentPrice>0)pl/=currentPrice;
       return Number(pl.toFixed(2));
     }
 
     function getAccountMetrics() {
       const acc = getActiveAccount();
       const accountOpenOrders = state.openOrders.filter(o => o.accountId === acc.id);
+      if(String(acc?.type||'').toLowerCase()==='real'&&window.__bbBbookMetrics){
+        const bm=window.__bbBbookMetrics;
+        return {balance:Number(bm.balance||0),equity:Number(bm.equity||0),floatingPL:Number(bm.floating_pnl||0),
+          usedMargin:Number(bm.margin||0),freeMargin:Number(bm.free_margin||0),marginLevel:Number(bm.margin_level_pct||0),
+          openCount:accountOpenOrders.length,pendingCount:0};
+      }
       let floatingPL = 0;
       let usedMargin = 0;
 
@@ -533,6 +540,14 @@
       });
       document.querySelectorAll('[data-metric-margin]').forEach(el => {
         el.textContent = `${formatMoney(metrics.usedMargin)} USD`;
+      });
+      document.querySelectorAll('[data-metric-margin-level]').forEach(el => {
+        el.textContent = metrics.usedMargin>0 ? Number(metrics.marginLevel||0).toFixed(1)+'%' : '—';
+      });
+      document.querySelectorAll('[data-margin-level-bar]').forEach(el => {
+        const level=Number(metrics.marginLevel||0),active=metrics.usedMargin>0;
+        el.style.width=active?Math.max(0,Math.min(100,level/500*100))+'%':'0%';
+        el.style.backgroundColor=level<=100?'#ef4444':level<=200?'#eab308':'#16a34a';
       });
 
       // Update individual open trade P/L rows
@@ -1785,6 +1800,8 @@
                   <span>Free Margin: <strong data-metric-freemargin class="text-white">${formatMoney(m.freeMargin)} USD</strong></span>
                   <span>Balance: <strong data-metric-balance class="text-white">${formatMoney(m.balance)} USD</strong></span>
                   <span>Margin: <strong data-metric-margin class="text-white">${formatMoney(m.usedMargin)} USD</strong></span>
+                  <span>Margin Level: <strong data-metric-margin-level class="text-white">—</strong></span>
+                  <span class="w-14 h-1.5 rounded-full bg-[#303847] overflow-hidden inline-flex"><span data-margin-level-bar class="h-full rounded-full" style="width:0%;background:#16a34a"></span></span>
                 </div>
 
                 <div class="flex items-center gap-3 shrink-0">
