@@ -1,6 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.0";
 
-const ORIGIN = "https://bigbullsglobalmarket.is-an.ai";
+const ORIGIN = "*";
 const cors = {
   "Access-Control-Allow-Origin": ORIGIN,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -29,16 +29,17 @@ async function quoteFor(symbol: string, supabaseUrl: string, anon: string): Prom
     if (!(p > 0)) throw new Error("Invalid crypto quote.");
     return p;
   }
+  const providerSymbol = ({ EURUSD: "EUR/USD", GBPUSD: "GBP/USD", USDJPY: "USD/JPY", XAUUSD: "XAU/USD" } as Record<string,string>)[s];
+  if (!providerSymbol) throw new Error("No Twelve Data quote mapping exists for " + symbol + ".");
   const r = await fetch(supabaseUrl + "/functions/v1/market-data", {
     method: "POST",
     headers: { "Content-Type": "application/json", apikey: anon, Authorization: "Bearer " + anon },
-    body: "{}",
+    body: JSON.stringify({ action: "quote", symbol: providerSymbol }),
     signal: AbortSignal.timeout(10000),
   });
   if (!r.ok) throw new Error("Market data service unavailable (" + r.status + ").");
   const d = await r.json();
-  const q = (d.quotes || []).find((x: any) => normalize(String(x.symbol || "")) === s);
-  const p = Number(q?.close);
+  const p = Number(d.price);
   if (!(p > 0)) throw new Error("Fresh market quote unavailable for " + symbol + ".");
   return p;
 }
