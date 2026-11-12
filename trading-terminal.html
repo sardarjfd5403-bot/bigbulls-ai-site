@@ -2562,6 +2562,8 @@
     window.switchAccount=function(mode){
       if(mode==='real' && !state.backendAccountIds?.real){ bbToast('Real paper testing requires an approved Real account linked to your BIGBULLS login. No real broker orders are sent.', 'error'); return; }
       if(originalSwitchAccount)originalSwitchAccount(mode);
+      state.positions=[];
+      if(typeof renderPositionsTable==='function')renderPositionsTable();
       bbRefreshPaperState(false);
     };
     window.executeOrder=async function(){
