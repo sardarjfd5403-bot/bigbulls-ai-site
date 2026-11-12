@@ -1426,6 +1426,47 @@ async function clickHandler(e){
  if(el.closest("[data-wallet-queue-refresh]")&&isAdmin()){loadPageData();return;}
  if(el.closest("[data-kyc-refresh]")&&isAdmin()){loadPageData();return;}
   const kycReview=el.closest("[data-kyc-review]");if(kycReview&&isAdmin()){const row=kycReview.closest(".admin-transaction"),reasons=Array.from(row?.querySelector("[data-kyc-reasons]")?.selectedOptions||[]).map(x=>x.value),note=String(row?.querySelector("[data-kyc-admin-note]")?.value||"").trim();if(kycReview.dataset.status==="rejected"&&!reasons.length){alert("Select at least one KYC rejection reason.");return;}const {error}=await sb.rpc("admin_review_kyc_submission",{p_submission_id:kycReview.dataset.kycReview,p_status:kycReview.dataset.status,p_admin_note:note||null,p_rejection_reasons:kycReview.dataset.status==="rejected"?reasons:[]});if(error)alert(error.message);else loadPageData();return;}
+ const partnerShare=el.closest("[data-partner-share]");
+ if(partnerShare){
+  const url=window.__bbPartnerReferralUrl||"";
+  if(!url){alert("Referral link is available after partner approval.");return;}
+  if(navigator.share){try{await navigator.share({title:"Join BIGBULLS",text:"Join BIGBULLS using my partner link.",url});}catch(err){if(err?.name!=="AbortError")alert(err.message||"Share could not be opened.");}}
+  else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(url);alert("Partner link copied.");}
+  else{prompt("Copy your partner link",url);}
+  return;
+ }
+ const partnerCopyCode=el.closest("[data-partner-copy-code]");
+ if(partnerCopyCode){
+  const code=window.__bbPartnerReferralCode||"";
+  if(!code){alert("Referral code is available after partner approval.");return;}
+  if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(code);alert("Referral code copied.");}else{prompt("Copy your referral code",code);}
+  return;
+ }
+ const ibRateSave=el.closest("[data-ib-rate-save]");
+ if(ibRateSave&&isAdmin()){
+  const row=ibRateSave.closest("[data-ib-rate-row]"),rate=Number(row?.querySelector("[data-ib-rate-value]")?.value),enabled=!!row?.querySelector("[data-ib-rate-enabled]")?.checked;
+  if(!Number.isFinite(rate)||rate<0||rate>1000){alert("Enter a valid per-lot rate from 0 to 1000 USD.");return;}
+  ibRateSave.disabled=true;
+  const {error}=await sb.rpc("admin_update_partner_commission_rate",{p_tier:ibRateSave.dataset.ibRateSave,p_commission_per_lot:rate,p_enabled:enabled});
+  ibRateSave.disabled=false;
+  if(error)alert(error.message);else{alert("IB tier rate updated.");loadPageData();}
+  return;
+ }
+ const ibPartnerStatus=el.closest("[data-ib-partner-status]");
+ if(ibPartnerStatus&&isAdmin()){
+  const row=ibPartnerStatus.closest(".ib-partner-row"),tier=row?.querySelector("[data-ib-tier-select]")?.value||"bronze";
+  const {error}=await sb.rpc("admin_set_partner_status",{p_partner_user_id:ibPartnerStatus.dataset.ibPartnerStatus,p_status:ibPartnerStatus.dataset.status,p_tier:tier});
+  if(error)alert(error.message);else{alert("IB partner status and tier updated.");loadPageData();}
+  return;
+ }
+ const ibPayoutReview=el.closest("[data-ib-payout-review]");
+ if(ibPayoutReview&&isAdmin()){
+  let note=null;
+  if(ibPayoutReview.dataset.status==="rejected"){note=prompt("Enter payout rejection reason (required):");if(!note||note.trim().length<4){alert("A clear rejection reason is required.");return;}note=note.trim();}
+  const {error}=await sb.rpc("admin_review_partner_payout",{p_request_id:ibPayoutReview.dataset.ibPayoutReview,p_status:ibPayoutReview.dataset.status,p_admin_note:note});
+  if(error)alert(error.message);else{alert(ibPayoutReview.dataset.status==="paid"?"Payout marked paid.":"Payout rejected and funds returned to the IB wallet.");loadPageData();}
+  return;
+ }
  const partnerReview=el.closest("[data-partner-review]");if(partnerReview&&isAdmin()){let note=null;if(partnerReview.dataset.status==="rejected"){note=prompt("Enter partner rejection reason (required):");if(!note||note.trim().length<4){alert("A clear rejection reason is required.");return;}note=note.trim();}const {error}=await sb.rpc("admin_review_partner_application",{p_application_id:partnerReview.dataset.partnerReview,p_status:partnerReview.dataset.status,p_admin_note:note});if(error)alert(error.message);else loadPageData();return;}
  if(el.closest("[data-support-queue-refresh]")&&isAdmin()){loadPageData();return;}
  const supportReview=el.closest("[data-support-review]");
