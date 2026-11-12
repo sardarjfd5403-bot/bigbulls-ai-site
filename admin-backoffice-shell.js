@@ -37,7 +37,7 @@ function addStyles(){
  #${ROOT_ID} .bb-admin-live i{display:inline-block;width:7px;height:7px;border-radius:50%;background:#e0a63a;margin-right:6px}
  #${ROOT_ID} .bb-admin-nav-label{font-size:9px;letter-spacing:.15em;color:#8498b3;padding:8px 10px;text-transform:uppercase}
  #${ROOT_ID} .bb-admin-nav{display:grid;gap:4px}
- #${ROOT_ID} .bb-admin-nav button{display:flex;align-items:center;gap:10px;text-align:left;width:100%;border:0;border-radius:10px;padding:10px;color:#b8c7da;background:transparent;font:600 12px inherit;cursor:pointer}
+ #${ROOT_ID} .bb-admin-nav button{display:flex;align-items:center;gap:10px;text-align:left;width:100%;border:0;border-radius:10px;padding:10px;color:#b8c7da;background:transparent;font:600 12px/1.4 Inter,system-ui,sans-serif;cursor:pointer}
  #${ROOT_ID} .bb-admin-nav button:hover{background:#20334f;color:#fff}
  #${ROOT_ID} .bb-admin-nav button[aria-current=true]{background:#29466d;color:#fff;box-shadow:inset 3px 0 #69a6ff}
  #${ROOT_ID} .bb-admin-nav button span{width:19px;text-align:center;font-size:15px}
