@@ -1977,7 +1977,8 @@ async function quotes(){
 async function candles(){
  const s=state.selectedSymbol,tf=state.timeframe,p=MARKET[s],i=state.instruments[s],request=++candleEpoch;
  if(!p||!i){notify('Market data unavailable',s+' is not enabled by the connected provider.','error');return;}
- const d=await call('market-data',{action:'candles',symbol:p,timeframe:tf,outputsize:500});
+ i.candles=[];drawChartCanvas();
+ const d=await call('market-data',{action:'candles',symbol:p,timeframe:tf,outputsize:5000});
  if(request!==candleEpoch||s!==state.selectedSymbol||tf!==state.timeframe)return;
  const rows=(d.candles||[]).map(c=>({time:Number(c.time),open:Number(c.open),high:Number(c.high),low:Number(c.low),close:Number(c.close)})).filter(c=>Number.isFinite(c.time)&&[c.open,c.high,c.low,c.close].every(Number.isFinite));
  if(!rows.length)throw new Error('The market provider returned no candles for '+s+' ('+tf+').');
