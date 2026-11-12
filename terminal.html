@@ -1927,7 +1927,33 @@ const PAPER={
 
 };
 const EXTRA_INSTRUMENTS=[
- ['USD/CAD','US Dollar vs Canadian Dollar','Forex',5,100000,'C
+ ['USD/CAD','US Dollar vs Canadian Dollar','Forex',5,100000,'CAD'],
+ ['AUD/USD','Australian Dollar vs US Dollar','Forex',5,100000,'AUD'],
+ ['NZD/USD','New Zealand Dollar vs US Dollar','Forex',5,100000,'NZD'],
+ ['USD/CHF','US Dollar vs Swiss Franc','Forex',5,100000,'CHF'],
+ ['EUR/GBP','Euro vs British Pound','Forex',5,100000,'EUR'],
+ ['EUR/JPY','Euro vs Japanese Yen','Forex',3,100000,'EUR'],
+ ['GBP/JPY','British Pound vs Japanese Yen','Forex',3,100000,'GBP'],
+ ['XAG/USD','Silver vs US Dollar','Metals',3,5000,'Ag'],
+ ['XPT/USD','Platinum vs US Dollar','Metals',2,50,'Pt'],
+ ['XPD/USD','Palladium vs US Dollar','Metals',2,100,'Pd'],
+ ['US30','Dow Jones 30 Index','Indices',2,1,'30'],
+ ['SPX500','S&P 500 Index','Indices',2,1,'500'],
+ ['GER40','Germany 40 Index','Indices',2,1,'40'],
+ ['UK100','UK 100 Index','Indices',2,1,'100'],
+ ['JPN225','Japan 225 Index','Indices',2,1,'225'],
+ ['UKOIL','Brent Crude Oil','Commodities',3,1000,'BR'],
+ ['NATGAS','Natural Gas','Commodities',3,10000,'NG'],
+ ['ETH/USD','Ethereum vs US Dollar','Crypto',2,1,'ETH'],
+ ['SOL/USD','Solana vs US Dollar','Crypto',2,1,'SOL'],
+ ['XRP/USD','XRP vs US Dollar','Crypto',4,1,'XRP'],
+ ['BNB/USD','BNB vs US Dollar','Crypto',2,1,'BNB']
+];
+for(const [symbol,name,category,digits,contractSize,iconText] of EXTRA_INSTRUMENTS){
+ state.instruments[symbol]={symbol,name,category,bid:0,ask:0,spread:0,change:0,digits,contractSize,iconBg:category==='Crypto'?'#F59E0B':category==='Metals'?'#D97706':category==='Indices'?'#2563EB':category==='Commodities'?'#10B981':'#64748B',iconText,candles:[],tradeEnabled:true};
+}
+state.instruments['USOIL'].category='Commodities';
+state.instruments['DXY'].category='Forex';
 const candleCache=new Map();
 const TF_SECONDS={'1m':60,'5m':300,'15m':900,'30m':1800,'1h':3600,'4h':14400,'1d':86400,'1w':604800,'1M':2592000};
 let chartPaintQueued=false;
