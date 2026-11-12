@@ -366,12 +366,12 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
     }
 
     function calculateOrderPL(order) {
+      if(Number.isFinite(Number(order.floatingPL)))return Number(Number(order.floatingPL).toFixed(2));
       const inst = state.instruments[order.symbol];
       if (!inst) return 0;
       const currentPrice = order.side === 'Buy' ? inst.bid : inst.ask;
       const diff = order.side === 'Buy' ? (currentPrice - order.openPrice) : (order.openPrice - currentPrice);
-      let pl = diff * order.lots * inst.contractSize;
-      if(order.symbol==='USD/JPY'&&currentPrice>0)pl/=currentPrice;
+      const pl = diff * order.lots * Number(inst.contractSize||1);
       return Number(pl.toFixed(2));
     }
 
@@ -2115,7 +2115,7 @@ async function candles(){
  if(!rows.length)throw new Error('BiQuote returned no candles for '+s+' ('+tf+').');
  i.candles=rows;candleCache.set(cacheKey,rows.map(c=>({...c})));if(!i.bid)applyQuote(s,d.price||rows[rows.length-1].close);drawChartCanvas();updateLiveDOMElements();
 }
-function mapTrade(t,n,accountId){const s=mapSymbol(t.symbol);if(!s)return null;const open=String(t.status).toUpperCase()==='OPEN',tm=v=>v?new Date(v).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}):'';return{id:n+1,backendTradeId:t.id,accountId,symbol:s,side:String(t.side).toUpperCase()==='BUY'?'Buy':'Sell',lots:Number(t.quantity),openPrice:Number(t.entry_price),sl:t.stop_loss==null?'':String(t.stop_loss),tp:t.take_profit==null?'':String(t.take_profit),openTime:tm(t.opened_at),closeTime:t.closed_at?new Date(t.closed_at).toLocaleString():'',closePrice:t.exit_price==null?Number(t.mark_price||t.entry_price):Number(t.exit_price),realizedPL:Number(t.realized_pnl||0),status:open?'open':'closed'};}
+function mapTrade(t,n,accountId){const s=mapSymbol(t.symbol);if(!s)return null;const open=String(t.status).toUpperCase()==='OPEN',tm=v=>v?new Date(v).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}):'';return{id:n+1,backendTradeId:t.id,accountId,symbol:s,side:String(t.side).toUpperCase()==='BUY'?'Buy':'Sell',lots:Number(t.quantity),openPrice:Number(t.entry_price),sl:t.stop_loss==null?'':String(t.stop_loss),tp:t.take_profit==null?'':String(t.take_profit),openTime:tm(t.opened_at),closeTime:t.closed_at?new Date(t.closed_at).toLocaleString():'',closePrice:t.exit_price==null?Number(t.mark_price||t.entry_price):Number(t.exit_price),realizedPL:Number(t.realized_pnl||0),floatingPL:Number(t.floating_pnl??t.unrealized_pnl??0),status:open?'open':'closed'};}
 async function refresh(silent=true){
  const epoch=++refreshEpoch;busy=true;
  try{
