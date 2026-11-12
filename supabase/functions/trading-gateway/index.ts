@@ -78,6 +78,17 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    if (action === "select_account") {
+      const accountId = String(body.account_id || "");
+      if (!accountId) return json({ error: "account_id is required." }, 400);
+      const { data: account, error } = await admin.from("trading_accounts")
+        .select("id,user_id,account_mode,account_number,display_name,currency,balance,status,requested_leverage,archived_at,deleted_at")
+        .eq("id", accountId).eq("user_id", user.id).maybeSingle();
+      if (error) throw error;
+      if (!account || account.status !== "approved" || account.archived_at || account.deleted_at) return json({ error: "Account is not available for terminal access." }, 403);
+      return json({ account });
+    }
+
     const { data: isAdmin, error: adminError } = await authClient.rpc("is_bigbulls_admin");
     if (adminError) throw adminError;
     if (isAdmin !== true) return json({ error: "Administrator permission required." }, 403);
@@ -219,17 +230,6 @@ Deno.serve(async (req: Request) => {
       if (error) throw error;
       await admin.from("bb_trade_audit_events").insert({ actor_user_id: user.id, event_type: "LIVE_EXECUTION_ENABLED", entity_type: "execution_settings" });
       return json({ success: true, live_effective: true, live_status: "ENABLED" });
-    }
-
-    if (action === "select_account") {
-      const accountId = String(body.account_id || "");
-      if (!accountId) return json({ error: "account_id is required." }, 400);
-      const { data: account, error } = await admin.from("trading_accounts")
-        .select("id,user_id,account_mode,account_number,display_name,currency,balance,status,requested_leverage,archived_at,deleted_at")
-        .eq("id", accountId).eq("user_id", user.id).maybeSingle();
-      if (error) throw error;
-      if (!account || account.status !== "approved" || account.archived_at || account.deleted_at) return json({ error: "Account is not available for terminal access." }, 403);
-      return json({ account });
     }
 
     return json({ error: "Unsupported action." }, 400);
