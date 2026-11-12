@@ -1353,7 +1353,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
                   <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-extrabold text-white" style="background:${item.iconBg}">${item.iconText}</div>
                   <div>
                     <div class="font-bold text-sm text-white">${item.symbol}</div>
-                    <div class="text-[11px] text-gray-400">${item.name}</div>
+                    <div class="text-[11px] text-gray-400">${item.name}</div><div class="text-[10px] text-gray-500">${item.category} · Contract ${item.contractSize||1} · Tick ${item.tickSize||"—"} / ${item.tickValue||"—"}</div>
                   </div>
                 </div>
                 <div class="text-right">
@@ -1922,28 +1922,28 @@ const PAPER={
  'XAU/USD':'XAUUSD','XAG/USD':'XAGUSD','XPT/USD':'XPTUSD','XPD/USD':'XPDUSD',
  'EUR/USD':'EURUSD','GBP/USD':'GBPUSD','USD/JPY':'USDJPY','USD/CAD':'USDCAD','AUD/USD':'AUDUSD','NZD/USD':'NZDUSD','USD/CHF':'USDCHF','EUR/GBP':'EURGBP','EUR/JPY':'EURJPY','GBP/JPY':'GBPJPY',
  'US30':'US30','USTEC':'USTEC','SPX500':'US500','GER40':'DE30','UK100':'UK100','JPN225':'JP225',
- 'USOIL':'USOIL','UKOIL':'UKOIL','NATGAS':'NATGAS',
+ 'USOIL':'USOIL','UKOIL':'UKOIL','NATGAS':'NATGASUSDT',
  'BTC':'BTCUSDT','ETH/USD':'ETHUSDT','SOL/USD':'SOLUSDT','XRP/USD':'XRPUSDT','BNB/USD':'BNBUSDT'
 
 };
 const EXTRA_INSTRUMENTS=[
- ['USD/CAD','US Dollar vs Canadian Dollar','Forex',5,100000,'CAD'],
- ['AUD/USD','Australian Dollar vs US Dollar','Forex',5,100000,'AUD'],
- ['NZD/USD','New Zealand Dollar vs US Dollar','Forex',5,100000,'NZD'],
- ['USD/CHF','US Dollar vs Swiss Franc','Forex',5,100000,'CHF'],
- ['EUR/GBP','Euro vs British Pound','Forex',5,100000,'EUR'],
- ['EUR/JPY','Euro vs Japanese Yen','Forex',3,100000,'EUR'],
- ['GBP/JPY','British Pound vs Japanese Yen','Forex',3,100000,'GBP'],
+ ['USD/CAD','US Dollar vs Canadian Dollar','Forex',5,1,'CAD'],
+ ['AUD/USD','Australian Dollar vs US Dollar','Forex',5,1,'AUD'],
+ ['NZD/USD','New Zealand Dollar vs US Dollar','Forex',5,1,'NZD'],
+ ['USD/CHF','US Dollar vs Swiss Franc','Forex',5,1,'CHF'],
+ ['EUR/GBP','Euro vs British Pound','Forex',5,1,'EUR'],
+ ['EUR/JPY','Euro vs Japanese Yen','Forex',5,1,'EUR'],
+ ['GBP/JPY','British Pound vs Japanese Yen','Forex',5,1,'GBP'],
  ['XAG/USD','Silver vs US Dollar','Metals',3,5000,'Ag'],
- ['XPT/USD','Platinum vs US Dollar','Metals',2,50,'Pt'],
- ['XPD/USD','Palladium vs US Dollar','Metals',2,100,'Pd'],
+ ['XPT/USD','Platinum vs US Dollar','Metals',2,1,'Pt'],
+ ['XPD/USD','Palladium vs US Dollar','Metals',5,1,'Pd'],
  ['US30','Dow Jones 30 Index','Indices',2,1,'30'],
  ['SPX500','S&P 500 Index','Indices',2,1,'500'],
  ['GER40','Germany 40 Index','Indices',2,1,'40'],
  ['UK100','UK 100 Index','Indices',2,1,'100'],
  ['JPN225','Japan 225 Index','Indices',2,1,'225'],
- ['UKOIL','Brent Crude Oil','Commodities',3,1000,'BR'],
- ['NATGAS','Natural Gas','Commodities',3,10000,'NG'],
+ ['UKOIL','Brent Crude Oil','Commodities',2,1,'BR'],
+ ['NATGAS','Natural Gas','Commodities',3,1,'NG'],
  ['ETH/USD','Ethereum vs US Dollar','Crypto',2,1,'ETH'],
  ['SOL/USD','Solana vs US Dollar','Crypto',2,1,'SOL'],
  ['XRP/USD','XRP vs US Dollar','Crypto',4,1,'XRP'],
@@ -2576,7 +2576,7 @@ window.switchTradingAccount=async function(backendId){
 };
 async function start(){
  try{const c=client(),auth=await c.auth.getSession();if(auth.error)throw auth.error;session=auth.data?.session||null;if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}
- await accounts();Object.values(state.instruments).forEach(i=>{i.candles=[];i.bid=0;i.ask=0;});state.openOrders=[];state.pendingOrders=[];state.closedOrders=[];ready=true;document.documentElement.classList.remove('bb-auth-pending');startBbookRealtime(c);startBiQuoteRealtime();lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();
+ await loadBiQuoteCatalog();await accounts();Object.values(state.instruments).forEach(i=>{i.candles=[];i.bid=0;i.ask=0;});state.openOrders=[];state.pendingOrders=[];state.closedOrders=[];ready=true;document.documentElement.classList.remove('bb-auth-pending');startBbookRealtime(c);startBiQuoteRealtime();lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();
  try{await quotes();}catch(e){console.warn('Market quotes:',e.message);}try{await candles();}catch(e){notify('Market feed unavailable',e.message||'Provider candles could not be loaded.','error');}
  await refresh(true);setInterval(()=>{if(!document.hidden&&(!biQuoteConnection||!window.signalR||biQuoteConnection.state!==window.signalR.HubConnectionState.Connected))quotes().catch(()=>{});},15000);setInterval(async()=>{if(document.hidden)return;try{const current=getActiveAccount()?.backendId||null;await accounts(current);renderApp();await refresh(true);}catch(e){console.warn('Account balance refresh:',e.message);}},10000);
  c.auth.onAuthStateChange((_event,s)=>{session=s||null;if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}accounts().then(()=>{ready=true;document.documentElement.classList.remove('bb-auth-pending');startBbookRealtime(c);startBiQuoteRealtime();lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();refresh(true);}).catch(e=>notify('Account refresh failed',e.message,'error'));});
