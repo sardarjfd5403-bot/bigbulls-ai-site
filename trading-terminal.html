@@ -175,7 +175,7 @@
               <span class="font-semibold text-white">Switch account</span>
             </div>
 
-            <div class="space-y-2" id="desktopAccountList">
+            <div class="mb-3"><label for="bbLinkedAccountPicker" class="block text-[10px] uppercase tracking-wider text-bb-muted mb-1">Your connected accounts</label><select id="bbLinkedAccountPicker" onchange="bbSelectLinkedAccount(this.value)" class="w-full rounded bg-bb-bg border border-bb-border px-2.5 py-2 text-xs text-white outline-none"><option value="__demo_default__">Demo paper account</option></select></div><div class="space-y-2" id="desktopAccountList">
               <!-- Populated by JS -->
             </div>
 
@@ -858,7 +858,7 @@
       <!-- Account Switcher Cards -->
       <div>
         <div class="text-xs font-semibold text-bb-muted uppercase tracking-wider mb-2">Switch Trading Account</div>
-        <div id="mobileAccountList" class="space-y-2">
+        <div class="mb-3"><label for="bbMobileLinkedAccountPicker" class="block text-[10px] uppercase tracking-wider text-bb-muted mb-1">Connected accounts</label><select id="bbMobileLinkedAccountPicker" onchange="bbSelectLinkedAccount(this.value)" class="w-full rounded bg-bb-panel border border-bb-border px-2.5 py-2 text-xs text-white"><option value="__demo_default__">Demo paper account</option></select></div><div id="mobileAccountList" class="space-y-2">
           <!-- Populated by JS -->
         </div>
       </div>
@@ -2377,7 +2377,8 @@
     const BB_SYMBOLS = ['EUR/USD', 'GBP/USD', 'USD/JPY', 'XAU/USD'];
     const BB_TD_SYMBOL = { 'EUR/USD':'EUR/USD', 'GBP/USD':'GBP/USD', 'USD/JPY':'USD/JPY', 'XAU/USD':'XAU/USD' };
     const BB_UI_SYMBOL = { EURUSD:'EUR/USD', GBPUSD:'GBP/USD', USDJPY:'USD/JPY', XAUUSD:'XAU/USD' };
-    let bbClient = null, bbSession = null, bbRealAccount = null, bbMarketBusy = false, bbPaperBusy = false;
+    let bbClient = null, bbSession = null, bbMarketBusy = false, bbPaperBusy = false;
+    let bbLinkedAccounts = [];
     let bbLastCandleKey = '';
 
     function bbClientInit() {
@@ -2468,25 +2469,39 @@
       if (data?.error) throw new Error(data.error);
       return data;
     }
+    function bbSyncAccountPicker() {
+      const mode=state.activeAccountKey||'demo';
+      const selectedId=state.backendAccountIds?.[mode]||(mode==='demo'?'__demo_default__':'__no_real__');
+      const options=[];
+      if(!bbLinkedAccounts.some(a=>a.account_mode==='demo'))options.push({value:'__demo_default__',label:'Demo · Default virtual account'});
+      bbLinkedAccounts.forEach(a=>options.push({value:a.id,label:String(a.account_mode).toUpperCase()+' · #'+(a.account_number||a.display_name||String(a.id).slice(0,8))+' · '+(a.account_type||a.platform||'Account')}));
+      if(!bbLinkedAccounts.some(a=>a.account_mode==='real'))options.push({value:'__no_real__',label:'REAL · No approved account'});
+      ['bbLinkedAccountPicker','bbMobileLinkedAccountPicker'].forEach(id=>{const el=document.getElementById(id);if(!el)return;el.innerHTML=options.map(o=>'<option value="'+String(o.value).replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">'+String(o.label).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</option>').join('');el.value=selectedId;if(el.value!==selectedId)el.value=mode==='demo'?'__demo_default__':'__no_real__';});
+      const selected=bbLinkedAccounts.find(a=>a.id===state.backendAccountIds?.[mode]);
+      if(selected){state.accounts[mode].id='#'+(selected.account_number||selected.display_name||mode.toUpperCase());state.accounts[mode].type=selected.account_type||(mode==='demo'?'Demo':'Real');}
+      else if(mode==='demo'){state.accounts.demo.id='DEMO PAPER';state.accounts.demo.type='Demo';}
+      else state.accounts.real.id='LINK APPROVED REAL ACCOUNT';
+      if(typeof renderAccountLists==='function')renderAccountLists();
+    }
+    window.bbSelectLinkedAccount=function(value){
+      if(value==='__no_real__'){bbToast('No approved Real account is available for this client.','error');bbSyncAccountPicker();return;}
+      let mode='demo',id=null;
+      if(value!=='__demo_default__'){const account=bbLinkedAccounts.find(a=>a.id===value);if(!account){bbToast('Selected account is no longer available.','error');return;}mode=account.account_mode;id=account.id;}
+      state.backendAccountIds=state.backendAccountIds||{demo:null,real:null};state.backendAccountIds[mode]=id;
+      if(typeof window.switchAccount==='function')window.switchAccount(mode);
+      bbSyncAccountPicker();
+    };
     async function bbLoadLinkedAccounts() {
-      const client = bbClientInit();
-      if (!client) return;
-      const {data:sessionData} = await client.auth.getSession();
-      bbSession = sessionData?.session || null;
-      if (!bbSession) return;
-      const {data,error} = await client.functions.invoke('trading-gateway', {body:{action:'accounts'}});
-      if (error || data?.error) { console.warn('Trading account lookup:', data?.error || error?.message); return; }
-      const accounts = (data.accounts || []).filter(a => a.account_mode === 'real' && a.status === 'approved' && !a.archived_at && !a.deleted_at);
-      bbRealAccount = accounts[0] || null;
-      state.backendAccountIds = state.backendAccountIds || {};
-      state.backendAccountIds.real = bbRealAccount?.id || null;
-      if (bbRealAccount) {
-        state.accounts.real.id = '#' + (bbRealAccount.account_number || bbRealAccount.display_name || 'REAL');
-        state.accounts.real.type = bbRealAccount.account_type || 'Real';
-      } else {
-        state.accounts.real.id = 'LINK APPROVED REAL ACCOUNT';
-      }
-      if (typeof renderAccountLists === 'function') renderAccountLists();
+      const client=bbClientInit();if(!client)return;
+      const {data:sessionData,error:sessionError}=await client.auth.getSession();if(sessionError)throw sessionError;
+      bbSession=sessionData?.session||null;
+      if(!bbSession){bbLinkedAccounts=[];state.backendAccountIds={demo:null,real:null};bbSyncAccountPicker();return;}
+      const {data,error}=await client.functions.invoke('trading-gateway',{body:{action:'accounts'}});
+      if(error||data?.error)throw new Error(data?.error||error?.message||'Trading account lookup failed.');
+      bbLinkedAccounts=(data.accounts||[]).filter(a=>['demo','real'].includes(a.account_mode)&&a.status==='approved'&&!a.archived_at&&!a.deleted_at);
+      state.backendAccountIds=state.backendAccountIds||{demo:null,real:null};
+      ['demo','real'].forEach(mode=>{const list=bbLinkedAccounts.filter(a=>a.account_mode===mode);const found=list.find(a=>a.id===state.backendAccountIds[mode]);state.backendAccountIds[mode]=found?.id||list[0]?.id||null;});
+      bbSyncAccountPicker();
     }
     function bbApplyPaperState(data, mode) {
       const ledger = data.ledger || {};
@@ -2525,8 +2540,8 @@
         if (!bbSession) { if (!silent) bbToast('Login required for server-saved paper trading.', 'error'); return; }
         const mode=state.activeAccountKey;
         await bbLoadLinkedAccounts();
-        const accountId=mode==='real' ? state.backendAccountIds?.real : null;
-        if (mode==='real' && !accountId) { if (!silent) bbToast('No approved Real trading account is linked. Real tab stays paper-only and locked until an approved account is available.', 'error'); return; }
+        const accountId=state.backendAccountIds?.[mode] || null;
+        if (mode==='real' && !accountId) { if (!silent) bbToast('No approved Real account is linked. Select an approved Real account first.', 'error'); return; }
         const payload={action:'status',account_mode:mode};
         if (accountId) payload.account_id=accountId;
         const data=await bbPaperCall(payload);
@@ -2572,11 +2587,10 @@
     window.setTimeframe=function(tf){ if(originalSetTimeframe)originalSetTimeframe(tf); bbLoadCandles(); };
     const originalSwitchAccount=window.switchAccount;
     window.switchAccount=function(mode){
-      if(mode==='real' && !state.backendAccountIds?.real){ bbToast('Real paper testing requires an approved Real account linked to your BIGBULLS login. No real broker orders are sent.', 'error'); return; }
+      if(!['demo','real'].includes(mode))return;
+      if(mode==='real'&&!state.backendAccountIds?.real){bbToast('Real paper testing requires an approved Real account. No broker orders or real funds are used.','error');bbSyncAccountPicker();return;}
       if(originalSwitchAccount)originalSwitchAccount(mode);
-      state.positions=[];
-      if(typeof renderPositionsTable==='function')renderPositionsTable();
-      bbRefreshPaperState(false);
+      state.positions=[];if(typeof renderPositionsTable==='function')renderPositionsTable();bbSyncAccountPicker();bbRefreshPaperState(false);
     };
     window.executeOrder=async function(){
       if(!state.selectedSide)return;
@@ -2588,7 +2602,7 @@
       const sl=parseFloat(document.getElementById('deskSlInput').value);
       if(!Number.isFinite(sl)){bbToast('Set a Stop Loss before opening a paper position.', 'error');return;}
       const mode=state.activeAccountKey;
-      const accountId=mode==='real'?state.backendAccountIds?.real:null;
+      const accountId=state.backendAccountIds?.[mode]||null;
       if(mode==='real'&&!accountId){bbToast('No approved Real account is linked for paper testing.', 'error');return;}
       const btn=document.getElementById('deskConfirmSubmitBtn');
       if(btn){btn.disabled=true;btn.textContent='Submitting paper order…';}
@@ -2605,7 +2619,7 @@
     window.closePositionById=async function(id){
       const pos=state.positions.find(p=>String(p.id)===String(id)); if(!pos||pos.status==='closed')return;
       try{
-        await bbPaperCall({action:'close',account_mode:state.activeAccountKey,account_id:state.activeAccountKey==='real'?state.backendAccountIds?.real:undefined,trade_id:String(id),reason:'TERMINAL MANUAL CLOSE'});
+        await bbPaperCall({action:'close',account_mode:state.activeAccountKey,account_id:state.backendAccountIds?.[state.activeAccountKey]||undefined,trade_id:String(id),reason:'TERMINAL MANUAL CLOSE'});
         bbToast('Paper position closed · #'+String(id).slice(0,8),'success');
         await bbRefreshPaperState(true);
       }catch(e){bbToast(e.message||'Could not close paper position.','error');}
@@ -2647,7 +2661,7 @@
       if(bbClient){
         try{const {data}=await bbClient.auth.getSession();bbSession=data?.session||null;}catch(e){console.warn('Session lookup:',e);}
       }
-      renderSymbolTabs(); renderSymbolPicker(); renderAccountLists(); drawChart();
+      renderSymbolTabs(); renderSymbolPicker(); renderAccountLists(); bbSyncAccountPicker(); drawChart();
       await bbLoadCandles(); await bbLoadQuotes();
       if(bbSession){await bbLoadLinkedAccounts();await bbRefreshPaperState(true);}
       else bbSetFeedStatus('TWELVE DATA LIVE · SIGN IN FOR PAPER TRADING',false);
