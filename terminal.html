@@ -119,6 +119,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 #bb-auth-boot .bb-auth-spinner{width:28px;height:28px;border:3px solid #293447;border-top-color:#2979ff;border-radius:50%;animation:bb-auth-spin .8s linear infinite}
 @keyframes bb-auth-spin{to{transform:rotate(360deg)}}
 </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="h-screen min-h-screen flex flex-col overflow-hidden">
@@ -1919,8 +1920,8 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 'use strict';
 document.documentElement.classList.add('bb-auth-pending');
 const BB_URL='https://ztiiyulusburxjkpcfxu.supabase.co',BB_KEY='sb_publishable_5hDwqvbcUHeSJdXFHf9ugw_VPYGN4J_';
-const MARKET={'XAU/USD':'XAU/USD','EUR/USD':'EUR/USD','GBP/USD':'GBP/USD','BTC':'BTCUSDT','USOIL':'WTI/USD','USTEC':'NDX'};
-const PAPER={'XAU/USD':'XAUUSD','EUR/USD':'EURUSD','GBP/USD':'GBPUSD','BTC':'BTCUSDT'};
+const MARKET={'XAU/USD':'XAU/USD','EUR/USD':'EUR/USD','GBP/USD':'GBP/USD','USD/JPY':'USD/JPY','BTC':'BTCUSDT','USOIL':'WTI/USD','USTEC':'NDX'};
+const PAPER={'XAU/USD':'XAUUSD','EUR/USD':'EURUSD','GBP/USD':'GBPUSD','USD/JPY':'USDJPY','BTC':'BTCUSDT'};
 let session=null,ready=false,busy=false,refreshEpoch=0,candleEpoch=0,lastAccount='',lastMarket='';
 const candleCache=new Map();
 const TF_SECONDS={'1m':60,'5m':300,'15m':900,'30m':1800,'1h':3600,'4h':14400,'1d':86400,'1w':604800,'1M':2592000};
@@ -1928,10 +1929,14 @@ let chartPaintQueued=false;
 function queueChartPaint(){if(chartPaintQueued)return;chartPaintQueued=true;requestAnimationFrame(()=>{chartPaintQueued=false;drawChartCanvas();updateLiveDOMElements();});}
 function updateCandleFromTick(symbol,bid,stamp=Date.now()){
  const inst=state.instruments[symbol];if(!inst||!(bid>0))return;
- const sec=TF_SECONDS[state.timeframe]||300,raw=Number(stamp),parsed=Number.isFinite(raw)?raw:(Date.parse(stamp)/1000),epoch=Number.isFinite(parsed)?(parsed>1e12?parsed/1000:parsed):Date.now()/1000,bucket=Math.floor(epoch/sec)*sec;
+ const raw=Number(stamp),parsed=Number.isFinite(raw)?raw:(Date.parse(stamp)/1000),epoch=Number.isFinite(parsed)?(parsed>1e12?parsed/1000:parsed):Date.now()/1000;
+ let bucket;const tf=state.timeframe;
+ if(tf==='1w'){const d=new Date(epoch*1000);bucket=Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()-((d.getUTCDay()+6)%7))/1000;}
+ else if(tf==='1M'){const d=new Date(epoch*1000);bucket=Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),1)/1000;}
+ else {const sec=TF_SECONDS[tf]||300;bucket=Math.floor(epoch/sec)*sec;}
  let rows=inst.candles||[],last=rows[rows.length-1];
- if(!last||Number(last.time)<bucket){last={time:bucket,open:bid,high:bid,low:bid,close:bid};rows.push(last);if(rows.length>5000)rows.shift();inst.candles=rows;}
- else if(Number(last.time)===bucket){last.close=bid;last.high=Math.max(Number(last.high),bid);last.low=Math.min(Number(last.low),bid);}
+ if(!last||Number(last.time)<bucket*1000){last={time:bucket*1000,open:bid,high:bid,low:bid,close:bid};rows.push(last);if(rows.length>5000)rows.shift();inst.candles=rows;}
+ else if(Number(last.time)===bucket*1000){last.close=bid;last.high=Math.max(Number(last.high),bid);last.low=Math.min(Number(last.low),bid);}
  if(symbol===state.selectedSymbol)queueChartPaint();
 }
 const notify=(t,s='',type='info')=>{if(typeof showToast==='function')showToast(t,s,type);};
@@ -1943,7 +1948,7 @@ function client(){
 }
 async function call(fn,body){const r=await client().functions.invoke(fn,{body});if(r.error)throw new Error(r.data?.error||r.error.message||fn+' request failed.');if(r.data?.error)throw new Error(r.data.error);return r.data||{};}
 const mode=a=>String(a?.type||'Demo').toLowerCase()==='real'?'real':'demo';
-function mapSymbol(s){return({XAUUSD:'XAU/USD',EURUSD:'EUR/USD',GBPUSD:'GBP/USD',USDJPY:'USD/JPY',BTCUSDT:'BTC',BTC:'BTC',WTIUSD:'USOIL',WTI:'USOIL',NDX:'USTEC'})[String(s||'').toUpperCase().replaceAll('/','')]||null;}
+function mapSymbol(s){return({XAUUSD:'XAU/USD',EURUSD:'EUR/USD',GBPUSD:'GBP/USD',USDJPY:'USD/JPY',BTCUSDT:'BTC',BTCUSD:'BTC',BTC:'BTC',WTIUSD:'USOIL',USOIL:'USOIL',WTI:'USOIL',NDX:'USTEC'})[String(s||'').toUpperCase().replaceAll('/','')]||null;}
 function applyQuote(s,p){const i=state.instruments[s];if(!i||!(Number(p)>0))return;i.bid=Number(p);i.ask=Number((i.bid+Number(i.spread||0)).toFixed(i.digits));}
 function applyBookQuote(s,q){const i=state.instruments[s];if(!i||!q)return;const bid=Number(q.bid),ask=Number(q.ask);if(bid>0&&ask>=bid){i.bid=bid;i.ask=ask;updateCandleFromTick(s,bid,q.time||q.updated_at||Date.now());}}
 let bbookRealtimeChannel=null;
@@ -1961,6 +1966,34 @@ function startBbookRealtime(c){
    catch(e){notify('Account sync failed',e.message||'Client Area account updates could not be loaded.','error');}
   })
   .subscribe();
+}
+let biQuoteConnection=null,biQuoteStartPromise=null;
+const BIQUOTE_STREAM_SYMBOLS=['EURUSD','GBPUSD','USDJPY','XAUUSD','BTCUSD','USOIL','NDX'];
+function handleBiQuoteTick(tick){
+ if(Array.isArray(tick))tick=tick[0];if(!tick||!tick.symbol)return;
+ const ui=mapSymbol(tick.symbol),inst=state.instruments[ui];if(!inst)return;
+ const mid=Number(tick.mid||((Number(tick.bid)+Number(tick.ask))/2));if(!(mid>0))return;
+ const active=getActiveAccount(),real=mode(active)==='real'&&!!PAPER[ui];
+ let bid=Number(tick.bid),ask=Number(tick.ask);
+ if(real&&Number.isFinite(inst.brokerSpreadBps)){
+  const half=inst.brokerSpreadBps/20000;bid=mid*(1-half);ask=mid*(1+half);
+ }
+ if(bid>0&&ask>=bid){inst.bid=bid;inst.ask=ask;updateCandleFromTick(ui,bid,tick.timestamp||Date.now());}
+ updateLiveDOMElements();
+}
+async function startBiQuoteRealtime(){
+ if(biQuoteConnection&&window.signalR?.HubConnectionState?.Connected===biQuoteConnection.state)return biQuoteConnection;
+ if(biQuoteStartPromise)return biQuoteStartPromise;
+ biQuoteStartPromise=(async()=>{
+  if(!window.signalR?.HubConnectionBuilder){console.warn('BiQuote SignalR client did not load; REST snapshot fallback remains active.');return null;}
+  const connection=new window.signalR.HubConnectionBuilder().withUrl('https://biquote.io/hubs/tick').withAutomaticReconnect([0,2000,5000,10000,30000]).build();
+  connection.on('ReceiveTick',handleBiQuoteTick);
+  connection.onreconnected(async()=>{try{await connection.invoke('Subscribe',BIQUOTE_STREAM_SYMBOLS);}catch(e){console.warn('BiQuote resubscribe failed:',e.message);}});
+  connection.onclose(e=>console.warn('BiQuote SignalR closed:',e?.message||'connection closed'));
+  try{await connection.start();await connection.invoke('Subscribe',BIQUOTE_STREAM_SYMBOLS);biQuoteConnection=connection;console.info('BiQuote SignalR connected; subscribed:',BIQUOTE_STREAM_SYMBOLS);return connection;}
+  catch(e){console.warn('BiQuote SignalR connection failed:',e.message);try{await connection.stop();}catch(_){}return null;}
+ })();
+ try{return await biQuoteStartPromise;}finally{biQuoteStartPromise=null;}
 }
 async function accounts(preferredBackendId=null){
  const d=await call('trading-gateway',{action:'accounts'});
@@ -1982,22 +2015,27 @@ async function accounts(preferredBackendId=null){
  try{sessionStorage.setItem('bb:terminal:active-mode:'+session.user.id,mode(selected));if(selected.backendId)sessionStorage.setItem('bb:terminal:selected-account:'+session.user.id+':'+mode(selected),selected.backendId);}catch(_){}
 }
 async function quotes(){
- const d=await call('market-data',{action:'quotes'});(d.quotes||[]).forEach(q=>applyQuote(mapSymbol(q.symbol),q.close??q.price));
+ const d=await call('market-data',{action:'quotes'});
+ (d.quotes||[]).forEach(q=>{
+  const ui=mapSymbol(q.symbol),inst=state.instruments[ui];if(!inst||q.error)return;
+  inst.brokerSpreadBps=Number(q.broker_spread_bps);
+  const a=getActiveAccount(),real=mode(a)==='real'&&Number.isFinite(inst.brokerSpreadBps);
+  applyBookQuote(ui,real?{bid:q.broker_bid,ask:q.broker_ask,time:q.datetime}:{bid:q.bid,ask:q.ask,time:q.datetime});
+ });
  const a=getActiveAccount(),symbol=PAPER[state.selectedSymbol];
  if(a&&mode(a)==='real'&&symbol){try{const b=await call('bbook-engine',{action:'quote',symbol});applyBookQuote(state.selectedSymbol,b.quote);}catch(e){console.warn('B-Book dealing quote:',e.message);}}
  updateLiveDOMElements();
 }
 async function candles(){
  const s=state.selectedSymbol,tf=state.timeframe,p=MARKET[s],i=state.instruments[s],request=++candleEpoch;
- if(!p||!i){notify('Market data unavailable',s+' is not enabled by the connected provider.','error');return;}
+ if(!p||!i){notify('Market data unavailable',s+' is not enabled by BiQuote.','error');return;}
  const cacheKey=s+'|'+tf,cached=candleCache.get(cacheKey);
- if(cached?.length){i.candles=cached.map(c=>({...c}));drawChartCanvas();}
- else drawChartCanvas();
- const d=await call('market-data',{action:'candles',symbol:p,timeframe:tf,outputsize:5000});
+ if(cached?.length){i.candles=cached.map(c=>({...c}));drawChartCanvas();}else drawChartCanvas();
+ const d=await call('market-data',{action:'candles',symbol:p,timeframe:tf,outputsize:1000});
  if(request!==candleEpoch||s!==state.selectedSymbol||tf!==state.timeframe)return;
  const rows=(d.candles||[]).map(c=>({time:Number(c.time),open:Number(c.open),high:Number(c.high),low:Number(c.low),close:Number(c.close)})).filter(c=>Number.isFinite(c.time)&&[c.open,c.high,c.low,c.close].every(Number.isFinite));
- if(!rows.length)throw new Error('The market provider returned no candles for '+s+' ('+tf+').');
- i.candles=rows;candleCache.set(cacheKey,rows.map(c=>({...c})));applyQuote(s,d.price||rows[rows.length-1].close);drawChartCanvas();updateLiveDOMElements();
+ if(!rows.length)throw new Error('BiQuote returned no candles for '+s+' ('+tf+').');
+ i.candles=rows;candleCache.set(cacheKey,rows.map(c=>({...c})));if(!i.bid)applyQuote(s,d.price||rows[rows.length-1].close);drawChartCanvas();updateLiveDOMElements();
 }
 function mapTrade(t,n,accountId){const s=mapSymbol(t.symbol);if(!s)return null;const open=String(t.status).toUpperCase()==='OPEN',tm=v=>v?new Date(v).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}):'';return{id:n+1,backendTradeId:t.id,accountId,symbol:s,side:String(t.side).toUpperCase()==='BUY'?'Buy':'Sell',lots:Number(t.quantity),openPrice:Number(t.entry_price),sl:t.stop_loss==null?'':String(t.stop_loss),tp:t.take_profit==null?'':String(t.take_profit),openTime:tm(t.opened_at),closeTime:tm(t.closed_at),closePrice:t.exit_price==null?Number(t.mark_price||t.entry_price):Number(t.exit_price),realizedPL:Number(t.realized_pnl||0),status:open?'open':'closed'};}
 async function refresh(silent=true){
@@ -2115,10 +2153,10 @@ window.switchTradingAccount=async function(backendId){
 };
 async function start(){
  try{const c=client(),auth=await c.auth.getSession();if(auth.error)throw auth.error;session=auth.data?.session||null;if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}
- await accounts();Object.values(state.instruments).forEach(i=>{i.candles=[];i.bid=0;i.ask=0;});state.openOrders=[];state.pendingOrders=[];state.closedOrders=[];ready=true;document.documentElement.classList.remove('bb-auth-pending');startBbookRealtime(c);lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();
+ await accounts();Object.values(state.instruments).forEach(i=>{i.candles=[];i.bid=0;i.ask=0;});state.openOrders=[];state.pendingOrders=[];state.closedOrders=[];ready=true;document.documentElement.classList.remove('bb-auth-pending');startBbookRealtime(c);startBiQuoteRealtime();lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();
  try{await quotes();}catch(e){console.warn('Market quotes:',e.message);}try{await candles();}catch(e){notify('Market feed unavailable',e.message||'Provider candles could not be loaded.','error');}
- await refresh(true);setInterval(()=>{if(!document.hidden)quotes().catch(()=>{});},15000);setInterval(async()=>{if(document.hidden)return;try{const current=getActiveAccount()?.backendId||null;await accounts(current);renderApp();await refresh(true);}catch(e){console.warn('Account balance refresh:',e.message);}},10000);
- c.auth.onAuthStateChange((_event,s)=>{session=s||null;if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}accounts().then(()=>{ready=true;document.documentElement.classList.remove('bb-auth-pending');startBbookRealtime(c);lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();refresh(true);}).catch(e=>notify('Account refresh failed',e.message,'error'));});
+ await refresh(true);setInterval(()=>{if(!document.hidden&&(!biQuoteConnection||!window.signalR||biQuoteConnection.state!==window.signalR.HubConnectionState.Connected))quotes().catch(()=>{});},15000);setInterval(async()=>{if(document.hidden)return;try{const current=getActiveAccount()?.backendId||null;await accounts(current);renderApp();await refresh(true);}catch(e){console.warn('Account balance refresh:',e.message);}},10000);
+ c.auth.onAuthStateChange((_event,s)=>{session=s||null;if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}accounts().then(()=>{ready=true;document.documentElement.classList.remove('bb-auth-pending');startBbookRealtime(c);startBiQuoteRealtime();lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();refresh(true);}).catch(e=>notify('Account refresh failed',e.message,'error'));});
  }catch(e){document.documentElement.classList.remove('bb-auth-pending');console.error('BIGBULLS terminal startup:',e);notify('Terminal connection failed',e.message||'Unable to connect to the trading backend.','error');}
 }
 window.addEventListener('load',start,{once:true});
