@@ -2767,9 +2767,34 @@ async function place(){
  }catch(e){const msg=/insufficient/i.test(e.message)?'Insufficient Funds':e.message;notify('Order not placed',msg,'error');}
 }
 async function closePosition(id,silent=false,reason='Closed manually'){
- const o=state.openOrders.find(x=>String(x.id)===String(id));if(!o)return;const a=getActiveAccount(),real=mode(a)==='real',b={action:'close',account_mode:mode(a),reason};
- if(real){b.position_id=o.backendTradeId;b.account_id=a.backendId;}else{b.trade_id=o.backendTradeId;if(a.backendId)b.account_id=a.backendId;}
- try{await call(real?'bbook-engine':'paper-execution',b);if(!silent)closeModal();await refresh(true);if(!silent)notify('Position closed',o.symbol+' '+o.side+' '+o.lots.toFixed(2)+' lots','success');}catch(e){notify('Close failed',e.message||'The position could not be closed.','error');}
+ const o=state.openOrders.find(x=>String(x.id)===String(id)||String(x.backendTradeId)===String(id));
+ if(!o){notify('Close failed','This position is no longer open. Refreshing the account ledger.','error');await refresh(true);return false;}
+ const a=state.accounts.find(x=>String(x.id)===String(o.accountId))||getActiveAccount(),real=mode(a)==='real';
+ if(!a?.backendId||a.status!=='approved'){notify('Close failed','Select an approved trading account.','error');return false;}
+ const tradeId=String(o.backendTradeId||'');
+ if(!tradeId){notify('Close failed','The position is missing its backend ledger ID.','error');return false;}
+ const lock='close:'+tradeId;
+ window.__bbClosingPositions=window.__bbClosingPositions||new Set();
+ if(window.__bbClosingPositions.has(lock))return false;
+ window.__bbClosingPositions.add(lock);
+ try{
+  const payload={action:'close',account_mode:mode(a),reason};
+  if(real){payload.position_id=tradeId;payload.account_id=a.backendId;}
+  else{payload.trade_id=tradeId;payload.account_id=a.backendId;}
+  const result=await call(real?'bbook-engine':'paper-execution',payload);
+  if(result?.success===false)throw new Error(result.error||'The execution service did not confirm the close.');
+  if(!silent)closeModal();
+  const loaded=await refresh(true);
+  if(!loaded){
+   state.openOrders=state.openOrders.filter(x=>String(x.backendTradeId||x.id)!==tradeId);
+   state.closedOrders=[{...o,status:'closed',closeTime:new Date().toISOString(),closePrice:Number(result?.position?.exit_price??result?.exit_price??0),realizedPL:Number(result?.realized_pnl??result?.position?.realized_pnl??0)},...state.closedOrders];
+   updateLiveDOMElements();renderApp();
+  }
+  playTerminalSound('closed');
+  notify('Position closed',o.symbol+' '+o.side+' '+o.lots.toFixed(2)+' lots','success');
+  return true;
+ }catch(e){playTerminalSound('error');notify('Close failed',e.message||'The position could not be closed.','error');return false;}
+ finally{window.__bbClosingPositions.delete(lock);}
 }
 const originalRender=window.renderApp;
 if(typeof originalRender==='function')window.renderApp=function(){originalRender();if(!ready)return;const a=getActiveAccount(),ak=a?.id||'',mk=state.selectedSymbol+':'+state.timeframe;if(ak&&ak!==lastAccount){lastAccount=ak;try{sessionStorage.setItem('bb:terminal:active-mode:'+session.user.id,mode(a));if(a.backendId)sessionStorage.setItem('bb:terminal:selected-account:'+session.user.id+':'+mode(a),a.backendId);}catch(_){}refresh(true);}if(mk!==lastMarket){lastMarket=mk;candles().catch(e=>console.warn('Market candles:',e.message));}};
