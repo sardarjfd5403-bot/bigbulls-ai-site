@@ -153,7 +153,8 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
       timeframe: '5m',
       oneClickTrade: true,
       ordersSubTab: 'open',   // 'open' | 'pending' | 'closed'
-      watchlistTab: 'Favorites',
+      watchlistTab: 'All',
+      marketSearch: ''
       perfAccountFilter: 'all_demo', // 'all_real' | 'all_demo' | accountId
       perfPeriodFilter: 'Last 7 days',
       showAccountMenu: false,
@@ -1920,8 +1921,20 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 'use strict';
 document.documentElement.classList.add('bb-auth-pending');
 const BB_URL='https://ztiiyulusburxjkpcfxu.supabase.co',BB_KEY='sb_publishable_5hDwqvbcUHeSJdXFHf9ugw_VPYGN4J_';
-const MARKET={'XAU/USD':'XAU/USD','EUR/USD':'EUR/USD','GBP/USD':'GBP/USD','USD/JPY':'USD/JPY','BTC':'BTCUSDT','USOIL':'WTI/USD','USTEC':'NDX'};
-const PAPER={'XAU/USD':'XAUUSD','EUR/USD':'EURUSD','GBP/USD':'GBPUSD','USD/JPY':'USDJPY','BTC':'BTCUSDT'};
+const MARKET={
+ 'XAU/USD':'XAU/USD','XAG/USD':'XAG/USD','XPT/USD':'XPT/USD','XPD/USD':'XPD/USD',
+ 'EUR/USD':'EUR/USD','GBP/USD':'GBP/USD','USD/JPY':'USD/JPY','USD/CAD':'USD/CAD','AUD/USD':'AUD/USD','NZD/USD':'NZD/USD','USD/CHF':'USD/CHF','EUR/GBP':'EUR/GBP','EUR/JPY':'EUR/JPY','GBP/JPY':'GBP/JPY',
+ 'US30':'US30','USTEC':'USTEC','SPX500':'SPX500','GER40':'GER40','UK100':'UK100','JPN225':'JPN225',
+ 'USOIL':'USOIL','UKOIL':'UKOIL','NATGAS':'NATGAS',
+ 'BTC':'BTCUSDT','ETH/USD':'ETHUSDT','SOL/USD':'SOLUSDT','XRP/USD':'XRPUSDT','BNB/USD':'BNBUSDT'
+};
+const PAPER={
+ 'XAU/USD':'XAUUSD','XAG/USD':'XAGUSD','XPT/USD':'XPTUSD','XPD/USD':'XPDUSD',
+ 'EUR/USD':'EURUSD','GBP/USD':'GBPUSD','USD/JPY':'USDJPY','USD/CAD':'USDCAD','AUD/USD':'AUDUSD','NZD/USD':'NZDUSD','USD/CHF':'USDCHF','EUR/GBP':'EURGBP','EUR/JPY':'EURJPY','GBP/JPY':'GBPJPY',
+ 'US30':'US30','USTEC':'USTEC','SPX500':'SPX500','GER40':'GER40','UK100':'UK100','JPN225':'JPN225',
+ 'USOIL':'USOIL','UKOIL':'UKOIL','NATGAS':'NATGAS',
+ 'BTC':'BTCUSDT','ETH/USD':'ETHUSDT','SOL/USD':'SOLUSDT','XRP/USD':'XRPUSDT','BNB/USD':'BNBUSDT'
+};
 let session=null,ready=false,busy=false,refreshEpoch=0,candleEpoch=0,lastAccount='',lastMarket='';
 const candleCache=new Map();
 const TF_SECONDS={'1m':60,'5m':300,'15m':900,'30m':1800,'1h':3600,'4h':14400,'1d':86400,'1w':604800,'1M':2592000};
@@ -1948,7 +1961,11 @@ function client(){
 }
 async function call(fn,body){const r=await client().functions.invoke(fn,{body});if(r.error)throw new Error(r.data?.error||r.error.message||fn+' request failed.');if(r.data?.error)throw new Error(r.data.error);return r.data||{};}
 const mode=a=>String(a?.type||'Demo').toLowerCase()==='real'?'real':'demo';
-function mapSymbol(s){return({XAUUSD:'XAU/USD',EURUSD:'EUR/USD',GBPUSD:'GBP/USD',USDJPY:'USD/JPY',BTCUSDT:'BTC',BTCUSD:'BTC',BTC:'BTC',WTIUSD:'USOIL',USOIL:'USOIL',WTI:'USOIL',NDX:'USTEC'})[String(s||'').toUpperCase().replaceAll('/','')]||null;}
+function mapSymbol(s){
+ const raw=String(s||'').toUpperCase().trim(),key=raw.replaceAll('/','').replaceAll('-','');
+ const aliases={XAUUSD:'XAU/USD',XAGUSD:'XAG/USD',XPTUSD:'XPT/USD',XPDUSD:'XPD/USD',EURUSD:'EUR/USD',GBPUSD:'GBP/USD',USDJPY:'USD/JPY',USDCAD:'USD/CAD',AUDUSD:'AUD/USD',NZDUSD:'NZD/USD',USDCHF:'USD/CHF',EURGBP:'EUR/GBP',EURJPY:'EUR/JPY',GBPJPY:'GBP/JPY',BTCUSDT:'BTC',BTCUSD:'BTC',ETHUSDT:'ETH/USD',ETHUSD:'ETH/USD',SOLUSDT:'SOL/USD',SOLUSD:'SOL/USD',XRPUSDT:'XRP/USD',XRPUSD:'XRP/USD',BNBUSDT:'BNB/USD',BNBUSD:'BNB/USD',WTIUSD:'USOIL',USOIL:'USOIL',WTI:'USOIL',UKOIL:'UKOIL',BRENT:'UKOIL',NATGAS:'NATGAS',NGAS:'NATGAS',NDX:'USTEC',NAS100:'USTEC',USTEC:'USTEC',DJI:'US30',US30:'US30',SP500:'SPX500',SPX500:'SPX500',DE40:'GER40',GER40:'GER40',FTSE100:'UK100',UK100:'UK100',JP225:'JPN225',JPN225:'JPN225'};
+ return aliases[key]||(state.instruments[raw]?raw:null);
+}
 function applyQuote(s,p){const i=state.instruments[s];if(!i||!(Number(p)>0))return;i.bid=Number(p);i.ask=Number((i.bid+Number(i.spread||0)).toFixed(i.digits));}
 function applyBookQuote(s,q){const i=state.instruments[s];if(!i||!q)return;const bid=Number(q.bid),ask=Number(q.ask);if(bid>0&&ask>=bid){i.bid=bid;i.ask=ask;updateCandleFromTick(s,bid,q.time||q.updated_at||Date.now());}}
 let bbookRealtimeChannel=null;
@@ -1968,7 +1985,7 @@ function startBbookRealtime(c){
   .subscribe();
 }
 let biQuoteConnection=null,biQuoteStartPromise=null;
-const BIQUOTE_STREAM_SYMBOLS=['EURUSD','GBPUSD','USDJPY','XAUUSD','BTCUSD','USOIL','USTEC'];
+let BIQUOTE_STREAM_SYMBOLS=['EURUSD','GBPUSD','USDJPY','USDCAD','AUDUSD','NZDUSD','USDCHF','EURGBP','EURJPY','GBPJPY','XAUUSD','XAGUSD','XPTUSD','XPDUSD','BTCUSD','ETHUSD','SOLUSD','XRPUSD','BNBUSD','US30','USTEC','SPX500','GER40','UK100','JPN225','USOIL','UKOIL','NATGAS'];
 function handleBiQuoteTick(tick){
  if(Array.isArray(tick))tick=tick[0];if(!tick||!tick.symbol)return;
  const ui=mapSymbol(tick.symbol),inst=state.instruments[ui];if(!inst)return;
