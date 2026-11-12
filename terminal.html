@@ -115,38 +115,6 @@
 <body class="h-screen min-h-screen flex flex-col overflow-hidden">
 
   <!-- MAIN VIEWPORT STAGE -->
-  <header class="w-full bg-[#131722] border-b border-[#262C3A] px-3 py-2 flex items-center justify-between z-50 shrink-0">
-    <div class="flex items-center gap-2.5">
-      <div class="w-7 h-7 rounded-lg bg-bullBlue flex items-center justify-center text-white font-extrabold text-sm shadow">
-        BB
-      </div>
-      <div>
-        <div class="flex items-center gap-1.5">
-          <span class="font-bold text-sm tracking-tight text-white">BigBull Terminal</span>
-          <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-bullBlue/15 text-bullBlue border border-bullBlue/30">v2.5 LIVE</span>
-        </div>
-        <p class="text-[10px] text-gray-400 hidden sm:block">BigBulls FX Academy • Interactive Workflow Preview</p>
-      </div>
-    </div>
-
-    <!-- View Mode Switcher -->
-    <div class="flex items-center bg-[#0E1117] p-1 rounded-xl border border-[#262C3A]">
-      <button id="btnViewMobile" onclick="setViewportMode('mobile')" class="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition bg-bullBlue text-white">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg>
-        Mobile View
-      </button>
-      <button id="btnViewDesktop" onclick="setViewportMode('desktop')" class="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition text-gray-400 hover:text-white">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-        Desktop Terminal
-      </button>
-    </div>
-
-    <div class="hidden md:flex items-center gap-2 text-xs text-gray-400">
-      <span class="w-2 h-2 rounded-full bg-bullGreen live-dot"></span>
-      <span>BigBulls-MT5 Feed Connected</span>
-    </div>
-  </header>
-
   <main id="appStage" class="flex-1 flex items-stretch justify-stretch w-full min-h-0 p-0 overflow-hidden">
     <!-- Rendered dynamically by JS for either Mobile Shell or Full Desktop Terminal -->
   </main>
