@@ -91,8 +91,10 @@ Deno.serve(async (req: Request) => {
       if (action === "admin_adjust_liquidity") {
         const amount = num(body.amount,"Amount");
         const direction = String(body.direction||"").toUpperCase();
+        const note = String(body.note||"").trim();
         if (!(amount>0) || !["DEPOSIT","WITHDRAWAL"].includes(direction)) return json({error:"Choose a valid deposit or withdrawal amount."},400);
-        const {data,error} = await db.rpc("bb_bbook_adjust_liquidity",{p_amount:amount,p_direction:direction,p_actor:user.id,p_note:String(body.note||"Admin liquidity adjustment").slice(0,250)});
+        if(note.length<8)return json({error:"An audit note with a verified funding or withdrawal reference is required."},400);
+        const {data,error} = await db.rpc("bb_bbook_adjust_liquidity",{p_amount:amount,p_direction:direction,p_actor:user.id,p_note:note.slice(0,250)});
         if(error)throw error;
         return json({success:true,pool:data});
       }
