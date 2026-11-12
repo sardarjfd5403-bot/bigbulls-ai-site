@@ -102,7 +102,7 @@ async function kycFileChangeHandler(e){
  if(!file){input.dataset.uploadedPath="";if(status){status.textContent="No file selected";status.classList.remove("error");}return;}
  const ext=String(file.name||"").split(".").pop().toLowerCase(),typed=String(file.type||"").toLowerCase(),byExt={jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",pdf:"application/pdf"};
  const mime=["image/jpeg","image/png","image/webp","application/pdf"].includes(typed)?typed:(typed==="image/jpg"||typed==="image/pjpeg"?"image/jpeg":byExt[ext]||"");
- if(file.size<100*1024)return fail("File must be at least 100 KB.");
+ if(file.size<1024)return fail("File must be at least 100 KB.");
  if(file.size>max)return fail("File exceeds the "+(max/1024/1024)+" MB limit.");
  if(!mime)return fail("Use JPG, PNG, WEBP or PDF.");
  if(!sb||!user?.id)return fail("Please sign in again before uploading.");
@@ -159,6 +159,7 @@ function startFinancialRealtime(){
  if(isAdmin()){
   channel.on("postgres_changes",{event:"*",schema:"public",table:"wallet_transactions"},()=>{if(activePage==="admin")loadPageData();});
   channel.on("postgres_changes",{event:"UPDATE",schema:"public",table:"trading_accounts"},()=>{if(activePage==="admin")loadPageData();});
+  channel.on("postgres_changes",{event:"*",schema:"public",table:"kyc_submissions"},()=>{if(activePage==="admin")loadPageData();});
   channel.on("postgres_changes",{event:"*",schema:"public",table:"bb_paper_accounts"},()=>{if(activePage==="admin")loadPageData();});
   channel.on("postgres_changes",{event:"*",schema:"public",table:"bb_mt5_demo_accounts"},()=>{if(activePage==="admin")loadPageData();});
  }else{
@@ -1104,7 +1105,7 @@ async function submitHandler(e){
  if(f.id==="wallet-form"){e.preventDefault();const d=new FormData(f),kind=String(d.get("kind")||"deposit"),accountId=String(d.get("account_id")||"")||null;if(!accountId){const msg=f.querySelector("[data-page-message]")||f.parentElement.querySelector("[data-page-message]");if(msg)msg.textContent="Please submit deposits and withdrawals from a specific Trading Account.";return;}let payload;if(kind==="withdrawal"){const pair=String(d.get("asset_network")).split("|");payload={user_id:user.id,account_id:accountId,kind:"withdrawal",asset:pair[0],network:pair[1],destination_address:String(d.get("destination_address")).trim(),amount_usd:Number(d.get("amount_usd")),amount_crypto:String(d.get("amount_crypto")).trim(),status:"pending"};}else{const walletId=String(d.get("wallet_id")||document.getElementById("deposit-asset")?.value||"");if(!walletId)return;const {data:w,error:walletError}=await sb.from("crypto_wallets").select("asset,network,address").eq("id",walletId).single();if(walletError||!w)return;payload={user_id:user.id,account_id:accountId,kind:"deposit",asset:w.asset,network:w.network,destination_address:w.address,amount_usd:Number(d.get("amount_usd")),amount_crypto:String(d.get("amount_crypto")).trim(),tx_hash:String(d.get("tx_hash")).trim(),status:"pending"};}const {error}=await sb.from("wallet_transactions").insert(payload);const msg=f.querySelector("[data-page-message]")||f.parentElement.querySelector("[data-page-message]");if(msg)msg.textContent=error?"Request failed: "+error.message:"Request submitted and is pending admin review.";if(!error){f.reset();if(accountId)showAccountTool(accountId,kind==="deposit"?"deposit":"withdraw");else loadPageData();}return;}
  if(f.id==="kyc-form"){
    e.preventDefault();e.stopPropagation();if(typeof e.stopImmediatePropagation==="function")e.stopImmediatePropagation();
-   const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector('button[type="submit"]'),front=d.get("document_front"),back=d.get("document_back"),allowed=["image/jpeg","image/png","image/webp","application/pdf"],minBytes=100*1024,maxBytes=20*1024*1024;
+   const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector('button[type="submit"]'),front=d.get("document_front"),back=d.get("document_back"),allowed=["image/jpeg","image/png","image/webp","application/pdf"],minBytes=1024,maxBytes=20*1024*1024;
    const mimeForFile=file=>{const ext=String(file?.name||"").split(".").pop().toLowerCase();const byExt={jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",pdf:"application/pdf"};const typed=String(file?.type||"").toLowerCase();if(allowed.includes(typed))return typed;if(typed==="image/jpg"||typed==="image/pjpeg")return "image/jpeg";return byExt[ext]||"";};
    const showKycError=message=>{if(out){out.textContent=message;out.classList.add("error");}};
    if(!button){showKycError("KYC submit control is unavailable. Please refresh once and retry.");return;}
