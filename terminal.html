@@ -1934,7 +1934,774 @@ const PAPER={
  'US30':'US30','USTEC':'USTEC','SPX500':'SPX500','GER40':'GER40','UK100':'UK100','JPN225':'JPN225',
  'USOIL':'USOIL','UKOIL':'UKOIL','NATGAS':'NATGAS',
  'BTC':'BTCUSDT','ETH/USD':'ETHUSDT','SOL/USD':'SOLUSDT','XRP/USD':'XRPUSDT','BNB/USD':'BNBUSDT'
+
 };
+const EXTRA_INSTRUMENTS=[
+ ['USD/CAD','US Dollar vs Canadian Dollar','Forex',5,100000,'C
+const candleCache=new Map();
+const TF_SECONDS={'1m':60,'5m':300,'15m':900,'30m':1800,'1h':3600,'4h':14400,'1d':86400,'1w':604800,'1M':2592000};
+let chartPaintQueued=false;
+function queueChartPaint(){if(chartPaintQueued)return;chartPaintQueued=true;requestAnimationFrame(()=>{chartPaintQueued=false;drawChartCanvas();updateLiveDOMElements();});}
+function updateCandleFromTick(symbol,bid,stamp=Date.now()){
+ const inst=state.instruments[symbol];if(!inst||!(bid>0))return;
+ const raw=Number(stamp),parsed=Number.isFinite(raw)?raw:(Date.parse(stamp)/1000),epoch=Number.isFinite(parsed)?(parsed>1e12?parsed/1000:parsed):Date.now()/1000;
+ let bucket;const tf=state.timeframe;
+ if(tf==='1w'){const d=new Date(epoch*1000);bucket=Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()-((d.getUTCDay()+6)%7))/1000;}
+ else if(tf==='1M'){const d=new Date(epoch*1000);bucket=Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),1)/1000;}
+ else {const sec=TF_SECONDS[tf]||300;bucket=Math.floor(epoch/sec)*sec;}
+ let rows=inst.candles||[],last=rows[rows.length-1];
+ if(!last||Number(last.time)<bucket*1000){last={time:bucket*1000,open:bid,high:bid,low:bid,close:bid};rows.push(last);if(rows.length>5000)rows.shift();inst.candles=rows;}
+ else if(Number(last.time)===bucket*1000){last.close=bid;last.high=Math.max(Number(last.high),bid);last.low=Math.min(Number(last.low),bid);}
+ if(symbol===state.selectedSymbol)queueChartPaint();
+}
+const notify=(t,s='',type='info')=>{if(typeof showToast==='function')showToast(t,s,type);};
+function client(){
+ if(window.__bbSupabaseClient?.auth&&window.__bbSupabaseClient?.functions)return window.__bbSupabaseClient;
+ if(window.bigbullsSupabase?.auth&&window.bigbullsSupabase?.functions)return window.bigbullsSupabase;
+ if(window.supabase?.createClient){window.__bbSupabaseClient=window.supabase.createClient(BB_URL,BB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});return window.__bbSupabaseClient;}
+ throw new Error('Supabase client library is unavailable.');
+}
+async function call(fn,body){const r=await client().functions.invoke(fn,{body});if(r.error)throw new Error(r.data?.error||r.error.message||fn+' request failed.');if(r.data?.error)throw new Error(r.data.error);return r.data||{};}
+const mode=a=>String(a?.type||'Demo').toLowerCase()==='real'?'real':'demo';
+function mapSymbol(s){
+ const raw=String(s||'').toUpperCase().trim(),key=raw.replaceAll('/','').replaceAll('-','');
+ const aliases={XAUUSD:'XAU/USD',XAGUSD:'XAG/USD',XPTUSD:'XPT/USD',XPDUSD:'XPD/USD',EURUSD:'EUR/USD',GBPUSD:'GBP/USD',USDJPY:'USD/JPY',USDCAD:'USD/CAD',AUDUSD:'AUD/USD',NZDUSD:'NZD/USD',USDCHF:'USD/CHF',EURGBP:'EUR/GBP',EURJPY:'EUR/JPY',GBPJPY:'GBP/JPY',BTCUSDT:'BTC',BTCUSD:'BTC',ETHUSDT:'ETH/USD',ETHUSD:'ETH/USD',SOLUSDT:'SOL/USD',SOLUSD:'SOL/USD',XRPUSDT:'XRP/USD',XRPUSD:'XRP/USD',BNBUSDT:'BNB/USD',BNBUSD:'BNB/USD',WTIUSD:'USOIL',USOIL:'USOIL',WTI:'USOIL',UKOIL:'UKOIL',BRENT:'UKOIL',NATGAS:'NATGAS',NGAS:'NATGAS',NDX:'USTEC',NAS100:'USTEC',USTEC:'USTEC',DJI:'US30',US30:'US30',SP500:'SPX500',SPX500:'SPX500',DE40:'GER40',GER40:'GER40',FTSE100:'UK100',UK100:'UK100',JP225:'JPN225',JPN225:'JPN225'};
+ return aliases[key]||(state.instruments[raw]?raw:null);
+}
+function applyQuote(s,p){const i=state.instruments[s];if(!i||!(Number(p)>0))return;i.bid=Number(p);i.ask=Number((i.bid+Number(i.spread||0)).toFixed(i.digits));}
+function applyBookQuote(s,q){const i=state.instruments[s];if(!i||!q)return;const bid=Number(q.bid),ask=Number(q.ask);if(bid>0&&ask>=bid){i.bid=bid;i.ask=ask;updateCandleFromTick(s,bid,q.time||q.updated_at||Date.now());}}
+let bbookRealtimeChannel=null;
+function startBbookRealtime(c){
+ if(bbookRealtimeChannel){c.removeChannel(bbookRealtimeChannel);bbookRealtimeChannel=null;}
+ if(!session?.user)return;
+ bbookRealtimeChannel=c.channel('bb-bbook-terminal-'+session.user.id)
+  .on('postgres_changes',{event:'*',schema:'public',table:'bb_bbook_quotes'},payload=>{
+   const row=payload.new||{};applyBookQuote(mapSymbol(row.symbol),row);updateLiveDOMElements();
+  })
+  .on('postgres_changes',{event:'*',schema:'public',table:'bb_bbook_positions',filter:'user_id=eq.'+session.user.id},()=>{if(mode(getActiveAccount())==='real')refresh(true);})
+  .on('postgres_changes',{event:'*',schema:'public',table:'bb_paper_execution_accounts',filter:'user_id=eq.'+session.user.id},async()=>{try{const current=getActiveAccount()?.backendId||null;await accounts(current);await refresh(true);renderApp();}catch(e){console.warn('Demo balance realtime sync:',e.message);}})
+  .on('postgres_changes',{event:'*',schema:'public',table:'trading_accounts',filter:'user_id=eq.'+session.user.id},async()=>{
+   try{const current=getActiveAccount()?.backendId||null;await accounts(current);renderApp();await refresh(true);}
+   catch(e){notify('Account sync failed',e.message||'Client Area account updates could not be loaded.','error');}
+  })
+  .subscribe();
+}
+let biQuoteConnection=null,biQuoteStartPromise=null;
+let BIQUOTE_STREAM_SYMBOLS=['EURUSD','GBPUSD','USDJPY','USDCAD','AUDUSD','NZDUSD','USDCHF','EURGBP','EURJPY','GBPJPY','XAUUSD','XAGUSD','XPTUSD','XPDUSD','BTCUSD','ETHUSD','SOLUSD','XRPUSD','BNBUSD','US30','USTEC','SPX500','GER40','UK100','JPN225','USOIL','UKOIL','NATGAS'];
+function handleBiQuoteTick(tick){
+ if(Array.isArray(tick))tick=tick[0];if(!tick||!tick.symbol)return;
+ const ui=mapSymbol(tick.symbol),inst=state.instruments[ui];if(!inst)return;
+ const mid=Number(tick.mid||((Number(tick.bid)+Number(tick.ask))/2));if(!(mid>0))return;
+ const active=getActiveAccount(),real=mode(active)==='real'&&!!PAPER[ui];
+ let bid=Number(tick.bid),ask=Number(tick.ask);
+ if(real&&Number.isFinite(inst.brokerSpreadBps)){
+  const half=inst.brokerSpreadBps/20000;bid=mid*(1-half);ask=mid*(1+half);
+ }
+ if(bid>0&&ask>=bid){inst.bid=bid;inst.ask=ask;updateCandleFromTick(ui,bid,tick.timestamp||Date.now());}
+ updateLiveDOMElements();
+}
+async function startBiQuoteRealtime(){
+ if(biQuoteConnection&&window.signalR?.HubConnectionState?.Connected===biQuoteConnection.state)return biQuoteConnection;
+ if(biQuoteStartPromise)return biQuoteStartPromise;
+ biQuoteStartPromise=(async()=>{
+  if(!window.signalR?.HubConnectionBuilder){console.warn('BiQuote SignalR client did not load; REST snapshot fallback remains active.');return null;}
+  const connection=new window.signalR.HubConnectionBuilder().withUrl('https://biquote.io/hubs/tick').withAutomaticReconnect([0,2000,5000,10000,30000]).build();
+  connection.on('ReceiveTick',handleBiQuoteTick);
+  connection.onreconnected(async()=>{try{await connection.invoke('Subscribe',BIQUOTE_STREAM_SYMBOLS);}catch(e){console.warn('BiQuote resubscribe failed:',e.message);}});
+  connection.onclose(e=>{console.warn('BiQuote SignalR closed:',e?.message||'connection closed');biQuoteConnection=null;if(session?.user)setTimeout(()=>startBiQuoteRealtime().catch(()=>{}),5000);});
+  try{await connection.start();await connection.invoke('Subscribe',BIQUOTE_STREAM_SYMBOLS);biQuoteConnection=connection;console.info('BiQuote SignalR connected; subscribed:',BIQUOTE_STREAM_SYMBOLS);return connection;}
+  catch(e){console.warn('BiQuote SignalR connection failed:',e.message);try{await connection.stop();}catch(_){}return null;}
+ })();
+ try{return await biQuoteStartPromise;}finally{biQuoteStartPromise=null;}
+}
+async function accounts(preferredBackendId=null){
+ const d=await call('trading-gateway',{action:'accounts'});
+ const rows=(d.accounts||[]).filter(a=>['demo','real'].includes(String(a.account_mode||'').toLowerCase())&&!a.archived_at&&!a.deleted_at).map(a=>({
+  id:String(a.account_number||a.id),accountNumber:a.account_number,backendId:String(a.id),nickname:a.display_name||a.account_type||String(a.account_mode).toUpperCase(),
+  type:String(a.account_mode).toLowerCase()==='real'?'Real':'Demo',platform:a.platform||(a.account_mode==='real'?'BigBulls B-Book':'BigBulls Paper'),
+  accountClass:a.account_type||'Standard',balance:Number(a.account_mode==='demo'?(a.virtual_balance??a.balance):(a.balance||0)),equity:Number(a.equity??a.balance??0),floatingPL:Number(a.floating_pnl||0),leverage:a.requested_leverage||'1:100',
+  server:a.server_name||'BigBulls',archived:false,status:String(a.status||'pending').toLowerCase(),currency:a.currency||'USD'
+ }));
+ state.accounts=rows.length?rows:[{id:'__no_account__',accountNumber:null,backendId:null,nickname:'No trading account',type:'Demo',platform:'BIGBULLS',accountClass:'—',balance:0,leverage:'1:100',server:'BIGBULLS',archived:false,status:'unavailable',currency:'USD'}];
+ let preferred='demo',selected=null;const launch=new URLSearchParams(location.search).get('account_id');
+ try{const sm=sessionStorage.getItem('bb:terminal:active-mode:'+session.user.id);if(sm==='demo'||sm==='real')preferred=sm;}catch(_){}
+ const findByBackend=id=>state.accounts.find(a=>a.backendId===String(id));
+ if(launch)selected=findByBackend(launch)||null;
+ if(!selected&&preferredBackendId)selected=findByBackend(preferredBackendId)||null;
+ try{const sid=sessionStorage.getItem('bb:terminal:selected-account:'+session.user.id+':'+preferred);if(!selected&&sid)selected=findByBackend(sid)||null;}catch(_){}
+ if(!selected)selected=state.accounts.find(a=>mode(a)===preferred&&a.status==='approved')||state.accounts.find(a=>a.status==='approved')||state.accounts[0];
+ state.activeAccountId=selected.id;lastAccount=selected.id;
+ try{sessionStorage.setItem('bb:terminal:active-mode:'+session.user.id,mode(selected));if(selected.backendId)sessionStorage.setItem('bb:terminal:selected-account:'+session.user.id+':'+mode(selected),selected.backendId);}catch(_){}
+}
+async function quotes(){
+ const d=await call('market-data',{action:'quotes'});
+ (d.quotes||[]).forEach(q=>{
+  const ui=mapSymbol(q.symbol),inst=state.instruments[ui];if(!inst||q.error)return;
+  inst.brokerSpreadBps=Number(q.broker_spread_bps);
+  const a=getActiveAccount(),real=mode(a)==='real'&&Number.isFinite(inst.brokerSpreadBps);
+  applyBookQuote(ui,real?{bid:q.broker_bid,ask:q.broker_ask,time:q.datetime}:{bid:q.bid,ask:q.ask,time:q.datetime});
+ });
+ const a=getActiveAccount(),symbol=PAPER[state.selectedSymbol];
+ if(a&&mode(a)==='real'&&symbol){try{const b=await call('bbook-engine',{action:'quote',symbol});applyBookQuote(state.selectedSymbol,b.quote);}catch(e){console.warn('B-Book dealing quote:',e.message);}}
+ updateLiveDOMElements();
+}
+async function candles(){
+ const s=state.selectedSymbol,tf=state.timeframe,p=MARKET[s],i=state.instruments[s],request=++candleEpoch;
+ if(!p||!i){notify('Market data unavailable',s+' is not enabled by BiQuote.','error');return;}
+ const cacheKey=s+'|'+tf,cached=candleCache.get(cacheKey);
+ if(cached?.length){i.candles=cached.map(c=>({...c}));drawChartCanvas();}else drawChartCanvas();
+ const d=await call('market-data',{action:'candles',symbol:p,timeframe:tf,outputsize:1000});
+ if(request!==candleEpoch||s!==state.selectedSymbol||tf!==state.timeframe)return;
+ const rows=(d.candles||[]).map(c=>({time:Number(c.time),open:Number(c.open),high:Number(c.high),low:Number(c.low),close:Number(c.close)})).filter(c=>Number.isFinite(c.time)&&[c.open,c.high,c.low,c.close].every(Number.isFinite));
+ if(!rows.length)throw new Error('BiQuote returned no candles for '+s+' ('+tf+').');
+ i.candles=rows;candleCache.set(cacheKey,rows.map(c=>({...c})));if(!i.bid)applyQuote(s,d.price||rows[rows.length-1].close);drawChartCanvas();updateLiveDOMElements();
+}
+function mapTrade(t,n,accountId){const s=mapSymbol(t.symbol);if(!s)return null;const open=String(t.status).toUpperCase()==='OPEN',tm=v=>v?new Date(v).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}):'';return{id:n+1,backendTradeId:t.id,accountId,symbol:s,side:String(t.side).toUpperCase()==='BUY'?'Buy':'Sell',lots:Number(t.quantity),openPrice:Number(t.entry_price),sl:t.stop_loss==null?'':String(t.stop_loss),tp:t.take_profit==null?'':String(t.take_profit),openTime:tm(t.opened_at),closeTime:tm(t.closed_at),closePrice:t.exit_price==null?Number(t.mark_price||t.entry_price):Number(t.exit_price),realizedPL:Number(t.realized_pnl||0),status:open?'open':'closed'};}
+async function refresh(silent=true){
+ const epoch=++refreshEpoch;busy=true;
+ try{
+  const a=getActiveAccount(),m=mode(a);
+  if(!a||!a.backendId||a.status!=='approved')throw new Error('Select an approved account created in the BIGBULLS Client Area before trading.');
+  window.__bbBbookMetrics=null;window.__bbBbookExecution=null;
+  let rows=[],balance=null,metrics=null,execution=null;
+  if(m==='real'){
+   const d=await call('bbook-engine',{action:'status',account_id:a.backendId});metrics=d.metrics||{};execution=d.execution||{};
+   balance=Number(metrics.balance??a.balance);
+   rows=(d.positions||[]).map((t,n)=>mapTrade(t,n,a.id)).filter(Boolean);
+   Object.entries(d.quotes||{}).forEach(([symbol,q])=>applyBookQuote(mapSymbol(symbol),q));
+  }else{
+   const d=await call('paper-execution',{action:'status',account_mode:m,account_id:a.backendId}),ledger=d.ledger||{};
+   balance=Number(ledger.virtual_balance??ledger.starting_balance??a.balance);
+   rows=(d.trades||[]).map((t,n)=>mapTrade(t,n,a.id)).filter(Boolean);
+   const floating=(d.trades||[]).filter(t=>t.status==='OPEN').reduce((sum,t)=>sum+Number(t.unrealized_pnl||0),0);
+   window.__bbPaperMetrics={balance,equity:balance+floating,floating_pnl:floating,margin:0,free_margin:balance+floating,margin_level_pct:0};
+   a.equity=balance+floating;a.floatingPL=floating;
+   Object.entries(d.prices||{}).forEach(([symbol,p])=>applyQuote(mapSymbol(symbol),p));
+  }
+  let pendingRows=[];
+  if(m==='real'){
+   const pr=await client().from('bb_bbook_pending_orders').select('*').eq('account_id',a.backendId).eq('user_id',session.user.id).eq('status','PENDING').order('created_at',{ascending:false});
+   if(pr.error)throw pr.error;
+   pendingRows=(pr.data||[]).map((p,n)=>({id:String(p.id),backendOrderId:p.id,accountId:a.id,symbol:mapSymbol(p.symbol)||state.selectedSymbol,
+    side:String(p.side).toUpperCase()==='BUY'?'Buy':'Sell',lots:Number(p.quantity),pendingType:({BUY_LIMIT:'Buy Limit',SELL_LIMIT:'Sell Limit',BUY_STOP:'Buy Stop',SELL_STOP:'Sell Stop'})[p.order_type]||p.order_type,
+    targetPrice:Number(p.target_price),sl:p.stop_loss==null?'':String(p.stop_loss),tp:p.take_profit==null?'':String(p.take_profit),status:p.status,openTime:p.created_at}));
+  }
+  if(epoch!==refreshEpoch||getActiveAccount()?.backendId!==a.backendId)return false;
+  a.balance=balance;
+  window.__bbBbookMetrics=metrics;window.__bbBbookExecution=execution;
+  state.openOrders=rows.filter(t=>t.status==='open');state.closedOrders=rows.filter(t=>t.status==='closed');state.pendingOrders=pendingRows;
+  updateLiveDOMElements();renderApp();return true;
+ }catch(e){if(epoch===refreshEpoch){state.openOrders=[];state.closedOrders=[];state.pendingOrders=[];updateLiveDOMElements();if(!silent)notify('Trading connection error',e.message||'Trading ledger could not be refreshed.','error');}console.error('BIGBULLS terminal backend:',e);return false;}finally{if(epoch===refreshEpoch)busy=false;}
+}
+async function place(){
+ const a=getActiveAccount(),m=state.orderTicket,s=state.selectedSymbol;if(!a)return;
+ if(!a.backendId||a.status!=='approved'){notify('Account approval required','Only approved Client Area trading accounts can place orders.','error');return;}
+ if(!session){notify('Login required','Sign in to your client account before trading.','error');return;}
+ const symbol=PAPER[s],quantity=Number(m.lots),sl=m.sl===''||m.sl==null?null:Number(m.sl),tp=m.tp===''||m.tp==null?null:Number(m.tp);
+ if(!symbol){notify('Instrument unavailable','This instrument is not enabled by the connected execution service.','error');return;}
+ if(!(quantity>0)||!Number.isFinite(quantity)){notify('Invalid lot size','Enter a valid lot size.','error');return;}
+ if(sl!==null&&(!(sl>0)||!Number.isFinite(sl))){notify('Invalid Stop Loss','Enter a valid Stop Loss or leave it empty.','error');return;}
+ if(tp!==null&&(!(tp>0)||!Number.isFinite(tp))){notify('Invalid Take Profit','Enter a valid Take Profit or leave it empty.','error');return;}
+ try{
+  const real=mode(a)==='real';
+  if(!real&&m.mode!=='Market')throw new Error('Pending orders are currently enabled for Real B-Book accounts only.');
+  const b={action:m.mode==='Market'?'open':'pending',account_mode:mode(a),symbol,side:m.side.toUpperCase(),quantity,stop_loss:sl,take_profit:tp};
+  if(a.backendId)b.account_id=a.backendId;
+  if(m.mode!=='Market'){
+    const map={ 'Buy Limit':'BUY_LIMIT','Sell Limit':'SELL_LIMIT','Buy Stop':'BUY_STOP','Sell Stop':'SELL_STOP' };
+    b.order_type=map[m.pendingType]||String(m.pendingType||'').toUpperCase().replaceAll(' ','_');
+    b.target_price=Number(m.targetPrice);
+    if(!(b.target_price>0)||!Number.isFinite(b.target_price))throw new Error('Enter a valid pending-order target price.');
+  }
+  const d=await call(real?'bbook-engine':'paper-execution',b);closeModal();
+  const confirmed=d.position||d.trade;
+  if(m.mode==='Market'&&confirmed){const optimistic=mapTrade({...confirmed,status:confirmed.status||'OPEN'},state.openOrders.length,a.id);if(optimistic){optimistic.status='open';state.openOrders.unshift(optimistic);updateLiveDOMElements();renderApp();}}
+  notify(m.mode==='Market'?(real?'B-Book position accepted':'Paper position opened'):'B-Book pending order saved',
+   s+' '+m.side+' '+quantity.toFixed(2)+' lots · '+String(confirmed?.id||d.order?.id||'').slice(0,8),'success');
+  refresh(true);
+ }catch(e){const msg=/insufficient/i.test(e.message)?'Insufficient Funds':e.message;notify('Order not placed',msg,'error');}
+}
+async function closePosition(id,silent=false,reason='Closed manually'){
+ const o=state.openOrders.find(x=>String(x.id)===String(id));if(!o)return;const a=getActiveAccount(),real=mode(a)==='real',b={action:'close',account_mode:mode(a),reason};
+ if(real){b.position_id=o.backendTradeId;b.account_id=a.backendId;}else{b.trade_id=o.backendTradeId;if(a.backendId)b.account_id=a.backendId;}
+ try{await call(real?'bbook-engine':'paper-execution',b);if(!silent)closeModal();await refresh(true);if(!silent)notify('Position closed',o.symbol+' '+o.side+' '+o.lots.toFixed(2)+' lots','success');}catch(e){notify('Close failed',e.message||'The position could not be closed.','error');}
+}
+const originalRender=window.renderApp;
+if(typeof originalRender==='function')window.renderApp=function(){originalRender();if(!ready)return;const a=getActiveAccount(),ak=a?.id||'',mk=state.selectedSymbol+':'+state.timeframe;if(ak&&ak!==lastAccount){lastAccount=ak;try{sessionStorage.setItem('bb:terminal:active-mode:'+session.user.id,mode(a));if(a.backendId)sessionStorage.setItem('bb:terminal:selected-account:'+session.user.id+':'+mode(a),a.backendId);}catch(_){}refresh(true);}if(mk!==lastMarket){lastMarket=mk;candles().catch(e=>console.warn('Market candles:',e.message));}};
+window.submitOrderExecution=place;window.executeCloseOrder=closePosition;
+window.closeAllOpenOrders=async()=>{const a=getActiveAccount(),real=mode(a)==='real',rows=[...state.openOrders];for(const o of rows){const b={action:'close',account_mode:mode(a),reason:'Closed all positions'};if(real){b.position_id=o.backendTradeId;b.account_id=a.backendId;}else{b.trade_id=o.backendTradeId;if(a.backendId)b.account_id=a.backendId;}try{await call(real?'bbook-engine':'paper-execution',b);}catch(e){notify('Close failed',e.message||'A position could not be closed.','error');}}await refresh(true);};
+window.goToClientArea=function(){
+ try{
+  if(window.parent&&window.parent!==window){
+   const parentDoc=window.parent.document;
+   const dashboard=parentDoc.querySelector('#app-shell [data-page="dashboard"]');
+   if(dashboard){dashboard.click();return;}
+   const home=parentDoc.querySelector('#app-shell .terminal-brand[data-page="dashboard"]');
+   if(home){home.click();return;}
+  }
+ }catch(e){console.warn('Client Area navigation:',e);}
+ if(document.referrer){try{const ref=new URL(document.referrer);if(ref.origin===location.origin){location.href=ref.href;return;}}catch(_){}}
+ notify('Client Area unavailable','Please reopen the terminal from your signed-in BIGBULLS Client Area.','error');
+};
+window.cancelPendingOrder=async function(id){
+ const a=getActiveAccount(),o=state.pendingOrders.find(x=>String(x.id)===String(id));
+ if(!o)return;
+ if(mode(a)!=='real'||!o.backendOrderId){notify('Cancel failed','This pending order is not linked to the B-Book ledger.','error');return;}
+ try{await call('bbook-engine',{action:'cancel_pending',account_id:a.backendId,order_id:o.backendOrderId});await refresh(true);notify('Pending order cancelled',o.symbol+' '+o.pendingType,'success');}
+ catch(e){notify('Cancel failed',e.message||'Pending order could not be cancelled.','error');}
+};
+window.submitDeposit=()=>notify('Funding managed in Client Area','No terminal balance was changed. Open the Client Area to submit a deposit.','info');
+window.submitWithdraw=()=>notify('Withdrawals managed in Client Area','No terminal balance was changed. Open the Client Area to submit a withdrawal.','info');
+window.createNewAccount=()=>{closeModal();notify('Account creation managed in Client Area','Create and manage accounts from the Client Area.','info');};
+window.switchTradingAccount=async function(backendId){
+ if(!ready||!session?.user){notify('Terminal not ready','Please wait for the account connection to finish.','error');return;}
+ const next=state.accounts.find(a=>a.backendId===String(backendId));
+ if(!next||next.status!=='approved'){notify('Account unavailable','This account must be approved in the Client Area before terminal access.','error');return;}
+ try{
+  const result=await call('trading-gateway',{action:'select_account',account_id:next.backendId});
+  if(String(result.account?.id)!==next.backendId)throw new Error('The backend did not confirm the selected account.');
+  state.activeAccountId=next.id;lastAccount=next.id;
+  window.__bbBbookMetrics=null;window.__bbBbookExecution=null;window.__bbPaperMetrics=null;
+  state.openOrders=[];state.closedOrders=[];state.pendingOrders=[];
+  try{sessionStorage.setItem('bb:terminal:active-mode:'+session.user.id,mode(next));sessionStorage.setItem('bb:terminal:selected-account:'+session.user.id+':'+mode(next),next.backendId);}catch(_){}
+  closeModal();renderApp();updateLiveDOMElements();
+  const loaded=await refresh(false);
+  if(!loaded)return;
+  notify('Account switched',next.nickname+' · #'+(next.accountNumber||next.id),'success');
+ }catch(e){notify('Account switch failed',e.message||'The selected account could not be loaded.','error');}
+};
+async function start(){
+ try{const c=client(),auth=await c.auth.getSession();if(auth.error)throw auth.error;session=auth.data?.session||null;if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}
+ await accounts();Object.values(state.instruments).forEach(i=>{i.candles=[];i.bid=0;i.ask=0;});state.openOrders=[];state.pendingOrders=[];state.closedOrders=[];ready=true;document.documentElement.classList.remove('bb-auth-pending');startBbookRealtime(c);startBiQuoteRealtime();lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();
+ try{await quotes();}catch(e){console.warn('Market quotes:',e.message);}try{await candles();}catch(e){notify('Market feed unavailable',e.message||'Provider candles could not be loaded.','error');}
+ await refresh(true);setInterval(()=>{if(!document.hidden&&(!biQuoteConnection||!window.signalR||biQuoteConnection.state!==window.signalR.HubConnectionState.Connected))quotes().catch(()=>{});},15000);setInterval(async()=>{if(document.hidden)return;try{const current=getActiveAccount()?.backendId||null;await accounts(current);renderApp();await refresh(true);}catch(e){console.warn('Account balance refresh:',e.message);}},10000);
+ c.auth.onAuthStateChange((_event,s)=>{session=s||null;if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}accounts().then(()=>{ready=true;document.documentElement.classList.remove('bb-auth-pending');startBbookRealtime(c);startBiQuoteRealtime();lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();refresh(true);}).catch(e=>notify('Account refresh failed',e.message,'error'));});
+ }catch(e){document.documentElement.classList.remove('bb-auth-pending');console.error('BIGBULLS terminal startup:',e);notify('Terminal connection failed',e.message||'Unable to connect to the trading backend.','error');}
+}
+window.addEventListener('load',start,{once:true});
+})();
+</script>
+
+</body>
+</html>],
+ ['AUD/USD','Australian Dollar vs US Dollar','Forex',5,100000,'A
+const candleCache=new Map();
+const TF_SECONDS={'1m':60,'5m':300,'15m':900,'30m':1800,'1h':3600,'4h':14400,'1d':86400,'1w':604800,'1M':2592000};
+let chartPaintQueued=false;
+function queueChartPaint(){if(chartPaintQueued)return;chartPaintQueued=true;requestAnimationFrame(()=>{chartPaintQueued=false;drawChartCanvas();updateLiveDOMElements();});}
+function updateCandleFromTick(symbol,bid,stamp=Date.now()){
+ const inst=state.instruments[symbol];if(!inst||!(bid>0))return;
+ const raw=Number(stamp),parsed=Number.isFinite(raw)?raw:(Date.parse(stamp)/1000),epoch=Number.isFinite(parsed)?(parsed>1e12?parsed/1000:parsed):Date.now()/1000;
+ let bucket;const tf=state.timeframe;
+ if(tf==='1w'){const d=new Date(epoch*1000);bucket=Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()-((d.getUTCDay()+6)%7))/1000;}
+ else if(tf==='1M'){const d=new Date(epoch*1000);bucket=Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),1)/1000;}
+ else {const sec=TF_SECONDS[tf]||300;bucket=Math.floor(epoch/sec)*sec;}
+ let rows=inst.candles||[],last=rows[rows.length-1];
+ if(!last||Number(last.time)<bucket*1000){last={time:bucket*1000,open:bid,high:bid,low:bid,close:bid};rows.push(last);if(rows.length>5000)rows.shift();inst.candles=rows;}
+ else if(Number(last.time)===bucket*1000){last.close=bid;last.high=Math.max(Number(last.high),bid);last.low=Math.min(Number(last.low),bid);}
+ if(symbol===state.selectedSymbol)queueChartPaint();
+}
+const notify=(t,s='',type='info')=>{if(typeof showToast==='function')showToast(t,s,type);};
+function client(){
+ if(window.__bbSupabaseClient?.auth&&window.__bbSupabaseClient?.functions)return window.__bbSupabaseClient;
+ if(window.bigbullsSupabase?.auth&&window.bigbullsSupabase?.functions)return window.bigbullsSupabase;
+ if(window.supabase?.createClient){window.__bbSupabaseClient=window.supabase.createClient(BB_URL,BB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});return window.__bbSupabaseClient;}
+ throw new Error('Supabase client library is unavailable.');
+}
+async function call(fn,body){const r=await client().functions.invoke(fn,{body});if(r.error)throw new Error(r.data?.error||r.error.message||fn+' request failed.');if(r.data?.error)throw new Error(r.data.error);return r.data||{};}
+const mode=a=>String(a?.type||'Demo').toLowerCase()==='real'?'real':'demo';
+function mapSymbol(s){
+ const raw=String(s||'').toUpperCase().trim(),key=raw.replaceAll('/','').replaceAll('-','');
+ const aliases={XAUUSD:'XAU/USD',XAGUSD:'XAG/USD',XPTUSD:'XPT/USD',XPDUSD:'XPD/USD',EURUSD:'EUR/USD',GBPUSD:'GBP/USD',USDJPY:'USD/JPY',USDCAD:'USD/CAD',AUDUSD:'AUD/USD',NZDUSD:'NZD/USD',USDCHF:'USD/CHF',EURGBP:'EUR/GBP',EURJPY:'EUR/JPY',GBPJPY:'GBP/JPY',BTCUSDT:'BTC',BTCUSD:'BTC',ETHUSDT:'ETH/USD',ETHUSD:'ETH/USD',SOLUSDT:'SOL/USD',SOLUSD:'SOL/USD',XRPUSDT:'XRP/USD',XRPUSD:'XRP/USD',BNBUSDT:'BNB/USD',BNBUSD:'BNB/USD',WTIUSD:'USOIL',USOIL:'USOIL',WTI:'USOIL',UKOIL:'UKOIL',BRENT:'UKOIL',NATGAS:'NATGAS',NGAS:'NATGAS',NDX:'USTEC',NAS100:'USTEC',USTEC:'USTEC',DJI:'US30',US30:'US30',SP500:'SPX500',SPX500:'SPX500',DE40:'GER40',GER40:'GER40',FTSE100:'UK100',UK100:'UK100',JP225:'JPN225',JPN225:'JPN225'};
+ return aliases[key]||(state.instruments[raw]?raw:null);
+}
+function applyQuote(s,p){const i=state.instruments[s];if(!i||!(Number(p)>0))return;i.bid=Number(p);i.ask=Number((i.bid+Number(i.spread||0)).toFixed(i.digits));}
+function applyBookQuote(s,q){const i=state.instruments[s];if(!i||!q)return;const bid=Number(q.bid),ask=Number(q.ask);if(bid>0&&ask>=bid){i.bid=bid;i.ask=ask;updateCandleFromTick(s,bid,q.time||q.updated_at||Date.now());}}
+let bbookRealtimeChannel=null;
+function startBbookRealtime(c){
+ if(bbookRealtimeChannel){c.removeChannel(bbookRealtimeChannel);bbookRealtimeChannel=null;}
+ if(!session?.user)return;
+ bbookRealtimeChannel=c.channel('bb-bbook-terminal-'+session.user.id)
+  .on('postgres_changes',{event:'*',schema:'public',table:'bb_bbook_quotes'},payload=>{
+   const row=payload.new||{};applyBookQuote(mapSymbol(row.symbol),row);updateLiveDOMElements();
+  })
+  .on('postgres_changes',{event:'*',schema:'public',table:'bb_bbook_positions',filter:'user_id=eq.'+session.user.id},()=>{if(mode(getActiveAccount())==='real')refresh(true);})
+  .on('postgres_changes',{event:'*',schema:'public',table:'bb_paper_execution_accounts',filter:'user_id=eq.'+session.user.id},async()=>{try{const current=getActiveAccount()?.backendId||null;await accounts(current);await refresh(true);renderApp();}catch(e){console.warn('Demo balance realtime sync:',e.message);}})
+  .on('postgres_changes',{event:'*',schema:'public',table:'trading_accounts',filter:'user_id=eq.'+session.user.id},async()=>{
+   try{const current=getActiveAccount()?.backendId||null;await accounts(current);renderApp();await refresh(true);}
+   catch(e){notify('Account sync failed',e.message||'Client Area account updates could not be loaded.','error');}
+  })
+  .subscribe();
+}
+let biQuoteConnection=null,biQuoteStartPromise=null;
+let BIQUOTE_STREAM_SYMBOLS=['EURUSD','GBPUSD','USDJPY','USDCAD','AUDUSD','NZDUSD','USDCHF','EURGBP','EURJPY','GBPJPY','XAUUSD','XAGUSD','XPTUSD','XPDUSD','BTCUSD','ETHUSD','SOLUSD','XRPUSD','BNBUSD','US30','USTEC','SPX500','GER40','UK100','JPN225','USOIL','UKOIL','NATGAS'];
+function handleBiQuoteTick(tick){
+ if(Array.isArray(tick))tick=tick[0];if(!tick||!tick.symbol)return;
+ const ui=mapSymbol(tick.symbol),inst=state.instruments[ui];if(!inst)return;
+ const mid=Number(tick.mid||((Number(tick.bid)+Number(tick.ask))/2));if(!(mid>0))return;
+ const active=getActiveAccount(),real=mode(active)==='real'&&!!PAPER[ui];
+ let bid=Number(tick.bid),ask=Number(tick.ask);
+ if(real&&Number.isFinite(inst.brokerSpreadBps)){
+  const half=inst.brokerSpreadBps/20000;bid=mid*(1-half);ask=mid*(1+half);
+ }
+ if(bid>0&&ask>=bid){inst.bid=bid;inst.ask=ask;updateCandleFromTick(ui,bid,tick.timestamp||Date.now());}
+ updateLiveDOMElements();
+}
+async function startBiQuoteRealtime(){
+ if(biQuoteConnection&&window.signalR?.HubConnectionState?.Connected===biQuoteConnection.state)return biQuoteConnection;
+ if(biQuoteStartPromise)return biQuoteStartPromise;
+ biQuoteStartPromise=(async()=>{
+  if(!window.signalR?.HubConnectionBuilder){console.warn('BiQuote SignalR client did not load; REST snapshot fallback remains active.');return null;}
+  const connection=new window.signalR.HubConnectionBuilder().withUrl('https://biquote.io/hubs/tick').withAutomaticReconnect([0,2000,5000,10000,30000]).build();
+  connection.on('ReceiveTick',handleBiQuoteTick);
+  connection.onreconnected(async()=>{try{await connection.invoke('Subscribe',BIQUOTE_STREAM_SYMBOLS);}catch(e){console.warn('BiQuote resubscribe failed:',e.message);}});
+  connection.onclose(e=>{console.warn('BiQuote SignalR closed:',e?.message||'connection closed');biQuoteConnection=null;if(session?.user)setTimeout(()=>startBiQuoteRealtime().catch(()=>{}),5000);});
+  try{await connection.start();await connection.invoke('Subscribe',BIQUOTE_STREAM_SYMBOLS);biQuoteConnection=connection;console.info('BiQuote SignalR connected; subscribed:',BIQUOTE_STREAM_SYMBOLS);return connection;}
+  catch(e){console.warn('BiQuote SignalR connection failed:',e.message);try{await connection.stop();}catch(_){}return null;}
+ })();
+ try{return await biQuoteStartPromise;}finally{biQuoteStartPromise=null;}
+}
+async function accounts(preferredBackendId=null){
+ const d=await call('trading-gateway',{action:'accounts'});
+ const rows=(d.accounts||[]).filter(a=>['demo','real'].includes(String(a.account_mode||'').toLowerCase())&&!a.archived_at&&!a.deleted_at).map(a=>({
+  id:String(a.account_number||a.id),accountNumber:a.account_number,backendId:String(a.id),nickname:a.display_name||a.account_type||String(a.account_mode).toUpperCase(),
+  type:String(a.account_mode).toLowerCase()==='real'?'Real':'Demo',platform:a.platform||(a.account_mode==='real'?'BigBulls B-Book':'BigBulls Paper'),
+  accountClass:a.account_type||'Standard',balance:Number(a.account_mode==='demo'?(a.virtual_balance??a.balance):(a.balance||0)),equity:Number(a.equity??a.balance??0),floatingPL:Number(a.floating_pnl||0),leverage:a.requested_leverage||'1:100',
+  server:a.server_name||'BigBulls',archived:false,status:String(a.status||'pending').toLowerCase(),currency:a.currency||'USD'
+ }));
+ state.accounts=rows.length?rows:[{id:'__no_account__',accountNumber:null,backendId:null,nickname:'No trading account',type:'Demo',platform:'BIGBULLS',accountClass:'—',balance:0,leverage:'1:100',server:'BIGBULLS',archived:false,status:'unavailable',currency:'USD'}];
+ let preferred='demo',selected=null;const launch=new URLSearchParams(location.search).get('account_id');
+ try{const sm=sessionStorage.getItem('bb:terminal:active-mode:'+session.user.id);if(sm==='demo'||sm==='real')preferred=sm;}catch(_){}
+ const findByBackend=id=>state.accounts.find(a=>a.backendId===String(id));
+ if(launch)selected=findByBackend(launch)||null;
+ if(!selected&&preferredBackendId)selected=findByBackend(preferredBackendId)||null;
+ try{const sid=sessionStorage.getItem('bb:terminal:selected-account:'+session.user.id+':'+preferred);if(!selected&&sid)selected=findByBackend(sid)||null;}catch(_){}
+ if(!selected)selected=state.accounts.find(a=>mode(a)===preferred&&a.status==='approved')||state.accounts.find(a=>a.status==='approved')||state.accounts[0];
+ state.activeAccountId=selected.id;lastAccount=selected.id;
+ try{sessionStorage.setItem('bb:terminal:active-mode:'+session.user.id,mode(selected));if(selected.backendId)sessionStorage.setItem('bb:terminal:selected-account:'+session.user.id+':'+mode(selected),selected.backendId);}catch(_){}
+}
+async function quotes(){
+ const d=await call('market-data',{action:'quotes'});
+ (d.quotes||[]).forEach(q=>{
+  const ui=mapSymbol(q.symbol),inst=state.instruments[ui];if(!inst||q.error)return;
+  inst.brokerSpreadBps=Number(q.broker_spread_bps);
+  const a=getActiveAccount(),real=mode(a)==='real'&&Number.isFinite(inst.brokerSpreadBps);
+  applyBookQuote(ui,real?{bid:q.broker_bid,ask:q.broker_ask,time:q.datetime}:{bid:q.bid,ask:q.ask,time:q.datetime});
+ });
+ const a=getActiveAccount(),symbol=PAPER[state.selectedSymbol];
+ if(a&&mode(a)==='real'&&symbol){try{const b=await call('bbook-engine',{action:'quote',symbol});applyBookQuote(state.selectedSymbol,b.quote);}catch(e){console.warn('B-Book dealing quote:',e.message);}}
+ updateLiveDOMElements();
+}
+async function candles(){
+ const s=state.selectedSymbol,tf=state.timeframe,p=MARKET[s],i=state.instruments[s],request=++candleEpoch;
+ if(!p||!i){notify('Market data unavailable',s+' is not enabled by BiQuote.','error');return;}
+ const cacheKey=s+'|'+tf,cached=candleCache.get(cacheKey);
+ if(cached?.length){i.candles=cached.map(c=>({...c}));drawChartCanvas();}else drawChartCanvas();
+ const d=await call('market-data',{action:'candles',symbol:p,timeframe:tf,outputsize:1000});
+ if(request!==candleEpoch||s!==state.selectedSymbol||tf!==state.timeframe)return;
+ const rows=(d.candles||[]).map(c=>({time:Number(c.time),open:Number(c.open),high:Number(c.high),low:Number(c.low),close:Number(c.close)})).filter(c=>Number.isFinite(c.time)&&[c.open,c.high,c.low,c.close].every(Number.isFinite));
+ if(!rows.length)throw new Error('BiQuote returned no candles for '+s+' ('+tf+').');
+ i.candles=rows;candleCache.set(cacheKey,rows.map(c=>({...c})));if(!i.bid)applyQuote(s,d.price||rows[rows.length-1].close);drawChartCanvas();updateLiveDOMElements();
+}
+function mapTrade(t,n,accountId){const s=mapSymbol(t.symbol);if(!s)return null;const open=String(t.status).toUpperCase()==='OPEN',tm=v=>v?new Date(v).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}):'';return{id:n+1,backendTradeId:t.id,accountId,symbol:s,side:String(t.side).toUpperCase()==='BUY'?'Buy':'Sell',lots:Number(t.quantity),openPrice:Number(t.entry_price),sl:t.stop_loss==null?'':String(t.stop_loss),tp:t.take_profit==null?'':String(t.take_profit),openTime:tm(t.opened_at),closeTime:tm(t.closed_at),closePrice:t.exit_price==null?Number(t.mark_price||t.entry_price):Number(t.exit_price),realizedPL:Number(t.realized_pnl||0),status:open?'open':'closed'};}
+async function refresh(silent=true){
+ const epoch=++refreshEpoch;busy=true;
+ try{
+  const a=getActiveAccount(),m=mode(a);
+  if(!a||!a.backendId||a.status!=='approved')throw new Error('Select an approved account created in the BIGBULLS Client Area before trading.');
+  window.__bbBbookMetrics=null;window.__bbBbookExecution=null;
+  let rows=[],balance=null,metrics=null,execution=null;
+  if(m==='real'){
+   const d=await call('bbook-engine',{action:'status',account_id:a.backendId});metrics=d.metrics||{};execution=d.execution||{};
+   balance=Number(metrics.balance??a.balance);
+   rows=(d.positions||[]).map((t,n)=>mapTrade(t,n,a.id)).filter(Boolean);
+   Object.entries(d.quotes||{}).forEach(([symbol,q])=>applyBookQuote(mapSymbol(symbol),q));
+  }else{
+   const d=await call('paper-execution',{action:'status',account_mode:m,account_id:a.backendId}),ledger=d.ledger||{};
+   balance=Number(ledger.virtual_balance??ledger.starting_balance??a.balance);
+   rows=(d.trades||[]).map((t,n)=>mapTrade(t,n,a.id)).filter(Boolean);
+   const floating=(d.trades||[]).filter(t=>t.status==='OPEN').reduce((sum,t)=>sum+Number(t.unrealized_pnl||0),0);
+   window.__bbPaperMetrics={balance,equity:balance+floating,floating_pnl:floating,margin:0,free_margin:balance+floating,margin_level_pct:0};
+   a.equity=balance+floating;a.floatingPL=floating;
+   Object.entries(d.prices||{}).forEach(([symbol,p])=>applyQuote(mapSymbol(symbol),p));
+  }
+  let pendingRows=[];
+  if(m==='real'){
+   const pr=await client().from('bb_bbook_pending_orders').select('*').eq('account_id',a.backendId).eq('user_id',session.user.id).eq('status','PENDING').order('created_at',{ascending:false});
+   if(pr.error)throw pr.error;
+   pendingRows=(pr.data||[]).map((p,n)=>({id:String(p.id),backendOrderId:p.id,accountId:a.id,symbol:mapSymbol(p.symbol)||state.selectedSymbol,
+    side:String(p.side).toUpperCase()==='BUY'?'Buy':'Sell',lots:Number(p.quantity),pendingType:({BUY_LIMIT:'Buy Limit',SELL_LIMIT:'Sell Limit',BUY_STOP:'Buy Stop',SELL_STOP:'Sell Stop'})[p.order_type]||p.order_type,
+    targetPrice:Number(p.target_price),sl:p.stop_loss==null?'':String(p.stop_loss),tp:p.take_profit==null?'':String(p.take_profit),status:p.status,openTime:p.created_at}));
+  }
+  if(epoch!==refreshEpoch||getActiveAccount()?.backendId!==a.backendId)return false;
+  a.balance=balance;
+  window.__bbBbookMetrics=metrics;window.__bbBbookExecution=execution;
+  state.openOrders=rows.filter(t=>t.status==='open');state.closedOrders=rows.filter(t=>t.status==='closed');state.pendingOrders=pendingRows;
+  updateLiveDOMElements();renderApp();return true;
+ }catch(e){if(epoch===refreshEpoch){state.openOrders=[];state.closedOrders=[];state.pendingOrders=[];updateLiveDOMElements();if(!silent)notify('Trading connection error',e.message||'Trading ledger could not be refreshed.','error');}console.error('BIGBULLS terminal backend:',e);return false;}finally{if(epoch===refreshEpoch)busy=false;}
+}
+async function place(){
+ const a=getActiveAccount(),m=state.orderTicket,s=state.selectedSymbol;if(!a)return;
+ if(!a.backendId||a.status!=='approved'){notify('Account approval required','Only approved Client Area trading accounts can place orders.','error');return;}
+ if(!session){notify('Login required','Sign in to your client account before trading.','error');return;}
+ const symbol=PAPER[s],quantity=Number(m.lots),sl=m.sl===''||m.sl==null?null:Number(m.sl),tp=m.tp===''||m.tp==null?null:Number(m.tp);
+ if(!symbol){notify('Instrument unavailable','This instrument is not enabled by the connected execution service.','error');return;}
+ if(!(quantity>0)||!Number.isFinite(quantity)){notify('Invalid lot size','Enter a valid lot size.','error');return;}
+ if(sl!==null&&(!(sl>0)||!Number.isFinite(sl))){notify('Invalid Stop Loss','Enter a valid Stop Loss or leave it empty.','error');return;}
+ if(tp!==null&&(!(tp>0)||!Number.isFinite(tp))){notify('Invalid Take Profit','Enter a valid Take Profit or leave it empty.','error');return;}
+ try{
+  const real=mode(a)==='real';
+  if(!real&&m.mode!=='Market')throw new Error('Pending orders are currently enabled for Real B-Book accounts only.');
+  const b={action:m.mode==='Market'?'open':'pending',account_mode:mode(a),symbol,side:m.side.toUpperCase(),quantity,stop_loss:sl,take_profit:tp};
+  if(a.backendId)b.account_id=a.backendId;
+  if(m.mode!=='Market'){
+    const map={ 'Buy Limit':'BUY_LIMIT','Sell Limit':'SELL_LIMIT','Buy Stop':'BUY_STOP','Sell Stop':'SELL_STOP' };
+    b.order_type=map[m.pendingType]||String(m.pendingType||'').toUpperCase().replaceAll(' ','_');
+    b.target_price=Number(m.targetPrice);
+    if(!(b.target_price>0)||!Number.isFinite(b.target_price))throw new Error('Enter a valid pending-order target price.');
+  }
+  const d=await call(real?'bbook-engine':'paper-execution',b);closeModal();
+  const confirmed=d.position||d.trade;
+  if(m.mode==='Market'&&confirmed){const optimistic=mapTrade({...confirmed,status:confirmed.status||'OPEN'},state.openOrders.length,a.id);if(optimistic){optimistic.status='open';state.openOrders.unshift(optimistic);updateLiveDOMElements();renderApp();}}
+  notify(m.mode==='Market'?(real?'B-Book position accepted':'Paper position opened'):'B-Book pending order saved',
+   s+' '+m.side+' '+quantity.toFixed(2)+' lots · '+String(confirmed?.id||d.order?.id||'').slice(0,8),'success');
+  refresh(true);
+ }catch(e){const msg=/insufficient/i.test(e.message)?'Insufficient Funds':e.message;notify('Order not placed',msg,'error');}
+}
+async function closePosition(id,silent=false,reason='Closed manually'){
+ const o=state.openOrders.find(x=>String(x.id)===String(id));if(!o)return;const a=getActiveAccount(),real=mode(a)==='real',b={action:'close',account_mode:mode(a),reason};
+ if(real){b.position_id=o.backendTradeId;b.account_id=a.backendId;}else{b.trade_id=o.backendTradeId;if(a.backendId)b.account_id=a.backendId;}
+ try{await call(real?'bbook-engine':'paper-execution',b);if(!silent)closeModal();await refresh(true);if(!silent)notify('Position closed',o.symbol+' '+o.side+' '+o.lots.toFixed(2)+' lots','success');}catch(e){notify('Close failed',e.message||'The position could not be closed.','error');}
+}
+const originalRender=window.renderApp;
+if(typeof originalRender==='function')window.renderApp=function(){originalRender();if(!ready)return;const a=getActiveAccount(),ak=a?.id||'',mk=state.selectedSymbol+':'+state.timeframe;if(ak&&ak!==lastAccount){lastAccount=ak;try{sessionStorage.setItem('bb:terminal:active-mode:'+session.user.id,mode(a));if(a.backendId)sessionStorage.setItem('bb:terminal:selected-account:'+session.user.id+':'+mode(a),a.backendId);}catch(_){}refresh(true);}if(mk!==lastMarket){lastMarket=mk;candles().catch(e=>console.warn('Market candles:',e.message));}};
+window.submitOrderExecution=place;window.executeCloseOrder=closePosition;
+window.closeAllOpenOrders=async()=>{const a=getActiveAccount(),real=mode(a)==='real',rows=[...state.openOrders];for(const o of rows){const b={action:'close',account_mode:mode(a),reason:'Closed all positions'};if(real){b.position_id=o.backendTradeId;b.account_id=a.backendId;}else{b.trade_id=o.backendTradeId;if(a.backendId)b.account_id=a.backendId;}try{await call(real?'bbook-engine':'paper-execution',b);}catch(e){notify('Close failed',e.message||'A position could not be closed.','error');}}await refresh(true);};
+window.goToClientArea=function(){
+ try{
+  if(window.parent&&window.parent!==window){
+   const parentDoc=window.parent.document;
+   const dashboard=parentDoc.querySelector('#app-shell [data-page="dashboard"]');
+   if(dashboard){dashboard.click();return;}
+   const home=parentDoc.querySelector('#app-shell .terminal-brand[data-page="dashboard"]');
+   if(home){home.click();return;}
+  }
+ }catch(e){console.warn('Client Area navigation:',e);}
+ if(document.referrer){try{const ref=new URL(document.referrer);if(ref.origin===location.origin){location.href=ref.href;return;}}catch(_){}}
+ notify('Client Area unavailable','Please reopen the terminal from your signed-in BIGBULLS Client Area.','error');
+};
+window.cancelPendingOrder=async function(id){
+ const a=getActiveAccount(),o=state.pendingOrders.find(x=>String(x.id)===String(id));
+ if(!o)return;
+ if(mode(a)!=='real'||!o.backendOrderId){notify('Cancel failed','This pending order is not linked to the B-Book ledger.','error');return;}
+ try{await call('bbook-engine',{action:'cancel_pending',account_id:a.backendId,order_id:o.backendOrderId});await refresh(true);notify('Pending order cancelled',o.symbol+' '+o.pendingType,'success');}
+ catch(e){notify('Cancel failed',e.message||'Pending order could not be cancelled.','error');}
+};
+window.submitDeposit=()=>notify('Funding managed in Client Area','No terminal balance was changed. Open the Client Area to submit a deposit.','info');
+window.submitWithdraw=()=>notify('Withdrawals managed in Client Area','No terminal balance was changed. Open the Client Area to submit a withdrawal.','info');
+window.createNewAccount=()=>{closeModal();notify('Account creation managed in Client Area','Create and manage accounts from the Client Area.','info');};
+window.switchTradingAccount=async function(backendId){
+ if(!ready||!session?.user){notify('Terminal not ready','Please wait for the account connection to finish.','error');return;}
+ const next=state.accounts.find(a=>a.backendId===String(backendId));
+ if(!next||next.status!=='approved'){notify('Account unavailable','This account must be approved in the Client Area before terminal access.','error');return;}
+ try{
+  const result=await call('trading-gateway',{action:'select_account',account_id:next.backendId});
+  if(String(result.account?.id)!==next.backendId)throw new Error('The backend did not confirm the selected account.');
+  state.activeAccountId=next.id;lastAccount=next.id;
+  window.__bbBbookMetrics=null;window.__bbBbookExecution=null;window.__bbPaperMetrics=null;
+  state.openOrders=[];state.closedOrders=[];state.pendingOrders=[];
+  try{sessionStorage.setItem('bb:terminal:active-mode:'+session.user.id,mode(next));sessionStorage.setItem('bb:terminal:selected-account:'+session.user.id+':'+mode(next),next.backendId);}catch(_){}
+  closeModal();renderApp();updateLiveDOMElements();
+  const loaded=await refresh(false);
+  if(!loaded)return;
+  notify('Account switched',next.nickname+' · #'+(next.accountNumber||next.id),'success');
+ }catch(e){notify('Account switch failed',e.message||'The selected account could not be loaded.','error');}
+};
+async function start(){
+ try{const c=client(),auth=await c.auth.getSession();if(auth.error)throw auth.error;session=auth.data?.session||null;if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}
+ await accounts();Object.values(state.instruments).forEach(i=>{i.candles=[];i.bid=0;i.ask=0;});state.openOrders=[];state.pendingOrders=[];state.closedOrders=[];ready=true;document.documentElement.classList.remove('bb-auth-pending');startBbookRealtime(c);startBiQuoteRealtime();lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();
+ try{await quotes();}catch(e){console.warn('Market quotes:',e.message);}try{await candles();}catch(e){notify('Market feed unavailable',e.message||'Provider candles could not be loaded.','error');}
+ await refresh(true);setInterval(()=>{if(!document.hidden&&(!biQuoteConnection||!window.signalR||biQuoteConnection.state!==window.signalR.HubConnectionState.Connected))quotes().catch(()=>{});},15000);setInterval(async()=>{if(document.hidden)return;try{const current=getActiveAccount()?.backendId||null;await accounts(current);renderApp();await refresh(true);}catch(e){console.warn('Account balance refresh:',e.message);}},10000);
+ c.auth.onAuthStateChange((_event,s)=>{session=s||null;if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}accounts().then(()=>{ready=true;document.documentElement.classList.remove('bb-auth-pending');startBbookRealtime(c);startBiQuoteRealtime();lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();refresh(true);}).catch(e=>notify('Account refresh failed',e.message,'error'));});
+ }catch(e){document.documentElement.classList.remove('bb-auth-pending');console.error('BIGBULLS terminal startup:',e);notify('Terminal connection failed',e.message||'Unable to connect to the trading backend.','error');}
+}
+window.addEventListener('load',start,{once:true});
+})();
+</script>
+
+</body>
+</html>],
+ ['NZD/USD','New Zealand Dollar vs US Dollar','Forex',5,100000,'NZ
+const candleCache=new Map();
+const TF_SECONDS={'1m':60,'5m':300,'15m':900,'30m':1800,'1h':3600,'4h':14400,'1d':86400,'1w':604800,'1M':2592000};
+let chartPaintQueued=false;
+function queueChartPaint(){if(chartPaintQueued)return;chartPaintQueued=true;requestAnimationFrame(()=>{chartPaintQueued=false;drawChartCanvas();updateLiveDOMElements();});}
+function updateCandleFromTick(symbol,bid,stamp=Date.now()){
+ const inst=state.instruments[symbol];if(!inst||!(bid>0))return;
+ const raw=Number(stamp),parsed=Number.isFinite(raw)?raw:(Date.parse(stamp)/1000),epoch=Number.isFinite(parsed)?(parsed>1e12?parsed/1000:parsed):Date.now()/1000;
+ let bucket;const tf=state.timeframe;
+ if(tf==='1w'){const d=new Date(epoch*1000);bucket=Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()-((d.getUTCDay()+6)%7))/1000;}
+ else if(tf==='1M'){const d=new Date(epoch*1000);bucket=Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),1)/1000;}
+ else {const sec=TF_SECONDS[tf]||300;bucket=Math.floor(epoch/sec)*sec;}
+ let rows=inst.candles||[],last=rows[rows.length-1];
+ if(!last||Number(last.time)<bucket*1000){last={time:bucket*1000,open:bid,high:bid,low:bid,close:bid};rows.push(last);if(rows.length>5000)rows.shift();inst.candles=rows;}
+ else if(Number(last.time)===bucket*1000){last.close=bid;last.high=Math.max(Number(last.high),bid);last.low=Math.min(Number(last.low),bid);}
+ if(symbol===state.selectedSymbol)queueChartPaint();
+}
+const notify=(t,s='',type='info')=>{if(typeof showToast==='function')showToast(t,s,type);};
+function client(){
+ if(window.__bbSupabaseClient?.auth&&window.__bbSupabaseClient?.functions)return window.__bbSupabaseClient;
+ if(window.bigbullsSupabase?.auth&&window.bigbullsSupabase?.functions)return window.bigbullsSupabase;
+ if(window.supabase?.createClient){window.__bbSupabaseClient=window.supabase.createClient(BB_URL,BB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});return window.__bbSupabaseClient;}
+ throw new Error('Supabase client library is unavailable.');
+}
+async function call(fn,body){const r=await client().functions.invoke(fn,{body});if(r.error)throw new Error(r.data?.error||r.error.message||fn+' request failed.');if(r.data?.error)throw new Error(r.data.error);return r.data||{};}
+const mode=a=>String(a?.type||'Demo').toLowerCase()==='real'?'real':'demo';
+function mapSymbol(s){
+ const raw=String(s||'').toUpperCase().trim(),key=raw.replaceAll('/','').replaceAll('-','');
+ const aliases={XAUUSD:'XAU/USD',XAGUSD:'XAG/USD',XPTUSD:'XPT/USD',XPDUSD:'XPD/USD',EURUSD:'EUR/USD',GBPUSD:'GBP/USD',USDJPY:'USD/JPY',USDCAD:'USD/CAD',AUDUSD:'AUD/USD',NZDUSD:'NZD/USD',USDCHF:'USD/CHF',EURGBP:'EUR/GBP',EURJPY:'EUR/JPY',GBPJPY:'GBP/JPY',BTCUSDT:'BTC',BTCUSD:'BTC',ETHUSDT:'ETH/USD',ETHUSD:'ETH/USD',SOLUSDT:'SOL/USD',SOLUSD:'SOL/USD',XRPUSDT:'XRP/USD',XRPUSD:'XRP/USD',BNBUSDT:'BNB/USD',BNBUSD:'BNB/USD',WTIUSD:'USOIL',USOIL:'USOIL',WTI:'USOIL',UKOIL:'UKOIL',BRENT:'UKOIL',NATGAS:'NATGAS',NGAS:'NATGAS',NDX:'USTEC',NAS100:'USTEC',USTEC:'USTEC',DJI:'US30',US30:'US30',SP500:'SPX500',SPX500:'SPX500',DE40:'GER40',GER40:'GER40',FTSE100:'UK100',UK100:'UK100',JP225:'JPN225',JPN225:'JPN225'};
+ return aliases[key]||(state.instruments[raw]?raw:null);
+}
+function applyQuote(s,p){const i=state.instruments[s];if(!i||!(Number(p)>0))return;i.bid=Number(p);i.ask=Number((i.bid+Number(i.spread||0)).toFixed(i.digits));}
+function applyBookQuote(s,q){const i=state.instruments[s];if(!i||!q)return;const bid=Number(q.bid),ask=Number(q.ask);if(bid>0&&ask>=bid){i.bid=bid;i.ask=ask;updateCandleFromTick(s,bid,q.time||q.updated_at||Date.now());}}
+let bbookRealtimeChannel=null;
+function startBbookRealtime(c){
+ if(bbookRealtimeChannel){c.removeChannel(bbookRealtimeChannel);bbookRealtimeChannel=null;}
+ if(!session?.user)return;
+ bbookRealtimeChannel=c.channel('bb-bbook-terminal-'+session.user.id)
+  .on('postgres_changes',{event:'*',schema:'public',table:'bb_bbook_quotes'},payload=>{
+   const row=payload.new||{};applyBookQuote(mapSymbol(row.symbol),row);updateLiveDOMElements();
+  })
+  .on('postgres_changes',{event:'*',schema:'public',table:'bb_bbook_positions',filter:'user_id=eq.'+session.user.id},()=>{if(mode(getActiveAccount())==='real')refresh(true);})
+  .on('postgres_changes',{event:'*',schema:'public',table:'bb_paper_execution_accounts',filter:'user_id=eq.'+session.user.id},async()=>{try{const current=getActiveAccount()?.backendId||null;await accounts(current);await refresh(true);renderApp();}catch(e){console.warn('Demo balance realtime sync:',e.message);}})
+  .on('postgres_changes',{event:'*',schema:'public',table:'trading_accounts',filter:'user_id=eq.'+session.user.id},async()=>{
+   try{const current=getActiveAccount()?.backendId||null;await accounts(current);renderApp();await refresh(true);}
+   catch(e){notify('Account sync failed',e.message||'Client Area account updates could not be loaded.','error');}
+  })
+  .subscribe();
+}
+let biQuoteConnection=null,biQuoteStartPromise=null;
+let BIQUOTE_STREAM_SYMBOLS=['EURUSD','GBPUSD','USDJPY','USDCAD','AUDUSD','NZDUSD','USDCHF','EURGBP','EURJPY','GBPJPY','XAUUSD','XAGUSD','XPTUSD','XPDUSD','BTCUSD','ETHUSD','SOLUSD','XRPUSD','BNBUSD','US30','USTEC','SPX500','GER40','UK100','JPN225','USOIL','UKOIL','NATGAS'];
+function handleBiQuoteTick(tick){
+ if(Array.isArray(tick))tick=tick[0];if(!tick||!tick.symbol)return;
+ const ui=mapSymbol(tick.symbol),inst=state.instruments[ui];if(!inst)return;
+ const mid=Number(tick.mid||((Number(tick.bid)+Number(tick.ask))/2));if(!(mid>0))return;
+ const active=getActiveAccount(),real=mode(active)==='real'&&!!PAPER[ui];
+ let bid=Number(tick.bid),ask=Number(tick.ask);
+ if(real&&Number.isFinite(inst.brokerSpreadBps)){
+  const half=inst.brokerSpreadBps/20000;bid=mid*(1-half);ask=mid*(1+half);
+ }
+ if(bid>0&&ask>=bid){inst.bid=bid;inst.ask=ask;updateCandleFromTick(ui,bid,tick.timestamp||Date.now());}
+ updateLiveDOMElements();
+}
+async function startBiQuoteRealtime(){
+ if(biQuoteConnection&&window.signalR?.HubConnectionState?.Connected===biQuoteConnection.state)return biQuoteConnection;
+ if(biQuoteStartPromise)return biQuoteStartPromise;
+ biQuoteStartPromise=(async()=>{
+  if(!window.signalR?.HubConnectionBuilder){console.warn('BiQuote SignalR client did not load; REST snapshot fallback remains active.');return null;}
+  const connection=new window.signalR.HubConnectionBuilder().withUrl('https://biquote.io/hubs/tick').withAutomaticReconnect([0,2000,5000,10000,30000]).build();
+  connection.on('ReceiveTick',handleBiQuoteTick);
+  connection.onreconnected(async()=>{try{await connection.invoke('Subscribe',BIQUOTE_STREAM_SYMBOLS);}catch(e){console.warn('BiQuote resubscribe failed:',e.message);}});
+  connection.onclose(e=>{console.warn('BiQuote SignalR closed:',e?.message||'connection closed');biQuoteConnection=null;if(session?.user)setTimeout(()=>startBiQuoteRealtime().catch(()=>{}),5000);});
+  try{await connection.start();await connection.invoke('Subscribe',BIQUOTE_STREAM_SYMBOLS);biQuoteConnection=connection;console.info('BiQuote SignalR connected; subscribed:',BIQUOTE_STREAM_SYMBOLS);return connection;}
+  catch(e){console.warn('BiQuote SignalR connection failed:',e.message);try{await connection.stop();}catch(_){}return null;}
+ })();
+ try{return await biQuoteStartPromise;}finally{biQuoteStartPromise=null;}
+}
+async function accounts(preferredBackendId=null){
+ const d=await call('trading-gateway',{action:'accounts'});
+ const rows=(d.accounts||[]).filter(a=>['demo','real'].includes(String(a.account_mode||'').toLowerCase())&&!a.archived_at&&!a.deleted_at).map(a=>({
+  id:String(a.account_number||a.id),accountNumber:a.account_number,backendId:String(a.id),nickname:a.display_name||a.account_type||String(a.account_mode).toUpperCase(),
+  type:String(a.account_mode).toLowerCase()==='real'?'Real':'Demo',platform:a.platform||(a.account_mode==='real'?'BigBulls B-Book':'BigBulls Paper'),
+  accountClass:a.account_type||'Standard',balance:Number(a.account_mode==='demo'?(a.virtual_balance??a.balance):(a.balance||0)),equity:Number(a.equity??a.balance??0),floatingPL:Number(a.floating_pnl||0),leverage:a.requested_leverage||'1:100',
+  server:a.server_name||'BigBulls',archived:false,status:String(a.status||'pending').toLowerCase(),currency:a.currency||'USD'
+ }));
+ state.accounts=rows.length?rows:[{id:'__no_account__',accountNumber:null,backendId:null,nickname:'No trading account',type:'Demo',platform:'BIGBULLS',accountClass:'—',balance:0,leverage:'1:100',server:'BIGBULLS',archived:false,status:'unavailable',currency:'USD'}];
+ let preferred='demo',selected=null;const launch=new URLSearchParams(location.search).get('account_id');
+ try{const sm=sessionStorage.getItem('bb:terminal:active-mode:'+session.user.id);if(sm==='demo'||sm==='real')preferred=sm;}catch(_){}
+ const findByBackend=id=>state.accounts.find(a=>a.backendId===String(id));
+ if(launch)selected=findByBackend(launch)||null;
+ if(!selected&&preferredBackendId)selected=findByBackend(preferredBackendId)||null;
+ try{const sid=sessionStorage.getItem('bb:terminal:selected-account:'+session.user.id+':'+preferred);if(!selected&&sid)selected=findByBackend(sid)||null;}catch(_){}
+ if(!selected)selected=state.accounts.find(a=>mode(a)===preferred&&a.status==='approved')||state.accounts.find(a=>a.status==='approved')||state.accounts[0];
+ state.activeAccountId=selected.id;lastAccount=selected.id;
+ try{sessionStorage.setItem('bb:terminal:active-mode:'+session.user.id,mode(selected));if(selected.backendId)sessionStorage.setItem('bb:terminal:selected-account:'+session.user.id+':'+mode(selected),selected.backendId);}catch(_){}
+}
+async function quotes(){
+ const d=await call('market-data',{action:'quotes'});
+ (d.quotes||[]).forEach(q=>{
+  const ui=mapSymbol(q.symbol),inst=state.instruments[ui];if(!inst||q.error)return;
+  inst.brokerSpreadBps=Number(q.broker_spread_bps);
+  const a=getActiveAccount(),real=mode(a)==='real'&&Number.isFinite(inst.brokerSpreadBps);
+  applyBookQuote(ui,real?{bid:q.broker_bid,ask:q.broker_ask,time:q.datetime}:{bid:q.bid,ask:q.ask,time:q.datetime});
+ });
+ const a=getActiveAccount(),symbol=PAPER[state.selectedSymbol];
+ if(a&&mode(a)==='real'&&symbol){try{const b=await call('bbook-engine',{action:'quote',symbol});applyBookQuote(state.selectedSymbol,b.quote);}catch(e){console.warn('B-Book dealing quote:',e.message);}}
+ updateLiveDOMElements();
+}
+async function candles(){
+ const s=state.selectedSymbol,tf=state.timeframe,p=MARKET[s],i=state.instruments[s],request=++candleEpoch;
+ if(!p||!i){notify('Market data unavailable',s+' is not enabled by BiQuote.','error');return;}
+ const cacheKey=s+'|'+tf,cached=candleCache.get(cacheKey);
+ if(cached?.length){i.candles=cached.map(c=>({...c}));drawChartCanvas();}else drawChartCanvas();
+ const d=await call('market-data',{action:'candles',symbol:p,timeframe:tf,outputsize:1000});
+ if(request!==candleEpoch||s!==state.selectedSymbol||tf!==state.timeframe)return;
+ const rows=(d.candles||[]).map(c=>({time:Number(c.time),open:Number(c.open),high:Number(c.high),low:Number(c.low),close:Number(c.close)})).filter(c=>Number.isFinite(c.time)&&[c.open,c.high,c.low,c.close].every(Number.isFinite));
+ if(!rows.length)throw new Error('BiQuote returned no candles for '+s+' ('+tf+').');
+ i.candles=rows;candleCache.set(cacheKey,rows.map(c=>({...c})));if(!i.bid)applyQuote(s,d.price||rows[rows.length-1].close);drawChartCanvas();updateLiveDOMElements();
+}
+function mapTrade(t,n,accountId){const s=mapSymbol(t.symbol);if(!s)return null;const open=String(t.status).toUpperCase()==='OPEN',tm=v=>v?new Date(v).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}):'';return{id:n+1,backendTradeId:t.id,accountId,symbol:s,side:String(t.side).toUpperCase()==='BUY'?'Buy':'Sell',lots:Number(t.quantity),openPrice:Number(t.entry_price),sl:t.stop_loss==null?'':String(t.stop_loss),tp:t.take_profit==null?'':String(t.take_profit),openTime:tm(t.opened_at),closeTime:tm(t.closed_at),closePrice:t.exit_price==null?Number(t.mark_price||t.entry_price):Number(t.exit_price),realizedPL:Number(t.realized_pnl||0),status:open?'open':'closed'};}
+async function refresh(silent=true){
+ const epoch=++refreshEpoch;busy=true;
+ try{
+  const a=getActiveAccount(),m=mode(a);
+  if(!a||!a.backendId||a.status!=='approved')throw new Error('Select an approved account created in the BIGBULLS Client Area before trading.');
+  window.__bbBbookMetrics=null;window.__bbBbookExecution=null;
+  let rows=[],balance=null,metrics=null,execution=null;
+  if(m==='real'){
+   const d=await call('bbook-engine',{action:'status',account_id:a.backendId});metrics=d.metrics||{};execution=d.execution||{};
+   balance=Number(metrics.balance??a.balance);
+   rows=(d.positions||[]).map((t,n)=>mapTrade(t,n,a.id)).filter(Boolean);
+   Object.entries(d.quotes||{}).forEach(([symbol,q])=>applyBookQuote(mapSymbol(symbol),q));
+  }else{
+   const d=await call('paper-execution',{action:'status',account_mode:m,account_id:a.backendId}),ledger=d.ledger||{};
+   balance=Number(ledger.virtual_balance??ledger.starting_balance??a.balance);
+   rows=(d.trades||[]).map((t,n)=>mapTrade(t,n,a.id)).filter(Boolean);
+   const floating=(d.trades||[]).filter(t=>t.status==='OPEN').reduce((sum,t)=>sum+Number(t.unrealized_pnl||0),0);
+   window.__bbPaperMetrics={balance,equity:balance+floating,floating_pnl:floating,margin:0,free_margin:balance+floating,margin_level_pct:0};
+   a.equity=balance+floating;a.floatingPL=floating;
+   Object.entries(d.prices||{}).forEach(([symbol,p])=>applyQuote(mapSymbol(symbol),p));
+  }
+  let pendingRows=[];
+  if(m==='real'){
+   const pr=await client().from('bb_bbook_pending_orders').select('*').eq('account_id',a.backendId).eq('user_id',session.user.id).eq('status','PENDING').order('created_at',{ascending:false});
+   if(pr.error)throw pr.error;
+   pendingRows=(pr.data||[]).map((p,n)=>({id:String(p.id),backendOrderId:p.id,accountId:a.id,symbol:mapSymbol(p.symbol)||state.selectedSymbol,
+    side:String(p.side).toUpperCase()==='BUY'?'Buy':'Sell',lots:Number(p.quantity),pendingType:({BUY_LIMIT:'Buy Limit',SELL_LIMIT:'Sell Limit',BUY_STOP:'Buy Stop',SELL_STOP:'Sell Stop'})[p.order_type]||p.order_type,
+    targetPrice:Number(p.target_price),sl:p.stop_loss==null?'':String(p.stop_loss),tp:p.take_profit==null?'':String(p.take_profit),status:p.status,openTime:p.created_at}));
+  }
+  if(epoch!==refreshEpoch||getActiveAccount()?.backendId!==a.backendId)return false;
+  a.balance=balance;
+  window.__bbBbookMetrics=metrics;window.__bbBbookExecution=execution;
+  state.openOrders=rows.filter(t=>t.status==='open');state.closedOrders=rows.filter(t=>t.status==='closed');state.pendingOrders=pendingRows;
+  updateLiveDOMElements();renderApp();return true;
+ }catch(e){if(epoch===refreshEpoch){state.openOrders=[];state.closedOrders=[];state.pendingOrders=[];updateLiveDOMElements();if(!silent)notify('Trading connection error',e.message||'Trading ledger could not be refreshed.','error');}console.error('BIGBULLS terminal backend:',e);return false;}finally{if(epoch===refreshEpoch)busy=false;}
+}
+async function place(){
+ const a=getActiveAccount(),m=state.orderTicket,s=state.selectedSymbol;if(!a)return;
+ if(!a.backendId||a.status!=='approved'){notify('Account approval required','Only approved Client Area trading accounts can place orders.','error');return;}
+ if(!session){notify('Login required','Sign in to your client account before trading.','error');return;}
+ const symbol=PAPER[s],quantity=Number(m.lots),sl=m.sl===''||m.sl==null?null:Number(m.sl),tp=m.tp===''||m.tp==null?null:Number(m.tp);
+ if(!symbol){notify('Instrument unavailable','This instrument is not enabled by the connected execution service.','error');return;}
+ if(!(quantity>0)||!Number.isFinite(quantity)){notify('Invalid lot size','Enter a valid lot size.','error');return;}
+ if(sl!==null&&(!(sl>0)||!Number.isFinite(sl))){notify('Invalid Stop Loss','Enter a valid Stop Loss or leave it empty.','error');return;}
+ if(tp!==null&&(!(tp>0)||!Number.isFinite(tp))){notify('Invalid Take Profit','Enter a valid Take Profit or leave it empty.','error');return;}
+ try{
+  const real=mode(a)==='real';
+  if(!real&&m.mode!=='Market')throw new Error('Pending orders are currently enabled for Real B-Book accounts only.');
+  const b={action:m.mode==='Market'?'open':'pending',account_mode:mode(a),symbol,side:m.side.toUpperCase(),quantity,stop_loss:sl,take_profit:tp};
+  if(a.backendId)b.account_id=a.backendId;
+  if(m.mode!=='Market'){
+    const map={ 'Buy Limit':'BUY_LIMIT','Sell Limit':'SELL_LIMIT','Buy Stop':'BUY_STOP','Sell Stop':'SELL_STOP' };
+    b.order_type=map[m.pendingType]||String(m.pendingType||'').toUpperCase().replaceAll(' ','_');
+    b.target_price=Number(m.targetPrice);
+    if(!(b.target_price>0)||!Number.isFinite(b.target_price))throw new Error('Enter a valid pending-order target price.');
+  }
+  const d=await call(real?'bbook-engine':'paper-execution',b);closeModal();
+  const confirmed=d.position||d.trade;
+  if(m.mode==='Market'&&confirmed){const optimistic=mapTrade({...confirmed,status:confirmed.status||'OPEN'},state.openOrders.length,a.id);if(optimistic){optimistic.status='open';state.openOrders.unshift(optimistic);updateLiveDOMElements();renderApp();}}
+  notify(m.mode==='Market'?(real?'B-Book position accepted':'Paper position opened'):'B-Book pending order saved',
+   s+' '+m.side+' '+quantity.toFixed(2)+' lots · '+String(confirmed?.id||d.order?.id||'').slice(0,8),'success');
+  refresh(true);
+ }catch(e){const msg=/insufficient/i.test(e.message)?'Insufficient Funds':e.message;notify('Order not placed',msg,'error');}
+}
+async function closePosition(id,silent=false,reason='Closed manually'){
+ const o=state.openOrders.find(x=>String(x.id)===String(id));if(!o)return;const a=getActiveAccount(),real=mode(a)==='real',b={action:'close',account_mode:mode(a),reason};
+ if(real){b.position_id=o.backendTradeId;b.account_id=a.backendId;}else{b.trade_id=o.backendTradeId;if(a.backendId)b.account_id=a.backendId;}
+ try{await call(real?'bbook-engine':'paper-execution',b);if(!silent)closeModal();await refresh(true);if(!silent)notify('Position closed',o.symbol+' '+o.side+' '+o.lots.toFixed(2)+' lots','success');}catch(e){notify('Close failed',e.message||'The position could not be closed.','error');}
+}
+const originalRender=window.renderApp;
+if(typeof originalRender==='function')window.renderApp=function(){originalRender();if(!ready)return;const a=getActiveAccount(),ak=a?.id||'',mk=state.selectedSymbol+':'+state.timeframe;if(ak&&ak!==lastAccount){lastAccount=ak;try{sessionStorage.setItem('bb:terminal:active-mode:'+session.user.id,mode(a));if(a.backendId)sessionStorage.setItem('bb:terminal:selected-account:'+session.user.id+':'+mode(a),a.backendId);}catch(_){}refresh(true);}if(mk!==lastMarket){lastMarket=mk;candles().catch(e=>console.warn('Market candles:',e.message));}};
+window.submitOrderExecution=place;window.executeCloseOrder=closePosition;
+window.closeAllOpenOrders=async()=>{const a=getActiveAccount(),real=mode(a)==='real',rows=[...state.openOrders];for(const o of rows){const b={action:'close',account_mode:mode(a),reason:'Closed all positions'};if(real){b.position_id=o.backendTradeId;b.account_id=a.backendId;}else{b.trade_id=o.backendTradeId;if(a.backendId)b.account_id=a.backendId;}try{await call(real?'bbook-engine':'paper-execution',b);}catch(e){notify('Close failed',e.message||'A position could not be closed.','error');}}await refresh(true);};
+window.goToClientArea=function(){
+ try{
+  if(window.parent&&window.parent!==window){
+   const parentDoc=window.parent.document;
+   const dashboard=parentDoc.querySelector('#app-shell [data-page="dashboard"]');
+   if(dashboard){dashboard.click();return;}
+   const home=parentDoc.querySelector('#app-shell .terminal-brand[data-page="dashboard"]');
+   if(home){home.click();return;}
+  }
+ }catch(e){console.warn('Client Area navigation:',e);}
+ if(document.referrer){try{const ref=new URL(document.referrer);if(ref.origin===location.origin){location.href=ref.href;return;}}catch(_){}}
+ notify('Client Area unavailable','Please reopen the terminal from your signed-in BIGBULLS Client Area.','error');
+};
+window.cancelPendingOrder=async function(id){
+ const a=getActiveAccount(),o=state.pendingOrders.find(x=>String(x.id)===String(id));
+ if(!o)return;
+ if(mode(a)!=='real'||!o.backendOrderId){notify('Cancel failed','This pending order is not linked to the B-Book ledger.','error');return;}
+ try{await call('bbook-engine',{action:'cancel_pending',account_id:a.backendId,order_id:o.backendOrderId});await refresh(true);notify('Pending order cancelled',o.symbol+' '+o.pendingType,'success');}
+ catch(e){notify('Cancel failed',e.message||'Pending order could not be cancelled.','error');}
+};
+window.submitDeposit=()=>notify('Funding managed in Client Area','No terminal balance was changed. Open the Client Area to submit a deposit.','info');
+window.submitWithdraw=()=>notify('Withdrawals managed in Client Area','No terminal balance was changed. Open the Client Area to submit a withdrawal.','info');
+window.createNewAccount=()=>{closeModal();notify('Account creation managed in Client Area','Create and manage accounts from the Client Area.','info');};
+window.switchTradingAccount=async function(backendId){
+ if(!ready||!session?.user){notify('Terminal not ready','Please wait for the account connection to finish.','error');return;}
+ const next=state.accounts.find(a=>a.backendId===String(backendId));
+ if(!next||next.status!=='approved'){notify('Account unavailable','This account must be approved in the Client Area before terminal access.','error');return;}
+ try{
+  const result=await call('trading-gateway',{action:'select_account',account_id:next.backendId});
+  if(String(result.account?.id)!==next.backendId)throw new Error('The backend did not confirm the selected account.');
+  state.activeAccountId=next.id;lastAccount=next.id;
+  window.__bbBbookMetrics=null;window.__bbBbookExecution=null;window.__bbPaperMetrics=null;
+  state.openOrders=[];state.closedOrders=[];state.pendingOrders=[];
+  try{sessionStorage.setItem('bb:terminal:active-mode:'+session.user.id,mode(next));sessionStorage.setItem('bb:terminal:selected-account:'+session.user.id+':'+mode(next),next.backendId);}catch(_){}
+  closeModal();renderApp();updateLiveDOMElements();
+  const loaded=await refresh(false);
+  if(!loaded)return;
+  notify('Account switched',next.nickname+' · #'+(next.accountNumber||next.id),'success');
+ }catch(e){notify('Account switch failed',e.message||'The selected account could not be loaded.','error');}
+};
+async function start(){
+ try{const c=client(),auth=await c.auth.getSession();if(auth.error)throw auth.error;session=auth.data?.session||null;if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}
+ await accounts();Object.values(state.instruments).forEach(i=>{i.candles=[];i.bid=0;i.ask=0;});state.openOrders=[];state.pendingOrders=[];state.closedOrders=[];ready=true;document.documentElement.classList.remove('bb-auth-pending');startBbookRealtime(c);startBiQuoteRealtime();lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();
+ try{await quotes();}catch(e){console.warn('Market quotes:',e.message);}try{await candles();}catch(e){notify('Market feed unavailable',e.message||'Provider candles could not be loaded.','error');}
+ await refresh(true);setInterval(()=>{if(!document.hidden&&(!biQuoteConnection||!window.signalR||biQuoteConnection.state!==window.signalR.HubConnectionState.Connected))quotes().catch(()=>{});},15000);setInterval(async()=>{if(document.hidden)return;try{const current=getActiveAccount()?.backendId||null;await accounts(current);renderApp();await refresh(true);}catch(e){console.warn('Account balance refresh:',e.message);}},10000);
+ c.auth.onAuthStateChange((_event,s)=>{session=s||null;if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}accounts().then(()=>{ready=true;document.documentElement.classList.remove('bb-auth-pending');startBbookRealtime(c);startBiQuoteRealtime();lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();refresh(true);}).catch(e=>notify('Account refresh failed',e.message,'error'));});
+ }catch(e){document.documentElement.classList.remove('bb-auth-pending');console.error('BIGBULLS terminal startup:',e);notify('Terminal connection failed',e.message||'Unable to connect to the trading backend.','error');}
+}
+window.addEventListener('load',start,{once:true});
+})();
+</script>
+
+</body>
+</html>],
+ ['USD/CHF','US Dollar vs Swiss Franc','Forex',5,100000,'CHF'],
+ ['EUR/GBP','Euro vs British Pound','Forex',5,100000,'€'],
+ ['EUR/JPY','Euro vs Japanese Yen','Forex',3,100000,'€'],
+ ['GBP/JPY','British Pound vs Japanese Yen','Forex',3,100000,'£'],
+ ['XAG/USD','Silver vs US Dollar','Metals',3,5000,'Ag'],
+ ['XPT/USD','Platinum vs US Dollar','Metals',2,50,'Pt'],
+ ['XPD/USD','Palladium vs US Dollar','Metals',2,100,'Pd'],
+ ['US30','Dow Jones 30 Index','Indices',2,1,'30'],
+ ['SPX500','S&P 500 Index','Indices',2,1,'500'],
+ ['GER40','Germany 40 Index','Indices',2,1,'40'],
+ ['UK100','UK 100 Index','Indices',2,1,'100'],
+ ['JPN225','Japan 225 Index','Indices',2,1,'225'],
+ ['UKOIL','Brent Crude Oil','Commodities',3,1000,'BR'],
+ ['NATGAS','Natural Gas','Commodities',3,10000,'NG'],
+ ['ETH/USD','Ethereum vs US Dollar','Crypto',2,1,'Ξ'],
+ ['SOL/USD','Solana vs US Dollar','Crypto',2,1,'◎'],
+ ['XRP/USD','XRP vs US Dollar','Crypto',4,1,'X'],
+ ['BNB/USD','BNB vs US Dollar','Crypto',2,1,'B']
+];
+for(const [symbol,name,category,digits,contractSize,iconText] of EXTRA_INSTRUMENTS){
+ state.instruments[symbol]={symbol,name,category,bid:0,ask:0,spread:0,change:0,digits,contractSize,iconBg:category==='Crypto'?'#F59E0B':category==='Metals'?'#D97706':category==='Indices'?'#2563EB':category==='Commodities'?'#10B981':'#64748B',iconText,candles:[]};
+}
+state.instruments['USOIL'].category='Commodities';
+state.instruments['DXY'].category='Forex';
 let session=null,ready=false,busy=false,refreshEpoch=0,candleEpoch=0,lastAccount='',lastMarket='';
 const candleCache=new Map();
 const TF_SECONDS={'1m':60,'5m':300,'15m':900,'30m':1800,'1h':3600,'4h':14400,'1d':86400,'1w':604800,'1M':2592000};
