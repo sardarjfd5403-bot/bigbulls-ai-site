@@ -2625,6 +2625,10 @@
       state.activeSymbol='XAU/USD';
       state.positions=[]; // Remove the original illustrative sample trade; positions now load from the paper ledger.
       state.backendAccountIds={demo:null,real:null};
+      state.accounts.demo.id='PAPER DEMO';
+      state.accounts.real.id='LINK APPROVED REAL ACCOUNT';
+      state.accounts.demo.balance=0;
+      state.accounts.real.balance=0;
       bbClientInit();
       if(bbClient){
         try{const {data}=await bbClient.auth.getSession();bbSession=data?.session||null;}catch(e){console.warn('Session lookup:',e);}
