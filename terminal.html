@@ -1996,19 +1996,27 @@ async function refresh(silent=true){
 async function place(){
  const a=getActiveAccount(),m=state.orderTicket,s=state.selectedSymbol;if(!a)return;
  if(!a.backendId||a.status!=='approved'){notify('Account approval required','Only approved Client Area trading accounts can place orders.','error');return;}
- if(m.mode!=='Market'){notify('Pending orders unavailable','The connected paper-execution service currently supports market positions only. No order was created.','error');return;}
  if(!session){notify('Login required','Sign in to your client account before trading.','error');return;}
- const symbol=PAPER[s],quantity=Number(m.lots),sl=Number(m.sl),tp=m.tp===''||m.tp==null?null:Number(m.tp);
+ const symbol=PAPER[s],quantity=Number(m.lots),sl=m.sl===''||m.sl==null?null:Number(m.sl),tp=m.tp===''||m.tp==null?null:Number(m.tp);
  if(!symbol){notify('Instrument unavailable','This instrument is not enabled by the connected execution service.','error');return;}
- if(!(quantity>0)||!(sl>0)){notify('Stop Loss required','Enter a valid Stop Loss before placing this paper trade.','error');return;}
- if(tp!==null&&!(tp>0)){notify('Invalid Take Profit','Enter a valid Take Profit or leave it empty.','error');return;}
+ if(!(quantity>0)||!Number.isFinite(quantity)){notify('Invalid lot size','Enter a valid lot size.','error');return;}
+ if(sl!==null&&(!(sl>0)||!Number.isFinite(sl))){notify('Invalid Stop Loss','Enter a valid Stop Loss or leave it empty.','error');return;}
+ if(tp!==null&&(!(tp>0)||!Number.isFinite(tp))){notify('Invalid Take Profit','Enter a valid Take Profit or leave it empty.','error');return;}
  try{
-  const real=mode(a)==='real';if(real&&tp===null)throw new Error('REAL B-Book orders require a Take Profit to reserve the maximum house payout.');
-  const b={action:'open',account_mode:mode(a),symbol,side:m.side.toUpperCase(),quantity,stop_loss:sl,take_profit:tp};
+  const real=mode(a)==='real';
+  if(!real&&m.mode!=='Market')throw new Error('Pending orders are currently enabled for Real B-Book accounts only.');
+  const b={action:m.mode==='Market'?'open':'pending',account_mode:mode(a),symbol,side:m.side.toUpperCase(),quantity,stop_loss:sl,take_profit:tp};
   if(a.backendId)b.account_id=a.backendId;
+  if(m.mode!=='Market'){
+    const map={ 'Buy Limit':'BUY_LIMIT','Sell Limit':'SELL_LIMIT','Buy Stop':'BUY_STOP','Sell Stop':'SELL_STOP' };
+    b.order_type=map[m.pendingType]||String(m.pendingType||'').toUpperCase().replaceAll(' ','_');
+    b.target_price=Number(m.targetPrice);
+    if(!(b.target_price>0)||!Number.isFinite(b.target_price))throw new Error('Enter a valid pending-order target price.');
+  }
   const d=await call(real?'bbook-engine':'paper-execution',b);closeModal();await refresh(true);
-  notify(real?'B-Book position opened':'Paper position opened',s+' '+m.side+' '+quantity.toFixed(2)+' lots · '+String(d.position?.id||d.trade?.id||'').slice(0,8),'success');
- }catch(e){notify('Order not placed',e.message||'Execution engine rejected the order.','error');}
+  notify(m.mode==='Market'?(real?'B-Book position opened':'Paper position opened'):'B-Book pending order saved',
+   s+' '+m.side+' '+quantity.toFixed(2)+' lots · '+String(d.position?.id||d.order?.id||d.trade?.id||'').slice(0,8),'success');
+ }catch(e){const msg=/insufficient/i.test(e.message)?'Insufficient Funds':e.message;notify('Order not placed',msg,'error');}
 }
 async function closePosition(id,silent=false,reason='Closed manually'){
  const o=state.openOrders.find(x=>String(x.id)===String(id));if(!o)return;const a=getActiveAccount(),real=mode(a)==='real',b={action:'close',account_mode:mode(a),reason};
