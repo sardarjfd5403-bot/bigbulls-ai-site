@@ -4,6 +4,10 @@ const URL="https://ztiiyulusburxjkpcfxu.supabase.co";
 const KEY="sb_publishable_5hDwqvbcUHeSJdXFHf9ugw_VPYGN4J_";
 let sb=null,modal,body,shell,user=null,activePage="dashboard",licenseActive=false,financialChannel=null,calendarEvents=[],calendarRefreshTimer=null;
 const pages=["seo","course-forex","course-smc","course-ict","course-vsa","dashboard","terminal","accounts","wallet","market-analysis","signals","learning","services","portfolio","orders","license","echo-system","downloads","profile","settings","support","verification","partner","economic-calendar","trading-central","admin"];
+const clientPageKey=id=>"bb:client:last-page:"+String(id||"");
+function getSavedClientPage(id){try{const saved=sessionStorage.getItem(clientPageKey(id));return pages.includes(saved)?saved:null;}catch(_){return null;}}
+function saveClientPage(id,page){try{if(id&&pages.includes(page))sessionStorage.setItem(clientPageKey(id),page);}catch(_){}}
+
 function init(){
  modal=document.getElementById("portal-modal");body=document.getElementById("portal-body");shell=document.getElementById("app-shell");
  if(!modal||!body||!shell){console.error("Portal markup missing");return;}
@@ -53,7 +57,7 @@ function connectSupabase(){
   if(error)throw error;
   user=data?.session?.user||null;
   updateHeader();
-  if(user)showApp("dashboard");
+  if(user)showApp(getSavedClientPage(user.id)||"dashboard");
   else hideApp();
  }).catch(error=>{
   console.error("Unable to restore the client session:",error);
@@ -211,6 +215,7 @@ async function showApp(page){
  startFinancialRealtime();
  if(activePage==="accounts")window.bbAccountMode="real";
  if((activePage==="admin"||activePage==="seo")&&!isAdmin())activePage="accounts";
+ saveClientPage(user.id,activePage);
 
  shell.hidden=false;
  document.body.classList.add("app-mode");
@@ -221,6 +226,7 @@ async function showApp(page){
 
  try{
   renderApp();
+  if(activePage==="terminal")delete window.__bbTerminalLaunchAccountId;
   if(window.__bbAccessNotice)message(window.__bbAccessNotice,true);
   // Apply the approved broker reference UI after the terminal has entered the DOM.
   // Retry briefly if the enhancement layer is still initializing or the browser schedules scripts late.
