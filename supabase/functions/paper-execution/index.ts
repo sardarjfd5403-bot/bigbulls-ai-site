@@ -94,14 +94,11 @@ Deno.serve(async (req: Request) => {
       const { data: isAdmin, error: adminCheckError } = await auth.rpc("is_bigbulls_admin");
       if (adminCheckError) throw adminCheckError;
       if (isAdmin !== true) {
-        const [{ data: aal, error: aalError }, { data: kyc, error: kycError }] = await Promise.all([
-          auth.auth.mfa.getAuthenticatorAssuranceLevel(),
-          auth.from("kyc_submissions").select("status").eq("user_id", user.id).eq("status", "approved").maybeSingle()
-        ]);
-        if (aalError) throw aalError;
+        const { data: kyc, error: kycError } = await auth.from("kyc_submissions")
+          .select("status").eq("user_id", user.id).eq("status", "approved").maybeSingle();
         if (kycError) throw kycError;
-        if (aal?.currentLevel !== "aal2" || !kyc) {
-          return json({ error: "Real-account test execution requires approved KYC and an AAL2-authenticated session.", code: "KYC_AAL2_REQUIRED" }, 403);
+        if (!kyc) {
+          return json({ error: "Real-account test execution requires approved KYC.", code: "KYC_APPROVAL_REQUIRED" }, 403);
         }
       }
     }
