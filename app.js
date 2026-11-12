@@ -857,6 +857,7 @@ if(activePage==="admin"&&isAdmin()){
      const tier=document.createElement("select");tier.dataset.ibTierSelect=partner.user_id;
      for(const name of ["bronze","silver","gold","diamond"]){const option=document.createElement("option");option.value=name;option.textContent=name.toUpperCase();option.selected=(partner.tier||"bronze")===name;tier.appendChild(option);}
      actions.appendChild(tier);
+     const saveTier=document.createElement("button");saveTier.type="button";saveTier.dataset.ibPartnerTierSave=partner.user_id;saveTier.textContent="Save tier";actions.appendChild(saveTier);
      if(status==="approved"||status==="disabled"){
       const button=document.createElement("button");button.type="button";button.dataset.ibPartnerStatus=partner.user_id;
       button.dataset.status=status==="approved"?"disabled":"approved";button.textContent=status==="approved"?"Disable IB":"Enable IB";actions.appendChild(button);
@@ -956,6 +957,23 @@ if(activePage==="admin"&&isAdmin()){
   if(form){const lock=state==="pending"||state==="approved";Array.from(form.elements).forEach(el=>el.disabled=lock);const btn=form.querySelector("button[type=submit]");if(btn)btn.textContent=state==="pending"?"KYC under review":state==="approved"?"KYC verified":"Submit KYC securely";}
   const reasonLabels={document_blurry:"Blurry / unreadable document",expired_document:"Expired document",name_mismatch:"Name mismatch",photo_mismatch:"Photo mismatch",missing_back:"Missing back side",address_incomplete:"Incomplete residential address",dob_mismatch:"Date of birth mismatch",unsupported_document:"Unsupported document",document_tampering:"Altered / damaged document",other:"Other"};
   if(history)history.innerHTML=error?'<p>'+esc(error.message)+'</p>':(data||[]).map(x=>'<div class="admin-row"><span><b>KYC · '+esc(x.status==="approved"?"VERIFIED":x.status.toUpperCase())+'</b><small>'+new Date(x.created_at).toLocaleString()+(x.rejection_reasons?.length?' · '+x.rejection_reasons.map(k=>reasonLabels[k]||k).join("; "):"")+(x.admin_note?' · Admin: '+esc(x.admin_note):"")+'</small></span></div>').join("")||"No KYC submission history.";
+ }
+ if(activePage==="partner"||activePage==="admin"){
+  if(!window.__bbIbUserRealtime&&user?.id){
+   let channel=sb.channel("bb-ib-user-"+user.id);
+   for(const table of ["partner_wallet_accounts","partner_wallet_ledger","partner_payout_requests","partner_commission_ledger","partner_referrals","partner_applications"]){
+    const filter=table==="partner_referrals"?"partner_user_id=eq."+user.id:table==="partner_applications"?"user_id=eq."+user.id:"partner_user_id=eq."+user.id;
+    channel=channel.on("postgres_changes",{event:"*",schema:"public",table,filter},()=>{if(activePage==="partner")loadPageData();});
+   }
+   window.__bbIbUserRealtime=channel.subscribe();
+  }
+  if(isAdmin()&&!window.__bbIbAdminRealtime){
+   let adminChannel=sb.channel("bb-ib-admin-live");
+   for(const table of ["partner_applications","partner_referrals","partner_commission_ledger","partner_commission_rates","partner_wallet_accounts","partner_payout_requests","partner_wallet_ledger"]){
+    adminChannel=adminChannel.on("postgres_changes",{event:"*",schema:"public",table},()=>{if(activePage==="admin")loadPageData();});
+   }
+   window.__bbIbAdminRealtime=adminChannel.subscribe();
+  }
  }
  if(activePage==="partner"){
   const [{data:application,error:applicationError},{data:snapshot,error:snapshotError}]=await Promise.all([
@@ -1464,6 +1482,8 @@ async function clickHandler(e){
  if(partnerCodeCopy){const code=window.__bbPartnerReferralCode||"";if(!code){message("Your referral code becomes available after partner approval.",true);return;}try{await navigator.clipboard.writeText(code);message("Referral code copied: "+code);}catch(_){window.prompt("Copy your BIGBULLS referral code:",code);}return;}
  const ibRateSave=el.closest("[data-ib-rate-save]");
  if(ibRateSave&&isAdmin()){const row=ibRateSave.closest("[data-ib-rate-row]"),rate=Number(row?.querySelector("[data-ib-rate-value]")?.value),enabled=!!row?.querySelector("[data-ib-rate-enabled]")?.checked,tier=ibRateSave.dataset.ibRateSave;if(!Number.isFinite(rate)||rate<0||rate>1000){message("Commission rate must be between $0 and $1,000 per lot.",true);return;}ibRateSave.disabled=true;const {error}=await sb.rpc("admin_update_partner_commission_rate",{p_tier:tier,p_commission_per_lot:rate,p_enabled:enabled});ibRateSave.disabled=false;if(error)message("Rate update failed: "+error.message,true);else{message(tier.toUpperCase()+" commission rate saved.");await loadPageData();}return;}
+ const ibTierSave=el.closest("[data-ib-partner-tier-save]");
+ if(ibTierSave&&isAdmin()){const row=ibTierSave.closest(".ib-partner-row"),tier=String(row?.querySelector("[data-ib-tier-select]")?.value||"bronze"),partnerId=ibTierSave.dataset.ibPartnerTierSave;ibTierSave.disabled=true;const {error}=await sb.rpc("admin_set_partner_status",{p_partner_user_id:partnerId,p_status:String(row?.querySelector("[data-ib-partner-status]")?.dataset.status==="disabled"?"approved":"approved"),p_tier:tier});ibTierSave.disabled=false;if(error)message("Tier update failed: "+error.message,true);else{message("Partner tier updated to "+tier.toUpperCase()+".");await loadPageData();}return;}
  const ibStatus=el.closest("[data-ib-partner-status]");
  if(ibStatus&&isAdmin()){const row=ibStatus.closest(".ib-partner-row"),tier=String(row?.querySelector("[data-ib-tier-select]")?.value||"bronze"),status=ibStatus.dataset.status;if(!confirm((status==="disabled"?"Disable":"Enable")+" IB partner access?"))return;ibStatus.disabled=true;const {error}=await sb.rpc("admin_set_partner_status",{p_partner_user_id:ibStatus.dataset.ibPartnerStatus,p_status:status,p_tier:tier});if(error){ibStatus.disabled=false;message("IB status update failed: "+error.message,true);}else{message("IB partner status updated.");await loadPageData();}return;}
  const ibPayoutReview=el.closest("[data-ib-payout-review]");
