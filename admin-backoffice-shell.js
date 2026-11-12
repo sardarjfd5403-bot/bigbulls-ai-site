@@ -10,6 +10,7 @@ const GROUPS=[
  {id:"partners",label:"IB & Partners",icon:"♧",match:/partner application|ib commission|commission management|partner operations/i},
  {id:"support",label:"Support Desk",icon:"☏",match:/customer support|support desk/i},
  {id:"dealing",label:"Dealing & Execution",icon:"⌁",match:/mt5 trading|demo account monitor|trading account|market signals|publishing control/i},
+ {id:"bbook",label:"B-Book Dealing",icon:"◈",match:/^b-book dealing/i},
  {id:"products",label:"Products & Licensing",icon:"⬡",match:/echo system|private echo|product order|license/i},
  {id:"system",label:"Platform Controls",icon:"⚙",match:/other platform controls|website theme|platform controls/i}
 ];
@@ -55,6 +56,28 @@ function addStyles(){
  #${ROOT_ID} .client-panel{border-color:var(--bb-line);border-radius:14px;box-shadow:0 5px 20px #1b355008}
  #${ROOT_ID} .admin-overview,#${ROOT_ID} .admin-metrics{border-radius:14px}
  #${ROOT_ID} .bb-admin-mobile{display:none}
+ #${ROOT_ID} .bb-bbook-admin{display:grid;gap:14px}
+ #${ROOT_ID} .bb-bbook-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+ #${ROOT_ID} .bb-bbook-head small{font-size:9px;letter-spacing:.14em;color:var(--bb-muted)}
+ #${ROOT_ID} .bb-bbook-head h3{margin:3px 0;font-size:16px}
+ #${ROOT_ID} .bb-bbook-head p{margin:3px 0;color:var(--bb-muted);font-size:12px}
+ #${ROOT_ID} .bb-bbook-head>button,#${ROOT_ID} .bb-bbook-enable{border:1px solid #cbd5e1;border-radius:9px;padding:9px 13px;background:#fff;color:#172a45;font-weight:700;cursor:pointer}
+ #${ROOT_ID} .bb-bbook-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+ #${ROOT_ID} .bb-bbook-stats>div{background:#fff;border:1px solid var(--bb-line);border-radius:12px;padding:13px}
+ #${ROOT_ID} .bb-bbook-stats small{display:block;color:var(--bb-muted);font-size:9px;letter-spacing:.1em}
+ #${ROOT_ID} .bb-bbook-stats b{display:block;font-size:18px;margin-top:5px}
+ #${ROOT_ID} .bb-bbook-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+ #${ROOT_ID} .bb-bbook-grid .client-panel{padding:15px}
+ #${ROOT_ID} .bb-bbook-formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ #${ROOT_ID} .bb-bbook-admin label{display:grid;gap:4px;font-size:11px;font-weight:700;margin:8px 0}
+ #${ROOT_ID} .bb-bbook-admin input,#${ROOT_ID} .bb-bbook-admin select{width:100%;min-width:0;padding:9px;border:1px solid var(--bb-line);border-radius:8px;background:#fff}
+ #${ROOT_ID} .bb-bbook-admin .notice{font-size:11px;white-space:normal}
+ #${ROOT_ID} .bb-bbook-tablewrap{overflow:auto}
+ #${ROOT_ID} .bb-bbook-tablewrap table{width:100%;border-collapse:collapse;min-width:720px;font-size:11px}
+ #${ROOT_ID} .bb-bbook-tablewrap th,#${ROOT_ID} .bb-bbook-tablewrap td{padding:9px 8px;border-bottom:1px solid var(--bb-line);text-align:left;white-space:nowrap}
+ #${ROOT_ID} .bb-bbook-tablewrap th{color:var(--bb-muted);font-size:9px;text-transform:uppercase}
+ @media(max-width:700px){#${ROOT_ID} .bb-bbook-stats{grid-template-columns:repeat(2,minmax(0,1fr))}#${ROOT_ID} .bb-bbook-grid{grid-template-columns:1fr}}
+
  @media(max-width:900px){#${ROOT_ID} .bb-admin-frame{grid-template-columns:1fr}#${ROOT_ID} .bb-admin-sidebar{position:relative;min-height:0}#${ROOT_ID} .bb-admin-nav{grid-template-columns:repeat(2,minmax(0,1fr))}#${ROOT_ID} .bb-admin-foot{display:none}}
  @media(max-width:620px){#${ROOT_ID} .bb-admin-top{align-items:flex-start;padding:13px;flex-direction:column}#${ROOT_ID} .bb-admin-statuses{justify-content:flex-start;width:100%}#${ROOT_ID} .bb-admin-status{flex:1;min-width:0}#${ROOT_ID} .bb-admin-frame{gap:10px}#${ROOT_ID} .bb-admin-sidebar{padding:10px}#${ROOT_ID} .bb-admin-nav{grid-template-columns:repeat(2,minmax(0,1fr))}#${ROOT_ID} .bb-admin-nav button{font-size:11px;padding:9px 7px}#${ROOT_ID} .bb-admin-workspace{padding:12px}#${ROOT_ID} .bb-admin-pagehead h2{font-size:19px}}
  `;
@@ -75,7 +98,7 @@ function decorate(){
  const original=Array.from(page.children);
  const root=document.createElement("section");root.id=ROOT_ID;
  const top=document.createElement("header");top.className="bb-admin-top";
- top.innerHTML='<div class="bb-admin-brand"><span class="bb-admin-mark">B</span><div><strong>BIGBULLS GLOBAL</strong><small>Back-Office</small><div class="bb-admin-subtitle">Institutional Client Operations &amp; Dealing Desk</div></div></div><div class="bb-admin-statuses"><div class="bb-admin-status"><small>MT5 Bridge</small><b>Not connected</b></div><div class="bb-admin-status"><small>Broker Liquidity Pool</small><b>Not configured</b></div><button class="bb-admin-notice" type="button" data-bb-admin-notice>Notice</button><div class="bb-admin-status"><small>Desk</small><b>Quetta / Dubai · GMT+5</b></div></div>';
+ top.innerHTML='<div class="bb-admin-brand"><span class="bb-admin-mark">B</span><div><strong>BIGBULLS GLOBAL</strong><small>Back-Office</small><div class="bb-admin-subtitle">Institutional Client Operations &amp; Dealing Desk</div></div></div><div class="bb-admin-statuses"><div class="bb-admin-status"><small>B-Book Engine</small><b data-bb-bbook-engine-status>Checking…</b></div><div class="bb-admin-status"><small>Master Liquidity Pool</small><b data-bb-bbook-pool-status>Loading…</b></div><button class="bb-admin-notice" type="button" data-bb-admin-notice>Notice</button><div class="bb-admin-status"><small>Desk</small><b>Quetta / Dubai · GMT+5</b></div></div>';
  const frame=document.createElement("div");frame.className="bb-admin-frame";
  const side=document.createElement("aside");side.className="bb-admin-sidebar";
  side.innerHTML='<div class="bb-admin-live"><b>SUPER ADMIN DESK</b><small><i></i> AUTHENTICATED WORKSPACE</small></div><div class="bb-admin-nav-label">Operations &amp; Compliance</div><nav class="bb-admin-nav" aria-label="Admin sections"></nav><div class="bb-admin-foot"><b>PLATFORM HEALTH</b>TwelveData Quote Engine · status shown in Market Data panel<br>Auto-Payout Rail · not configured until provider is connected</div>';
@@ -85,6 +108,66 @@ function decorate(){
  workspace.append(pagehead);
  const panes=new Map();GROUPS.forEach(g=>{const pane=document.createElement("section");pane.className="bb-admin-pane";pane.dataset.pane=g.id;workspace.append(pane);panes.set(g.id,pane);
  const btn=document.createElement("button");btn.type="button";btn.dataset.bbTab=g.id;btn.innerHTML='<span>'+g.icon+'</span>'+g.label;btn.addEventListener("click",()=>activate(g.id));nav.append(btn);});
+ // Native B-Book back-office. All financial writes are routed through the authenticated Edge Function.
+ const bbookPane=panes.get("bbook");
+ bbookPane.innerHTML='<section class="bb-bbook-admin"><div class="bb-bbook-head"><div><small>IN-HOUSE MARKET MAKER</small><h3>B-Book Liquidity &amp; Execution Control</h3><p>REAL account counterparty ledger, liquidity reserve, spread controls and open exposure.</p></div><button type="button" data-bb-bbook-refresh>Refresh</button></div><div class="bb-bbook-stats" data-bb-bbook-stats><div>Loading B-Book state…</div></div><div class="bb-bbook-grid"><section class="client-panel"><h3>Master Liquidity Capital</h3><form data-bb-bbook-capital><label>Action<select name="direction"><option value="DEPOSIT">Deposit liquidity</option><option value="WITHDRAWAL">Withdraw available liquidity</option></select></label><label>Amount (USD)<input name="amount" type="number" min="0.01" step="0.01" required></label><label>Audit note<input name="note" maxlength="250" placeholder="Treasury funding reference" required></label><button type="submit" class="portal-primary">Submit capital movement</button><p data-bb-bbook-capital-status class="notice">Capital movements are audit logged. Withdrawals cannot use reserved payouts.</p></form></section><section class="client-panel"><h3>Spread, Leverage &amp; Risk Controls</h3><form data-bb-bbook-settings><div class="bb-bbook-formgrid"><label>Default leverage<input name="default_leverage" type="number" min="1" max="500" step="1"></label><label>Maximum leverage<input name="max_leverage" type="number" min="1" max="1000" step="1"></label><label>FX spread (bps)<input name="FX" type="number" min="0" max="100" step=".1"></label><label>Gold spread (bps)<input name="XAUUSD" type="number" min="0" max="100" step=".1"></label><label>Crypto spread (bps)<input name="CRYPTO" type="number" min="0" max="100" step=".1"></label><label>Margin call level (%)<input name="margin_call_level_pct" type="number" min="50" max="1000"></label><label>Stop-out level (%)<input name="stop_out_level_pct" type="number" min="10" max="100"></label></div><button type="submit" class="portal-primary">Save dealing controls</button><p data-bb-bbook-settings-status class="notice">REAL execution remains locked until all readiness checks and liquidity are verified.</p></form><button type="button" data-bb-bbook-enable class="bb-bbook-enable">Enable REAL B-Book</button></section></div><section class="client-panel"><div class="bb-bbook-head"><h3>Live Open Positions &amp; House Exposure</h3><span data-bb-bbook-exposure>—</span></div><div class="bb-bbook-tablewrap"><table><thead><tr><th>Account</th><th>Symbol</th><th>Side</th><th>Lots</th><th>Entry</th><th>Margin</th><th>Floating P/L</th><th>Opened</th></tr></thead><tbody data-bb-bbook-positions><tr><td colspan="8">Loading positions…</td></tr></tbody></table></div></section><section class="client-panel"><h3>Liquidity Audit Ledger</h3><div class="bb-bbook-tablewrap"><table><thead><tr><th>Time</th><th>Type</th><th>Direction</th><th>Amount</th><th>Balance After</th><th>Note</th></tr></thead><tbody data-bb-bbook-ledger><tr><td colspan="6">Loading ledger…</td></tr></tbody></table></div></section></section>';
+ const bbookClient=()=>window.__bbSupabaseClient||window.bigbullsSupabase||null;
+ const bbookEsc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+ const bbookMoney=v=>"$"+Number(v||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+ async function refreshBbook(){
+   const client=bbookClient(),stats=bbookPane.querySelector("[data-bb-bbook-stats]");
+   if(!client?.functions){if(stats)stats.textContent="Secure Supabase client unavailable.";return;}
+   const refresh=bbookPane.querySelector("[data-bb-bbook-refresh]");if(refresh)refresh.disabled=true;
+   try{
+     const result=await client.functions.invoke("bbook-engine",{body:{action:"admin_status"}});
+     if(result.error||result.data?.error)throw new Error(result.data?.error||result.error?.message||"B-Book service unavailable.");
+     const d=result.data||{},pool=d.pool||{},m=d.metrics||{},cfg=d.settings||{};
+     const capital=Number(pool.capital_balance||0),reserved=Number(pool.reserved_payout||0);
+     stats.innerHTML='<div><small>MASTER CAPITAL</small><b>'+bbookMoney(capital)+'</b></div><div><small>RESERVED PAYOUT</small><b>'+bbookMoney(reserved)+'</b></div><div><small>AVAILABLE LIQUIDITY</small><b>'+bbookMoney(capital-reserved)+'</b></div><div><small>OPEN POSITIONS</small><b>'+Number(m.open_positions||0)+'</b></div><div><small>GROSS EXPOSURE</small><b>'+bbookMoney(m.gross_exposure)+'</b></div><div><small>HOUSE FLOATING P/L</small><b>'+bbookMoney(m.house_net_pnl)+'</b></div>';
+     const root=bbookPane.closest("#"+ROOT_ID);
+     const engineStatus=root?.querySelector("[data-bb-bbook-engine-status]");
+     const poolStatus=root?.querySelector("[data-bb-bbook-pool-status]");
+     if(engineStatus)engineStatus.textContent=cfg.enabled?"ENABLED":"LOCKED";
+     if(poolStatus)poolStatus.textContent=bbookMoney(capital);
+     const exposure=bbookPane.querySelector("[data-bb-bbook-exposure]");if(exposure)exposure.textContent="Gross "+bbookMoney(m.gross_exposure)+" · House net "+bbookMoney(m.house_net_pnl);
+     const pos=bbookPane.querySelector("[data-bb-bbook-positions]");
+     pos.innerHTML=(d.positions||[]).length?(d.positions||[]).map(p=>'<tr><td>#'+bbookEsc(p.trading_accounts?.account_number||p.account_id)+'</td><td>'+bbookEsc(p.symbol)+'</td><td>'+bbookEsc(p.side)+'</td><td>'+Number(p.quantity||0).toFixed(2)+'</td><td>'+Number(p.entry_price||0).toFixed(5)+'</td><td>'+bbookMoney(p.margin_used)+'</td><td>'+bbookMoney(p.floating_pnl)+'</td><td>'+bbookEsc(new Date(p.opened_at).toLocaleString())+'</td></tr>').join(""):'<tr><td colspan="8">No open B-Book positions.</td></tr>';
+     const ledger=bbookPane.querySelector("[data-bb-bbook-ledger]");
+     ledger.innerHTML=(d.ledger||[]).length?(d.ledger||[]).map(x=>'<tr><td>'+bbookEsc(new Date(x.created_at).toLocaleString())+'</td><td>'+bbookEsc(x.entry_type)+'</td><td>'+bbookEsc(x.direction)+'</td><td>'+bbookMoney(x.amount)+'</td><td>'+bbookMoney(x.balance_after)+'</td><td>'+bbookEsc(x.note||"—")+'</td></tr>').join(""):'<tr><td colspan="6">No liquidity ledger entries yet.</td></tr>';
+     const form=bbookPane.querySelector("[data-bb-bbook-settings]");
+     if(form&&!form.dataset.loaded){form.elements.default_leverage.value=cfg.default_leverage||100;form.elements.max_leverage.value=cfg.max_leverage||500;form.elements.FX.value=cfg.spread_bps?.FX??2;form.elements.XAUUSD.value=cfg.spread_bps?.XAUUSD??4;form.elements.CRYPTO.value=cfg.spread_bps?.CRYPTO??10;form.elements.margin_call_level_pct.value=cfg.margin_call_level_pct||100;form.elements.stop_out_level_pct.value=cfg.stop_out_level_pct||50;form.dataset.loaded="1";}
+   }catch(e){if(stats)stats.textContent="B-Book load failed: "+(e?.message||"Unknown error");}
+   finally{if(refresh)refresh.disabled=false;}
+ }
+ bbookPane.querySelector("[data-bb-bbook-refresh]").addEventListener("click",refreshBbook);
+ bbookPane.querySelector("[data-bb-bbook-capital]").addEventListener("submit",async e=>{
+   e.preventDefault();const form=e.currentTarget,button=form.querySelector('button[type="submit"]'),status=form.querySelector("[data-bb-bbook-capital-status]"),client=bbookClient();
+   button.disabled=true;status.textContent="Submitting audited liquidity movement…";
+   try{const result=await client.functions.invoke("bbook-engine",{body:{action:"admin_adjust_liquidity",direction:form.elements.direction.value,amount:Number(form.elements.amount.value),note:form.elements.note.value}});
+     if(result.error||result.data?.error)throw new Error(result.data?.error||result.error?.message||"Capital adjustment failed.");
+     status.textContent="Liquidity capital movement recorded successfully.";form.reset();await refreshBbook();
+   }catch(err){status.textContent="Not completed: "+(err?.message||"Unknown error");}
+   finally{button.disabled=false;}
+ });
+ bbookPane.querySelector("[data-bb-bbook-settings]").addEventListener("submit",async e=>{
+   e.preventDefault();const form=e.currentTarget,button=form.querySelector('button[type="submit"]'),status=form.querySelector("[data-bb-bbook-settings-status]"),client=bbookClient();
+   button.disabled=true;status.textContent="Saving dealing controls…";
+   try{const result=await client.functions.invoke("bbook-engine",{body:{action:"admin_update_settings",default_leverage:Number(form.elements.default_leverage.value),max_leverage:Number(form.elements.max_leverage.value),spread_bps:{FX:Number(form.elements.FX.value),XAUUSD:Number(form.elements.XAUUSD.value),CRYPTO:Number(form.elements.CRYPTO.value)},margin_call_level_pct:Number(form.elements.margin_call_level_pct.value),stop_out_level_pct:Number(form.elements.stop_out_level_pct.value)}});
+     if(result.error||result.data?.error)throw new Error(result.data?.error||result.error?.message||"Settings update failed.");
+     status.textContent="Dealing settings saved.";await refreshBbook();
+   }catch(err){status.textContent="Not saved: "+(err?.message||"Unknown error");}
+   finally{button.disabled=false;}
+ });
+ bbookPane.querySelector("[data-bb-bbook-enable]").addEventListener("click",async()=>{
+   const button=bbookPane.querySelector("[data-bb-bbook-enable]"),status=bbookPane.querySelector("[data-bb-bbook-settings-status]");
+   button.disabled=true;status.textContent="Checking regulatory, liquidity, settlement and reconciliation readiness…";
+   try{const result=await bbookClient().functions.invoke("bbook-engine",{body:{action:"admin_update_settings",enabled:true}});
+     if(result.error||result.data?.error)throw new Error(result.data?.error||result.error?.message||"B-Book enable was rejected.");
+     status.textContent="REAL B-Book enabled.";await refreshBbook();
+   }catch(err){status.textContent="REAL execution remains locked: "+(err?.message||"Readiness checks incomplete.");}
+   finally{button.disabled=false;}
+ });
+
  // Keep each original node and its event handlers intact; only move it into its tab pane.
  let currentGroup="overview";
  original.forEach(node=>{
@@ -99,6 +182,7 @@ function decorate(){
   panes.forEach((p,k)=>p.classList.toggle("is-active",k===id));
   nav.querySelectorAll("button").forEach(b=>b.setAttribute("aria-current",String(b.dataset.bbTab===id)));
   const group=GROUPS.find(g=>g.id===id);pagehead.querySelector("h2").textContent=group?.label||"Operations Overview";
+  if(id==="bbook")refreshBbook();
  }
  activate("overview");
  top.querySelector("[data-bb-admin-notice]").addEventListener("click",()=>{
