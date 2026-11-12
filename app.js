@@ -161,6 +161,7 @@ function startFinancialRealtime(){
  if(isAdmin()){
   channel.on("postgres_changes",{event:"*",schema:"public",table:"wallet_transactions"},()=>{if(activePage==="admin")loadPageData();});
   channel.on("postgres_changes",{event:"UPDATE",schema:"public",table:"trading_accounts"},()=>{if(activePage==="admin")loadPageData();});
+  channel.on("postgres_changes",{event:"*",schema:"public",table:"bb_paper_execution_accounts"},()=>{if(activePage==="admin")loadPageData();if(activePage==="accounts")loadClientTradingAccounts();});
   channel.on("postgres_changes",{event:"*",schema:"public",table:"kyc_submissions"},()=>{if(activePage==="admin")loadPageData();});
   channel.on("postgres_changes",{event:"*",schema:"public",table:"account_transfers"},()=>{if(activePage==="admin")loadPageData();});
   channel.on("postgres_changes",{event:"*",schema:"public",table:"bb_paper_accounts"},()=>{if(activePage==="admin")loadPageData();});
@@ -168,6 +169,7 @@ function startFinancialRealtime(){
  }else{
   channel.on("postgres_changes",{event:"UPDATE",schema:"public",table:"wallet_transactions",filter:"user_id=eq."+user.id},payload=>{showFinancialNotice(payload.new);if(activePage==="accounts"){loadClientTradingAccounts();const tools=document.getElementById("bb-account-tools");if(tools?.dataset.accountTool==="transactions")showAccountTool(tools.dataset.accountId,"transactions");}});
   channel.on("postgres_changes",{event:"UPDATE",schema:"public",table:"trading_accounts",filter:"user_id=eq."+user.id},payload=>{if(activePage==="accounts")loadClientTradingAccounts();if(payload.new&&payload.old&&Number(payload.new.balance)!==Number(payload.old.balance))showAccountBalanceNotice(payload.new);});
+  channel.on("postgres_changes",{event:"*",schema:"public",table:"bb_paper_execution_accounts",filter:"user_id=eq."+user.id},()=>{if(activePage==="accounts")loadClientTradingAccounts();});
   channel.on("postgres_changes",{event:"*",schema:"public",table:"account_transfers",filter:"user_id=eq."+user.id},()=>{if(activePage==="accounts"){loadClientTradingAccounts();const tools=document.getElementById("bb-account-tools");if(tools?.dataset.accountTool==="transactions")showAccountTool(tools.dataset.accountId,"transactions");}});
   channel.on("postgres_changes",{event:"*",schema:"public",table:"client_wallet_accounts",filter:"user_id=eq."+user.id},()=>{if(activePage==="wallet")loadPageData();refreshMainWalletHeader();});
   channel.on("postgres_changes",{event:"*",schema:"public",table:"client_fund_transfers",filter:"user_id=eq."+user.id},()=>{if(activePage==="wallet")loadPageData();if(activePage==="accounts")loadClientTradingAccounts();});
