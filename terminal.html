@@ -2421,7 +2421,7 @@ function bbShowBootFallback(error){
    c.auth.onAuthStateChange(async(_event,s)=>{
     if(!s?.user)return;
     session=s;
-    try{await bbWithBootTimeout(accounts(),'Trading account hydration',BB_BOOT_TIMEOUT_MS);renderApp();await refresh(true);document.getElementById('bb-session-reconnect-fallback')?.remove();startBbookRealtime(c);startBiQuoteRealtime().catch(e=>console.warn('BiQuote startup:',e));bbStartBackgroundLoops(c);}
+    try{await bbWithBootTimeout(accounts(),'Trading account hydration',BB_BOOT_TIMEOUT_MS);renderApp();await refresh(true);document.getElementById('bb-session-reconnect-fallback')?.remove();startBbookRealtime(c).catch(e=>console.warn('BIGBULLS Realtime startup fallback:',e));startBiQuoteRealtime().catch(e=>console.warn('BiQuote startup:',e));bbStartBackgroundLoops(c);}
     catch(e){console.warn('Terminal session restored; account hydration remains pending:',e);}
    });
   }
@@ -2476,7 +2476,7 @@ async function start(){
    state.openOrders=[];state.pendingOrders=[];state.closedOrders=[];
    ready=true;document.documentElement.classList.remove('bb-auth-pending');
    lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();bbShowAccountFallback();
-   startBbookRealtime(c);startBiQuoteRealtime().catch(e=>console.warn('BiQuote startup:',e));
+   startBbookRealtime(c).catch(e=>console.warn('BIGBULLS Realtime startup fallback:',e));startBiQuoteRealtime().catch(e=>console.warn('BiQuote startup:',e));
    Promise.resolve().then(()=>{if(typeof loadBiQuoteCatalog==='function')return loadBiQuoteCatalog();}).catch(e=>console.warn('Instrument catalog:',e));
    Promise.resolve().then(()=>{if(typeof bbLoadMarketHolidays==='function')return bbLoadMarketHolidays();}).catch(e=>console.warn('Market holiday calendar:',e));
    Promise.resolve().then(()=>quotes()).catch(e=>console.warn('Initial quotes:',e));
