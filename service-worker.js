@@ -1,5 +1,5 @@
 "use strict";
-const CACHE="bigbulls-pwa-shell-v6-master-terminal-fix";
+const CACHE="bigbulls-pwa-shell-v7-terminal-auth-handoff2";
 const SHELL=["./","./index.html","./manifest.json","./pwa-install.js","./pwa-install.css","./icons/bigbulls-192.svg","./icons/bigbulls-512.svg"];
 self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));});
 self.addEventListener("activate",event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith("bigbulls-pwa-")&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim()));});
