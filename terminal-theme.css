@@ -46,3 +46,26 @@ html,body,#appStage,.mobile-shell{
 #bb-auth-boot .bb-auth-spinner{border-color:#26364f!important;border-top-color:var(--bb-terminal-blue)!important}
 #bb-terminal-runtime-error{background:#130d10!important;color:#fecaca!important;border-color:#ef4444!important}
 @media(min-width:768px){.mobile-shell{border-radius:0!important}}
+
+
+/* 2026-11-13 strict dark terminal enforcement */
+:root,html,body{color-scheme:dark!important;background:#0E1117!important;color:#E5E7EB!important}
+html,body,#appStage,.mobile-shell{background:#0E1117!important;color:#E5E7EB!important}
+#appStage [class*="bg-white"],#appStage [class*="bg-gray-50"],#appStage [class*="bg-gray-100"],#appStage [class*="bg-slate-50"],#appStage [class*="bg-slate-100"],#appStage [class*="bg-[#ffffff"],#appStage [class*="bg-[#fff"],#appStage [class*="bg-[#f8fafc"],#appStage [class*="bg-[#f1f5f9"],#appStage [class*="bg-[#e2e8f0"],#appStage [class*="bg-[#cbd5e1"]{
+ background:#1A1F29!important;color:#E5E7EB!important;border-color:#2D3545!important
+}
+#appStage input,#appStage select,#appStage textarea,#modalContent input,#modalContent select,#modalContent textarea{
+ background:#131722!important;color:#FFFFFF!important;border:1px solid #2D3545!important;caret-color:#60A5FA!important;color-scheme:dark!important
+}
+#appStage input::placeholder,#appStage textarea::placeholder,#modalContent input::placeholder,#modalContent textarea::placeholder{color:#94A3B8!important}
+#appStage button[class*="bg-[#e2e8f0"],#appStage button[class*="bg-[#cbd5e1"],#appStage button[class*="bg-slate-100"],#appStage button[class*="bg-gray-100"],#appStage button[class*="bg-white"]{
+ background:#262C3A!important;color:#E2E8F0!important;border:1px solid #2D3545!important
+}
+#appStage [class*="rounded-full"][class*="bg-"],#appStage [class*="rounded-xl"][class*="bg-"]{
+ border-color:#2D3545
+}
+#appStage canvas,#liveChartCanvas{background:#0E1117!important}
+#modalBackdrop,#modalContent{background:#131722!important;color:#E5E7EB!important;border-color:#2D3545!important}
+#modalContent button[class*="bg-slate-100"],#modalContent button[class*="bg-gray-100"],#modalContent button[class*="bg-[#e2e8f0"],#modalContent button[class*="bg-white"]{background:#262C3A!important;color:#E2E8F0!important;border-color:#2D3545!important}
+#bb-auth-boot,#bb-terminal-runtime-error{background:#0E1117!important;color:#E5E7EB!important}
+#bb-session-reconnect-fallback{background:#1A1F29!important;color:#E5E7EB!important;border-color:#2D3545!important}
