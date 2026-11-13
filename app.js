@@ -321,12 +321,22 @@ async function openTerminalFromPortal(accountId=null){
  const launchId=accountId||cachedSelected?.id||null;
  window.__bbTerminalLaunchAccountId=launchId;
  try{
-  if(launchId)sessionStorage.setItem("bb:terminal:launch-account:"+user.id,String(launchId));
-  else sessionStorage.removeItem("bb:terminal:launch-account:"+user.id);
-  if(cachedSelected?.account_mode||preferred)sessionStorage.setItem("bb:terminal:active-mode:"+user.id,String(cachedSelected?.account_mode||preferred).toLowerCase());
- }catch(_){}
- if(activePage!=="terminal")history.pushState({...(history.state&&typeof history.state==="object"?history.state:{}),bbTerminalView:true},"",location.href);
- showApp("terminal");
+  if(launchId){
+   localStorage.setItem("bb:terminal:launch-account:"+user.id,String(launchId));
+   localStorage.setItem("bb:terminal:active-account:"+user.id,String(launchId));
+  }else{
+   localStorage.removeItem("bb:terminal:launch-account:"+user.id);
+   localStorage.removeItem("bb:terminal:active-account:"+user.id);
+  }
+  if(cachedSelected?.account_mode||preferred){
+   localStorage.setItem("bb:terminal:active-mode:"+user.id,String(cachedSelected?.account_mode||preferred).toLowerCase());
+  }
+ }catch(storageError){console.warn("Terminal account preference storage unavailable:",storageError);}
+ const terminalUrl=new URL("/terminal.html",window.location.origin);
+ terminalUrl.searchParams.set("v","20261113-force-open");
+ if(launchId)terminalUrl.searchParams.set("account_id",String(launchId));
+ window.location.assign(terminalUrl.pathname+terminalUrl.search);
+
 }
 window.__bbReturnToClientArea=()=>{if(activePage!=="terminal")return;showApp("accounts");if(history.state?.bbTerminalView)history.back();};
 
