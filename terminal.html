@@ -123,7 +123,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 </style>
   <script async src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
   <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="stylesheet" href="terminal-theme.css?v=20261113-auto-connect-fix">
+  <link rel="stylesheet" href="terminal-theme.css?v=20261113-fast-execution-fix">
 <script id="bb-cache-cleanup">
 (function(){
   try {
@@ -2306,7 +2306,7 @@ window.bbSubmitPositionModify=async function(positionId){
  const slText=document.getElementById('bbModifySL')?.value??'',tpText=document.getElementById('bbModifyTP')?.value??'';
  const sl=slText.trim()===''?null:Number(slText),tp=tpText.trim()===''?null:Number(tpText);
  if((sl!==null&&(!(sl>0)||!Number.isFinite(sl)))||(tp!==null&&(!(tp>0)||!Number.isFinite(tp)))){notify('Invalid protection level','SL and TP must be positive prices or left blank.','error');return;}
- try{if(real){await call('bbook-engine',{action:'modify_position',account_id:a.backendId,position_id:order.backendTradeId,stop_loss:sl,take_profit:tp});}else{if(sl===null)throw new Error('Demo positions require a Stop Loss; keep the current SL or enter a new one.');await call('paper-execution',{action:'modify',account_mode:'demo',account_id:a.backendId,trade_id:order.backendTradeId,stop_loss:sl,take_profit:tp});}closeModal();await refresh(true);notify('Protection updated',order.symbol+' SL / TP saved.','success');}catch(e){notify('Modify failed',e.message||'SL / TP could not be updated.','error');}
+ try{if(real){await call('bbook-engine',{action:'modify_position',account_id:a.backendId,position_id:order.backendTradeId,stop_loss:sl,take_profit:tp});}else{if(sl===null)throw new Error('Demo positions require a Stop Loss; keep the current SL or enter a new one.');await call('paper-execution',{action:'modify',account_mode:'demo',account_id:a.backendId,trade_id:order.backendTradeId,stop_loss:sl,take_profit:tp});}order.sl=sl==null?'':String(sl);order.tp=tp==null?'':String(tp);closeModal();updateLiveDOMElements();renderApp();notify('Protection updated',order.symbol+' SL / TP saved.','success');void refresh(true).then(ok=>{if(!ok)notify('Protection saved; sync retrying','The execution service confirmed the SL / TP update.','info');});}catch(e){notify('Modify failed',e.message||'SL / TP could not be updated.','error');}
 };
 async function closePosition(id,silent=false,reason='Closed manually'){
  const o=state.openOrders.find(x=>String(x.id)===String(id)||String(x.backendTradeId)===String(id));
@@ -2321,16 +2321,18 @@ async function closePosition(id,silent=false,reason='Closed manually'){
   const result=await call(real?'bbook-engine':'paper-execution',payload);
   if(real&&(!result.success||String(result.position?.status||'').toUpperCase()!=='CLOSED'))throw new Error(result.error||'B-Book engine did not confirm the position close.');
   if(!silent)closeModal();
-  const realized=Number(result.realized_pnl??result.position?.realized_pnl??o.realizedPL??0);
-  const exit=Number(result.position?.exit_price??result.quote?.bid??result.quote?.ask??o.closePrice);
+  const positionResult=result.position||result;
+  const realized=Number(positionResult.realized_pnl??result.realized_pnl??o.realizedPL??0);
+  const quoteExit=o.side==='Buy'?result.quote?.bid:result.quote?.ask;
+  const exit=Number(positionResult.exit_price??quoteExit??o.closePrice??o.openPrice);
   const closed={...o,closePrice:exit,closeTime:new Date().toLocaleString(),realizedPL:realized,status:'closed'};
   state.openOrders=state.openOrders.filter(x=>String(x.backendTradeId||x.id)!==lock);
   state.closedOrders=[closed,...state.closedOrders.filter(x=>String(x.backendTradeId||x.id)!==lock)];
   if(real&&Number.isFinite(Number(result.account_balance)))a.balance=Number(result.account_balance);
   updateLiveDOMElements();renderApp();
-  const refreshed=await refresh(true);
-  if(!refreshed){state.openOrders=state.openOrders.filter(x=>String(x.backendTradeId||x.id)!==lock);state.closedOrders=[closed,...state.closedOrders.filter(x=>String(x.backendTradeId||x.id)!==lock)];updateLiveDOMElements();renderApp();}
-  notify('Position closed',o.symbol+' '+o.side+' '+o.lots.toFixed(2)+' lots · '+(realized>=0?'+':'')+formatMoney(realized)+' USD','success');return true;
+  notify('Position closed',o.symbol+' '+o.side+' '+o.lots.toFixed(2)+' lots · '+(realized>=0?'+':'')+formatMoney(realized)+' USD','success');
+  void refresh(true).then(ok=>{if(!ok){state.openOrders=state.openOrders.filter(x=>String(x.backendTradeId||x.id)!==lock);state.closedOrders=[closed,...state.closedOrders.filter(x=>String(x.backendTradeId||x.id)!==lock)];updateLiveDOMElements();renderApp();notify('Closed order saved; history sync retrying','The B-Book confirmed settlement. The local history record is retained while the ledger reconnects.','info');}});
+  return true;
  }catch(e){notify('Close failed',e.message||'The position could not be closed.','error');return false;}
  finally{closingPositions.delete(lock);}
 }
