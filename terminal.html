@@ -38,7 +38,7 @@
   <style>
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body {
-      background-color: #f8fafc;
+      background-color: #0E1117;
       color: #172235;
       font-family: 'Inter', sans-serif;
       margin: 0;
@@ -112,18 +112,18 @@
     }
     .sheet-animate { animation: slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1); }
     #liveChartCanvas{touch-action:none;user-select:none;-webkit-user-select:none;display:block;width:100%;height:100%;}
-  html, body { width:100%; min-width:0; height:100%; min-height:100%; margin:0!important; padding:0!important; background:#f8fafc!important; }
-    #appStage { width:100vw!important; height:100dvh!important; min-height:100dvh!important; margin:0!important; padding:0!important; background:#f8fafc!important; }
-    .mobile-shell { width:100%; max-width:none; height:100dvh; min-height:100dvh; max-height:none; margin:0; border:0; border-radius:0; box-shadow:none; background:#f8fafc; }
+  html, body { width:100%; min-width:0; height:100%; min-height:100%; margin:0!important; padding:0!important; background:#0E1117!important; }
+    #appStage { width:100vw!important; height:100dvh!important; min-height:100dvh!important; margin:0!important; padding:0!important; background:#0E1117!important; }
+    .mobile-shell { width:100%; max-width:none; height:100dvh; min-height:100dvh; max-height:none; margin:0; border:0; border-radius:0; box-shadow:none; background:#0E1117; }
   html.bb-auth-pending #appStage{visibility:hidden}
 html.bb-auth-pending #bb-auth-boot{display:flex}
-#bb-auth-boot{display:none;position:fixed;inset:0;z-index:9999;background:#f8fafc;color:#f3f4f6;align-items:center;justify-content:center;flex-direction:column;gap:12px;font:600 14px Inter,sans-serif}
+#bb-auth-boot{display:none;position:fixed;inset:0;z-index:9999;background:#0E1117;color:#f3f4f6;align-items:center;justify-content:center;flex-direction:column;gap:12px;font:600 14px Inter,sans-serif}
 #bb-auth-boot .bb-auth-spinner{width:28px;height:28px;border:3px solid #dbeafe;border-top-color:#2979ff;border-radius:50%;animation:bb-auth-spin .8s linear infinite}
 @keyframes bb-auth-spin{to{transform:rotate(360deg)}}
 </style>
   <script async src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
   <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="stylesheet" href="terminal-theme.css?v=20261113-final-live">
+  <link rel="stylesheet" href="terminal-theme.css?v=20261113-dark-contrast-flow-fix">
 <script id="bb-cache-cleanup">
 (function(){
   try {
@@ -2231,7 +2231,7 @@ async function refresh(silent=true){
   window.__bbBbookMetrics=metrics;window.__bbBbookExecution=execution;
   state.openOrders=rows.filter(t=>t.status==='open');state.closedOrders=rows.filter(t=>t.status==='closed');state.pendingOrders=pendingRows;
   updateLiveDOMElements();renderApp();return true;
- }catch(e){if(epoch===refreshEpoch){state.openOrders=[];state.closedOrders=[];state.pendingOrders=[];updateLiveDOMElements();if(!silent)notify('Trading connection error',e.message||'Trading ledger could not be refreshed.','error');}console.error('BIGBULLS terminal backend:',e);return false;}finally{if(epoch===refreshEpoch)busy=false;}
+ }catch(e){if(epoch===refreshEpoch){updateLiveDOMElements();if(!silent)notify('Trading connection error',e.message||'Trading ledger could not be refreshed. Existing confirmed orders are retained until the next successful ledger sync.','error');}console.error('BIGBULLS terminal backend:',e);return false;}finally{if(epoch===refreshEpoch)busy=false;}
 }
 async function place(){
  const a=getActiveAccount(),m=state.orderTicket,s=state.selectedSymbol;if(!a)return;
@@ -2260,7 +2260,17 @@ async function place(){
   notify(m.mode==='Market'?(real?'B-Book position accepted':'Paper position opened'):'B-Book pending order saved',
    s+' '+m.side+' '+quantity.toFixed(2)+' lots · '+String(confirmed?.id||d.order?.id||'').slice(0,8),'success');
   playTerminalSound(m.mode==='Market'?'placed':'pending');
-  refresh(true);
+  const optimisticId=confirmed?.id==null?null:String(confirmed.id);
+  const synced=await refresh(true);
+  if(m.mode==='Market'&&confirmed){
+   const existing=state.openOrders.some(o=>String(o.backendTradeId||o.id)===optimisticId);
+   if(!existing){
+    const retained=mapTrade({...confirmed,status:confirmed.status||'OPEN'},state.openOrders.length,a.id);
+    if(retained){retained.status='open';state.openOrders=[retained,...state.openOrders];}
+   }
+   updateLiveDOMElements();renderApp();
+  }
+  if(!synced)notify('Order accepted; sync retrying','The execution service confirmed the order. It remains visible while the ledger reconnects.','info');
  }catch(e){const msg=/insufficient/i.test(e.message)?'Insufficient Funds':e.message;playTerminalSound('error');notify('Order not placed',msg,'error');}
 }
 const closingPositions=new Set();
