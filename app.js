@@ -275,11 +275,12 @@ async function showApp(page){
  if(!isAdmin())window.setTimeout(()=>maybeOpenKycOnboarding(),650);
 }
 
-function openTerminalFromPortal(accountId=null){
- const rows=(window.bbClientAccounts||[]).filter(x=>x.status==="approved"&&!x.archived_at&&!x.deleted_at);
+async function openTerminalFromPortal(accountId=null){
+ let rows=(window.bbClientAccounts||[]).filter(x=>x.status==="approved"&&!x.archived_at&&!x.deleted_at);
+ if(accountId&&!rows.some(x=>String(x.id)===String(accountId))){message("The selected account is not available for terminal access. Refresh Accounts and try again.",true);return;}
+ if(!rows.length){const {data,error}=await sb.from("trading_accounts").select("id,account_mode,status,archived_at,deleted_at").eq("user_id",user.id).eq("status","approved").is("archived_at",null).is("deleted_at",null).order("created_at",{ascending:false});if(error){message("Could not load your approved trading accounts: "+error.message,true);return;}rows=data||[];}
  const preferred=String(window.bbAccountMode||"real").toLowerCase()==="demo"?"demo":"real";
  const selected=(accountId?rows.find(x=>String(x.id)===String(accountId)):null)||rows.find(x=>String(x.account_mode||"").toLowerCase()===preferred)||rows.find(x=>String(x.account_mode||"").toLowerCase()==="real")||rows[0]||null;
- if(accountId&&!selected){message("The selected account is not available for terminal access. Refresh Accounts and try again.",true);return;}
  if(!selected){message("No approved trading account is available. Create or activate a Real or Demo account first.",true);return;}
  window.__bbTerminalLaunchAccountId=selected.id;
  if(activePage!=="terminal")history.pushState({...(history.state&&typeof history.state==="object"?history.state:{}),bbTerminalView:true},"",location.href);
@@ -1454,7 +1455,7 @@ async function clickHandler(e){
  const accountMode=el.closest("[data-account-mode]");
  if(accountMode){window.bbAccountMode=accountMode.dataset.accountMode;document.querySelectorAll("[data-account-mode]").forEach(x=>x.classList.toggle("active",x===accountMode));const tools=document.getElementById("bb-account-tools");if(tools){tools.hidden=true;tools.innerHTML="";}loadClientTradingAccounts();return;}
  const terminalAccount=el.closest("[data-account-terminal]");
- if(terminalAccount){const account=(window.bbClientAccounts||[]).find(x=>x.id===terminalAccount.dataset.accountTerminal);if(!account||account.status!=="approved"||account.archived_at||account.deleted_at){message("This account is not approved for terminal access.",true);return;}openTerminalFromPortal(account.id);return;}
+ if(terminalAccount){const account=(window.bbClientAccounts||[]).find(x=>x.id===terminalAccount.dataset.accountTerminal);if(!account||account.status!=="approved"||account.archived_at||account.deleted_at){message("This account is not approved for terminal access.",true);return;}await openTerminalFromPortal(account.id);return;}
  const accountTool=el.closest("[data-account-tool]");
  if(accountTool){if(["deposit","withdraw"].includes(accountTool.dataset.accountTool))showAccountTool(accountTool.dataset.accountId,accountTool.dataset.accountTool);else showAccountTool(accountTool.dataset.accountId,accountTool.dataset.accountTool);return;}
  const accountAction=el.closest("[data-account-action]");
@@ -1466,7 +1467,7 @@ async function clickHandler(e){
  const termBottom=el.closest("[data-term-bottom]");if(termBottom){document.querySelectorAll("[data-term-bottom]").forEach(x=>x.classList.toggle("active",x===termBottom));const box=document.getElementById("bb-bottom-content");if(box)box.textContent=termBottom.dataset.termBottom==="positions"?"No live positions. BIGBULLS execution engine is not connected yet.":termBottom.dataset.termBottom==="orders"?"No active orders. Order routing is disabled until the BIGBULLS trading engine is deployed.":termBottom.dataset.termBottom==="history"?"Trading history will appear after account execution services are connected.":"Trade journal and analysis notes will be available in a future terminal release.";return;}
  const termTool=el.closest("[data-term-tool]");if(termTool){if(termTool.dataset.termTool==="fullscreen"){const frame=document.querySelector(".bb-tv-frame");if(frame?.requestFullscreen)frame.requestFullscreen();}else if(termTool.dataset.termTool==="indicators")alert("Use the Indicators button in the embedded chart toolbar to add technical indicators.");else if(termTool.dataset.termTool==="compare")alert("Use the Compare symbol control in the embedded chart toolbar.");return;}
  const termMarket=el.closest("[data-term-market]");if(termMarket){document.querySelectorAll("[data-term-market]").forEach(x=>x.classList.toggle("active",x===termMarket));const groups={forex:["FX:EURUSD","FX:GBPUSD","FX:USDJPY"],metals:["OANDA:XAUUSD"],crypto:["BINANCE:BTCUSDT","BINANCE:ETHUSDT"],indices:["NASDAQ:NDX","TVC:DJI"]};document.querySelectorAll("[data-term-symbol]").forEach(x=>x.hidden=!groups[termMarket.dataset.termMarket].includes(x.dataset.termSymbol));return;}
- const page=el.closest("[data-page]");if(page){e.preventDefault();document.querySelectorAll(".top-menu-dropdown,.sidebar-submenu").forEach(x=>x.hidden=true);document.querySelectorAll("[data-menu-toggle]").forEach(x=>x.setAttribute("aria-expanded","false"));const destination=page.getAttribute("data-page");if(destination==="terminal"){openTerminalFromPortal();return;}showApp(destination);return;}
+ const page=el.closest("[data-page]");if(page){e.preventDefault();document.querySelectorAll(".top-menu-dropdown,.sidebar-submenu").forEach(x=>x.hidden=true);document.querySelectorAll("[data-menu-toggle]").forEach(x=>x.setAttribute("aria-expanded","false"));const destination=page.getAttribute("data-page");if(destination==="terminal"){await openTerminalFromPortal();return;}showApp(destination);return;}
  const view=el.closest("[data-auth-view]");if(view){if(view.dataset.authView==="signup")signupForm();else loginForm();return;}
  const lang=el.closest("[data-language]");if(lang){alert("Language selector is a visual prototype. EN / UR / AR translations will be enabled in the localization phase.");return;}
  const trigger=el.closest("[data-open]");if(trigger){e.preventDefault();openModal(trigger.getAttribute("data-open"));return;}
