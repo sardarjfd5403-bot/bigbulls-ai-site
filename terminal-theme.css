@@ -1,0 +1,16 @@
+/* BIGBULLS clean white + professional blue terminal theme */
+:root{color-scheme:light;--bb-terminal-bg:#f8fafc;--bb-terminal-surface:#fff;--bb-terminal-border:#e2e8f0;--bb-terminal-ink:#0f172a;--bb-terminal-muted:#64748b;--bb-terminal-blue:#2563eb}
+html,body,#appStage,.mobile-shell{background:#f8fafc!important;color:#0f172a!important}
+#appStage{color-scheme:light}
+#appStage [class*="bg-[#0b0e14"],#appStage [class*="bg-[#0f172a"],#appStage [class*="bg-[#111827"],#appStage [class*="bg-[#1A1F29"],#appStage [class*="bg-[#1a1f29"],#appStage [class*="bg-[#172033"],#appStage [class*="bg-[#1e293b"],#appStage [class*="bg-[#232936"],#appStage [class*="bg-[#262C3A"],#appStage [class*="bg-[#2D3545"],#appStage [class*="bg-slate-900"],#appStage [class*="bg-gray-900"]{background-color:#fff!important;color:#0f172a!important;border-color:#e2e8f0!important;box-shadow:0 4px 6px -1px rgba(15,23,42,.06)}
+#appStage [class*="text-white"],#appStage [class*="text-gray-100"],#appStage [class*="text-slate-100"],#appStage [class*="text-gray-200"],#appStage [class*="text-slate-200"]{color:#0f172a!important}
+#appStage [class*="border-[#2D3545"],#appStage [class*="border-[#262C3A"],#appStage [class*="border-gray-700"],#appStage [class*="border-slate-700"]{border-color:#e2e8f0!important}
+#appStage input,#appStage select,#appStage textarea{background:#fff!important;color:#0f172a!important;border-color:#cbd5e1!important}
+#appStage button[class*="bg-[#2979FF"],#appStage button[class*="bg-blue-"],#appStage [class*="bg-blue-600"],#appStage [class*="bg-blue-500"]{background-color:#2563eb!important;color:#fff!important}
+#appStage [class*="text-[#9"],#appStage [class*="text-gray-400"],#appStage [class*="text-slate-400"],#appStage [class*="text-gray-500"],#appStage [class*="text-slate-500"]{color:#64748b!important}
+#modalBackdrop{background:rgba(15,23,42,.38)!important}
+#modalContent{background:#fff!important;color:#0f172a!important;border:1px solid #e2e8f0!important;box-shadow:0 16px 40px rgba(15,23,42,.12)!important}
+#bb-terminal-back{background:#2563eb!important;color:#fff!important;border-color:#2563eb!important;box-shadow:0 4px 12px rgba(37,99,235,.18)!important}
+#bb-auth-boot{background:#f8fafc!important;color:#0f172a!important}
+#bb-auth-boot .bb-auth-spinner{border-color:#dbeafe!important;border-top-color:#2563eb!important}
+#appStage canvas{background:transparent}
