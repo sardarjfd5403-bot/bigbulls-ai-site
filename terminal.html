@@ -2486,7 +2486,7 @@ async function bbAttemptSessionReconnect(source='background'){
   if(!restored?.access_token||!restored.user?.id)throw new Error('No valid signed-in Supabase session is available yet.');
   session=restored;
   window.__bbTerminalAuthSession=restored;
-  if(c.realtime?.setAuth)await c.realtime.setAuth(restored.access_token);
+  if(c.realtime?.setAuth){try{await c.realtime.setAuth(restored.access_token);}catch(realtimeError){console.warn('Realtime JWT bind deferred; authenticated REST recovery continues:',realtimeError.message);}}
   await accounts();
   const active=getActiveAccount();
   if(!active?.backendId||active.status!=='approved')throw new Error('Signed-in session restored, but no approved trading account is available.');
@@ -2593,9 +2593,11 @@ async function start(){
    // Parent portal has already authenticated before it can launch this iframe.
    // Use that session immediately; direct terminal URL visits still hydrate Supabase normally.
    const bridgedSession=window.__bbTerminalAuthSession||window.__bbParentAuthSession||null;
-   const auth=bridgedSession?{data:{session:bridgedSession},error:null}:await bbWithBootTimeout(c.auth.getSession(),'Session hydration',Math.max(250,deadline-Date.now()));
+   // Always ask the shared Supabase SDK for its current session first so expired tokens refresh;
+   // the parent snapshot is only a fallback, never the authority over SDK storage.
+   const auth=await bbWithBootTimeout(c.auth.getSession(),'Session hydration',Math.max(250,deadline-Date.now()));
    if(auth.error)throw auth.error;
-   session=auth.data?.session||null;
+   session=auth.data?.session||bridgedSession||null;
    if(!session?.user){bbShowBootFallback(new Error('Secure session is not ready. Terminal remains open in safe mode; sign in to enable account access and trading.'));return;}
    // Paint the authenticated terminal shell immediately; account lookup is background-only.
    state.accounts=[{id:'__account_loading__',accountNumber:null,backendId:null,nickname:'Loading approved accounts…',type:'Demo',platform:'BIGBULLS',accountClass:'—',balance:0,creditBonus:0,equity:0,floatingPL:0,leverage:'1:100',server:'BIGBULLS',archived:false,status:'unavailable',currency:'USD'}];
