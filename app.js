@@ -2,7 +2,7 @@
 "use strict";
 const URL="https://ztiiyulusburxjkpcfxu.supabase.co";
 const KEY="sb_publishable_5hDwqvbcUHeSJdXFHf9ugw_VPYGN4J_";
-let sb=null,modal,body,shell,user=null,activePage="dashboard",licenseActive=false,financialChannel=null,calendarEvents=[],calendarRefreshTimer=null;
+let sb=null,modal,body,shell,user=null,activePage="dashboard",licenseActive=false,financialChannel=null,calendarEvents=[],calendarRefreshTimer=null,authEventVersion=0,portalRenderVersion=0;
 const pages=["seo","course-forex","course-smc","course-ict","course-vsa","dashboard","terminal","accounts","wallet","market-analysis","signals","learning","services","portfolio","orders","license","echo-system","downloads","profile","settings","support","verification","partner","economic-calendar","trading-central","admin"];
 const clientPageKey=id=>"bb:client:last-page:"+String(id||"");
 function getSavedClientPage(id){try{const saved=sessionStorage.getItem(clientPageKey(id));return pages.includes(saved)?saved:null;}catch(_){return null;}}
@@ -47,26 +47,42 @@ function connectSupabase(){
  });
  window.openPortal=openModal;window.closePortal=closeModal;
  updateHeader();
- // Keep the public landing page visible; authentication opens only when the visitor selects Login or Sign up.
- // Keep this callback synchronous to avoid waiting on the Supabase auth lock.
+ // Auth events are the source of truth. Keep the callback synchronous (Supabase auth lock),
+ // then switch views on the next task so SIGNED_IN / INITIAL_SESSION cannot be overwritten by stale boot work.
  sb.auth.onAuthStateChange((event,session)=>{
-  user=session?session.user:null;
+  const eventVersion=++authEventVersion;
+  user=session?.user||null;
   updateHeader();
-  if(event==="SIGNED_OUT")hideApp();
+  if(event==="SIGNED_OUT"){portalRenderVersion++;hideApp();document.documentElement.classList.remove("bb-auth-boot-pending");return;}
+  if(session&&["SIGNED_IN","INITIAL_SESSION","TOKEN_REFRESHED","USER_UPDATED"].includes(event)){
+   const requested=location.hash==="#login"?"dashboard":(location.hash==="#dashboard"||location.hash==="#portal"?"dashboard":getSavedClientPage(session.user.id)||"dashboard");
+   setTimeout(()=>{if(eventVersion===authEventVersion&&user?.id===session.user.id)showApp(requested).catch(err=>console.error("Portal open after auth event failed:",err));},0);
+  }
  });
- // Restore the persisted session outside the auth callback.
+ // Restore session without allowing a stale getSession result to undo a newer auth event.
+ const bootVersion=authEventVersion;
  sb.auth.getSession().then(async({data,error})=>{
   if(error)throw error;
-  user=data?.session?.user||null;
-  updateHeader();
-  if(user)await showApp(getSavedClientPage(user.id)||"dashboard");
-  else hideApp();
+  if(bootVersion!==authEventVersion)return;
+  const session=data?.session||null;
+  user=session?.user||null;updateHeader();
+  if(session){
+   const hash=location.hash.toLowerCase();
+   const page=hash==="#login"?"dashboard":(hash==="#dashboard"||hash==="#portal"? "dashboard":getSavedClientPage(session.user.id)||"dashboard");
+   await showApp(page);
+  }else{
+   const hash=location.hash.toLowerCase();
+   if(hash==="#login"){hideApp();openModal("login");}
+   else if(hash==="#dashboard"||hash==="#portal"){hideApp();openModal("login");}
+   else hideApp();
+  }
   document.documentElement.classList.remove("bb-auth-boot-pending");
  }).catch(error=>{
+  if(bootVersion!==authEventVersion)return;
   console.error("Unable to restore the client session:",error);
-  user=null;updateHeader();hideApp();
+  // Keep the public page usable on transient storage/network errors; never erase a session delivered by an auth event.
+  if(!user){updateHeader();hideApp();}
   document.documentElement.classList.remove("bb-auth-boot-pending");
-  console.error("Could not restore client session:",error);
  });
 }
 
@@ -222,9 +238,11 @@ async function renderVipOffer(){
  // This avoids hiding Admin/SEO navigation when JWT app_metadata is stale in the browser session.
  try{
   const {data:adminFlag,error:adminError}=await sb.rpc("is_bigbulls_admin");
+  if(renderVersion!==portalRenderVersion||user?.id!==sessionUserId)return;
   window.__bbAdminAccess=!adminError&&adminFlag===true;
  }catch(error){
   console.error("Administrator access check failed:",error);
+  if(renderVersion!==portalRenderVersion||user?.id!==sessionUserId)return;
   window.__bbAdminAccess=false;
  }
  // AI analysis pages require an authenticated client with the latest KYC submission approved.
@@ -233,6 +251,7 @@ async function renderVipOffer(){
  const kycProtectedPages=["echo-system","market-analysis","signals","trading-central"];
  if(kycProtectedPages.includes(requested)&&!isAdmin()){
   const {data:kyc,error:kycError}=await sb.from("kyc_submissions").select("status").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1).maybeSingle();
+  if(renderVersion!==portalRenderVersion||user?.id!==sessionUserId)return;
   if(kycError||kyc?.status!=="approved"){
    requested="verification";
    window.__bbAccessNotice=kycError?"AI access is locked because KYC status could not be verified. Please retry after checking your verification status.":kyc?.status==="pending"?"AI access is locked while your KYC is under review.":"AI access requires an approved KYC submission.";
@@ -253,7 +272,7 @@ async function renderVipOffer(){
  if((activePage==="admin"||activePage==="seo")&&!isAdmin())activePage="accounts";
  saveClientPage(user.id,activePage);
 
- shell.hidden=false;
+ shell.hidden=false;shell.removeAttribute("aria-busy");
  document.body.classList.add("app-mode");
  const main=document.querySelector("main"),footer=document.querySelector("footer");
  if(main)main.setAttribute("hidden","");
@@ -2890,6 +2909,14 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 
 async function showApp(page){
  if(!user||!shell)return;
+ const renderVersion=++portalRenderVersion;
+ // Reveal the authenticated shell immediately; optional authorization/data checks must never send the client back to the public landing page.
+ shell.hidden=false;document.body.classList.add("app-mode");
+ const bootMain=document.querySelector("main"),bootFooter=document.querySelector("footer");
+ if(bootMain)bootMain.setAttribute("hidden","");if(bootFooter)bootFooter.setAttribute("hidden","");
+ shell.setAttribute("aria-busy","true");
+ if(!shell.firstElementChild)shell.innerHTML='<div class="portal-loading" role="status" aria-live="polite">Opening your secure BIGBULLS workspace…</div>';
+ const sessionUserId=user.id;
  // Resolve administrator access from the same database-side authorization function used by protected Edge Functions.
  // This avoids hiding Admin/SEO navigation when JWT app_metadata is stale in the browser session.
  try{
