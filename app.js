@@ -282,6 +282,22 @@ async function showApp(page){
 }
 
 async function openTerminalFromPortal(accountId=null){
+ // Snapshot the authenticated parent session before the iframe is created. This avoids
+ // asking the shared Supabase auth client to re-enter getSession() from inside the iframe.
+ let authSession=window.__bbAuthSession||window.__bbTerminalAuthSession||null;
+ if(!authSession?.user||String(authSession.user.id)!==String(user?.id)){
+  const authResult=await Promise.race([
+   sb.auth.getSession(),
+   new Promise((_,reject)=>window.setTimeout(()=>reject(new Error("Secure sign-in session is taking too long. Please refresh the Client Area and retry.")),2800))
+  ]);
+  if(authResult.error)throw authResult.error;
+  authSession=authResult.data?.session||null;
+ }
+ if(!authSession?.user||String(authSession.user.id)!==String(user?.id)){
+  message("Your secure session is not ready. Please sign in again and reopen Terminal.",true);return;
+ }
+ window.__bbAuthSession=authSession;
+ window.__bbTerminalAuthSession=authSession;
  let rows=(window.bbClientAccounts||[]).filter(x=>x.status==="approved"&&!x.archived_at&&!x.deleted_at);
  if(accountId&&!rows.some(x=>String(x.id)===String(accountId))){message("The selected account is not available for terminal access. Refresh Accounts and try again.",true);return;}
  if(!rows.length){const {data,error}=await sb.from("trading_accounts").select("id,account_mode,status,archived_at,deleted_at").eq("user_id",user.id).eq("status","approved").is("archived_at",null).is("deleted_at",null).order("created_at",{ascending:false});if(error){message("Could not load your approved trading accounts: "+error.message,true);return;}rows=data||[];}
