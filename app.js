@@ -16,7 +16,7 @@ function init(){
  document.addEventListener("keydown",e=>{if(e.key!=="Enter"||!(e.target instanceof HTMLInputElement))return;const form=e.target.form;if(form&&["signup-form","login-form"].includes(form.id))e.preventDefault();},true);
  document.addEventListener("submit",e=>{submitHandler(e).catch(err=>{console.error("Portal form workflow failed:",err);const out=e.target?.querySelector?.("[data-page-message]");if(out)out.textContent="This request could not be completed: "+(err?.message||"Please retry.");else message("This request could not be completed: "+(err?.message||"Please retry."),true);});},true);
  document.addEventListener("change",e=>{kycFileChangeHandler(e).catch(err=>{console.error("Secure upload workflow failed:",err);message("Secure upload failed: "+(err?.message||"Please retry."),true);});},true);
- startAICarousel();
+ try{startAICarousel();}catch(err){console.warn("Optional AI carousel failed:",err);}
  if(window.supabase&&window.supabase.createClient){connectSupabase();}
  else{
   // Keep the login visible even if the primary CDN is blocked; retry through a fallback CDN.
@@ -123,6 +123,7 @@ async function kycFileChangeHandler(e){
  }catch(err){fail("Upload failed: "+(err?.message||"Storage error. Please choose the file again."));}
  finally{if(button){const pending=[...form.querySelectorAll('input[type="file"]')].some(el=>el.files?.[0]&&!el.dataset.uploadedPath);button.disabled=pending;}}
 }
+window.openAuthModal=function(kind,event){if(event){event.preventDefault();event.stopPropagation();}modal=modal||document.getElementById("portal-modal");body=body||document.getElementById("portal-body");shell=shell||document.getElementById("app-shell");if(!modal||!body){console.warn("Auth modal markup is unavailable.");return false;}openModal(kind==="signup"?"signup":"login");return false;};
 function showModal(){modal.classList.add("show");modal.setAttribute("aria-hidden","false");document.body.classList.add("portal-open");}
 function closeModal(){modal.classList.remove("show");modal.setAttribute("aria-hidden","true");document.body.classList.remove("portal-open");}
 function signupForm(){body.innerHTML='<p class="eyebrow">CUSTOMER ACCOUNT</p><h2>Create your BIGBULLS profile</h2><form id="signup-form"><label>Full name<input name="full_name" autocomplete="name" required></label><label>Email<input name="email" type="email" autocomplete="email" required></label><div class="form-two"><label>Country<input name="country" autocomplete="country-name" placeholder="Country" required></label><label>Phone number<input name="phone" type="tel" autocomplete="tel" placeholder="+ country code"></label></div><label>Account type<select name="account_type"><option>Individual</option><option>Corporate</option></select></label><label>Referral code (optional)<input name="referral_code"></label><label>Password<input name="password" type="password" minlength="8" autocomplete="new-password" required></label><label class="check-line"><input type="checkbox" name="terms" required> I agree to the Terms, Privacy Policy and risk disclosure.</label><button class="portal-primary" type="submit">Create account</button></form><div data-msg></div><button class="copy-wallet" data-auth-view="login">Already registered? Login</button>';const referral=new URLSearchParams(location.search).get("ref");const referralInput=body.querySelector('#signup-form [name="referral_code"]');if(referral&&referralInput)referralInput.value=referral.trim().toUpperCase();}
@@ -1420,6 +1421,7 @@ async function submitHandler(e){
 }
 async function clickHandler(e){
  const el=e.target instanceof Element?e.target:null;if(!el)return;
+ const authTrigger=el.closest("[data-open=\"login\"],[data-open=\"signup\"]");if(authTrigger){e.preventDefault();e.stopPropagation();openModal(authTrigger.getAttribute("data-open"));return;}
  const menuToggle=el.closest("[data-menu-toggle]");
  if(menuToggle){e.preventDefault();const id=menuToggle.dataset.menuToggle,drop=document.querySelector('[data-menu-dropdown="'+id+'"]'),wasOpen=drop&&!drop.hidden;document.querySelectorAll(".top-menu-dropdown,.sidebar-submenu").forEach(x=>x.hidden=true);document.querySelectorAll("[data-menu-toggle]").forEach(x=>x.setAttribute("aria-expanded","false"));if(drop&&!wasOpen){drop.hidden=false;menuToggle.setAttribute("aria-expanded","true");}return;}
  if(!el.closest(".top-menu-group")){document.querySelectorAll(".top-menu-dropdown,.sidebar-submenu").forEach(x=>x.hidden=true);document.querySelectorAll("[data-menu-toggle]").forEach(x=>x.setAttribute("aria-expanded","false"));}
