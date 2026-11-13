@@ -1991,9 +1991,18 @@ function updateCandleFromTick(symbol,bid,stamp=Date.now()){
 }
 const notify=(t,s='',type='info')=>{if(typeof showToast==='function')showToast(t,s,type);};
 function client(){
- // Reuse the authenticated parent Client Area client inside the same-origin terminal iframe.
- // This avoids two Supabase Auth clients competing for the same browser session lock/storage.
- try{const parentClient=window.parent!==window?window.parent.__bbSupabaseClient:null;if(parentClient?.auth&&parentClient?.functions){window.__bbSupabaseClient=parentClient;return parentClient;}}catch(e){console.warn('Parent BIGBULLS session bridge unavailable:',e);}
+ // Reuse the authenticated parent Client Area client and its in-memory session snapshot.
+ // Access tokens are never placed in URLs, browser history, or persistent storage by this bridge.
+ try{
+  if(window.parent!==window){
+   const parentClient=window.parent.__bbSupabaseClient;
+   if(parentClient?.auth&&parentClient?.functions){
+    window.__bbSupabaseClient=parentClient;
+    window.__bbParentAuthSession=window.parent.__bbAuthSession||null;
+    return parentClient;
+   }
+  }
+ }catch(e){console.warn('Parent BIGBULLS session bridge unavailable:',e);}
  if(window.__bbSupabaseClient?.auth&&window.__bbSupabaseClient?.functions)return window.__bbSupabaseClient;
  if(window.bigbullsSupabase?.auth&&window.bigbullsSupabase?.functions)return window.bigbullsSupabase;
  if(window.supabase?.createClient){window.__bbSupabaseClient=window.supabase.createClient(BB_URL,BB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});return window.__bbSupabaseClient;}
@@ -2327,7 +2336,7 @@ function mountTerminalSoundToggle(){
  if(document.getElementById('bbTerminalSoundToggle'))return;
  const btn=document.createElement('button');btn.id='bbTerminalSoundToggle';btn.type='button';
  btn.title='Toggle terminal sound';btn.setAttribute('aria-label','Toggle terminal sound');
- btn.style.cssText='position:fixed;right:14px;bottom:14px;z-index:75;width:40px;height:40px;border:1px solid #2563eb;border-radius:12px;background:#17202e;color:#f8fafc;box-shadow:0 6px 20px #0008;font-size:17px;display:flex;align-items:center;justify-content:center;cursor:pointer';
+ btn.style.cssText='position:fixed;right:14px;bottom:14px;z-index:75;width:40px;height:40px;border:1px solid #2563eb;border-radius:12px;background:#2563eb;color:#ffffff;box-shadow:0 6px 20px #0008;font-size:17px;display:flex;align-items:center;justify-content:center;cursor:pointer';
  const paint=()=>{btn.textContent=bbSoundEnabled?'🔊':'🔇';btn.setAttribute('aria-pressed',String(bbSoundEnabled));btn.title=bbSoundEnabled?'Mute terminal sounds':'Unmute terminal sounds';};
  btn.addEventListener('click',()=>{bbSoundEnabled=!bbSoundEnabled;try{localStorage.setItem('bb-terminal-sound',bbSoundEnabled?'on':'off');}catch(_){}paint();if(bbSoundEnabled){try{const C=window.AudioContext||window.webkitAudioContext;if(C){window.__bbAudioContext=window.__bbAudioContext||new C();window.__bbAudioContext.resume?.();}}catch(_){}playTerminalSound('placed');}});
  paint();document.body.appendChild(btn);
@@ -2354,7 +2363,7 @@ function bbShowBootError(error){
  document.documentElement.classList.remove('bb-auth-pending');
  const stage=document.getElementById('appStage');if(!stage)return;
  const message=String(error?.message||error||'Terminal initialization failed.');
- stage.innerHTML='<section style="margin:auto;width:min(92vw,460px);padding:24px;border:1px solid #2563eb;border-radius:18px;background:#111827;color:#f8fafc;text-align:center;font:14px Inter,sans-serif"><div style="font-size:30px;margin-bottom:10px">⚠</div><h2 style="font-size:18px;font-weight:800;margin:0 0 8px">Terminal connection needs attention</h2><p style="color:#aab4c5;line-height:1.55;margin:0 0 18px" id="bb-boot-error"></p><div style="display:flex;gap:10px"><button id="bb-boot-retry" style="flex:1;padding:12px;border-radius:10px;background:#2563eb;color:white;font-weight:700">Retry</button><button id="bb-boot-back" style="flex:1;padding:12px;border-radius:10px;background:#263244;color:white;font-weight:700">My Accounts</button></div></section>';
+ stage.innerHTML='<section style="margin:auto;width:min(92vw,460px);padding:24px;border:1px solid #2563eb;border-radius:18px;background:#ffffff;color:#0f172a;text-align:center;font:14px Inter,sans-serif"><div style="font-size:30px;margin-bottom:10px">⚠</div><h2 style="font-size:18px;font-weight:800;margin:0 0 8px">Terminal connection needs attention</h2><p style="color:#64748b;line-height:1.55;margin:0 0 18px" id="bb-boot-error"></p><div style="display:flex;gap:10px"><button id="bb-boot-retry" style="flex:1;padding:12px;border-radius:10px;background:#2563eb;color:white;font-weight:700">Retry</button><button id="bb-boot-back" style="flex:1;padding:12px;border-radius:10px;background:#e2e8f0;color:#0f172a;font-weight:700">My Accounts</button></div></section>';
  const p=document.getElementById('bb-boot-error');if(p)p.textContent=message;
  document.getElementById('bb-boot-retry')?.addEventListener('click',()=>{document.documentElement.classList.add('bb-auth-pending');stage.innerHTML='';start();});
  document.getElementById('bb-boot-back')?.addEventListener('click',()=>{try{const d=window.parent.document.querySelector('#app-shell [data-page="accounts"]');if(d){d.click();return;}}catch(_){}location.href='index.html';});
@@ -2371,7 +2380,7 @@ function bbShowBootFallback(error){
  let banner=document.getElementById('bb-session-reconnect-fallback');
  if(!banner){
   banner=document.createElement('div');banner.id='bb-session-reconnect-fallback';
-  banner.style.cssText='position:fixed;z-index:10000;top:10px;left:50%;transform:translateX(-50%);width:min(94vw,560px);padding:12px 14px;border:1px solid #92400e;border-radius:14px;background:#211a10;color:#fef3c7;box-shadow:0 8px 28px #0008;font:12px Inter,sans-serif;display:flex;align-items:center;gap:10px;flex-wrap:wrap';
+  banner.style.cssText='position:fixed;z-index:10000;top:10px;left:50%;transform:translateX(-50%);width:min(94vw,560px);padding:12px 14px;border:1px solid #92400e;border-radius:14px;background:#eff6ff;color:#1e3a8a;box-shadow:0 8px 28px #0008;font:12px Inter,sans-serif;display:flex;align-items:center;gap:10px;flex-wrap:wrap';
   banner.innerHTML='<span style="flex:1;min-width:190px">Terminal is open in safe reconnect mode. Secure session is still loading; account data and trading actions will activate after authentication reconnects.</span><button id="bb-session-retry" style="padding:9px 12px;border-radius:9px;background:#2563eb;color:white;font-weight:700">Retry session</button>';
   document.body.appendChild(banner);
   document.getElementById('bb-session-retry')?.addEventListener('click',()=>{banner.remove();document.documentElement.classList.add('bb-auth-pending');start();});
@@ -2414,7 +2423,10 @@ async function start(){
   const deadline=Date.now()+BB_BOOT_TIMEOUT_MS;
   try{
    const c=client();
-   const auth=await bbWithBootTimeout(c.auth.getSession(),'Session hydration',deadline-Date.now());
+   // Parent portal has already authenticated before it can launch this iframe.
+   // Use that session immediately; direct terminal URL visits still hydrate Supabase normally.
+   const bridgedSession=window.__bbParentAuthSession||null;
+   const auth=bridgedSession?{data:{session:bridgedSession},error:null}:await bbWithBootTimeout(c.auth.getSession(),'Session hydration',Math.max(250,deadline-Date.now()));
    if(auth.error)throw auth.error;
    session=auth.data?.session||null;
    if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}
