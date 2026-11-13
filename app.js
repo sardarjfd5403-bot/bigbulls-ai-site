@@ -843,7 +843,14 @@ if(activePage==="admin"&&isAdmin()){
   const supportBox=document.getElementById("admin-support-queue");
   if(supportBox){
    if(supportTickets.error)supportBox.innerHTML='<div class="notice error">'+esc(supportTickets.error.message)+'</div>';
-   else supportBox.innerHTML=(supportTickets.data||[]).map(ticket=>'<article class="admin-transaction"><b>'+esc(ticket.subject)+' · '+esc(String(ticket.status).toUpperCase())+'</b><small>'+esc(ticket.category)+' · Client '+esc(ticket.user_id)+' · '+new Date(ticket.created_at).toLocaleString()+'</small><p>'+esc(ticket.message)+'</p>'+(ticket.admin_reply?'<div class="notice"><b>Previous reply:</b> '+esc(ticket.admin_reply)+'</div>':'')+'<div class="bb-support-review-actions"><button type="button" data-support-review="'+esc(ticket.id)+'" data-status="open">Reopen</button><button type="button" data-support-review="'+esc(ticket.id)+'" data-status="in_progress">In progress</button><button type="button" data-support-review="'+esc(ticket.id)+'" data-status="resolved">Resolve</button><button type="button" data-support-review="'+esc(ticket.id)+'" data-status="closed">Close</button></div></article>').join("")||'<div class="empty-state">No support tickets have been submitted.</div>';
+   else{
+    const cards=await Promise.all((supportTickets.data||[]).map(async ticket=>{
+     const {data:messages,error:messageError}=await sb.from("support_ticket_messages").select("id,author_role,body,created_at").eq("ticket_id",ticket.id).order("created_at",{ascending:true});
+     const thread=messageError?'<div class="notice error">Conversation load failed: '+esc(messageError.message)+'</div>':(messages||[]).map(m=>'<div class="notice"><b>'+(m.author_role==="admin"?"Admin":"Client")+'</b><small>'+new Date(m.created_at).toLocaleString()+'</small><p>'+esc(m.body)+'</p></div>').join("");
+     return '<article class="admin-transaction"><b>'+esc(ticket.subject)+' · '+esc(String(ticket.status).toUpperCase())+'</b><small>'+esc(ticket.category)+' · Client '+esc(ticket.user_id)+' · '+new Date(ticket.created_at).toLocaleString()+'</small><p>'+esc(ticket.message)+'</p><div class="bb-support-thread">'+thread+'</div><form class="client-form" data-admin-support-message-form="'+esc(ticket.id)+'"><label>Message client<textarea name="body" rows="3" minlength="2" maxlength="5000" required placeholder="Write a helpful response to this client…"></textarea></label><button class="portal-primary" type="submit">Send message to client</button><div data-page-message role="status" aria-live="polite"></div></form><div class="bb-support-review-actions"><button type="button" data-support-review="'+esc(ticket.id)+'" data-status="open">Reopen</button><button type="button" data-support-review="'+esc(ticket.id)+'" data-status="in_progress">In progress</button><button type="button" data-support-review="'+esc(ticket.id)+'" data-status="resolved">Resolve</button><button type="button" data-support-review="'+esc(ticket.id)+'" data-status="closed">Close</button></div></article>';
+    }));
+    supportBox.innerHTML=cards.join("")||'<div class="empty-state">No support tickets have been submitted.</div>';
+   }
   }
   const commissionBox=document.getElementById("admin-commission-ledger");
   if(commissionBox)commissionBox.innerHTML=commissionRowsError?'<div class="notice error">'+esc(commissionRowsError.message)+'</div>':(commissionRows||[]).map(x=>'<div class="admin-transaction"><b>'+esc(x.partner_user_id)+' · $'+Number(x.commission_usd||0).toFixed(2)+' · '+esc(String(x.status).toUpperCase())+'</b><small>'+Number(x.verified_lots||0).toFixed(2)+' lots · '+esc(x.source_reference||"")+(x.referred_user_id?' · Client '+esc(x.referred_user_id):"")+'</small><small>'+esc(x.admin_note||"No admin note")+'</small>'+(x.status==="pending"?'<button data-commission-status="'+esc(x.id)+'" data-status="approved">Approve commission</button>':"")+(x.status==="approved"?'<button data-commission-status="'+esc(x.id)+'" data-status="paid">Mark as paid</button>':"")+(x.status!=="paid"&&x.status!=="rejected"?'<button data-commission-status="'+esc(x.id)+'" data-status="rejected">Reject</button>':"")+(x.paid_at?'<small>Paid '+new Date(x.paid_at).toLocaleString()+'</small>':"")+'</div>').join("")||"No commission records yet.";
@@ -917,7 +924,15 @@ if(activePage==="admin"&&isAdmin()){
   const box=document.getElementById("client-support-tickets");
   if(box){
    const {data,error}=await sb.from("support_tickets").select("id,subject,category,message,status,admin_reply,created_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(30);
-   box.innerHTML=error?'<div class="notice error">'+esc(error.message)+'</div>':(data||[]).map(t=>'<article class="admin-row"><span><b>'+esc(t.subject)+'</b><small>'+esc(t.category)+' · '+new Date(t.created_at).toLocaleString()+'</small><small>'+esc(t.message)+'</small>'+(t.admin_reply?'<small><b>BIGBULLS reply:</b> '+esc(t.admin_reply)+'</small>':'')+'</span><em class="status-'+esc(t.status)+'">'+esc(t.status.toUpperCase())+'</em></article>').join("")||'<div class="empty-state">You have not submitted a support ticket yet.</div>';
+   if(error)box.innerHTML='<div class="notice error">'+esc(error.message)+'</div>';
+   else{
+    const cards=await Promise.all((data||[]).map(async t=>{
+     const {data:messages,error:messageError}=await sb.from("support_ticket_messages").select("id,author_role,body,created_at").eq("ticket_id",t.id).order("created_at",{ascending:true});
+     const thread=messageError?'<div class="notice error">Conversation could not be loaded: '+esc(messageError.message)+'</div>':(messages||[]).map(m=>'<div class="notice"><b>'+(m.author_role==="admin"?"BIGBULLS Support":"You")+'</b><small>'+new Date(m.created_at).toLocaleString()+'</small><p>'+esc(m.body)+'</p></div>').join("");
+     return '<article class="admin-row"><span><b>'+esc(t.subject)+'</b><small>'+esc(t.category)+' · '+new Date(t.created_at).toLocaleString()+'</small><small>'+esc(t.message)+'</small>'+(t.admin_reply?'<small><b>Latest BIGBULLS reply:</b> '+esc(t.admin_reply)+'</small>':'')+'<div class="bb-support-thread">'+thread+'</div>'+(t.status!=="closed"?'<form class="client-form" data-support-message-form="'+esc(t.id)+'"><label>Reply to support<textarea name="body" rows="2" minlength="2" maxlength="5000" required placeholder="Write a message to BIGBULLS support…"></textarea></label><button class="portal-secondary" type="submit">Send message</button><div data-page-message role="status" aria-live="polite"></div></form>':'<small>This ticket is closed. Submit a new ticket if you need more help.</small>')+'</span><em class="status-'+esc(t.status)+'">'+esc(t.status.toUpperCase())+'</em></article>';
+    }));
+    box.innerHTML=cards.join("")||'<div class="empty-state">You have not submitted a support ticket yet.</div>';
+   }
   }
  }
  if(activePage==="portfolio"){
@@ -1363,7 +1378,25 @@ async function submitHandler(e){
    finally{button.disabled=false;button.textContent="Submit KYC securely";}
    return;
   }
-  if(f.id==="support-ticket-form"){
+  if(f.matches("[data-support-message-form]")||f.matches("[data-admin-support-message-form]")){
+  e.preventDefault();
+  const admin=f.matches("[data-admin-support-message-form]"),ticketId=admin?f.getAttribute("data-admin-support-message-form"):f.getAttribute("data-support-message-form"),out=f.querySelector("[data-page-message]"),button=f.querySelector("button[type=submit]"),bodyText=String(new FormData(f).get("body")||"").trim();
+  if(!user||!ticketId||bodyText.length<2||bodyText.length>5000){if(out)out.textContent="Enter a message between 2 and 5000 characters.";return;}
+  if(admin&&!isAdmin()){if(out)out.textContent="Administrator permission required.";return;}
+  button.disabled=true;button.textContent="Sending…";
+  try{
+   const {error}=await sb.from("support_ticket_messages").insert({ticket_id:ticketId,author_id:user.id,author_role:admin?"admin":"client",body:bodyText});
+   if(error)throw error;
+   if(admin){
+    const {error:statusError}=await sb.rpc("admin_update_support_ticket",{p_ticket_id:ticketId,p_status:"in_progress",p_admin_reply:bodyText});
+    if(statusError)throw statusError;
+   }
+   f.reset();if(out)out.textContent="Message sent successfully.";await loadPageData();
+  }catch(err){if(out)out.textContent="Message could not be sent: "+(err.message||"Please retry.");}
+  finally{button.disabled=false;button.textContent=admin?"Send message to client":"Send message";}
+  return;
+ }
+ if(f.id==="support-ticket-form"){
   e.preventDefault();
   if(!sb||!user){const out=f.querySelector("[data-page-message]");if(out)out.textContent="Please sign in again before submitting a ticket.";return;}
   const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button");
