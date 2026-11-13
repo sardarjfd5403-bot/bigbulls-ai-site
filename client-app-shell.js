@@ -54,6 +54,7 @@ function ensureTopbar(){
  const select=$("#bb-active-account-select",bar),rows=accounts(),current=active();
  if(select){const previous=activeId||select.value;select.innerHTML=rows.map(a=>'<option value="'+a.id+'">'+(a.account_mode||"").toUpperCase()+" · #"+(a.account_number||"—")+" · "+(a.display_name||a.account_type||"Account")+'</option>').join("");if(rows.length){activeId=rows.some(a=>a.id===previous)?previous:(current?.id||rows[0].id);select.value=activeId;}else select.innerHTML='<option value="">No approved accounts</option>';}
  renderMetrics();
+ const launch=$("#bb-app-open-terminal",bar);if(launch){const url=new URL("/terminal.html",window.location.origin);url.searchParams.set("v","20261113-unfreeze");if(current?.id)url.searchParams.set("account_id",String(current.id));launch.href=url.pathname+url.search;}
 }
 // OPEN TERMINAL is a native anchor; its href is refreshed with the selected approved account.
 
