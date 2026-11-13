@@ -50,11 +50,11 @@ function ensureTopbar(){
  const isAccountsPage=!!$("#my-trading-accounts",page)||!!$(".accounts-workspace",page);
  if(!isAccountsPage){$("#bb-client-appbar",main)?.remove();return;}
  let bar=$("#bb-client-appbar",main);
- if(!bar){bar=document.createElement("section");bar.id="bb-client-appbar";bar.className="bb-client-appbar";bar.innerHTML='<div class="bb-appbar-switch"><small>ACTIVE TRADING ACCOUNT</small><b id="bb-active-account-label">Select account</b><select id="bb-active-account-select" aria-label="Switch trading account"></select></div><div id="bb-live-account-metrics" class="bb-live-account-metrics"></div><a class="bb-app-terminal" id="bb-app-open-terminal" href="/terminal.html?v=20261113-session-ui-fix">OPEN TERMINAL ↗</a>';const head=$(".terminal-page-head",main)||$(".bb-v3-page-head",main);if(head)head.insertAdjacentElement("afterend",bar);else main.insertBefore(bar,page);}
+ if(!bar){bar=document.createElement("section");bar.id="bb-client-appbar";bar.className="bb-client-appbar";bar.innerHTML='<div class="bb-appbar-switch"><small>ACTIVE TRADING ACCOUNT</small><b id="bb-active-account-label">Select account</b><select id="bb-active-account-select" aria-label="Switch trading account"></select></div><div id="bb-live-account-metrics" class="bb-live-account-metrics"></div><a class="bb-app-terminal" id="bb-app-open-terminal" href="/terminal.html?v=20261113-auth-reconnect-fix">OPEN TERMINAL ↗</a>';const head=$(".terminal-page-head",main)||$(".bb-v3-page-head",main);if(head)head.insertAdjacentElement("afterend",bar);else main.insertBefore(bar,page);}
  const select=$("#bb-active-account-select",bar),rows=accounts(),current=active();
  if(select){const previous=activeId||select.value;select.innerHTML=rows.map(a=>'<option value="'+a.id+'">'+(a.account_mode||"").toUpperCase()+" · #"+(a.account_number||"—")+" · "+(a.display_name||a.account_type||"Account")+'</option>').join("");if(rows.length){activeId=rows.some(a=>a.id===previous)?previous:(current?.id||rows[0].id);select.value=activeId;}else select.innerHTML='<option value="">No approved accounts</option>';}
  renderMetrics();
- const launch=$("#bb-app-open-terminal",bar);if(launch){const url=new URL("/terminal.html",window.location.origin);url.searchParams.set("v","20261113-unfreeze");if(current?.id)url.searchParams.set("account_id",String(current.id));launch.href=url.pathname+url.search;}
+ const launch=$("#bb-app-open-terminal",bar);if(launch){const url=new URL("/terminal.html",window.location.origin);url.searchParams.set("v","20261113-auth-reconnect-fix");if(current?.id)url.searchParams.set("account_id",String(current.id));launch.href=url.pathname+url.search;}
 }
 // OPEN TERMINAL is a native anchor; its href is refreshed with the selected approved account.
 
@@ -77,7 +77,7 @@ function init(){
  const main=$(".terminal-main");if(!main)return;
  if(!main.dataset.bbAppShellEvents){
   main.dataset.bbAppShellEvents="1";
-  main.addEventListener("change",e=>{if(e.target.id==="bb-active-account-select"){activeId=e.target.value;window.bbActiveAccountId=activeId;const a=active();if(a&&a.account_mode!=="archived"){const tab=document.querySelector('[data-account-mode="'+a.account_mode+'"]');if(tab&&!tab.classList.contains("active"))tab.click();}renderMetrics();const launch=$("#bb-app-open-terminal");if(launch){const url=new URL("/terminal.html",window.location.origin);url.searchParams.set("v","20261113-unfreeze");if(a)url.searchParams.set("account_id",String(a.id));launch.href=url.pathname+url.search;}}});
+  main.addEventListener("change",e=>{if(e.target.id==="bb-active-account-select"){activeId=e.target.value;window.bbActiveAccountId=activeId;const a=active();if(a&&a.account_mode!=="archived"){const tab=document.querySelector('[data-account-mode="'+a.account_mode+'"]');if(tab&&!tab.classList.contains("active"))tab.click();}renderMetrics();const launch=$("#bb-app-open-terminal");if(launch){const url=new URL("/terminal.html",window.location.origin);url.searchParams.set("v","20261113-auth-reconnect-fix");if(a)url.searchParams.set("account_id",String(a.id));launch.href=url.pathname+url.search;}}});
   main.addEventListener("click",e=>{
    if(e.target.closest("[data-bb-account-close]")){const box=$("#bb-account-tools");if(box){box.hidden=true;box.innerHTML="";}accountToolModal();return;}
    if(e.target.closest("[data-bb-wallet-close]")){$("#wallet-content")?.classList.remove("bb-wallet-modal-open");document.body.classList.remove("bb-wallet-modal-active");return;}
