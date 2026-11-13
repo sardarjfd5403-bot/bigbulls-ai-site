@@ -42,12 +42,15 @@ document.addEventListener("click",async e=>{
  if(review){
   status=String(review.dataset.status||"");
   if(!["approved","rejected"].includes(status))return;
-  noteText=String(prompt(status==="rejected"?"Required rejection reason (minimum 4 characters):":"Admin note (optional):","")??"");
-  if(status==="rejected"&&noteText.trim().length<4){if(noteText!=="")alert("Please enter a clear rejection reason of at least 4 characters.");return;}
-  if(status==="approved"&&noteText===null)return;
+  const noteAnswer=prompt(status==="rejected"?"Required rejection reason (minimum 4 characters):":"Admin note (optional):","");
+  if(noteAnswer===null)return;
+  noteText=String(noteAnswer);
+  if(status==="rejected"&&noteText.trim().length<4){alert("Please enter a clear rejection reason of at least 4 characters.");return;}
  }else{
-  payoutReference=String(prompt("Enter the confirmed payout TXID / payment reference (minimum 5 characters):","")??"");
-  if(payoutReference.trim().length<5){if(payoutReference!=="")alert("A payout reference of at least 5 characters is required.");return;}
+  const payoutAnswer=prompt("Enter the confirmed payout TXID / payment reference (minimum 5 characters):","");
+  if(payoutAnswer===null)return;
+  payoutReference=String(payoutAnswer);
+  if(payoutReference.trim().length<5){alert("A payout reference of at least 5 characters is required.");return;}
  }
  button.disabled=true;
  try{
