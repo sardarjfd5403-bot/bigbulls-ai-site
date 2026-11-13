@@ -2255,7 +2255,7 @@ async function place(){
  if(!a.backendId||a.status!=='approved'){notify('Account approval required','Only approved Client Area trading accounts can place orders.','error');return;}
  if(!session){notify('Login required','Sign in to your client account before trading.','error');return;}
  const symbol=PAPER[s],quantity=Number(m.lots),sl=m.sl===''||m.sl==null?null:Number(m.sl),tp=m.tp===''||m.tp==null?null:Number(m.tp);
- const liveQuote=state.instruments[s];if(!liveQuote||!(Number(liveQuote.bid)>0)||!(Number(liveQuote.ask)>=Number(liveQuote.bid)))throw new Error('Live market quote is unavailable. Trading is locked until the provider feed reconnects.');
+ const liveQuote=state.instruments[s];if(!liveQuote||!(Number(liveQuote.bid)>0)||!(Number(liveQuote.ask)>=Number(liveQuote.bid))){notify('Live feed unavailable','Trading is locked until the market-data provider reconnects.','error');return;}
  if(!symbol){notify('Instrument unavailable','This instrument is not enabled by the connected execution service.','error');return;}
  if(!(quantity>0)||!Number.isFinite(quantity)){notify('Invalid lot size','Enter a valid lot size.','error');return;}
  if(sl!==null&&(!(sl>0)||!Number.isFinite(sl))){notify('Invalid Stop Loss','Enter a valid Stop Loss or leave it empty.','error');return;}
