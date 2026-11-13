@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#f8fafc" />
   <title>BigBull Terminal — Pro Trading Platform</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script async src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -120,8 +120,8 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 #bb-auth-boot .bb-auth-spinner{width:28px;height:28px;border:3px solid #dbeafe;border-top-color:#2979ff;border-radius:50%;animation:bb-auth-spin .8s linear infinite}
 @keyframes bb-auth-spin{to{transform:rotate(360deg)}}
 </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script async src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+  <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="terminal-theme.css?v=20261113-white-blue-scoped-card">
 </head>
 <body class="h-screen min-h-screen flex flex-col overflow-hidden">
@@ -2115,7 +2115,7 @@ async function startBiQuoteRealtime(){
   connection.on('ReceiveTick',handleBiQuoteTick);
   connection.onreconnected(async()=>{try{await subscribeBiQuoteSymbols(connection);}catch(e){console.warn('BiQuote resubscribe failed:',e.message);}});
   connection.onclose(e=>{console.warn('BiQuote SignalR closed:',e?.message||'connection closed');biQuoteConnection=null;if(session?.user)setTimeout(()=>startBiQuoteRealtime().catch(()=>{}),5000);});
-  try{await connection.start();await subscribeBiQuoteSymbols(connection);biQuoteConnection=connection;console.info('BiQuote SignalR connected; subscribed:',BIQUOTE_STREAM_SYMBOLS);return connection;}
+  try{await Promise.race([connection.start(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('BiQuote connection timed out after 1.5 seconds.')),1500))]);await subscribeBiQuoteSymbols(connection);biQuoteConnection=connection;console.info('BiQuote SignalR connected; subscribed:',BIQUOTE_STREAM_SYMBOLS);return connection;}
   catch(e){console.warn('BiQuote SignalR connection failed:',e.message);try{await connection.stop();}catch(_){}return null;}
  })();
  try{return await biQuoteStartPromise;}finally{biQuoteStartPromise=null;}
@@ -2373,10 +2373,10 @@ refresh=async function(silent=true){
  return ok;
 };
 let startupPromise=null,backgroundLoopsStarted=false;
-const BB_BOOT_TIMEOUT_MS=2000;
+const BB_BOOT_TIMEOUT_MS=1500;
 // Keep the terminal UI responsive even when the parent session snapshot is late. The parent portal primes this snapshot before iframe creation.
 function bbWithBootTimeout(promise,label,remaining){
- return Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label+' timed out during the 2-second startup window.')),Math.max(0,remaining)))]);
+ return Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label+' timed out during the 1.5-second startup window.')),Math.max(0,remaining)))]);
 }
 function bbShowBootError(error){
  document.documentElement.classList.remove('bb-auth-pending');
@@ -2488,7 +2488,7 @@ async function start(){
 window.__bbTerminalRetryStartup=start;
 // Fail safe: never leave the client staring at an endless session spinner if startup code stalls.
 window.setTimeout(()=>{if(document.documentElement.classList.contains('bb-auth-pending'))bbShowBootFallback(new Error('Secure session is still reconnecting. Terminal layout remains available; trading stays locked until account verification completes.'));},BB_BOOT_TIMEOUT_MS);
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();\n// Async CDN scripts never block first paint; retry startup once they finish loading.\nwindow.addEventListener('load',()=>{if(!session)start().catch(e=>console.warn('Post-load terminal retry:',e));},{once:true});
 })();
 </script>
 
