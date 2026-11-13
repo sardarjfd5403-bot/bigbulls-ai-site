@@ -2338,9 +2338,9 @@ refresh=async function(silent=true){
  return ok;
 };
 let startupPromise=null,backgroundLoopsStarted=false;
-const BB_BOOT_TIMEOUT_MS=5000;
+const BB_BOOT_TIMEOUT_MS=3000;
 function bbWithBootTimeout(promise,label,remaining){
- return Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label+' timed out after 5 seconds.')),Math.max(0,remaining)))]);
+ return Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label+' timed out after 3 seconds.')),Math.max(0,remaining)))]);
 }
 function bbShowBootError(error){
  document.documentElement.classList.remove('bb-auth-pending');
@@ -2410,25 +2410,22 @@ async function start(){
    if(auth.error)throw auth.error;
    session=auth.data?.session||null;
    if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}
-   let accountHydrated=true;
-   try{await bbWithBootTimeout(accounts(),'Trading account hydration',deadline-Date.now());}
-   catch(e){
-    accountHydrated=false;console.warn('BIGBULLS account hydration fallback:',e);
-    state.accounts=[{id:'__no_account__',accountNumber:null,backendId:null,nickname:'Account connection pending',type:'Demo',platform:'BIGBULLS',accountClass:'—',balance:0,equity:0,floatingPL:0,leverage:'1:100',server:'BIGBULLS',archived:false,status:'unavailable',currency:'USD'}];
-    state.activeAccountId='__no_account__';lastAccount='__no_account__';
-   }
+   // Paint the authenticated terminal shell immediately; account lookup is background-only.
+   state.accounts=[{id:'__account_loading__',accountNumber:null,backendId:null,nickname:'Loading approved accounts…',type:'Demo',platform:'BIGBULLS',accountClass:'—',balance:0,creditBonus:0,equity:0,floatingPL:0,leverage:'1:100',server:'BIGBULLS',archived:false,status:'unavailable',currency:'USD'}];
+   state.activeAccountId='__account_loading__';lastAccount='__account_loading__';
    Object.values(state.instruments).forEach(i=>{i.candles=[];i.bid=0;i.ask=0;});
    state.openOrders=[];state.pendingOrders=[];state.closedOrders=[];
    ready=true;document.documentElement.classList.remove('bb-auth-pending');
+   lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();bbShowAccountFallback();
    startBbookRealtime(c);startBiQuoteRealtime().catch(e=>console.warn('BiQuote startup:',e));
-   lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();
-   if(!accountHydrated)bbShowAccountFallback();
    Promise.resolve().then(()=>{if(typeof loadBiQuoteCatalog==='function')return loadBiQuoteCatalog();}).catch(e=>console.warn('Instrument catalog:',e));
    Promise.resolve().then(()=>{if(typeof bbLoadMarketHolidays==='function')return bbLoadMarketHolidays();}).catch(e=>console.warn('Market holiday calendar:',e));
    Promise.resolve().then(()=>quotes()).catch(e=>console.warn('Initial quotes:',e));
    Promise.resolve().then(()=>candles()).catch(e=>notify('Market feed unavailable',e.message||'Provider candles could not be loaded.','error'));
-   Promise.resolve().then(()=>refresh(true)).catch(e=>console.warn('Initial trade refresh:',e));
-   if(!accountHydrated)Promise.resolve().then(async()=>{try{await accounts();renderApp();await refresh(true);notify('Accounts connected','Your trading accounts are ready.','success');}catch(e){console.error('Account retry:',e);}});
+   Promise.resolve().then(async()=>{
+    try{await bbWithBootTimeout(accounts(),'Trading account hydration',BB_BOOT_TIMEOUT_MS);renderApp();await refresh(true);document.getElementById('bb-account-hydration-fallback')?.remove();notify('Accounts connected','Your approved trading accounts are ready.','success');}
+    catch(e){console.warn('Account hydration remains pending:',e);bbShowAccountFallback();}
+   });
    bbStartBackgroundLoops(c);
    c.auth.onAuthStateChange((_event,s)=>{
     session=s||null;if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}
