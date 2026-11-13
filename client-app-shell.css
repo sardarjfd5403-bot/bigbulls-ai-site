@@ -30,3 +30,20 @@ body.bb-account-modal-active:after,body.bb-wallet-modal-active:after{content:"";
 @media(max-width:560px){.bb-v3-active .terminal-layout{height:calc(100dvh - 68px);max-height:calc(100dvh - 68px)}.bb-v3-active .terminal-footer{display:none}.bb-v3-active .terminal-main{padding:9px!important}.bb-v3-active .bb-client-appbar{gap:7px;padding:8px}.bb-v3-active .bb-live-account-metrics{grid-template-columns:repeat(3,minmax(0,1fr));gap:3px}.bb-v3-active .bb-app-metric{padding:4px;border-left:0;border-top:1px solid #e2e8f0}.bb-v3-active .bb-app-metric b{font-size:9px}.bb-v3-active .bb-app-terminal{font-size:8px;padding:8px}.bb-v3-active .bb-appbar-switch small{font-size:7px}.bb-v3-active .bb-appbar-switch select{font-size:9px}.bb-v3-active .bb-account-meta{grid-template-columns:repeat(2,minmax(0,1fr))}.bb-v3-active .bb-account-card{padding:8px}.bb-v3-active .bb-account-tabs{position:sticky;top:0;z-index:3;background:#f8fafc;padding:4px 0}.bb-v3-active #bb-account-tools:not([hidden]),.bb-v3-active #wallet-content.bb-wallet-modal-open{inset:auto 0 0!important;height:90dvh!important;max-height:90dvh!important;padding:15px!important;border-radius:18px 18px 0 0!important}}
 
 .bb-v3-active .header-popover{background:#ffffff!important;color:#172235!important;border-color:#cbd5e1!important}.bb-v3-active .header-popover button{background:#ffffff!important;color:#334155!important}.bb-v3-active .header-popover button:hover{background:#eff6ff!important}.bb-v3-active .bb-nav-main:hover,.bb-v3-active .bb-sub-link:hover,.bb-v3-active .bb-nav-direct:hover{background:#eff6ff!important;color:#0066ff!important}
+
+/* Account list stays compact: detailed values are available only in the account-info modal. */
+.bb-v3-active #client-page .bb-account-meta{display:none!important}
+.bb-v3-active #client-page .bb-account-card-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.bb-v3-active #client-page .bb-account-card-head-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.bb-v3-active #client-page .bb-account-info-btn{display:grid;place-items:center;width:34px;height:34px;padding:0;border:1px solid #dbe5f2;border-radius:10px;background:#f8fbff;color:#1769e8;font-size:17px;line-height:1;cursor:pointer}
+.bb-v3-active #client-page .bb-account-info-btn:hover{border-color:#0066ff;background:#eff6ff;color:#0052cc}
+.bb-account-info-modal{color:#172235}
+.bb-account-info-modal h2{margin:7px 0 4px;color:#172235;font-size:21px;font-weight:850}
+.bb-account-info-modal .accounts-kicker{color:#0066ff;font-size:10px;font-weight:850;letter-spacing:.12em}
+.bb-account-info-number{margin:0 0 18px;color:#64748b;font-size:11px;font-weight:750}
+.bb-account-info-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.bb-account-info-row{min-width:0;padding:13px;border:1px solid #e2e8f0;border-radius:11px;background:#f8fafc}
+.bb-account-info-row small{display:block;margin-bottom:6px;color:#64748b;font-size:10px;font-weight:750;text-transform:uppercase;letter-spacing:.06em}
+.bb-account-info-row b{display:block;color:#172235;font-size:13px;font-weight:850;overflow-wrap:anywhere}
+.bb-account-info-note{margin:15px 0 0;color:#64748b;font-size:11px}
+@media(max-width:560px){.bb-account-info-grid{grid-template-columns:1fr 1fr;gap:7px}.bb-account-info-row{padding:10px}.bb-account-info-row b{font-size:12px}}
