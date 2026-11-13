@@ -373,25 +373,9 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
       }
     };
 
-    // Initialize realistic historical candles for each instrument
+    // Historical candles are loaded from the live market-data service; never synthesize candles in the client.
     function initCandles() {
-      Object.values(state.instruments).forEach(inst => {
-        let price = inst.bid;
-        const step = inst.digits === 5 ? 0.0004 : inst.digits === 3 && inst.bid < 200 ? 0.04 : inst.digits === 3 ? 2.2 : 35;
-        const arr = [];
-        for (let i = 0; i < 42; i++) {
-          const open = price;
-          const delta = (Math.random() - 0.51) * step;
-          const close = Number((open + delta).toFixed(inst.digits));
-          const high = Number((Math.max(open, close) + Math.random() * step * 0.6).toFixed(inst.digits));
-          const low = Number((Math.min(open, close) - Math.random() * step * 0.6).toFixed(inst.digits));
-          arr.push({ open, high, low, close, time: i });
-          price = close;
-        }
-        inst.candles = arr;
-        inst.bid = price;
-        inst.ask = Number((price + inst.spread).toFixed(inst.digits));
-      });
+      Object.values(state.instruments).forEach(inst => { inst.candles = []; });
     }
     Object.values(state.instruments).forEach(inst=>{inst.candles=[];inst.bid=0;inst.ask=0;});
 
