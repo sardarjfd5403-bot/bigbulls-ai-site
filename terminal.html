@@ -1995,7 +1995,7 @@ function updateCandleFromTick(symbol,bid,stamp=Date.now()){
  if(symbol===state.selectedSymbol)queueChartPaint();
 }
 let localTickTimer=null;
-function stopLocalSimulation(){if(localTickTimer){clearInterval(localTickTimer);localTickTimer=null;}document.getElementById('bb-local-sim-banner')?.remove();}
+function stopLocalSimulation(){if(localTickTimer){clearInterval(localTickTimer);localTickTimer=null;}document.getElementById('bb-local-sim-banner')?.remove();updateLiveDOMElements();}
 function startLocalSimulation(){
  if(localTickTimer)return;
  const seeds={'XAU/USD':4000,'XAG/USD':50,'XPT/USD':1500,'XPD/USD':1200,'EUR/USD':1.16,'GBP/USD':1.32,'USD/JPY':154,'USD/CAD':1.39,'AUD/USD':0.65,'NZD/USD':0.58,'USD/CHF':0.80,'EUR/GBP':0.86,'EUR/JPY':178,'GBP/JPY':202,'US30':45000,'USTEC':22000,'SPX500':6500,'GER40':24000,'UK100':9500,'JPN225':50000,'USOIL':65,'UKOIL':69,'NATGAS':3.5,'BTC':95000,'ETH/USD':3200,'SOL/USD':180,'XRP/USD':2.4,'BNB/USD':900};
