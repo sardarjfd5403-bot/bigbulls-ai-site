@@ -922,7 +922,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
           </div>
           <div class="grid grid-cols-2 border-b border-[#e2e8f0] text-xs font-bold">
             <button onclick="state.orderTicket.mode='Market'; openModal(renderTicketInner())" class="py-2.5 border-b-2 ${m.mode==='Market'?'border-bullBlue text-white':'border-transparent text-gray-400'}">Market</button>
-            <button onclick="state.orderTicket.mode='Pending'; openModal(renderTicketInner())" class="py-2.5 border-b-2 ${m.mode==='Pending'?'border-bullBlue text-white':'border-transparent text-gray-400'}">Pending</button>
+            <button onclick="state.orderTicket.mode='Pending'; state.orderTicket.pendingType=state.orderTicket.side+' Limit'; openModal(renderTicketInner())" class="py-2.5 border-b-2 ${m.mode==='Pending'?'border-bullBlue text-white':'border-transparent text-gray-400'}">Pending</button>
           </div>
           <div class="p-4 space-y-3.5 text-xs">
             <div class="grid grid-cols-2 gap-2">
