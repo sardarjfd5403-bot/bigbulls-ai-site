@@ -2110,7 +2110,7 @@ async function accounts(preferredBackendId=null){
  let preferred='demo',selected=null;const launch=new URLSearchParams(location.search).get('account_id');
  try{const sm=sessionStorage.getItem('bb:terminal:active-mode:'+session.user.id);if(sm==='demo'||sm==='real')preferred=sm;}catch(_){}
  const findByBackend=id=>state.accounts.find(a=>a.backendId===String(id)&&a.status==='approved');
- if(launch)selected=findByBackend(launch)||null;
+ if(launch){selected=findByBackend(launch)||null;if(!selected)throw new Error("The selected account is not available or not approved for terminal access. Return to My Accounts and open the account again.");}
  if(!selected&&preferredBackendId)selected=findByBackend(preferredBackendId)||null;
  try{const sid=sessionStorage.getItem('bb:terminal:selected-account:'+session.user.id+':'+preferred);if(!selected&&sid)selected=findByBackend(sid)||null;}catch(_){}
  if(!selected)selected=state.accounts.find(a=>mode(a)===preferred&&a.status==='approved')||state.accounts.find(a=>a.status==='approved')||state.accounts[0];
