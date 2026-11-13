@@ -2373,7 +2373,7 @@ refresh=async function(silent=true){
  return ok;
 };
 let startupPromise=null,backgroundLoopsStarted=false;
-const BB_BOOT_TIMEOUT_MS=3000;\n// Keep the terminal UI responsive even when the parent session snapshot is late. The parent portal primes this snapshot before iframe creation.
+const BB_BOOT_TIMEOUT_MS=2000;\n// Keep the terminal UI responsive even when the parent session snapshot is late. The parent portal primes this snapshot before iframe creation.
 function bbWithBootTimeout(promise,label,remaining){
  return Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label+' timed out after 3 seconds.')),Math.max(0,remaining)))]);
 }
@@ -2437,6 +2437,17 @@ function bbStartBackgroundLoops(c){
 }
 async function start(){
  if(startupPromise)return startupPromise;
+ // Paint a safe, non-trading terminal shell synchronously. Auth, RPC and account
+ // hydration must never be prerequisites for the chart/layout to become visible.
+ try{
+  if(!ready){
+   state.accounts=[{id:'__session_pending__',accountNumber:null,backendId:null,nickname:'Connecting secure session…',type:'Demo',platform:'BIGBULLS',accountClass:'—',balance:0,creditBonus:0,equity:0,floatingPL:0,leverage:'1:100',server:'BIGBULLS',archived:false,status:'unavailable',currency:'USD'}];
+   state.activeAccountId='__session_pending__';lastAccount='__session_pending__';
+   ready=true;
+   document.documentElement.classList.remove('bb-auth-pending');
+   renderApp();
+  }
+ }catch(paintError){console.error('Immediate terminal shell render:',paintError);}
  startupPromise=(async()=>{
   const deadline=Date.now()+BB_BOOT_TIMEOUT_MS;
   try{
@@ -2475,7 +2486,7 @@ async function start(){
 }
 window.__bbTerminalRetryStartup=start;
 // Fail safe: never leave the client staring at an endless session spinner if startup code stalls.
-window.setTimeout(()=>{if(document.documentElement.classList.contains('bb-auth-pending'))bbShowBootFallback(new Error('Terminal startup exceeded the 3-second UI boot limit. Session reconnect continues in the background.'));},BB_BOOT_TIMEOUT_MS);
+window.setTimeout(()=>{if(document.documentElement.classList.contains('bb-auth-pending'))bbShowBootFallback(new Error('Secure session is still reconnecting. Terminal layout remains available; trading stays locked until account verification completes.'));},BB_BOOT_TIMEOUT_MS);
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
 </script>
