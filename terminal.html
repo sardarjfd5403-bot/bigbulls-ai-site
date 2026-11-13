@@ -122,7 +122,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 </style>
   <script async src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
   <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="stylesheet" href="terminal-theme.css?v=20261113-unfreeze">
+  <link rel="stylesheet" href="terminal-theme.css?v=20261113-chart-fix">
 <script id="bb-cache-cleanup">
 (function(){
   try {
@@ -1088,6 +1088,19 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
     // 5. LIVE CANDLESTICK CHART CANVAS RENDERER
     // ==========================================
 
+    // Local chart-renderer scheduler: this scope owns drawChartCanvas and gesture handlers.
+    let chartPaintFramePending=false;
+    function queueChartPaint(){
+      if(chartPaintFramePending)return;
+      chartPaintFramePending=true;
+      const paint=()=>{
+        chartPaintFramePending=false;
+        try{drawChartCanvas();}
+        catch(error){console.error('[BIGBULLS chart] Canvas repaint failed:',error);}
+      };
+      if(typeof window.requestAnimationFrame==='function')window.requestAnimationFrame(paint);
+      else window.setTimeout(paint,16);
+    }
     let chartView={count:90,offset:0,priceShift:0};
     const chartPointers=new Map();
     let chartGesture=null;
