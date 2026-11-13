@@ -1090,8 +1090,8 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
       const dpr=window.devicePixelRatio||1;canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);
       const ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);
       const w=rect.width,h=rect.height,chartW=Math.max(40,w-72),inst=state.instruments[state.selectedSymbol];
-      ctx.fillStyle='#f8fafc';ctx.fillRect(0,0,w,h);
-      ctx.strokeStyle='#202838';ctx.lineWidth=1;
+      ctx.fillStyle='#0E1117';ctx.fillRect(0,0,w,h);
+      ctx.strokeStyle='#191F2C';ctx.lineWidth=1;
       for(let i=1;i<7;i++){const y=h*i/7;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(chartW,y);ctx.stroke();}
       for(let i=1;i<9;i++){const x=chartW*i/9;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}
       const all=inst?.candles||[];if(!all.length)return;
