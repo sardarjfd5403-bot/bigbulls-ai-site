@@ -287,57 +287,7 @@ async function showApp(page){
  if(!isAdmin())window.setTimeout(()=>maybeOpenKycOnboarding(),650);
 }
 
-async function openTerminalFromPortal(accountId=null){
- // Use the already-hydrated parent auth snapshot and launch immediately. Do not
- // block iframe creation on a second getSession() call or a remote accounts RPC.
- let authSession=window.__bbAuthSession||window.__bbTerminalAuthSession||null;
- if(!authSession?.user||String(authSession.user.id)!==String(user?.id)){
-  try{
-   const authResult=await Promise.race([
-    sb.auth.getSession(),
-    new Promise((_,reject)=>window.setTimeout(()=>reject(new Error("Secure sign-in session is still loading. Please retry in a moment.")),800))
-   ]);
-   if(authResult.error)throw authResult.error;
-   authSession=authResult.data?.session||null;
-  }catch(error){
-   console.warn("Terminal launch using parent auth snapshot fallback:",error);
-  }
- }
- if(!authSession?.user||String(authSession.user.id)!==String(user?.id)){
-  message("Your secure session is not ready. Please sign in again and reopen Terminal.",true);return;
- }
- window.__bbAuthSession=authSession;
- window.__bbTerminalAuthSession=authSession;
- // The iframe validates account ownership/approval through the authenticated
- // trading-gateway before enabling any execution. Parent-side cache is only a
- // launch hint and is never treated as authorization.
- const cached=Array.isArray(window.bbClientAccounts)?window.bbClientAccounts:[];
- const preferred=String(window.bbAccountMode||"real").toLowerCase()==="demo"?"demo":"real";
- const cachedSelected=(accountId?cached.find(x=>String(x.id)===String(accountId)):null)
-  ||cached.find(x=>String(x.account_mode||"").toLowerCase()===preferred&&x.status==="approved"&&!x.archived_at&&!x.deleted_at)
-  ||cached.find(x=>String(x.account_mode||"").toLowerCase()==="real"&&x.status==="approved"&&!x.archived_at&&!x.deleted_at)
-  ||cached.find(x=>x.status==="approved"&&!x.archived_at&&!x.deleted_at)
-  ||null;
- const launchId=accountId||cachedSelected?.id||null;
- window.__bbTerminalLaunchAccountId=launchId;
- try{
-  if(launchId){
-   localStorage.setItem("bb:terminal:launch-account:"+user.id,String(launchId));
-   localStorage.setItem("bb:terminal:active-account:"+user.id,String(launchId));
-  }else{
-   localStorage.removeItem("bb:terminal:launch-account:"+user.id);
-   localStorage.removeItem("bb:terminal:active-account:"+user.id);
-  }
-  if(cachedSelected?.account_mode||preferred){
-   localStorage.setItem("bb:terminal:active-mode:"+user.id,String(cachedSelected?.account_mode||preferred).toLowerCase());
-  }
- }catch(storageError){console.warn("Terminal account preference storage unavailable:",storageError);}
- const terminalUrl=new URL("/terminal.html",window.location.origin);
- terminalUrl.searchParams.set("v","20261113-force-open");
- if(launchId)terminalUrl.searchParams.set("account_id",String(launchId));
- window.location.assign(terminalUrl.pathname+terminalUrl.search);
-
-}
+// Terminal navigation is a native link; no async click handler is used.
 window.__bbReturnToClientArea=()=>{if(activePage!=="terminal")return;showApp("accounts");if(history.state?.bbTerminalView)history.back();};
 
 async function maybeOpenKycOnboarding(){
@@ -1109,7 +1059,7 @@ async function loadClientTradingAccounts(){
  const title=document.getElementById("bb-account-list-title");if(title)title.textContent=mode==="archived"?"Archived Accounts":"My "+(mode==="real"?"Real":"Demo")+" Accounts";
  const rows=window.bbClientAccounts.filter(x=>mode==="archived"?!!x.archived_at:!x.archived_at&&x.account_mode===mode);
  if(!rows.length){box.innerHTML='<div class="empty-state">No '+(mode==="archived"?"archived":mode)+" accounts found.</div>";return;}
- box.innerHTML=rows.map(x=>'<div class="bb-account-card"><div class="bb-account-card-top"><div><small>'+esc(x.server_name||"BIGBULLS")+' · '+esc(String(x.account_mode||"real").toUpperCase())+'</small><h4>'+esc(x.display_name||x.account_type||"Trading account")+'</h4></div><div class="bb-account-card-head-actions"><span class="bb-account-number">#'+esc(x.account_number||"—")+'</span><button type="button" class="bb-account-info-btn" data-account-info="'+esc(x.id)+'" aria-label="View account details" title="Account information"><span aria-hidden="true">⚙</span></button></div></div><div class="bb-account-meta" hidden aria-hidden="true"></div>'+(x.archived_at?'':x.status==="approved"&&x.account_mode==="demo"?'<div class="bb-account-actions account-demo-actions"><button type="button" data-demo-balance="'+esc(x.id)+'">Set / Top-up Demo Balance</button><button type="button" data-account-terminal="'+esc(x.id)+'">Open in Terminal</button></div>':x.status==="approved"&&x.account_mode==="real"?'':x.status==="approved"?'<div class="notice">Demo account funding is managed separately with demo funds. Crypto deposits and cash withdrawals are available only on approved Real accounts.</div>':'<div class="notice">Awaiting Admin approval. Portal ID only; funding access is not available yet.</div>')+'<div class="bb-account-actions">'+(x.archived_at?'<button type="button" data-account-action="restore" data-account-id="'+esc(x.id)+'">Restore</button>':'<button type="button" data-account-action="rename" data-account-id="'+esc(x.id)+'">Rename</button><button type="button" data-account-action="archive" data-account-id="'+esc(x.id)+'">Archive</button>')+'<button class="danger" type="button" data-account-action="delete" data-account-id="'+esc(x.id)+'">Delete</button>'+(x.status==="approved"&&!x.archived_at?'<button type="button" data-account-terminal="'+esc(x.id)+'">Open in Terminal</button>':'')+'</div></div>').join("");
+ box.innerHTML=rows.map(x=>'<div class="bb-account-card"><div class="bb-account-card-top"><div><small>'+esc(x.server_name||"BIGBULLS")+' · '+esc(String(x.account_mode||"real").toUpperCase())+'</small><h4>'+esc(x.display_name||x.account_type||"Trading account")+'</h4></div><div class="bb-account-card-head-actions"><span class="bb-account-number">#'+esc(x.account_number||"—")+'</span><button type="button" class="bb-account-info-btn" data-account-info="'+esc(x.id)+'" aria-label="View account details" title="Account information"><span aria-hidden="true">⚙</span></button></div></div><div class="bb-account-meta" hidden aria-hidden="true"></div>'+(x.archived_at?'':x.status==="approved"&&x.account_mode==="demo"?'<div class="bb-account-actions account-demo-actions"><button type="button" data-demo-balance="'+esc(x.id)+'">Set / Top-up Demo Balance</button><a class="button button-primary" href="/terminal.html?v=20261113-unfreeze&account_id='+encodeURIComponent(x.id)+'">Open in Terminal</a></div>':x.status==="approved"&&x.account_mode==="real"?'':x.status==="approved"?'<div class="notice">Demo account funding is managed separately with demo funds. Crypto deposits and cash withdrawals are available only on approved Real accounts.</div>':'<div class="notice">Awaiting Admin approval. Portal ID only; funding access is not available yet.</div>')+'<div class="bb-account-actions">'+(x.archived_at?'<button type="button" data-account-action="restore" data-account-id="'+esc(x.id)+'">Restore</button>':'<button type="button" data-account-action="rename" data-account-id="'+esc(x.id)+'">Rename</button><button type="button" data-account-action="archive" data-account-id="'+esc(x.id)+'">Archive</button>')+'<button class="danger" type="button" data-account-action="delete" data-account-id="'+esc(x.id)+'">Delete</button>'+(x.status==="approved"&&!x.archived_at?'<a class="button button-primary" href="/terminal.html?v=20261113-unfreeze&account_id='+encodeURIComponent(x.id)+'">Open in Terminal</a>':'')+'</div></div>').join("");
  const tools=document.getElementById("bb-account-tools");if(tools){tools.hidden=true;tools.innerHTML="";}
 }
 function openAccountInfoModal(id){
@@ -1530,10 +1480,6 @@ async function clickHandler(e){
  const accountWizard=el.closest("[data-account-wizard]");if(accountWizard){openAccountWizard();return;}
  const accountMode=el.closest("[data-account-mode]");
  if(accountMode){window.bbAccountMode=accountMode.dataset.accountMode;document.querySelectorAll("[data-account-mode]").forEach(x=>x.classList.toggle("active",x===accountMode));const tools=document.getElementById("bb-account-tools");if(tools){tools.hidden=true;tools.innerHTML="";}loadClientTradingAccounts();return;}
- const terminalLaunch=el.closest("[data-open-terminal]");
- if(terminalLaunch){e.preventDefault();const id=terminalLaunch.dataset.accountId||terminalLaunch.dataset.openTerminal||null;await openTerminalFromPortal(id);return;}
- const terminalAccount=el.closest("[data-account-terminal]");
- if(terminalAccount){const account=(window.bbClientAccounts||[]).find(x=>x.id===terminalAccount.dataset.accountTerminal);if(!account||account.status!=="approved"||account.archived_at||account.deleted_at){message("This account is not approved for terminal access.",true);return;}await openTerminalFromPortal(account.id);return;}
  const accountInfo=el.closest("[data-account-info]");if(accountInfo){openAccountInfoModal(accountInfo.dataset.accountInfo);return;}
  const accountInfoBack=el.closest("[data-account-info-back]");if(accountInfoBack){openAccountInfoModal(accountInfoBack.dataset.accountInfoBack);return;}
  const accountTool=el.closest("[data-account-tool]");
@@ -1547,7 +1493,7 @@ async function clickHandler(e){
  const termBottom=el.closest("[data-term-bottom]");if(termBottom){document.querySelectorAll("[data-term-bottom]").forEach(x=>x.classList.toggle("active",x===termBottom));const box=document.getElementById("bb-bottom-content");if(box)box.textContent=termBottom.dataset.termBottom==="positions"?"No live positions. BIGBULLS execution engine is not connected yet.":termBottom.dataset.termBottom==="orders"?"No active orders. Order routing is disabled until the BIGBULLS trading engine is deployed.":termBottom.dataset.termBottom==="history"?"Trading history will appear after account execution services are connected.":"Trade journal and analysis notes will be available in a future terminal release.";return;}
  const termTool=el.closest("[data-term-tool]");if(termTool){if(termTool.dataset.termTool==="fullscreen"){const frame=document.querySelector(".bb-tv-frame");if(frame?.requestFullscreen)frame.requestFullscreen();}else if(termTool.dataset.termTool==="indicators")alert("Use the Indicators button in the embedded chart toolbar to add technical indicators.");else if(termTool.dataset.termTool==="compare")alert("Use the Compare symbol control in the embedded chart toolbar.");return;}
  const termMarket=el.closest("[data-term-market]");if(termMarket){document.querySelectorAll("[data-term-market]").forEach(x=>x.classList.toggle("active",x===termMarket));const groups={forex:["FX:EURUSD","FX:GBPUSD","FX:USDJPY"],metals:["OANDA:XAUUSD"],crypto:["BINANCE:BTCUSDT","BINANCE:ETHUSDT"],indices:["NASDAQ:NDX","TVC:DJI"]};document.querySelectorAll("[data-term-symbol]").forEach(x=>x.hidden=!groups[termMarket.dataset.termMarket].includes(x.dataset.termSymbol));return;}
- const page=el.closest("[data-page]");if(page){e.preventDefault();document.querySelectorAll(".top-menu-dropdown,.sidebar-submenu").forEach(x=>x.hidden=true);document.querySelectorAll("[data-menu-toggle]").forEach(x=>x.setAttribute("aria-expanded","false"));const destination=page.getAttribute("data-page");if(destination==="terminal"){await openTerminalFromPortal();return;}showApp(destination);return;}
+ const page=el.closest("[data-page]");if(page){e.preventDefault();document.querySelectorAll(".top-menu-dropdown,.sidebar-submenu").forEach(x=>x.hidden=true);document.querySelectorAll("[data-menu-toggle]").forEach(x=>x.setAttribute("aria-expanded","false"));const destination=page.getAttribute("data-page");if(destination==="terminal"){window.location.assign("/terminal.html?v=20261113-unfreeze");return;}showApp(destination);return;}
  const view=el.closest("[data-auth-view]");if(view){if(view.dataset.authView==="signup")signupForm();else loginForm();return;}
  const lang=el.closest("[data-language]");if(lang){alert("Language selector is a visual prototype. EN / UR / AR translations will be enabled in the localization phase.");return;}
  const trigger=el.closest("[data-open]");if(trigger){e.preventDefault();openModal(trigger.getAttribute("data-open"));return;}
