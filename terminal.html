@@ -2373,7 +2373,8 @@ refresh=async function(silent=true){
  return ok;
 };
 let startupPromise=null,backgroundLoopsStarted=false;
-const BB_BOOT_TIMEOUT_MS=2000;\n// Keep the terminal UI responsive even when the parent session snapshot is late. The parent portal primes this snapshot before iframe creation.
+const BB_BOOT_TIMEOUT_MS=2000;
+// Keep the terminal UI responsive even when the parent session snapshot is late. The parent portal primes this snapshot before iframe creation.
 function bbWithBootTimeout(promise,label,remaining){
  return Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label+' timed out after 3 seconds.')),Math.max(0,remaining)))]);
 }
