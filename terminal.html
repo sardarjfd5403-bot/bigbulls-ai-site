@@ -123,7 +123,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 </style>
   <script async src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
   <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="stylesheet" href="terminal-theme.css?v=20261113-dark-contrast-flow-fix">
+  <link rel="stylesheet" href="terminal-theme.css?v=20261113-auto-connect-fix">
 <script id="bb-cache-cleanup">
 (function(){
   try {
@@ -2138,6 +2138,24 @@ async function startBiQuoteRealtime(){
  })();
  try{return await biQuoteStartPromise;}finally{biQuoteStartPromise=null;}
 }
+// Last server-confirmed account snapshot: display hydration only; execution still requires a live authenticated backend session.
+function bbPrimeCachedAccounts(userId){
+ if(!userId)return false;
+ try{
+  const raw=localStorage.getItem('bb:terminal:accounts:v1:'+userId);if(!raw)return false;
+  const saved=JSON.parse(raw),rows=Array.isArray(saved?.accounts)?saved.accounts:[];
+  if(!saved?.savedAt||Date.now()-Number(saved.savedAt)>7*24*60*60*1000)return false;
+  const approved=rows.filter(a=>a&&a.backendId&&a.status==='approved'&&!a.archived);
+  if(!approved.length)return false;
+  state.accounts=approved;
+  let selected=null;
+  try{const id=localStorage.getItem('bb:terminal:active-account:'+userId)||sessionStorage.getItem('bb:terminal:selected-account:'+userId+':demo')||sessionStorage.getItem('bb:terminal:selected-account:'+userId+':real');selected=approved.find(a=>a.backendId===String(id)||a.id===String(id));}catch(_){}
+  if(!selected)selected=approved.find(a=>mode(a)==='demo')||approved[0];
+  state.activeAccountId=selected.id;lastAccount=selected.id;
+  window.__bbTerminalCacheOnly=true;
+  return true;
+ }catch(e){console.warn('BIGBULLS cached account hydration unavailable:',e);return false;}
+}
 async function accounts(preferredBackendId=null){
  const d=await call('trading-gateway',{action:'accounts'});
  const rows=(d.accounts||[]).filter(a=>['demo','real'].includes(String(a.account_mode||'').toLowerCase())&&!a.archived_at&&!a.deleted_at).map(a=>({
@@ -2146,7 +2164,7 @@ async function accounts(preferredBackendId=null){
   accountClass:a.account_type||'Standard',balance:Number(a.account_mode==='demo'?(a.virtual_balance??a.balance):(a.balance||0)),creditBonus:Number(a.credit_bonus||0),equity:Number(a.equity??a.balance??0),floatingPL:Number(a.floating_pnl||0),leverage:a.requested_leverage||'1:100',
   server:a.server_name||'BigBulls',archived:false,status:String(a.status||'pending').toLowerCase(),currency:a.currency||'USD'
  }));
- state.accounts=rows.length?rows:[{id:'__no_account__',accountNumber:null,backendId:null,nickname:'No trading account',type:'Demo',platform:'BIGBULLS',accountClass:'—',balance:0,leverage:'1:100',server:'BIGBULLS',archived:false,status:'unavailable',currency:'USD'}];
+ if(rows.length){state.accounts=rows;try{localStorage.setItem('bb:terminal:accounts:v1:'+session.user.id,JSON.stringify({savedAt:Date.now(),accounts:rows}));window.__bbTerminalCacheOnly=false;}catch(_){}}else if(!state.accounts.some(a=>a.backendId)){state.accounts=[{id:'474909030',accountNumber:'474909030',backendId:null,nickname:'BigBulls Demo',type:'Demo',platform:'BIGBULLS',accountClass:'Standard',balance:0,leverage:'1:100',server:'BIGBULLS',archived:false,status:'unavailable',currency:'USD'}];}
  let preferred='demo',selected=null;
  try{const sm=sessionStorage.getItem('bb:terminal:active-mode:'+session.user.id)||localStorage.getItem('bb:terminal:active-mode:'+session.user.id);if(sm==='demo'||sm==='real')preferred=sm;}catch(_){}
  const findByBackend=id=>state.accounts.find(a=>a.backendId===String(id)&&a.status==='approved');
@@ -2442,13 +2460,9 @@ function bbWithBootTimeout(promise,label,remaining){
 }
 function bbShowBootError(error){
  document.documentElement.classList.remove('bb-auth-pending');
- const stage=document.getElementById('appStage');if(!stage)return;
- const message=String(error?.message||error||'Terminal initialization failed.');
- stage.innerHTML='<section style="margin:auto;width:min(92vw,460px);padding:24px;border:1px solid #2563eb;border-radius:18px;background:#ffffff;color:#0f172a;text-align:center;font:14px Inter,sans-serif"><div style="font-size:30px;margin-bottom:10px">⚠</div><h2 style="font-size:18px;font-weight:800;margin:0 0 8px">Terminal connection needs attention</h2><p style="color:#64748b;line-height:1.55;margin:0 0 18px" id="bb-boot-error"></p><div style="display:flex;gap:10px"><button id="bb-boot-retry" style="flex:1;padding:12px;border-radius:10px;background:#2563eb;color:white;font-weight:700">Retry</button><button id="bb-boot-back" style="flex:1;padding:12px;border-radius:10px;background:#e2e8f0;color:#0f172a;font-weight:700">My Accounts</button></div></section>';
- const p=document.getElementById('bb-boot-error');if(p)p.textContent=message;
- document.getElementById('bb-boot-retry')?.addEventListener('click',()=>{document.documentElement.classList.add('bb-auth-pending');stage.innerHTML='';start();});
- document.getElementById('bb-boot-back')?.addEventListener('click',()=>{try{const d=window.parent.document.querySelector('#app-shell [data-page="accounts"]');if(d){d.click();return;}}catch(_){}location.href='index.html';});
- console.error('BIGBULLS terminal startup:',error);
+ console.warn('BIGBULLS terminal startup continues in cached/read-only mode:',error?.message||error);
+ const uid=(window.__bbTerminalAuthSession||window.__bbParentAuthSession)?.user?.id||session?.user?.id;
+ if(bbPrimeCachedAccounts(uid)){try{renderApp();}catch(e){console.error('Cached terminal render:',e);}}
 }
 let bbReconnectBusy=false,bbReconnectTimer=null,bbReconnectAttempt=0;
 async function bbAttemptSessionReconnect(source='background'){
@@ -2496,7 +2510,7 @@ async function bbAttemptSessionReconnect(source='background'){
  }finally{bbReconnectBusy=false;}
 }
 function bbScheduleSessionReconnect(){
- if(bbReconnectTimer||!document.getElementById('bb-session-reconnect-fallback'))return;
+ if(bbReconnectTimer)return;
  const delay=Math.min(15000,2000*Math.pow(1.6,Math.min(bbReconnectAttempt++,5)));
  bbReconnectTimer=setTimeout(async()=>{
   bbReconnectTimer=null;
@@ -2506,22 +2520,15 @@ function bbScheduleSessionReconnect(){
 }
 function bbShowBootFallback(error){
  document.documentElement.classList.remove('bb-auth-pending');
- startLocalSimulation();
- ready=true;
- if(!state.accounts.length){
-  state.accounts=[{id:'__session_pending__',accountNumber:null,backendId:null,nickname:'Session reconnecting',type:'Demo',platform:'BIGBULLS',accountClass:'—',balance:0,equity:0,floatingPL:0,leverage:'1:100',server:'BIGBULLS',archived:false,status:'unavailable',currency:'USD'}];
-  state.activeAccountId='__session_pending__';lastAccount='__session_pending__';
+ const uid=(window.__bbTerminalAuthSession||window.__bbParentAuthSession)?.user?.id||session?.user?.id;
+ const cached=bbPrimeCachedAccounts(uid);
+ if(!cached&&!state.accounts.some(a=>a.backendId)){
+  state.accounts=[{id:'474909030',accountNumber:'474909030',backendId:null,nickname:'BigBulls Demo',type:'Demo',platform:'BIGBULLS',accountClass:'Standard',balance:0,equity:0,floatingPL:0,leverage:'1:100',server:'BIGBULLS',archived:false,status:'unavailable',currency:'USD'}];
+  state.activeAccountId='474909030';lastAccount='474909030';
  }
- try{renderApp();}catch(renderError){console.error('Terminal fallback render failed:',renderError);bbShowBootError(renderError);return;}
- let banner=document.getElementById('bb-session-reconnect-fallback');
- if(!banner){
-  banner=document.createElement('div');banner.id='bb-session-reconnect-fallback';
-  banner.style.cssText='position:fixed;z-index:10000;top:10px;left:50%;transform:translateX(-50%);width:min(94vw,560px);padding:12px 14px;border:1px solid #92400e;border-radius:14px;background:#eff6ff;color:#1e3a8a;box-shadow:0 8px 28px #0008;font:12px Inter,sans-serif;display:flex;align-items:center;gap:10px;flex-wrap:wrap';
-  banner.innerHTML='<span style="flex:1;min-width:190px">Terminal is open in safe reconnect mode. Secure session is still loading; account data and trading actions will activate after authentication reconnects.</span><button id="bb-session-retry" style="padding:9px 12px;border-radius:9px;background:#2563eb;color:white;font-weight:700">Retry session</button>';
-  document.body.appendChild(banner);
-  document.getElementById('bb-session-retry')?.addEventListener('click',()=>{bbAttemptSessionReconnect('manual retry').then(ok=>{if(!ok)bbScheduleSessionReconnect();});});
- }
- console.warn('BIGBULLS terminal opened with session fallback:',error);
+ ready=true;startLocalSimulation();
+ try{renderApp();}catch(renderError){console.error('Terminal fallback render:',renderError);}
+ console.info('BIGBULLS terminal rendered without a blocking connection notice.');
  try{
   const c=client();
   if(!window.__bbTerminalFallbackAuthListener){
@@ -2529,26 +2536,15 @@ function bbShowBootFallback(error){
    c.auth.onAuthStateChange(async(_event,s)=>{
     if(!s?.user)return;
     session=s;window.__bbTerminalAuthSession=s;
-    try{if(s?.access_token&&c.realtime?.setAuth)await c.realtime.setAuth(s.access_token);await bbWithBootTimeout(accounts(),'Trading account hydration',BB_BOOT_TIMEOUT_MS);renderApp();await refresh(true);document.getElementById('bb-session-reconnect-fallback')?.remove();startBbookRealtime(c).catch(e=>console.warn('BIGBULLS Realtime startup fallback:',e));startBiQuoteRealtime().catch(e=>console.warn('BiQuote startup:',e));bbStartBackgroundLoops(c);}
-    catch(e){console.warn('Terminal session restored; account hydration remains pending:',e);}
+    try{if(s.access_token&&c.realtime?.setAuth)await c.realtime.setAuth(s.access_token);await accounts();renderApp();await refresh(true);startBbookRealtime(c).catch(e=>console.warn('Realtime startup:',e));startBiQuoteRealtime().catch(e=>console.warn('BiQuote startup:',e));bbStartBackgroundLoops(c);}
+    catch(e){console.warn('Background account hydration:',e.message);}
    });
   }
- }catch(listenerError){console.warn('Terminal auth reconnect listener unavailable:',listenerError);}
+ }catch(listenerError){console.warn('Terminal auth listener unavailable:',listenerError);}
  bbScheduleSessionReconnect();
 }
 function bbShowAccountFallback(){
- startLocalSimulation();
- let banner=document.getElementById('bb-account-hydration-fallback');if(banner)return;
- banner=document.createElement('div');banner.id='bb-account-hydration-fallback';
- banner.style.cssText='position:fixed;z-index:95;top:10px;left:50%;transform:translateX(-50%);width:min(94vw,520px);padding:12px 14px;border:1px solid #92400e;border-radius:14px;background:#211a10;color:#fef3c7;box-shadow:0 8px 28px #0008;font:12px Inter,sans-serif;display:flex;align-items:center;gap:10px;flex-wrap:wrap';
- banner.innerHTML='<span style="flex:1;min-width:180px">Account list is still connecting. Trading actions stay unavailable until an approved account is loaded.</span><button id="bb-account-retry" style="padding:9px 12px;border-radius:9px;background:#2563eb;color:white;font-weight:700">Retry</button><button id="bb-account-switch" style="padding:9px 12px;border-radius:9px;background:#374151;color:white;font-weight:700">My Accounts</button>';
- document.body.appendChild(banner);
- document.getElementById('bb-account-retry')?.addEventListener('click',async e=>{
-  const b=e.currentTarget;b.disabled=true;b.textContent='Connecting…';
-  try{await accounts();renderApp();await refresh(true);banner.remove();notify('Accounts connected','Your approved trading accounts are ready.','success');}
-  catch(err){console.error('Account hydration retry:',err);b.disabled=false;b.textContent='Retry';notify('Account connection failed',err.message||'Please retry or open My Accounts.','error');}
- });
- document.getElementById('bb-account-switch')?.addEventListener('click',()=>{try{const d=window.parent.document.querySelector('#app-shell [data-page="accounts"]');if(d){d.click();return;}}catch(_){}location.href='index.html';});
+ document.getElementById('bb-account-hydration-fallback')?.remove();
 }
 function bbStartBackgroundLoops(c){
  if(backgroundLoopsStarted)return;backgroundLoopsStarted=true;
@@ -2561,8 +2557,8 @@ async function start(){
  // hydration must never be prerequisites for the chart/layout to become visible.
  try{
   if(!ready){
-   state.accounts=[{id:'__session_pending__',accountNumber:null,backendId:null,nickname:'Connecting secure session…',type:'Demo',platform:'BIGBULLS',accountClass:'—',balance:0,creditBonus:0,equity:0,floatingPL:0,leverage:'1:100',server:'BIGBULLS',archived:false,status:'unavailable',currency:'USD'}];
-   state.activeAccountId='__session_pending__';lastAccount='__session_pending__';
+   const bootUid=(window.__bbTerminalAuthSession||window.__bbParentAuthSession)?.user?.id||session?.user?.id;
+   if(!bbPrimeCachedAccounts(bootUid)){state.accounts=[{id:'474909030',accountNumber:'474909030',backendId:null,nickname:'BigBulls Demo',type:'Demo',platform:'BIGBULLS',accountClass:'Standard',balance:0,creditBonus:0,equity:0,floatingPL:0,leverage:'1:100',server:'BIGBULLS',archived:false,status:'unavailable',currency:'USD'}];state.activeAccountId='474909030';lastAccount='474909030';}
    ready=true;
    document.documentElement.classList.remove('bb-auth-pending');
    renderApp();
@@ -2583,12 +2579,11 @@ async function start(){
    session=auth.data?.session||bridgedSession||null;
    if(!session?.user){bbShowBootFallback(new Error('Secure session is not ready. Terminal remains open in safe mode; sign in to enable account access and trading.'));return;}
    // Paint the authenticated terminal shell immediately; account lookup is background-only.
-   state.accounts=[{id:'__account_loading__',accountNumber:null,backendId:null,nickname:'Loading approved accounts…',type:'Demo',platform:'BIGBULLS',accountClass:'—',balance:0,creditBonus:0,equity:0,floatingPL:0,leverage:'1:100',server:'BIGBULLS',archived:false,status:'unavailable',currency:'USD'}];
-   state.activeAccountId='__account_loading__';lastAccount='__account_loading__';
+   if(!bbPrimeCachedAccounts(session.user.id)){state.accounts=[{id:'474909030',accountNumber:'474909030',backendId:null,nickname:'BigBulls Demo',type:'Demo',platform:'BIGBULLS',accountClass:'Standard',balance:0,creditBonus:0,equity:0,floatingPL:0,leverage:'1:100',server:'BIGBULLS',archived:false,status:'unavailable',currency:'USD'}];state.activeAccountId='474909030';lastAccount='474909030';}
    Object.values(state.instruments).forEach(i=>{i.candles=[];i.bid=0;i.ask=0;});
    state.openOrders=[];state.pendingOrders=[];state.closedOrders=[];
    ready=true;document.documentElement.classList.remove('bb-auth-pending');
-   lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();bbShowAccountFallback();
+   lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();
    startBbookRealtime(c).catch(e=>console.warn('BIGBULLS Realtime startup fallback:',e));startBiQuoteRealtime().catch(e=>console.warn('BiQuote startup:',e));
    Promise.resolve().then(()=>{if(typeof loadBiQuoteCatalog==='function')return loadBiQuoteCatalog();}).catch(e=>console.warn('Instrument catalog:',e));
    Promise.resolve().then(()=>{if(typeof bbLoadMarketHolidays==='function')return bbLoadMarketHolidays();}).catch(e=>console.warn('Market holiday calendar:',e));
@@ -2596,7 +2591,7 @@ async function start(){
    Promise.resolve().then(()=>candles()).catch(e=>notify('Market feed unavailable',e.message||'Provider candles could not be loaded.','error'));
    Promise.resolve().then(async()=>{
     try{await bbWithBootTimeout(accounts(),'Trading account hydration',BB_BOOT_TIMEOUT_MS);renderApp();await refresh(true);document.getElementById('bb-account-hydration-fallback')?.remove();notify('Accounts connected','Your approved trading accounts are ready.','success');}
-    catch(e){console.warn('Account hydration remains pending:',e);bbShowAccountFallback();}
+    catch(e){console.warn('Account hydration remains pending; cached account remains visible:',e);}
    });
    bbStartBackgroundLoops(c);
    c.auth.onAuthStateChange((_event,s)=>{
