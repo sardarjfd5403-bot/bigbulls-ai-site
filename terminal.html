@@ -2194,6 +2194,7 @@ async function candles(){
  const cacheKey=s+'|'+tf,cached=candleCache.get(cacheKey);
  if(cached?.length){i.candles=cached.map(c=>({...c}));drawChartCanvas();}else drawChartCanvas();
  const d=await call('market-data',{action:'candles',symbol:p,timeframe:tf,outputsize:1000});
+ if(d.candles?.length)stopLocalSimulation();
  if(request!==candleEpoch||s!==state.selectedSymbol||tf!==state.timeframe)return;
  const rows=(d.candles||[]).map(c=>({time:Number(c.time),open:Number(c.open),high:Number(c.high),low:Number(c.low),close:Number(c.close)})).filter(c=>Number.isFinite(c.time)&&[c.open,c.high,c.low,c.close].every(Number.isFinite));
  if(!rows.length)throw new Error('BiQuote returned no candles for '+s+' ('+tf+').');
