@@ -1418,13 +1418,23 @@ async function submitHandler(e){
   if(name.length>40){if(out)out.textContent="Nickname must be 40 characters or fewer.";return;}
   button.disabled=true;button.textContent="Creating securely…";
   try{
+   const createdAt=new Date().toISOString();
    const {data:accountNumber,error}=await sb.rpc("create_client_trading_account",{p_account_mode:mode,p_account_type:type,p_currency:currency,p_display_name:name,p_platform:platform,p_leverage:leverage,p_swap_free:swapFree});
    if(error)throw error;
-   window.bbAccountMode=mode;await loadClientTradingAccounts();
-   const {data:created,error:lookupError}=await sb.from("trading_accounts").select("id,account_number,status,account_mode").eq("user_id",user.id).eq("account_number",accountNumber).maybeSingle();
-   if(lookupError||!created)throw new Error("Account was created (#"+accountNumber+") but terminal handoff could not be prepared. Open it from My Accounts.");
-   body.innerHTML='<p class="eyebrow">ACCOUNT CREATED · ACTIVE</p><h2>Your '+esc(mode.toUpperCase())+' account is ready</h2><p class="muted">Account #'+esc(accountNumber)+' · '+esc(type)+' · '+esc(leverage)+'</p><section class="account-credential-panel" style="margin:16px 0;padding:14px;border:1px solid var(--border,#e5e7eb);border-radius:14px;background:var(--surface-soft,#f8fafc);text-align:left"><strong style="display:block;margin-bottom:8px">Account access details</strong><div style="font-size:13px;line-height:1.7">Account number: <b>'+esc(accountNumber)+'</b><br>Master password: <b>Not issued</b><br>Investor password: <b>Not issued</b></div><p class="muted" style="font-size:12px;margin:8px 0 0">This BIGBULLS B-Book account uses your secure Client Area sign-in. Separate MT5 master/investor passwords are not available until an MT5 server connection is integrated. No placeholder passwords are generated or stored.</p></section><button class="portal-primary" type="button" id="bb-trade-created-account">Trade in Terminal</button><button class="copy-wallet" type="button" data-close>Done</button>';
-   document.getElementById("bb-trade-created-account")?.addEventListener("click",()=>{window.__bbTerminalLaunchAccountId=created.id;showApp("terminal");});
+   if(accountNumber===null||accountNumber===undefined||String(accountNumber).trim()==="")throw new Error("The account service did not return an account number. No success was assumed.");
+   const accountNumberLabel=String(accountNumber);
+   window.bbAccountMode=mode;
+   await loadClientTradingAccounts();
+   let lookup=await sb.from("trading_accounts").select("id,account_number,status,account_mode").eq("user_id",user.id).eq("account_number",accountNumberLabel).eq("account_mode",mode).maybeSingle();
+   let created=lookup.data||null;
+   if(!created){
+    lookup=await sb.from("trading_accounts").select("id,account_number,status,account_mode").eq("user_id",user.id).eq("account_mode",mode).gte("created_at",createdAt).order("created_at",{ascending:false}).limit(1).maybeSingle();
+    created=lookup.data||null;
+   }
+   await loadClientTradingAccounts();
+   const tradeButton=created?'<button class="portal-primary" type="button" id="bb-trade-created-account">Trade in Terminal</button>':'<div class="notice">Your account creation request was accepted by the secure account service. Refresh My Accounts if it does not appear immediately.</div>';
+   body.innerHTML='<p class="eyebrow">ACCOUNT CREATED · ACTIVE</p><h2>Your '+esc(mode.toUpperCase())+' account is ready</h2><p class="muted">Account #'+esc(accountNumberLabel)+' · '+esc(type)+' · '+esc(leverage)+'</p><section class="account-credential-panel" style="margin:16px 0;padding:14px;border:1px solid var(--border,#e5e7eb);border-radius:14px;background:var(--surface-soft,#f8fafc);text-align:left"><strong style="display:block;margin-bottom:8px">Account access details</strong><div style="font-size:13px;line-height:1.7">Account number: <b>'+esc(accountNumberLabel)+'</b><br>Master password: <b>Not issued</b><br>Investor password: <b>Not issued</b></div><p class="muted" style="font-size:12px;margin:8px 0 0">This BIGBULLS B-Book account uses your secure Client Area sign-in. Separate MT5 master/investor passwords are not available until an MT5 server connection is integrated. No placeholder passwords are generated or stored.</p></section>'+tradeButton+'<button class="copy-wallet" type="button" data-close>Done</button>';
+   if(created)document.getElementById("bb-trade-created-account")?.addEventListener("click",()=>{window.__bbTerminalLaunchAccountId=created.id;showApp("terminal");});
   }catch(err){if(out)out.textContent=err.message||"Account creation failed.";button.disabled=false;button.textContent="Create account instantly";}
   return;
  }
