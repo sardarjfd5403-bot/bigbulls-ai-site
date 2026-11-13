@@ -2467,6 +2467,60 @@ function bbShowBootError(error){
  document.getElementById('bb-boot-back')?.addEventListener('click',()=>{try{const d=window.parent.document.querySelector('#app-shell [data-page="accounts"]');if(d){d.click();return;}}catch(_){}location.href='index.html';});
  console.error('BIGBULLS terminal startup:',error);
 }
+let bbReconnectBusy=false,bbReconnectTimer=null,bbReconnectAttempt=0;
+async function bbAttemptSessionReconnect(source='background'){
+ if(bbReconnectBusy)return false;
+ bbReconnectBusy=true;
+ const button=document.getElementById('bb-session-retry');
+ if(button){button.disabled=true;button.textContent='Reconnecting…';}
+ try{
+  const c=client();
+  let result=await c.auth.getSession();
+  if(result.error)throw result.error;
+  let restored=result.data?.session||null;
+  if(!restored?.access_token){
+   const refreshed=await c.auth.refreshSession();
+   if(refreshed.error)throw refreshed.error;
+   restored=refreshed.data?.session||null;
+  }
+  if(!restored?.access_token||!restored.user?.id)throw new Error('No valid signed-in Supabase session is available yet.');
+  session=restored;
+  window.__bbTerminalAuthSession=restored;
+  if(c.realtime?.setAuth)await c.realtime.setAuth(restored.access_token);
+  await accounts();
+  const active=getActiveAccount();
+  if(!active?.backendId||active.status!=='approved')throw new Error('Signed-in session restored, but no approved trading account is available.');
+  ready=true;
+  stopLocalSimulation();
+  renderApp();
+  const loaded=await refresh(true);
+  if(!loaded)throw new Error('Account ledger did not return a verified balance and positions yet.');
+  document.getElementById('bb-session-reconnect-fallback')?.remove();
+  if(bbReconnectTimer){clearTimeout(bbReconnectTimer);bbReconnectTimer=null;}
+  bbReconnectAttempt=0;
+  await startBbookRealtime(c).catch(e=>console.warn('Realtime reconnect deferred; REST refresh remains active:',e));
+  startBiQuoteRealtime().catch(e=>console.warn('BiQuote reconnect:',e));
+  bbStartBackgroundLoops(c);
+  console.info('BIGBULLS secure terminal session restored via',source);
+  return true;
+ }catch(e){
+  console.warn('BIGBULLS session reconnect attempt failed:',e.message||e);
+  const banner=document.getElementById('bb-session-reconnect-fallback');
+  const label=banner?.querySelector('span');
+  if(label)label.textContent='Secure session is still reconnecting. Account data and trading remain locked until Supabase confirms your session. '+(e.message||'');
+  if(button){button.disabled=false;button.textContent='Retry session';}
+  return false;
+ }finally{bbReconnectBusy=false;}
+}
+function bbScheduleSessionReconnect(){
+ if(bbReconnectTimer||!document.getElementById('bb-session-reconnect-fallback'))return;
+ const delay=Math.min(15000,2000*Math.pow(1.6,Math.min(bbReconnectAttempt++,5)));
+ bbReconnectTimer=setTimeout(async()=>{
+  bbReconnectTimer=null;
+  const ok=await bbAttemptSessionReconnect('automatic retry');
+  if(!ok)bbScheduleSessionReconnect();
+ },delay);
+}
 function bbShowBootFallback(error){
  document.documentElement.classList.remove('bb-auth-pending');
  startLocalSimulation();
@@ -2482,7 +2536,7 @@ function bbShowBootFallback(error){
   banner.style.cssText='position:fixed;z-index:10000;top:10px;left:50%;transform:translateX(-50%);width:min(94vw,560px);padding:12px 14px;border:1px solid #92400e;border-radius:14px;background:#eff6ff;color:#1e3a8a;box-shadow:0 8px 28px #0008;font:12px Inter,sans-serif;display:flex;align-items:center;gap:10px;flex-wrap:wrap';
   banner.innerHTML='<span style="flex:1;min-width:190px">Terminal is open in safe reconnect mode. Secure session is still loading; account data and trading actions will activate after authentication reconnects.</span><button id="bb-session-retry" style="padding:9px 12px;border-radius:9px;background:#2563eb;color:white;font-weight:700">Retry session</button>';
   document.body.appendChild(banner);
-  document.getElementById('bb-session-retry')?.addEventListener('click',()=>{banner.remove();document.documentElement.classList.add('bb-auth-pending');start();});
+  document.getElementById('bb-session-retry')?.addEventListener('click',()=>{bbAttemptSessionReconnect('manual retry').then(ok=>{if(!ok)bbScheduleSessionReconnect();});});
  }
  console.warn('BIGBULLS terminal opened with session fallback:',error);
  try{
@@ -2491,12 +2545,13 @@ function bbShowBootFallback(error){
    window.__bbTerminalFallbackAuthListener=true;
    c.auth.onAuthStateChange(async(_event,s)=>{
     if(!s?.user)return;
-    session=s;
-    try{await bbWithBootTimeout(accounts(),'Trading account hydration',BB_BOOT_TIMEOUT_MS);renderApp();await refresh(true);document.getElementById('bb-session-reconnect-fallback')?.remove();startBbookRealtime(c).catch(e=>console.warn('BIGBULLS Realtime startup fallback:',e));startBiQuoteRealtime().catch(e=>console.warn('BiQuote startup:',e));bbStartBackgroundLoops(c);}
+    session=s;window.__bbTerminalAuthSession=s;
+    try{if(s?.access_token&&c.realtime?.setAuth)await c.realtime.setAuth(s.access_token);await bbWithBootTimeout(accounts(),'Trading account hydration',BB_BOOT_TIMEOUT_MS);renderApp();await refresh(true);document.getElementById('bb-session-reconnect-fallback')?.remove();startBbookRealtime(c).catch(e=>console.warn('BIGBULLS Realtime startup fallback:',e));startBiQuoteRealtime().catch(e=>console.warn('BiQuote startup:',e));bbStartBackgroundLoops(c);}
     catch(e){console.warn('Terminal session restored; account hydration remains pending:',e);}
    });
   }
  }catch(listenerError){console.warn('Terminal auth reconnect listener unavailable:',listenerError);}
+ bbScheduleSessionReconnect();
 }
 function bbShowAccountFallback(){
  startLocalSimulation();
@@ -2560,8 +2615,8 @@ async function start(){
    });
    bbStartBackgroundLoops(c);
    c.auth.onAuthStateChange((_event,s)=>{
-    session=s||null;if(!session?.user){bbShowBootFallback(new Error('Session is reconnecting. Terminal remains open in safe mode; trading is locked until sign-in is restored.'));return;}
-    accounts().then(()=>{ready=true;renderApp();refresh(true);}).catch(e=>{console.error('Account refresh failed:',e);notify('Account refresh failed',e.message||'Could not reload trading accounts.','error');});
+    session=s||null;window.__bbTerminalAuthSession=session;if(!session?.user){bbShowBootFallback(new Error('Session is reconnecting. Terminal remains open in safe mode; trading is locked until sign-in is restored.'));return;}
+    Promise.resolve().then(async()=>{if(session?.access_token&&c.realtime?.setAuth)await c.realtime.setAuth(session.access_token);await accounts();ready=true;renderApp();await refresh(true);}).catch(e=>{console.error('Account refresh failed:',e);notify('Account refresh failed',e.message||'Could not reload trading accounts.','error');});
    });
   }catch(e){bbShowBootFallback(e);}
  })().finally(()=>{startupPromise=null;});
