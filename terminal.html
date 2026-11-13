@@ -2346,6 +2346,19 @@ function bbShowBootError(error){
  document.getElementById('bb-boot-back')?.addEventListener('click',()=>{try{const d=window.parent.document.querySelector('#app-shell [data-page="accounts"]');if(d){d.click();return;}}catch(_){}location.href='index.html';});
  console.error('BIGBULLS terminal startup:',error);
 }
+function bbShowAccountFallback(){
+ let banner=document.getElementById('bb-account-hydration-fallback');if(banner)return;
+ banner=document.createElement('div');banner.id='bb-account-hydration-fallback';
+ banner.style.cssText='position:fixed;z-index:95;top:10px;left:50%;transform:translateX(-50%);width:min(94vw,520px);padding:12px 14px;border:1px solid #92400e;border-radius:14px;background:#211a10;color:#fef3c7;box-shadow:0 8px 28px #0008;font:12px Inter,sans-serif;display:flex;align-items:center;gap:10px;flex-wrap:wrap';
+ banner.innerHTML='<span style="flex:1;min-width:180px">Account list is still connecting. Trading actions stay unavailable until an approved account is loaded.</span><button id="bb-account-retry" style="padding:9px 12px;border-radius:9px;background:#2563eb;color:white;font-weight:700">Retry</button><button id="bb-account-switch" style="padding:9px 12px;border-radius:9px;background:#374151;color:white;font-weight:700">My Accounts</button>';
+ document.body.appendChild(banner);
+ document.getElementById('bb-account-retry')?.addEventListener('click',async e=>{
+  const b=e.currentTarget;b.disabled=true;b.textContent='Connecting…';
+  try{await accounts();renderApp();await refresh(true);banner.remove();notify('Accounts connected','Your approved trading accounts are ready.','success');}
+  catch(err){console.error('Account hydration retry:',err);b.disabled=false;b.textContent='Retry';notify('Account connection failed',err.message||'Please retry or open My Accounts.','error');}
+ });
+ document.getElementById('bb-account-switch')?.addEventListener('click',()=>{try{const d=window.parent.document.querySelector('#app-shell [data-page="accounts"]');if(d){d.click();return;}}catch(_){}location.href='index.html';});
+}
 function bbStartBackgroundLoops(c){
  if(backgroundLoopsStarted)return;backgroundLoopsStarted=true;
  setInterval(()=>{if(!document.hidden&&(!biQuoteConnection||!window.signalR||biQuoteConnection.state!==window.signalR.HubConnectionState.Connected))quotes().catch(e=>console.warn('Quote refresh:',e));},15000);
@@ -2373,7 +2386,7 @@ async function start(){
    ready=true;document.documentElement.classList.remove('bb-auth-pending');
    startBbookRealtime(c);startBiQuoteRealtime().catch(e=>console.warn('BiQuote startup:',e));
    lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();
-   if(!accountHydrated)notify('Account list is taking longer','Terminal is open. Retry account loading or return to My Accounts.','error');
+   if(!accountHydrated)bbShowAccountFallback();
    Promise.resolve().then(()=>{if(typeof loadBiQuoteCatalog==='function')return loadBiQuoteCatalog();}).catch(e=>console.warn('Instrument catalog:',e));
    Promise.resolve().then(()=>{if(typeof bbLoadMarketHolidays==='function')return bbLoadMarketHolidays();}).catch(e=>console.warn('Market holiday calendar:',e));
    Promise.resolve().then(()=>quotes()).catch(e=>console.warn('Initial quotes:',e));
