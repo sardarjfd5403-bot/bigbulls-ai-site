@@ -2064,6 +2064,8 @@ function startBbookRealtime(c){
    const row=payload.new||{};applyBookQuote(mapSymbol(row.symbol),row);updateLiveDOMElements();
   })
   .on('postgres_changes',{event:'*',schema:'public',table:'bb_bbook_positions',filter:'user_id=eq.'+session.user.id},()=>{if(mode(getActiveAccount())==='real')refresh(true);})
+  .on('postgres_changes',{event:'*',schema:'public',table:'bb_bbook_pending_orders',filter:'user_id=eq.'+session.user.id},()=>{if(mode(getActiveAccount())==='real')refresh(true);})
+  .on('postgres_changes',{event:'*',schema:'public',table:'bb_paper_execution_trades',filter:'user_id=eq.'+session.user.id},()=>{if(mode(getActiveAccount())!=='real')refresh(true);})
   .on('postgres_changes',{event:'*',schema:'public',table:'bb_paper_execution_accounts',filter:'user_id=eq.'+session.user.id},async()=>{try{const current=getActiveAccount()?.backendId||null;await accounts(current);await refresh(true);renderApp();}catch(e){console.warn('Demo balance realtime sync:',e.message);}})
   .on('postgres_changes',{event:'*',schema:'public',table:'trading_accounts',filter:'user_id=eq.'+session.user.id},async()=>{
    try{const current=getActiveAccount()?.backendId||null;await accounts(current);renderApp();await refresh(true);}
