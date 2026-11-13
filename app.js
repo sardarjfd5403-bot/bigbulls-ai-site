@@ -1403,7 +1403,7 @@ async function submitHandler(e){
   const subject=String(d.get("subject")||"").trim(),category=String(d.get("category")||"other"),bodyText=String(d.get("message")||"").trim();
   if(subject.length<3||bodyText.length<10){if(out)out.textContent="Enter a clear subject and at least 10 characters describing the issue.";return;}
   button.disabled=true;button.textContent="Submitting…";
-  try{const {error}=await sb.from("support_tickets").insert({user_id:user.id,subject,category,message:bodyText,status:"open"});if(error)throw error;f.reset();if(out)out.textContent="Ticket submitted successfully. You can follow its status below.";await loadPageData();}
+  try{const {data:ticket,error}=await sb.from("support_tickets").insert({user_id:user.id,subject,category,message:bodyText,status:"open"}).select("id").single();if(error)throw error;const {error:messageError}=await sb.from("support_ticket_messages").insert({ticket_id:ticket.id,author_id:user.id,author_role:"client",body:bodyText});if(messageError)throw messageError;f.reset();if(out)out.textContent="Ticket submitted successfully. BIGBULLS Support can now reply in this conversation.";await loadPageData();}
   catch(err){if(out)out.textContent="Ticket submission failed: "+(err.message||"Please retry.");}
   finally{button.disabled=false;button.textContent="Submit support ticket";}
   return;
