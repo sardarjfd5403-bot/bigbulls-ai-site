@@ -877,7 +877,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
             ${m.mode === 'Pending' ? `
               <div>
                 <label class="text-gray-400 block mb-1">Order Price (${m.pendingType})</label>
-                <input id="ticketTargetPrice" type="number" step="any" value="${m.targetPrice}" oninput="state.orderTicket.targetPrice=parseFloat(this.value)" class="w-full bg-[#0E1117] border border-[#2D3545] rounded-xl px-3 py-2 font-mono font-bold text-white" />
+                <input id="ticketTargetPrice" type="number" step="any" value="${m.targetPrice}" oninput="state.orderTicket.targetPrice=parseFloat(this.value);bbUpdateTicketMargin()" class="w-full bg-[#0E1117] border border-[#2D3545] rounded-xl px-3 py-2 font-mono font-bold text-white" />
               </div>
             ` : ''}
 
@@ -888,7 +888,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
               </div>
               <div class="flex items-center gap-2">
                 <button onclick="state.orderTicket.lots=Math.max(0.01, Number((state.orderTicket.lots-0.01).toFixed(2))); openModal(renderTicketInner())" class="w-10 h-10 rounded-xl bg-[#262C3A] text-white font-bold text-base">−</button>
-                <input type="number" step="0.01" min="0.01" value="${m.lots}" oninput="state.orderTicket.lots=Math.max(0.01, parseFloat(this.value)||0.01)" class="flex-1 bg-[#0E1117] border border-[#2D3545] rounded-xl h-10 text-center font-mono font-bold text-sm text-white" />
+                <input type="number" step="0.01" min="0.01" value="${m.lots}" oninput="state.orderTicket.lots=Math.max(0.01, parseFloat(this.value)||0.01);bbUpdateTicketMargin()" class="flex-1 bg-[#0E1117] border border-[#2D3545] rounded-xl h-10 text-center font-mono font-bold text-sm text-white" />
                 <button onclick="state.orderTicket.lots=Number((state.orderTicket.lots+0.01).toFixed(2)); openModal(renderTicketInner())" class="w-10 h-10 rounded-xl bg-[#262C3A] text-white font-bold text-base">+</button>
               </div>
               <div class="flex gap-1.5 mt-2">
@@ -910,10 +910,10 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
             </div>
 
             <div class="flex justify-between text-[11px] text-gray-400 pt-1">
-              <span>Required margin: <strong class="text-white font-mono">${marginReq} USD</strong></span>
+              <span>Required margin: <strong data-ticket-required-margin class="text-white font-mono">${marginReq} USD</strong></span>
               <span>Free margin: <strong data-ticket-free-margin class="text-white font-mono">${formatMoney(getAccountMetrics().freeMargin)} USD</strong></span>
             </div>
-            <div class="flex justify-between text-[10px] text-gray-500"><span>Contract size: ${Number(inst.contractSize||1).toLocaleString()} units</span><span>Leverage: ${acc.leverage}</span></div>
+            <div class="flex justify-between text-[10px] text-gray-500"><span>Contract size: ${Number(inst.contractSize||1).toLocaleString()} units</span><span>Leverage: ${acc.leverage}</span></div><div class="text-[10px] text-gray-500">Trading hours: ${bbIsCryptoSymbol(inst.symbol)?'24/7':'Mon–Fri 00:00–23:59 UTC; holidays excluded'}</div>
 
             <button onclick="submitOrderExecution()" class="w-full py-3.5 rounded-xl font-bold text-sm text-white transition shadow-lg ${m.side==='Buy' ? 'bg-bullBlue hover:bg-bullYellowHover' : 'bg-bullRed hover:bg-red-600'}">
               Confirm ${m.side} ${m.lots.toFixed(2)} lots
@@ -3307,6 +3307,18 @@ if(typeof bbBaseOpenTicket==='function')window.openOrderTicketModal=function(sid
  return bbBaseOpenTicket(side,orderMode);
 };
 
+
+function bbUpdateTicketMargin(){
+ const required=document.querySelector('[data-ticket-required-margin]'),free=document.querySelector('[data-ticket-free-margin]');
+ if(!required&&!free)return;
+ const inst=state.instruments[state.selectedSymbol],acc=getActiveAccount(),lots=Number(document.querySelector('input[oninput*="state.orderTicket.lots"]')?.value??state.orderTicket.lots);
+ if(!inst||!acc)return;
+ const lev=Math.max(1,parseInt(String(acc.leverage||'1:100').split(':')[1])||100),price=state.orderTicket.mode==='Pending'?Number(state.orderTicket.targetPrice||inst.ask):(state.orderTicket.side==='Buy'?inst.ask:inst.bid);
+ const margin=Math.max(0,lots*Number(inst.contractSize||1)*price/lev);
+ if(required)required.textContent=margin.toFixed(2)+' USD';
+ if(free)free.textContent=formatMoney(getAccountMetrics().freeMargin)+' USD';
+}
+setInterval(bbUpdateTicketMargin,1000);
 </script>
 
 </body>
