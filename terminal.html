@@ -987,6 +987,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
           <div class="flex justify-between"><span class="text-gray-400">Closing price</span><span class="font-mono font-bold text-white">${closePrice.toFixed(inst.digits)}</span></div>
           <div class="flex justify-between"><span class="text-gray-400">Profit / Loss</span><span class="font-mono font-bold ${pl>=0?'text-bullGreen':'text-bullRed'}">${pl>=0?'+':''}${formatMoney(pl)} USD</span></div>
           ${mode(getActiveAccount())==='real'&&Number(order.lots)>=0.02?'<button onclick="openPartialCloseModal(\\''+(order.backendTradeId||order.id)+'\\')" class="w-full py-2.5 rounded-xl bg-[#262C3A] text-white font-bold text-xs mt-2">Partial close</button>':''}
+          ${mode(getActiveAccount())==='real'?'<button onclick="openModifyPositionModal(\\\''+(order.backendTradeId||order.id)+'\\\')" class="w-full py-2.5 rounded-xl bg-[#262C3A] text-white font-bold text-xs mt-2">Modify SL / TP</button>':''}
           <button onclick="executeCloseOrder('${order.backendTradeId || order.id}', false)" class="w-full py-3 rounded-xl bg-bullBlue hover:bg-bullYellowHover text-white font-bold text-sm mt-2">Confirm</button>
           <button onclick="closeModal()" class="w-full py-2.5 rounded-xl bg-[#262C3A] text-gray-300 font-bold text-xs">Cancel</button>
         </div>
@@ -3339,6 +3340,23 @@ window.submitPartialClose=async function(id){
   notify('Partial close completed',quantity.toFixed(2)+' lots closed · '+Number(result.realized_pnl||0).toFixed(2)+' USD realized','success');
   playTerminalSound('placed');
  }catch(e){notify('Partial close failed',e.message||'The partial close could not be completed.','error');playTerminalSound('error');}
+};
+
+
+window.openModifyPositionModal=function(id){
+ const o=state.openOrders.find(x=>String(x.backendTradeId||x.id)===String(id));if(!o)return;
+ openModal('<div class="p-4 border-b border-[#262C3A] flex items-center justify-between"><h3 class="font-bold text-sm text-white">Modify SL / TP</h3><button onclick="closeModal()" class="w-7 h-7 rounded-full bg-[#262C3A] text-gray-300">✕</button></div><div class="p-4 space-y-3 text-xs"><div class="text-gray-400">'+o.symbol+' · '+o.side+' · '+Number(o.lots).toFixed(2)+' lots</div><label class="block text-gray-400">Stop Loss<input id="bbPositionSL" type="number" step="any" value="'+(o.sl||'')+'" placeholder="Remove / leave empty" class="mt-1 w-full rounded-lg border border-[#2D3545] bg-[#0E1117] p-3 text-white"></label><label class="block text-gray-400">Take Profit<input id="bbPositionTP" type="number" step="any" value="'+(o.tp||'')+'" placeholder="Remove / leave empty" class="mt-1 w-full rounded-lg border border-[#2D3545] bg-[#0E1117] p-3 text-white"></label><button onclick="savePositionModification(\\''+id+'\\')" class="w-full py-3 rounded-xl bg-bullBlue text-white font-bold">Save SL / TP</button></div>');
+};
+window.savePositionModification=async function(id){
+ const o=state.openOrders.find(x=>String(x.backendTradeId||x.id)===String(id)),a=getActiveAccount();if(!o)return;
+ const slRaw=document.getElementById('bbPositionSL')?.value||'',tpRaw=document.getElementById('bbPositionTP')?.value||'';
+ const sl=slRaw===''?null:Number(slRaw),tp=tpRaw===''?null:Number(tpRaw);
+ if((sl!==null&&(!(sl>0)||!Number.isFinite(sl)))||(tp!==null&&(!(tp>0)||!Number.isFinite(tp)))){notify('Invalid SL / TP','Enter positive prices or leave the field empty.','error');return;}
+ try{
+  const r=await call('bbook-engine',{action:'modify_position',account_mode:'real',account_id:a.backendId,position_id:o.backendTradeId,stop_loss:sl,take_profit:tp});
+  if(!r.success||!r.position)throw new Error(r.error||'Position modification was not confirmed.');
+  closeModal();await refresh(true);notify('SL / TP updated',o.symbol+' protection levels saved.','success');playTerminalSound('placed');
+ }catch(e){notify('Modification failed',e.message||'Could not update position protection.','error');}
 };
 
 </script>
