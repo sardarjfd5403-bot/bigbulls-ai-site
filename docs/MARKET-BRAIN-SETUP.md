@@ -30,3 +30,12 @@
 - Provider candles are not broker bid/ask execution quotes. Spread and slippage assumptions in the sample backtest are generic, not broker-calibrated.
 - Historical simulation is not proof of future profitability. Validate with out-of-sample data and paper trading before considering live execution.
 - Live trading is not implemented or enabled in this phase.
+
+
+## Automated client signal publishing
+- The `market-brain` Edge Function now writes each completed scan directly to `public.bb_market_signal_feed` using its server-side service-role client. The admin browser no longer performs a second RLS-bound insert/update.
+- A protected `public.bb_market_brain_config` row stores a random cron credential; it is not readable by anon/authenticated roles.
+- Supabase pg_cron calls the function every 15 minutes through pg_net with the private `x-market-brain-cron-secret` header. No admin approval or button click is required for scheduled publishing.
+- Each scan publishes a 20-minute snapshot. Expired rows are archived and the client feed query excludes expired snapshots.
+- The existing `approved clients read published market signals` RLS policy remains the database gate: only a user's latest KYC status of `approved` can select current published rows. The portal also displays a locked KYC prompt before loading the feed.
+- A scan may correctly publish only WAIT snapshots when no setup meets the strict score, freshness and news-protection rules. This is intentional; the scanner must not manufacture BUY/SELL calls to satisfy a test.
