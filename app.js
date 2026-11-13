@@ -109,7 +109,7 @@ async function kycFileChangeHandler(e){
  if(!file){input.dataset.uploadedPath="";if(status){status.textContent="No file selected";status.classList.remove("error");}return;}
  const ext=String(file.name||"").split(".").pop().toLowerCase(),typed=String(file.type||"").toLowerCase(),byExt={jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",pdf:"application/pdf"};
  const mime=["image/jpeg","image/png","image/webp","application/pdf"].includes(typed)?typed:(typed==="image/jpg"||typed==="image/pjpeg"?"image/jpeg":byExt[ext]||"");
- if(file.size<1024)return fail("File must be at least 100 KB.");
+ if(file.size<100*1024)return fail("File must be at least 100 KB.");
  if(file.size>max)return fail("File exceeds the "+(max/1024/1024)+" MB limit.");
  if(!mime)return fail("Use JPG, PNG, WEBP or PDF.");
  if(!sb||!user?.id)return fail("Please sign in again before uploading.");
