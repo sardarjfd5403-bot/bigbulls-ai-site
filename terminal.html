@@ -2442,7 +2442,7 @@ async function start(){
 }
 window.__bbTerminalRetryStartup=start;
 // Fail safe: never leave the client staring at an endless session spinner if startup code stalls.
-window.setTimeout(()=>{if(document.documentElement.classList.contains('bb-auth-pending'))bbShowBootError(new Error('Terminal startup did not finish. Use Retry to reconnect your secure session.'));},BB_BOOT_TIMEOUT_MS);
+window.setTimeout(()=>{if(document.documentElement.classList.contains('bb-auth-pending'))bbShowBootFallback(new Error('Terminal startup exceeded the 3-second UI boot limit. Session reconnect continues in the background.'));},BB_BOOT_TIMEOUT_MS);
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
 </script>
