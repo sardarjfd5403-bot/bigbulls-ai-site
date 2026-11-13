@@ -2023,6 +2023,8 @@ function client(){
  throw new Error('Supabase client library is unavailable.');
 }
 async function call(fn,body){
+ // Cached account snapshots are for instant display only. Never submit account mutations until a live account list is confirmed.
+ if(window.__bbTerminalCacheOnly&&((fn==='trading-gateway'&&!['accounts'].includes(body?.action))||(fn==='bbook-engine'&&!['quote','status'].includes(body?.action))||(fn==='paper-execution'&&!['status'].includes(body?.action))))throw new Error('Trading is activating after secure account verification.');
  const r=await client().functions.invoke(fn,{body});
  if(r.error){
   let payload=r.data||{};const context=r.error?.context;
