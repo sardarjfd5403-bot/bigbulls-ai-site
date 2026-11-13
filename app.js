@@ -1019,7 +1019,7 @@ if(activePage==="admin"&&isAdmin()){
 async function loadClientTradingAccounts(){
  const box=document.getElementById("my-trading-accounts");if(!box||!sb||!user)return;
  box.textContent="Loading accounts…";
- const {data,error}=await sb.from("trading_accounts").select("id,account_mode,account_number,account_type,currency,balance,status,display_name,server_name,platform,requested_leverage,archived_at,deleted_at,created_at").eq("user_id",user.id).is("deleted_at",null).order("created_at",{ascending:false});
+ const {data,error}=await sb.from("trading_accounts").select("id,account_mode,account_number,account_type,currency,balance,status,display_name,server_name,platform,requested_leverage,swap_free,archived_at,deleted_at,created_at").eq("user_id",user.id).is("deleted_at",null).order("created_at",{ascending:false});
  if(error){box.textContent="Trading accounts unavailable: "+error.message;return;}
  const [{data:demoLedgers,error:demoLedgerError},{data:demoTrades,error:demoTradesError},{data:realPositions,error:realPositionsError}]=await Promise.all([
   sb.from("bb_paper_execution_accounts").select("account_id,virtual_balance").eq("user_id",user.id).eq("account_mode","demo"),
@@ -1093,11 +1093,25 @@ function renderWithdrawalDetails(account,method){
 }
 async function openAccountWizard(){
  if(!sb||!user){message("Please sign in to create an account.",true);return;}
- const {data:kyc,error}=await sb.from("kyc_submissions").select("status").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1).maybeSingle();
- if(error){message("KYC status could not be checked. Please retry.",true);return;}
- const verified=isAdmin()||kyc?.status==="approved";
+ const [{data:kyc,error:kycError},{count,error:countError}]=await Promise.all([
+  sb.from("kyc_submissions").select("status").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1).maybeSingle(),
+  sb.from("trading_accounts").select("id",{count:"exact",head:true}).eq("user_id",user.id).eq("account_mode","real").is("deleted_at",null).is("archived_at",null)
+ ]);
+ if(kycError||countError){message("KYC / account eligibility could not be checked. Please retry.",true);return;}
+ const verified=isAdmin()||["approved","verified"].includes(String(kyc?.status||"").toLowerCase());
+ const realCount=Number(count||0),limitReached=realCount>=5;
  const initial=window.bbAccountMode==="demo"?"demo":"real";
- body.innerHTML=`<p class="eyebrow">ACCOUNT CENTRE · NEW ACCOUNT</p><h2>Configure your trading account</h2><p class="muted">Choose an environment and account profile.</p><form id="bb-account-wizard" class="client-form"><label>Account environment<select name="account_mode"><option value="demo" ${initial==="demo"||!verified?"selected":""}>Demo · Practice</option><option value="real" ${initial==="real"&&verified?"selected":""} ${!verified?"disabled":""}>Real · Live account</option></select></label>${!verified?'<div class="notice">Real account creation unlocks after Admin approves your KYC. Demo requests are available now.</div>':""}<label>Account type<select name="account_type"><option value="Pro">Standard Account</option><option value="Speed">Pro Account</option><option value="Zero">Raw Spread / Zero Account</option><option value="Cent">Cent Account</option></select></label><label>Trading platform<select name="platform"><option value="BIGBULLS">BigBulls Native Terminal</option></select></label><label>Maximum leverage<select name="leverage"><option>1:200</option><option>1:500</option><option>1:1000</option><option>1:2000</option><option>1:100</option></select></label><label>Account currency<select name="currency"><option value="USD">USD</option></select></label><label>Account nickname<input name="display_name" maxlength="40" required placeholder="e.g. Gold Scalping"></label><button class="portal-primary" type="submit">Create account request</button><div data-page-message role="status" aria-live="polite"></div></form><button class="copy-wallet" type="button" data-close>Cancel</button>`;
+ body.innerHTML=`<p class="eyebrow">ACCOUNT CENTRE · INSTANT SETUP</p><h2>Configure your trading account</h2><p class="muted">Your account is created instantly after the server validates eligibility.</p><form id="bb-account-wizard" class="client-form">
+ <label>Account environment<select name="account_mode"><option value="demo" ${initial==="demo"||!verified?"selected":""}>Demo · Practice (no KYC)</option><option value="real" ${initial==="real"&&verified&&!limitReached?"selected":""} ${!verified||limitReached?"disabled":""}>Real · Live account</option></select></label>
+ ${!verified?'<div class="notice">Real accounts require verified/approved KYC. Demo accounts remain available. <button type="button" class="copy-wallet" data-page="verification">Complete KYC</button></div>':""}
+ ${limitReached?'<div class="notice">You have reached the limit of 5 active Real accounts. Archive or delete an existing account to create another.</div>':""}
+ <label>Account type<select name="account_type"><option value="Standard">Standard</option><option value="Pro">Pro</option><option value="Raw Spread">Raw Spread</option><option value="Zero">Zero</option></select></label>
+ <label>Trading platform<select name="platform"><option value="BIGBULLS">BIGBULLS Native Terminal</option></select></label>
+ <label>Leverage request<select name="leverage"><option>1:100</option><option>1:200</option><option>1:500</option><option>1:1000</option><option>1:2000</option><option>Unlimited</option></select></label>
+ <label>Account currency<select name="currency"><option value="USD">USD</option></select></label>
+ <label>Swap-Free (Islamic Mode)<select name="swap_free"><option value="false">Off</option><option value="true">On</option></select></label>
+ <label>Account nickname (optional)<input name="display_name" maxlength="40" placeholder="e.g. Gold Scalping"></label>
+ <button class="portal-primary" type="submit" ${limitReached&&verified?'disabled':''}>Create account instantly</button><div data-page-message role="status" aria-live="polite"></div></form><button class="copy-wallet" type="button" data-close>Cancel</button>`;
  showModal();
 }
 
@@ -1357,16 +1371,19 @@ async function submitHandler(e){
   button.disabled=false;if(out)out.textContent=error?"Commission record failed: "+error.message:"Commission entry saved as pending review.";if(!error){f.reset();loadPageData();}return;
  }
  if(f.id==="bb-account-wizard"){
-  e.preventDefault();const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button");
-  const mode=String(d.get("account_mode")),type=String(d.get("account_type")),currency=String(d.get("currency")),name=String(d.get("display_name")||"").trim(),platform=String(d.get("platform")),leverage=String(d.get("leverage"));
-  if(name.length<1||name.length>40){if(out)out.textContent="Nickname must be 1–40 characters.";return;}
-  button.disabled=true;button.textContent="Creating request…";
+  e.preventDefault();const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector('button[type="submit"]');
+  const mode=String(d.get("account_mode")),type=String(d.get("account_type")),currency=String(d.get("currency")),name=String(d.get("display_name")||"").trim(),platform=String(d.get("platform")),leverage=String(d.get("leverage")),swapFree=String(d.get("swap_free"))==="true";
+  if(name.length>40){if(out)out.textContent="Nickname must be 40 characters or fewer.";return;}
+  button.disabled=true;button.textContent="Creating securely…";
   try{
-   const {data,error}=await sb.rpc("create_client_trading_account",{p_account_mode:mode,p_account_type:type,p_currency:currency,p_display_name:name,p_platform:platform,p_leverage:leverage});
+   const {data:accountNumber,error}=await sb.rpc("create_client_trading_account",{p_account_mode:mode,p_account_type:type,p_currency:currency,p_display_name:name,p_platform:platform,p_leverage:leverage,p_swap_free:swapFree});
    if(error)throw error;
-   body.innerHTML='<p class="eyebrow">ACCOUNT REQUEST RECEIVED</p><h2>Request submitted</h2><button class="portal-primary" type="button" data-close>Done</button>';
    window.bbAccountMode=mode;await loadClientTradingAccounts();
-  }catch(err){if(out)out.textContent=err.message||"Account request failed.";button.disabled=false;button.textContent="Create account request";}
+   const {data:created,error:lookupError}=await sb.from("trading_accounts").select("id,account_number,status,account_mode").eq("user_id",user.id).eq("account_number",accountNumber).maybeSingle();
+   if(lookupError||!created)throw new Error("Account was created (#"+accountNumber+") but terminal handoff could not be prepared. Open it from My Accounts.");
+   body.innerHTML='<p class="eyebrow">ACCOUNT CREATED · ACTIVE</p><h2>Your '+esc(mode.toUpperCase())+' account is ready</h2><p class="muted">Account #'+esc(accountNumber)+' · '+esc(type)+' · '+esc(leverage)+'</p><button class="portal-primary" type="button" id="bb-trade-created-account">Trade in Terminal</button><button class="copy-wallet" type="button" data-close>Done</button>';
+   document.getElementById("bb-trade-created-account")?.addEventListener("click",()=>{window.__bbTerminalLaunchAccountId=created.id;showApp("terminal");});
+  }catch(err){if(out)out.textContent=err.message||"Account creation failed.";button.disabled=false;button.textContent="Create account instantly";}
   return;
  }
 
