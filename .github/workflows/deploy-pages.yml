@@ -1,0 +1,48 @@
+name: Deploy BIGBULLS website to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare public website files
+        run: |
+          mkdir -p /tmp/bigbulls-site
+          rsync -a \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='supabase/' \
+            --exclude='node_modules/' \
+            ./ /tmp/bigbulls-site/
+          touch /tmp/bigbulls-site/.nojekyll
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload website artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: /tmp/bigbulls-site
+
+      - name: Deploy website
+        id: deployment
+        uses: actions/deploy-pages@v4
