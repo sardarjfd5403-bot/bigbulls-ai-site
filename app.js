@@ -250,13 +250,18 @@ async function renderVipOffer(){
  if(requested==="dashboard")requested="accounts";
  const kycProtectedPages=["echo-system","market-analysis","signals","trading-central"];
  if(kycProtectedPages.includes(requested)&&!isAdmin()){
-  const {data:kyc,error:kycError}=await sb.from("kyc_submissions").select("status").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1).maybeSingle();
-  if(renderVersion!==portalRenderVersion||user?.id!==sessionUserId)return;
-  if(kycError||kyc?.status!=="approved"){
+  try{
+   const {data:kyc,error:kycError}=await sb.from("kyc_submissions").select("status").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1).maybeSingle();
+   if(renderVersion!==portalRenderVersion||user?.id!==sessionUserId)return;
+   if(kycError||kyc?.status!=="approved"){
+    requested="verification";
+    window.__bbAccessNotice=kycError?"AI access is locked because KYC status could not be verified. Please retry after checking your verification status.":kyc?.status==="pending"?"AI access is locked while your KYC is under review.":"AI access requires an approved KYC submission.";
+   }else window.__bbAccessNotice="";
+  }catch(kycFailure){
+   console.warn("KYC access check unavailable; keeping the client portal available:",kycFailure);
+   if(renderVersion!==portalRenderVersion||user?.id!==sessionUserId)return;
    requested="verification";
-   window.__bbAccessNotice=kycError?"AI access is locked because KYC status could not be verified. Please retry after checking your verification status.":kyc?.status==="pending"?"AI access is locked while your KYC is under review.":"AI access requires an approved KYC submission.";
-  }else{
-   window.__bbAccessNotice="";
+   window.__bbAccessNotice="KYC status could not be checked right now. Your client portal remains available.";
   }
  }else{
   window.__bbAccessNotice="";
