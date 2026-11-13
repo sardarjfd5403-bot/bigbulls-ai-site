@@ -1109,7 +1109,7 @@ async function showAccountTool(id,action){
  const account=(window.bbClientAccounts||[]).find(x=>String(x.id)===String(id));const box=document.getElementById("bb-account-tools");if(!account||!box)return;
  box.hidden=true;box.dataset.accountId=id;box.dataset.accountTool=action;
  const heading=esc(account.display_name||account.account_type)+" · #"+esc(account.account_number);
- const showTool=(label,content)=>{body.innerHTML='<div class="bb-account-tool-modal"><span class="accounts-kicker">'+label+'</span><h2>'+heading+'</h2>'+content+'<button type="button" class="copy-wallet" data-close>Back to account details</button></div>';showModal();};
+ const showTool=(label,content)=>{body.innerHTML='<div class="bb-account-tool-modal"><span class="accounts-kicker">'+label+'</span><h2>'+heading+'</h2>'+content+'<button type="button" class="copy-wallet" data-account-info-back="'+esc(id)+'">Back to account details</button></div>';showModal();};
  if(action==="trades"){showTool("TRADING HISTORY",'<div class="empty-state">No B-Book REAL or BigBulls DEMO trading history is available yet.</div>');return;}
  if(action==="transactions"){
   showTool("TRANSACTION HISTORY",'<p>Deposits, withdrawals and transfers for this account.</p><div id="bb-account-transactions">Loading…</div>');
@@ -1505,6 +1505,7 @@ async function clickHandler(e){
  const terminalAccount=el.closest("[data-account-terminal]");
  if(terminalAccount){const account=(window.bbClientAccounts||[]).find(x=>x.id===terminalAccount.dataset.accountTerminal);if(!account||account.status!=="approved"||account.archived_at||account.deleted_at){message("This account is not approved for terminal access.",true);return;}await openTerminalFromPortal(account.id);return;}
  const accountInfo=el.closest("[data-account-info]");if(accountInfo){openAccountInfoModal(accountInfo.dataset.accountInfo);return;}
+ const accountInfoBack=el.closest("[data-account-info-back]");if(accountInfoBack){openAccountInfoModal(accountInfoBack.dataset.accountInfoBack);return;}
  const accountTool=el.closest("[data-account-tool]");
  if(accountTool){if(["deposit","withdraw"].includes(accountTool.dataset.accountTool))showAccountTool(accountTool.dataset.accountId,accountTool.dataset.accountTool);else showAccountTool(accountTool.dataset.accountId,accountTool.dataset.accountTool);return;}
  const accountAction=el.closest("[data-account-action]");
