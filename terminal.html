@@ -2226,8 +2226,9 @@ async function closePosition(id,silent=false,reason='Closed manually'){
  finally{closingPositions.delete(lock);}
 }
 const originalRender=window.renderApp;
-if(typeof originalRender==='function')window.renderApp=function(){originalRender();if(!ready)return;const a=getActiveAccount(),ak=a?.id||'',mk=state.selectedSymbol+':'+state.timeframe;if(ak&&ak!==lastAccount){lastAccount=ak;try{sessionStorage.setItem('bb:terminal:active-mode:'+session.user.id,mode(a));if(a.backendId)sessionStorage.setItem('bb:terminal:selected-account:'+session.user.id+':'+mode(a),a.backendId);}catch(_){}refresh(true);}if(mk!==lastMarket){lastMarket=mk;candles().catch(e=>console.warn('Market candles:',e.message));}};
+if(typeof originalRender==='function')window.renderApp=function(){originalRender();bbUpdateMarketSessionUI();if(!ready)return;const a=getActiveAccount(),ak=a?.id||'',mk=state.selectedSymbol+':'+state.timeframe;if(ak&&ak!==lastAccount){lastAccount=ak;try{sessionStorage.setItem('bb:terminal:active-mode:'+session.user.id,mode(a));if(a.backendId)sessionStorage.setItem('bb:terminal:selected-account:'+session.user.id+':'+mode(a),a.backendId);}catch(_){}refresh(true);}if(mk!==lastMarket){lastMarket=mk;candles().catch(e=>console.warn('Market candles:',e.message));}};
 window.submitOrderExecution=place;window.executeCloseOrder=closePosition;
+setInterval(bbUpdateMarketSessionUI,1000);
 window.closeAllOpenOrders=async()=>{const a=getActiveAccount(),real=mode(a)==='real',rows=[...state.openOrders];for(const o of rows){const b={action:'close',account_mode:mode(a),reason:'Closed all positions'};if(real){b.position_id=o.backendTradeId;b.account_id=a.backendId;}else{b.trade_id=o.backendTradeId;if(a.backendId)b.account_id=a.backendId;}try{await call(real?'bbook-engine':'paper-execution',b);}catch(e){notify('Close failed',e.message||'A position could not be closed.','error');}}await refresh(true);};
 window.goToClientArea=function(){
  try{
@@ -3106,7 +3107,65 @@ async function refresh(silent=true){
   updateLiveDOMElements();renderApp();return true;
  }catch(e){if(epoch===refreshEpoch){state.openOrders=[];state.closedOrders=[];state.pendingOrders=[];updateLiveDOMElements();if(!silent)notify('Trading connection error',e.message||'Trading ledger could not be refreshed.','error');}console.error('BIGBULLS terminal backend:',e);return false;}finally{if(epoch===refreshEpoch)busy=false;}
 }
+
+// BIGBULLS market-session guard (UTC server schedule: Forex/Metals/Indices Mon-Fri; Crypto 24/7)
+function bbIsCryptoSymbol(symbol){
+ const inst=state.instruments[symbol];
+ return String(inst?.category||'').toLowerCase()==='crypto' || /^(BTC|ETH|SOL|XRP|BNB|DOGE)(\/|$)/i.test(String(symbol||''));
+}
+function bbMarketSession(now=new Date()){
+ const symbol=state.selectedSymbol;
+ if(bbIsCryptoSymbol(symbol))return {open:true,crypto:true};
+ const day=now.getUTCDay(),hour=now.getUTCHours(),minute=now.getUTCMinutes();
+ const closed=day===0||day===6||(day===5&&hour===23&&minute>=59);
+ if(!closed)return {open:true,crypto:false};
+ const next=new Date(now);
+ const daysUntilMonday=(8-day)%7||7;
+ next.setUTCDate(now.getUTCDate()+daysUntilMonday);
+ next.setUTCHours(0,0,0,0);
+ return {open:false,crypto:false,nextOpen:next};
+}
+function bbCountdownText(ms){
+ const total=Math.max(0,Math.floor(ms/1000)),days=Math.floor(total/86400),hours=Math.floor(total%86400/3600),minutes=Math.floor(total%3600/60),seconds=total%60;
+ return (days?days+'d ':'')+[hours,minutes,seconds].map(v=>String(v).padStart(2,'0')).join(':');
+}
+function bbUpdateMarketSessionUI(){
+ const stage=document.getElementById('appStage');if(!stage)return;
+ const status=bbMarketSession();
+ let banner=document.getElementById('bb-market-closed-banner');
+ if(status.open){
+  if(banner)banner.remove();
+ }else{
+  if(!banner){
+   banner=document.createElement('div');banner.id='bb-market-closed-banner';
+   banner.setAttribute('role','status');banner.setAttribute('aria-live','polite');
+   banner.style.cssText='position:fixed;z-index:70;top:8px;left:50%;transform:translateX(-50%);width:min(94vw,620px);padding:10px 14px;border:1px solid #854d0e;border-radius:12px;background:rgba(39,29,13,.97);box-shadow:0 8px 28px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:space-between;gap:12px;color:#fef3c7;font:600 12px Inter,sans-serif;pointer-events:none;';
+   stage.appendChild(banner);
+  }
+  banner.innerHTML='<span style="display:flex;align-items:center;gap:8px;min-width:0"><span style="width:8px;height:8px;border-radius:50%;background:#f59e0b;flex:none"></span><span>Market Closed • Opens Monday 00:00</span></span><span id="bb-market-countdown" style="font:700 12px JetBrains Mono,monospace;white-space:nowrap"></span>';
+  const countdown=banner.querySelector('#bb-market-countdown');if(countdown)countdown.textContent=bbCountdownText(status.nextOpen-Date.now());
+ }
+ document.querySelectorAll('#appStage button[onclick*="openOrderTicketModal"]').forEach(btn=>{
+  const disabled=!status.open;
+  btn.setAttribute('aria-disabled',disabled?'true':'false');
+  btn.style.filter=disabled?'grayscale(1)':'';
+  btn.style.opacity=disabled?'.42':'';
+  btn.style.cursor=disabled?'not-allowed':'';
+  btn.title=disabled?'Market is currently closed':'';
+ });
+}
+document.addEventListener('click',function(event){
+ const btn=event.target?.closest?.('#appStage button[onclick*="openOrderTicketModal"]');
+ if(btn&&!bbMarketSession().open){event.preventDefault();event.stopImmediatePropagation();notify('Market is currently closed','Market is currently closed','error');}
+},true);
+const bbOriginalOpenTicket=window.openOrderTicketModal;
+if(typeof bbOriginalOpenTicket==='function')window.openOrderTicketModal=function(side='Buy',orderMode='Market'){
+ if(!bbMarketSession().open){notify('Market is currently closed','Market is currently closed','error');return;}
+ return bbOriginalOpenTicket(side,orderMode);
+};
 async function place(){
+ if(!bbMarketSession().open){notify('Market is currently closed','Market is currently closed','error');return;}
+
  const a=getActiveAccount(),m=state.orderTicket,s=state.selectedSymbol;if(!a)return;
  if(!a.backendId||a.status!=='approved'){notify('Account approval required','Only approved Client Area trading accounts can place orders.','error');return;}
  if(!session){notify('Login required','Sign in to your client account before trading.','error');return;}
