@@ -177,7 +177,13 @@ function startFinancialRealtime(){
   channel.on("postgres_changes",{event:"*",schema:"public",table:"bb_paper_accounts"},()=>{if(activePage==="admin")loadPageData();});
   channel.on("postgres_changes",{event:"*",schema:"public",table:"bb_mt5_demo_accounts"},()=>{if(activePage==="admin")loadPageData();});
  }else{
-  channel.on("postgres_changes",{event:"UPDATE",schema:"public",table:"wallet_transactions",filter:"user_id=eq."+user.id},payload=>{showFinancialNotice(payload.new);if(activePage==="accounts"){loadClientTradingAccounts();const tools=document.getElementById("bb-account-tools");if(tools?.dataset.accountTool==="transactions")showAccountTool(tools.dataset.accountId,"transactions");}});
+  channel.on("postgres_changes",{event:"*",schema:"public",table:"wallet_transactions",filter:"user_id=eq."+user.id},payload=>{if(payload.eventType==="UPDATE")showFinancialNotice(payload.new);if(activePage==="accounts"){loadClientTradingAccounts();const tools=document.getElementById("bb-account-tools");if(tools?.dataset.accountTool==="transactions")showAccountTool(tools.dataset.accountId,"transactions");}if(activePage==="wallet")loadPageData();});
+  channel.on("postgres_changes",{event:"*",schema:"public",table:"trading_accounts",filter:"user_id=eq."+user.id},()=>{if(activePage==="accounts")loadClientTradingAccounts();window.dispatchEvent(new CustomEvent("bb:account-sync"));});
+  channel.on("postgres_changes",{event:"*",schema:"public",table:"bb_bbook_positions",filter:"user_id=eq."+user.id},()=>{if(activePage==="accounts")loadClientTradingAccounts();window.dispatchEvent(new CustomEvent("bb:account-sync"));});
+  channel.on("postgres_changes",{event:"*",schema:"public",table:"bb_bbook_pending_orders",filter:"user_id=eq."+user.id},()=>{window.dispatchEvent(new CustomEvent("bb:account-sync"));});
+  channel.on("postgres_changes",{event:"*",schema:"public",table:"bb_paper_execution_accounts",filter:"user_id=eq."+user.id},()=>{if(activePage==="accounts")loadClientTradingAccounts();window.dispatchEvent(new CustomEvent("bb:account-sync"));});
+  channel.on("postgres_changes",{event:"*",schema:"public",table:"bb_paper_execution_trades",filter:"user_id=eq."+user.id},()=>{if(activePage==="accounts")loadClientTradingAccounts();window.dispatchEvent(new CustomEvent("bb:account-sync"));});
+  channel.on("postgres_changes",{event:"*",schema:"public",table:"account_balance_ledger",filter:"user_id=eq."+user.id},()=>{if(activePage==="accounts")loadClientTradingAccounts();window.dispatchEvent(new CustomEvent("bb:account-sync"));});
   channel.on("postgres_changes",{event:"UPDATE",schema:"public",table:"trading_accounts",filter:"user_id=eq."+user.id},payload=>{if(activePage==="accounts")loadClientTradingAccounts();if(payload.new&&payload.old&&Number(payload.new.balance)!==Number(payload.old.balance))showAccountBalanceNotice(payload.new);});
   channel.on("postgres_changes",{event:"*",schema:"public",table:"bb_paper_execution_accounts",filter:"user_id=eq."+user.id},()=>{if(activePage==="accounts")loadClientTradingAccounts();});
   channel.on("postgres_changes",{event:"*",schema:"public",table:"partner_applications",filter:"user_id=eq."+user.id},()=>{if(activePage==="partner")loadPageData();});
@@ -1035,22 +1041,23 @@ if(activePage==="admin"&&isAdmin()){
 async function loadClientTradingAccounts(){
  const box=document.getElementById("my-trading-accounts");if(!box||!sb||!user)return;
  box.textContent="Loading accounts…";
- const {data,error}=await sb.from("trading_accounts").select("id,account_mode,account_number,account_type,currency,balance,status,display_name,server_name,platform,requested_leverage,leverage_preference,swap_free,archived_at,deleted_at,created_at").eq("user_id",user.id).is("deleted_at",null).order("created_at",{ascending:false});
+ const {data,error}=await sb.from("trading_accounts").select("id,account_mode,account_number,account_type,currency,balance,credit_bonus,status,display_name,server_name,platform,requested_leverage,leverage_preference,swap_free,archived_at,deleted_at,created_at").eq("user_id",user.id).is("deleted_at",null).order("created_at",{ascending:false});
  if(error){box.textContent="Trading accounts unavailable: "+error.message;return;}
  const [{data:demoLedgers,error:demoLedgerError},{data:demoTrades,error:demoTradesError},{data:realPositions,error:realPositionsError}]=await Promise.all([
   sb.from("bb_paper_execution_accounts").select("account_id,virtual_balance").eq("user_id",user.id).eq("account_mode","demo"),
   sb.from("bb_paper_execution_trades").select("account_id,unrealized_pnl,status").eq("user_id",user.id).eq("account_mode","demo").eq("status","OPEN"),
-  sb.from("bb_bbook_positions").select("account_id,floating_pnl,status").eq("user_id",user.id).eq("account_mode","real").eq("status","OPEN")
+  sb.from("bb_bbook_positions").select("account_id,floating_pnl,margin_used,status").eq("user_id",user.id).eq("account_mode","real").eq("status","OPEN")
  ]);
  if(demoLedgerError||demoTradesError||realPositionsError){box.textContent="Account balance / equity ledger unavailable: "+(demoLedgerError||demoTradesError||realPositionsError).message;return;}
  const demoBalanceByAccount=new Map((demoLedgers||[]).map(x=>[x.account_id,Number(x.virtual_balance||0)]));
- const demoFloatingByAccount=new Map(),realFloatingByAccount=new Map();
+ const demoFloatingByAccount=new Map(),realFloatingByAccount=new Map(),realMarginByAccount=new Map();
  for(const trade of demoTrades||[])demoFloatingByAccount.set(trade.account_id,(demoFloatingByAccount.get(trade.account_id)||0)+Number(trade.unrealized_pnl||0));
- for(const position of realPositions||[])realFloatingByAccount.set(position.account_id,(realFloatingByAccount.get(position.account_id)||0)+Number(position.floating_pnl||0));
+ for(const position of realPositions||[]){realFloatingByAccount.set(position.account_id,(realFloatingByAccount.get(position.account_id)||0)+Number(position.floating_pnl||0));realMarginByAccount.set(position.account_id,(realMarginByAccount.get(position.account_id)||0)+Number(position.margin_used||0));}
  window.bbClientAccounts=(data||[]).map(x=>{
   const demo=x.account_mode==="demo",balance=demo?(demoBalanceByAccount.get(x.id)??Number(x.balance||0)):Number(x.balance||0);
   const floating=(demo?demoFloatingByAccount:realFloatingByAccount).get(x.id)||0;
-  return {...x,balance,floating_pnl:floating,equity:balance+floating};
+  const creditBonus=demo?0:Number(x.credit_bonus||0),marginUsed=demo?null:(realMarginByAccount.get(x.id)||0);
+  return {...x,balance,credit_bonus:creditBonus,floating_pnl:floating,equity:balance+creditBonus+floating,margin_used:marginUsed,free_margin:marginUsed===null?null:balance+creditBonus+floating-marginUsed,margin_level:marginUsed>0?(balance+creditBonus+floating)/marginUsed*100:null};
  });
  const mode=window.bbAccountMode||"real";
  const title=document.getElementById("bb-account-list-title");if(title)title.textContent=mode==="archived"?"Archived Accounts":"My "+(mode==="real"?"Real":"Demo")+" Accounts";
