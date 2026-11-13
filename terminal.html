@@ -3363,3 +3363,68 @@ window.savePositionModification=async function(id){
 
 </body>
 </html>
+
+/* BIGBULLS direct chart-level dragging (open SL/TP; pending Entry/SL/TP) */
+(function(){
+ let drag=null,guide=null;
+ function chartPriceAt(clientY,canvas){
+  const rect=canvas.getBoundingClientRect(),h=rect.height;
+  const inst=state.instruments[state.selectedSymbol],all=inst?.candles||[];
+  if(!all.length||h<=0)return null;
+  const count=Math.max(18,Math.min(all.length,chartView.count));
+  const end=Math.max(1,all.length-Math.max(0,chartView.offset)),start=Math.max(0,end-count),candles=all.slice(start,end);
+  const acc=getActiveAccount(),open=state.openOrders.filter(o=>o.accountId===acc?.id&&o.symbol===state.selectedSymbol),pending=state.pendingOrders.filter(o=>o.accountId===acc?.id&&o.symbol===state.selectedSymbol);
+  const vals=[...candles.flatMap(x=>[Number(x.low),Number(x.high)]),...open.flatMap(o=>[Number(o.openPrice),Number(o.sl)||NaN,Number(o.tp)||NaN]),...pending.flatMap(o=>[Number(o.targetPrice),Number(o.sl)||NaN,Number(o.tp)||NaN]),Number(inst.bid)].filter(Number.isFinite);
+  let lo=Math.min(...vals),hi=Math.max(...vals),range=Math.max(hi-lo,Math.abs(hi)*.00001,.00001),pad=range*.08;
+  lo-=pad;hi+=pad;lo-=range*chartView.priceShift;hi-=range*chartView.priceShift;
+  return hi-((clientY-rect.top)/h)*(hi-lo);
+ }
+ function addGuide(canvas,y,color){
+  if(!guide){guide=document.createElement('div');guide.style.cssText='position:fixed;z-index:75;left:0;height:0;border-top:2px dashed #fbbf24;pointer-events:none;';document.body.appendChild(guide);}
+  const r=canvas.getBoundingClientRect();guide.style.left=r.left+'px';guide.style.width=Math.max(0,r.width-72)+'px';guide.style.top=y+'px';guide.style.borderColor=color||'#fbbf24';
+ }
+ function clearGuide(){guide?.remove();guide=null;}
+ function onDown(e){
+  const canvas=e.target?.closest?.('#liveChartCanvas');if(!canvas||e.button>0)return;
+  const acc=getActiveAccount(),sym=state.selectedSymbol,inst=state.instruments[sym];if(!acc||!inst)return;
+  const rect=canvas.getBoundingClientRect(),h=rect.height;
+  const count=Math.max(18,Math.min((inst.candles||[]).length,chartView.count)),end=Math.max(1,inst.candles.length-Math.max(0,chartView.offset)),start=Math.max(0,end-count),candles=inst.candles.slice(start,end);
+  if(!candles.length)return;
+  const open=state.openOrders.filter(o=>o.accountId===acc.id&&o.symbol===sym),pending=state.pendingOrders.filter(o=>o.accountId===acc.id&&o.symbol===sym);
+  const values=[...candles.flatMap(x=>[Number(x.low),Number(x.high)]),...open.flatMap(o=>[Number(o.openPrice),Number(o.sl)||NaN,Number(o.tp)||NaN]),...pending.flatMap(o=>[Number(o.targetPrice),Number(o.sl)||NaN,Number(o.tp)||NaN]),Number(inst.bid)].filter(Number.isFinite);
+  let lo=Math.min(...values),hi=Math.max(...values),range=Math.max(hi-lo,Math.abs(hi)*.00001,.00001),pad=range*.08;lo-=pad;hi+=pad;lo-=range*chartView.priceShift;hi-=range*chartView.priceShift;
+  const yOf=p=>rect.top+h-((p-lo)/(hi-lo))*h;
+  const candidates=[];
+  open.forEach(o=>{if(Number(o.sl)>0)candidates.push({kind:'SL',order:o,price:Number(o.sl),editable:true});if(Number(o.tp)>0)candidates.push({kind:'TP',order:o,price:Number(o.tp),editable:true});candidates.push({kind:'ENTRY',order:o,price:Number(o.openPrice),editable:false});});
+  pending.forEach(o=>{candidates.push({kind:'ENTRY',order:o,price:Number(o.targetPrice),editable:true,pending:true});if(Number(o.sl)>0)candidates.push({kind:'SL',order:o,price:Number(o.sl),editable:true,pending:true});if(Number(o.tp)>0)candidates.push({kind:'TP',order:o,price:Number(o.tp),editable:true,pending:true});});
+  let best=null,dist=14;
+  for(const x of candidates){const d=Math.abs(e.clientY-yOf(x.price));if(d<dist){dist=d;best=x;}}
+  if(!best)return;
+  if(!best.editable){notify('Entry price is fixed','An executed position entry cannot be moved. Drag its SL/TP, or use pending-order Entry lines.','info');return;}
+  e.preventDefault();e.stopImmediatePropagation();
+  drag={canvas,order:best.order,kind:best.kind,pending:!!best.pending,pointerId:e.pointerId,price:best.price,digits:inst.digits};
+  canvas.setPointerCapture?.(e.pointerId);addGuide(canvas,e.clientY,'#fbbf24');
+ }
+ function onMove(e){
+  if(!drag||e.pointerId!==drag.pointerId)return;
+  e.preventDefault();e.stopImmediatePropagation();
+  drag.price=Number(chartPriceAt(e.clientY,drag.canvas).toFixed(drag.digits));addGuide(drag.canvas,e.clientY,'#fbbf24');
+ }
+ function onUp(e){
+  if(!drag||e.pointerId!==drag.pointerId)return;
+  e.preventDefault();e.stopImmediatePropagation();
+  const d=drag;drag=null;clearGuide();
+  if(!(d.price>0))return;
+  if(d.pending){
+   window.openModifyPendingModal?.(d.order.backendOrderId||d.order.id);
+   setTimeout(()=>{const field=document.getElementById('bb-modify-target'),sl=document.getElementById('bb-modify-sl'),tp=document.getElementById('bb-modify-tp');if(!field)return;if(d.kind==='ENTRY')field.value=d.price;else if(d.kind==='SL'&&sl)sl.value=d.price;else if(d.kind==='TP'&&tp)tp.value=d.price;notify('Chart level moved','Review the new '+d.kind+' price and confirm Save Changes.','info');},0);
+  }else{
+   window.openModifyPositionModal?.(d.order.backendTradeId||d.order.id);
+   setTimeout(()=>{const sl=document.getElementById('bbPositionSL'),tp=document.getElementById('bbPositionTP');if(d.kind==='SL'&&sl)sl.value=d.price;if(d.kind==='TP'&&tp)tp.value=d.price;notify('Chart level moved','Review the new '+d.kind+' price and confirm Save SL / TP.','info');},0);
+  }
+ }
+ document.addEventListener('pointerdown',onDown,true);
+ document.addEventListener('pointermove',onMove,true);
+ document.addEventListener('pointerup',onUp,true);
+ document.addEventListener('pointercancel',()=>{drag=null;clearGuide();},true);
+})();
