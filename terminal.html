@@ -123,7 +123,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 </style>
   <script async src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
   <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="stylesheet" href="terminal-theme.css?v=20261113-fast-execution-fix">
+  <link rel="stylesheet" href="terminal-theme.css?v=20261113-persistent-holding-fix">
 <script id="bb-cache-cleanup">
 (function(){
   try {
@@ -2552,6 +2552,16 @@ function bbShowAccountFallback(){
 }
 function bbStartBackgroundLoops(c){
  if(backgroundLoopsStarted)return;backgroundLoopsStarted=true;
+ const hydrateFromServer=async(source)=>{
+  if(document.hidden||!session?.user||!ready||busy)return;
+  const current=getActiveAccount()?.backendId||null;
+  if(!current)return;
+  try{await accounts(current);renderApp();await refresh(true);console.info('BIGBULLS ledger rehydrated from server after',source);}
+  catch(e){console.warn('Foreground ledger rehydration deferred:',e.message||e);}
+ };
+ window.addEventListener('focus',()=>{void hydrateFromServer('terminal focus');});
+ window.addEventListener('pageshow',()=>{void hydrateFromServer('pageshow');});
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)void hydrateFromServer('visibility restore');});
  setInterval(()=>{if(!document.hidden&&(!biQuoteConnection||!window.signalR||biQuoteConnection.state!==window.signalR.HubConnectionState.Connected))quotes().catch(e=>console.warn('Quote refresh:',e));},15000);
  setInterval(async()=>{if(document.hidden)return;try{const current=getActiveAccount()?.backendId||null;await accounts(current);renderApp();await refresh(true);}catch(e){console.warn('Account balance refresh:',e);}},10000);
 }
@@ -2585,7 +2595,7 @@ async function start(){
    // Paint the authenticated terminal shell immediately; account lookup is background-only.
    if(!bbPrimeCachedAccounts(session.user.id)){state.accounts=[{id:'474909030',accountNumber:'474909030',backendId:null,nickname:'BigBulls Demo',type:'Demo',platform:'BIGBULLS',accountClass:'Standard',balance:0,creditBonus:0,equity:0,floatingPL:0,leverage:'1:100',server:'BIGBULLS',archived:false,status:'unavailable',currency:'USD'}];state.activeAccountId='474909030';lastAccount='474909030';}
    Object.values(state.instruments).forEach(i=>{i.candles=[];i.bid=0;i.ask=0;});
-   state.openOrders=[];state.pendingOrders=[];state.closedOrders=[];
+   // Preserve the last confirmed UI snapshot until the authenticated server ledger rehydrates it.
    ready=true;document.documentElement.classList.remove('bb-auth-pending');
    lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();
    startBbookRealtime(c).catch(e=>console.warn('BIGBULLS Realtime startup fallback:',e));startBiQuoteRealtime().catch(e=>console.warn('BiQuote startup:',e));
