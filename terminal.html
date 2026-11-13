@@ -887,6 +887,16 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
       showToast('Copied to Clipboard', txt, 'success');
     }
 
+    // Symbol classifier used by the order ticket; prefer instrument metadata over name heuristics.
+    function bbIsCryptoSymbol(symbol) {
+      const key = String(symbol || '').trim().toUpperCase().replace(/\s+/g, '');
+      if (!key) return false;
+      const instrument = state && state.instruments ? state.instruments[symbol] : null;
+      if (instrument && instrument.category) return String(instrument.category).toLowerCase() === 'crypto';
+      const cryptoSymbols = new Set(['BTC','BTCUSD','BTC/USD','BTCUSDT','ETH','ETHUSD','ETH/USD','ETHUSDT','SOL','SOLUSD','SOL/USD','SOLUSDT','XRP','XRPUSD','XRP/USD','XRPUSDT','BNB','BNBUSD','BNB/USD','BNBUSDT']);
+      return cryptoSymbols.has(key);
+    }
+
     function openOrderTicketModal(side = 'Buy', mode = 'Market') {
       const inst = state.instruments[state.selectedSymbol];
       state.orderTicket.side = side;
