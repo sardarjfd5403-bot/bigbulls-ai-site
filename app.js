@@ -259,7 +259,7 @@ async function showApp(page){
   window.setTimeout(()=>applyReferenceClientUI(),80);
  }catch(error){
   console.error("Client portal render failed:",error);
-  shell.innerHTML='<div class="portal-load-error" role="alert"><h2>Workspace could not be rendered</h2><p>Please refresh the page. Your sign-in session is still active.</p><button type="button" onclick="location.reload()">Reload workspace</button></div>';
+  shell.innerHTML='<div class="portal-load-error" role="alert"><h2>Workspace could not be rendered</h2><p>Please refresh the page. Your sign-in session is still active.</p><p>Return to the client area from the header and try again.</p></div>';
   return;
  }
  Promise.resolve(refreshHeaderBalance()).catch(error=>console.error("Wallet balance refresh failed:",error));
