@@ -369,7 +369,8 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
     }
 
     function calculateOrderPL(order) {
-      if(mode(getActiveAccount())!=='real'&&Number.isFinite(Number(order.floatingPL)))return Number(Number(order.floatingPL).toFixed(2));
+      // Mark Demo and Real positions against the latest live bid/ask on every market tick.
+      // Backend unrealized P/L remains the fallback until a usable live quote is available.
       const inst = state.instruments[order.symbol];
       if (!inst) return Number(order.floatingPL||0);
       const currentPrice = order.side === 'Buy' ? inst.bid : inst.ask;
@@ -386,9 +387,11 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
       const acc = getActiveAccount();
       const accountOpenOrders = state.openOrders.filter(o => o.accountId === acc.id);
       if(String(acc?.type||'').toLowerCase()==='demo'&&window.__bbPaperMetrics){
-        const pm=window.__bbPaperMetrics;
-        return {balance:Number(pm.balance||0),equity:Number(pm.equity||0),floatingPL:Number(pm.floating_pnl||0),
-          usedMargin:Number(pm.margin||0),freeMargin:Number(pm.free_margin||pm.equity||0),marginLevel:Number(pm.margin_level_pct||0),
+        const pm=window.__bbPaperMetrics,balance=Number(pm.balance||0);
+        const floatingPL=accountOpenOrders.reduce((sum,o)=>sum+calculateOrderPL(o),0);
+        const usedMargin=Number(pm.margin||0),equity=balance+floatingPL;
+        const freeMargin=Math.max(0,equity-usedMargin),marginLevel=usedMargin>0?equity/usedMargin*100:0;
+        return {balance,equity,floatingPL,usedMargin,freeMargin,marginLevel,
           openCount:accountOpenOrders.length,pendingCount:state.pendingOrders.filter(o=>o.accountId===acc.id).length};
       }
       if(String(acc?.type||'').toLowerCase()==='real'&&window.__bbBbookMetrics){
