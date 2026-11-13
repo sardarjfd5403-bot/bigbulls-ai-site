@@ -1998,7 +1998,7 @@ function client(){
    const parentClient=window.parent.__bbSupabaseClient;
    if(parentClient?.auth&&parentClient?.functions){
     window.__bbSupabaseClient=parentClient;
-    window.__bbParentAuthSession=window.parent.__bbAuthSession||null;
+    window.__bbParentAuthSession=window.parent.__bbTerminalAuthSession||window.parent.__bbAuthSession||null;
     return parentClient;
    }
   }
@@ -2355,7 +2355,7 @@ refresh=async function(silent=true){
  return ok;
 };
 let startupPromise=null,backgroundLoopsStarted=false;
-const BB_BOOT_TIMEOUT_MS=3000;
+const BB_BOOT_TIMEOUT_MS=3000;\n// Keep the terminal UI responsive even when the parent session snapshot is late. The parent portal primes this snapshot before iframe creation.
 function bbWithBootTimeout(promise,label,remaining){
  return Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label+' timed out after 3 seconds.')),Math.max(0,remaining)))]);
 }
@@ -2425,7 +2425,7 @@ async function start(){
    const c=client();
    // Parent portal has already authenticated before it can launch this iframe.
    // Use that session immediately; direct terminal URL visits still hydrate Supabase normally.
-   const bridgedSession=window.__bbParentAuthSession||null;
+   const bridgedSession=window.__bbTerminalAuthSession||window.__bbParentAuthSession||null;
    const auth=bridgedSession?{data:{session:bridgedSession},error:null}:await bbWithBootTimeout(c.auth.getSession(),'Session hydration',Math.max(250,deadline-Date.now()));
    if(auth.error)throw auth.error;
    session=auth.data?.session||null;
