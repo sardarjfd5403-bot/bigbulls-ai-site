@@ -21,8 +21,13 @@ const CONTRACT_SIZES: Record<string,number> = {
 };
 const CRYPTO_SYMBOLS = new Set(["BTCUSDT","ETHUSDT","SOLUSDT","XRPUSDT","BNBUSDT"]);
 const SYMBOLS = new Set(Object.keys(CONTRACT_SIZES));
-const normalize = (v: unknown) => String(v || "").toUpperCase().replaceAll("/", "").trim();
+const normalize = (v: unknown) => String(v || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
 const contractSize = (s: string) => CONTRACT_SIZES[s] || 0;
+const marketOpen = (symbol: string, now = new Date()) => {
+  if (CRYPTO_SYMBOLS.has(normalize(symbol))) return true;
+  const day = now.getUTCDay();
+  return day >= 1 && day <= 5;
+};
 const category = (s: string) => CRYPTO_SYMBOLS.has(s) ? "CRYPTO" : ["XAUUSD","XAGUSD","XPTUSD","XPDUSD"].includes(s) ? "XAUUSD" : ["USOIL","UKOIL","NATGASUSDT"].includes(s) ? "COMMODITY" : ["US30","USTEC","US500","DE30","UK100","JP225","DXY"].includes(s) ? "INDEX" : "FX";
 const num = (v: unknown, label: string) => {
   const n = Number(v);
@@ -50,21 +55,15 @@ async function quote(symbol: string, settings: any, url: string, anon: string, d
         method: "POST",
         headers: { "Content-Type":"application/json", apikey:anon, Authorization:"Bearer " + anon },
         body: JSON.stringify({ action:"quote", symbol:map[symbol] }),
-        signal: AbortSignal.timeout(12000),
+        signal: AbortSignal.timeout(7000),
       };
-      let lastFailure = "Market reference feed unavailable.";
-      let r: Response | null = null;
-      for (let attempt = 0; attempt < 2; attempt++) {
-        try {
-          r = await fetch(url + "/functions/v1/market-data", request);
-          if (r.ok || r.status < 500 || attempt === 1) break;
-          lastFailure = "Market reference feed unavailable (" + r.status + ").";
-        } catch (fetchError) {
-          lastFailure = "Market reference feed request failed: " + (fetchError instanceof Error ? fetchError.message : "network error");
-          if (attempt === 1) throw new Error(lastFailure);
-        }
+      let r: Response;
+      try {
+        r = await fetch(url + "/functions/v1/market-data", request);
+      } catch (fetchError) {
+        throw new Error("Market reference feed request failed: " + (fetchError instanceof Error ? fetchError.message : "network error"));
       }
-      if (!r || !r.ok) throw new Error(lastFailure);
+      if (!r.ok) throw new Error("Market reference feed unavailable (" + r.status + ").");
       const d = await r.json();
       mid = Number(d.price); provider = String(d.provider || "Twelve Data Indicative Reference");
     }
@@ -209,12 +208,15 @@ Deno.serve(async (req: Request) => {
     if(action==="pending"){
       if(!settings.enabled)return json({error:"B-Book execution is not enabled."},423);
       const symbol=normalize(body.symbol),side=String(body.side||"").toUpperCase();
-      const orderType=String(body.order_type||"").toUpperCase(),quantity=num(body.quantity,"Lot size");
+      if (!marketOpen(symbol)) return json({error:"Market is closed for this instrument. New orders resume Monday 00:00 UTC.",code:"MARKET_CLOSED"},423);
+       const orderType=String(body.order_type||"").toUpperCase(),quantity=num(body.quantity,"Lot size");
       const target=num(body.target_price,"Target price");
       const sl=body.stop_loss==null||body.stop_loss===""?null:num(body.stop_loss,"Stop Loss");
       const tp=body.take_profit==null||body.take_profit===""?null:num(body.take_profit,"Take Profit");
       if(!["BUY","SELL"].includes(side)||quantity<=0)return json({error:"Invalid side or lot size."},400);
-      const q=await quote(symbol,settings,url,anon,db),size=contractSize(symbol);
+      const q=await quote(symbol,settings,url,anon,db);
+      if(q.fallback)throw new Error("A fresh live quote is required to place a pending order. Cached prices are display-only.");
+      const size=contractSize(symbol);
       const {data,error}=await db.rpc("bb_bbook_create_pending_order",{p:{
         user_id:user.id,account_id:accountId,symbol,side,order_type:orderType,quantity,
         contract_size:size,target_price:target,stop_loss:sl,take_profit:tp
@@ -230,6 +232,7 @@ Deno.serve(async (req: Request) => {
       const sl=body.stop_loss==null||body.stop_loss===""?null:num(body.stop_loss,"Stop Loss"),tp=body.take_profit==null||body.take_profit===""?null:num(body.take_profit,"Take Profit");
       if(!["BUY","SELL"].includes(side)||quantity<=0)return json({error:"Invalid side or lot size."},400);
       const q=await quote(symbol,settings,url,anon,db);
+      if(q.fallback)throw new Error("A fresh live quote is required to execute a REAL order. Cached prices are display-only.");
       const size=contractSize(symbol);
       const spreadCost=(q.ask-q.bid)*quantity*size;
       const {data,error}=await db.rpc("bb_bbook_open_position",{p:{user_id:user.id,account_id:accountId,symbol,side,quantity,contract_size:size,mid:q.mid,bid:q.bid,ask:q.ask,stop_loss:sl,take_profit:tp,spread_cost:spreadCost}});
@@ -244,6 +247,7 @@ Deno.serve(async (req: Request) => {
       if(error)throw error;
       if(!position)return json({error:"Open B-Book position not found."},404);
       const q=await quote(position.symbol,settings,url,anon,db);
+      if(q.fallback)throw new Error("A fresh live quote is required to close a REAL position. Cached prices cannot be used for settlement.");
       const exit=position.side==="BUY"?q.bid:q.ask;
       let conversionRate:number|null=null;
       if(position.symbol.endsWith("JPY")&&position.symbol!=="USDJPY")conversionRate=(await quote("USDJPY",settings,url,anon,db)).mid;
@@ -273,11 +277,15 @@ Deno.serve(async (req: Request) => {
       const quoteSymbols=[...new Set(open.map((p:any)=>p.symbol))] as string[];
       if(open.some((p:any)=>p.symbol.endsWith("JPY")&&p.symbol!=="USDJPY"))quoteSymbols.push("USDJPY");
       if(open.some((p:any)=>p.symbol==="EURGBP"))quoteSymbols.push("GBPUSD");
-      for(const symbol of [...new Set(quoteSymbols)]){
-        try{quotes[symbol]=await quote(symbol,settings,url,anon,db);await db.from("bb_bbook_quotes").upsert({symbol,mid:quotes[symbol].mid,bid:quotes[symbol].bid,ask:quotes[symbol].ask,spread_bps:quotes[symbol].spread_bps,provider:quotes[symbol].provider,quote_time:quotes[symbol].quote_time,updated_at:new Date().toISOString()});}catch(e){console.warn("B-Book quote:",symbol,e);}
-      }
-      for(const p of open){
-        const q=quotes[p.symbol];if(!q)continue;
+      await Promise.all([...new Set(quoteSymbols)].filter(marketOpen).map(async symbol=>{
+        try{
+          quotes[symbol]=await quote(symbol,settings,url,anon,db);
+          const {error}=await db.from("bb_bbook_quotes").upsert({symbol,mid:quotes[symbol].mid,bid:quotes[symbol].bid,ask:quotes[symbol].ask,spread_bps:quotes[symbol].spread_bps,provider:quotes[symbol].provider,quote_time:quotes[symbol].quote_time,updated_at:new Date().toISOString()});
+          if(error)console.warn("B-Book quote cache write:",symbol,error);
+        }catch(e){console.warn("B-Book quote:",symbol,e);}
+      }));
+      await Promise.all(open.map(async p=>{
+        const q=quotes[p.symbol];if(!q||q.fallback)return;
         const exit=p.side==="BUY"?q.bid:q.ask;
         let floating=(p.side==="BUY"?exit-Number(p.entry_price):Number(p.entry_price)-exit)*Number(p.quantity)*Number(p.contract_size);if(p.symbol==="USDJPY"||p.symbol==="USDCAD"||p.symbol==="USDCHF"){if(exit>0)floating/=exit;}
         else if(p.symbol.endsWith("JPY")){const fx=quotes["USDJPY"]?.mid;if(Number(fx)>0)floating/=Number(fx);}
@@ -292,7 +300,7 @@ Deno.serve(async (req: Request) => {
           const {error}=await db.from("bb_bbook_positions").update({mark_price:q.mid,bid_price:q.bid,ask_price:q.ask,floating_pnl:floating}).eq("id",p.id).eq("status","OPEN").eq("user_id",user.id);
           if(error)throw error;
         }
-      }
+      }));
       let {data:fresh,error:freshError}=await db.from("bb_bbook_positions").select("*").eq("account_id",accountId).eq("user_id",user.id).order("opened_at",{ascending:false}).limit(500);
       if(freshError)throw freshError;
       const active=(fresh||[]).filter((p:any)=>p.status==="OPEN");
@@ -302,7 +310,9 @@ Deno.serve(async (req: Request) => {
       const marginLevel=margin>0?equity/margin*100:0;
       if(active.length&&margin>0&&marginLevel<=Number(settings.stop_out_level_pct||50)){
         for(const p of [...active].sort((a:any,b:any)=>Number(a.floating_pnl)-Number(b.floating_pnl))){
+          if (!marketOpen(p.symbol)) continue;
           const q=quotes[p.symbol]||await quote(p.symbol,settings,url,anon,db);
+          if(q.fallback)continue;
           const exit=p.side==="BUY"?q.bid:q.ask;
           const conversionRate=p.symbol.endsWith("JPY")&&p.symbol!=="USDJPY"?quotes["USDJPY"]?.mid:p.symbol==="EURGBP"?quotes["GBPUSD"]?.mid:null;
           const {error}=await db.rpc("bb_bbook_close_position",{p:{user_id:user.id,position_id:p.id,exit_price:exit,bid:q.bid,ask:q.ask,conversion_rate:conversionRate,reason:"MARGIN STOP OUT"}});
@@ -326,14 +336,20 @@ Deno.serve(async (req: Request) => {
     return json({error:"Unsupported B-Book action."},400);
   }catch(e){
     console.error("bbook-engine:",e);
-    const message = e instanceof Error ? e.message : "B-Book engine error.";
+    const message = e instanceof Error ? e.message : (typeof e === "object" && e !== null && "message" in e ? String((e as any).message) : "B-Book engine error.");
+    const dbCode = typeof e === "object" && e !== null && "code" in e ? String((e as any).code || "") : "";
     const locked = /readiness checks are incomplete|execution is locked|locked by platform controls|compliance controls/i.test(message);
     const kycRequired = /approved KYC is required/i.test(message);
     const feedUnavailable = /reference feed unavailable|reference feed request failed/i.test(message);
-    const status = kycRequired ? 403 : locked ? 423 : feedUnavailable ? 503 : 500;
+    const positionLimit = /maximum open positions reached/i.test(message);
+    const riskRejected = /order exceeds account exposure limit|insufficient free margin|insufficient funds|negative client account balance/i.test(message);
+    const invalidOrder = /invalid b-book order parameters|invalid side or lot size|sl\/tp levels are invalid|target price must|stop loss must|take profit must|instrument is not enabled/i.test(message);
+    const status = positionLimit || riskRejected ? 409 : invalidOrder ? 422 : kycRequired ? 403 : locked ? 423 : feedUnavailable ? 503 : 500;
     return json({
       error: message,
-      code: kycRequired ? "KYC_REQUIRED" : locked ? "EXECUTION_LOCKED" : feedUnavailable ? "MARKET_DATA_UNAVAILABLE" : "BBOOK_EXECUTION_ERROR"
+      code: positionLimit ? "MAX_OPEN_POSITIONS" : riskRejected ? "RISK_LIMIT_REJECTED" : invalidOrder ? "INVALID_ORDER" : kycRequired ? "KYC_REQUIRED" : locked ? "EXECUTION_LOCKED" : feedUnavailable ? "MARKET_DATA_UNAVAILABLE" : "BBOOK_EXECUTION_ERROR",
+      ...(dbCode ? { database_code: dbCode } : {}),
+      request_id: req.headers.get("x-request-id") || null
     }, status);
   }
 });
