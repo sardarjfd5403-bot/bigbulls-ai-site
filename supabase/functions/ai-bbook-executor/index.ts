@@ -127,7 +127,9 @@ Deno.serve(async (req:Request) => {
         if(actualRisk>riskBudget+0.01) throw new Error("Calculated lot size exceeds the effective risk budget.");
         if(aggregateRisk+actualRisk>equity*maxAggregatePct/100) throw new Error("Aggregate open-position risk limit would be exceeded.");
         const freeMargin=equity-usedMargin;
-        const marginEstimate=(entry*quantity*contract)/Math.max(1,Number(account.requested_leverage)||100);
+        const leverageText=String(account.requested_leverage||"");
+        const parsedLeverage=Number(leverageText.split(":").at(-1));
+        const marginEstimate=(entry*quantity*contract)/Math.max(1,Number.isFinite(parsedLeverage)?parsedLeverage:100);
         if(freeMargin<marginEstimate) throw new Error("Insufficient free margin for calculated AI lot size.");
         const rewardPct=Math.max(2,Math.min(3,Number(opt.reward_pct)||2.5));
         const rewardAmount=equity*rewardPct/100;
