@@ -2352,6 +2352,36 @@ function bbShowBootError(error){
  document.getElementById('bb-boot-back')?.addEventListener('click',()=>{try{const d=window.parent.document.querySelector('#app-shell [data-page="accounts"]');if(d){d.click();return;}}catch(_){}location.href='index.html';});
  console.error('BIGBULLS terminal startup:',error);
 }
+function bbShowBootFallback(error){
+ document.documentElement.classList.remove('bb-auth-pending');
+ ready=true;
+ if(!state.accounts.length){
+  state.accounts=[{id:'__session_pending__',accountNumber:null,backendId:null,nickname:'Session reconnecting',type:'Demo',platform:'BIGBULLS',accountClass:'—',balance:0,equity:0,floatingPL:0,leverage:'1:100',server:'BIGBULLS',archived:false,status:'unavailable',currency:'USD'}];
+  state.activeAccountId='__session_pending__';lastAccount='__session_pending__';
+ }
+ try{renderApp();}catch(renderError){console.error('Terminal fallback render failed:',renderError);bbShowBootError(renderError);return;}
+ let banner=document.getElementById('bb-session-reconnect-fallback');
+ if(!banner){
+  banner=document.createElement('div');banner.id='bb-session-reconnect-fallback';
+  banner.style.cssText='position:fixed;z-index:10000;top:10px;left:50%;transform:translateX(-50%);width:min(94vw,560px);padding:12px 14px;border:1px solid #92400e;border-radius:14px;background:#211a10;color:#fef3c7;box-shadow:0 8px 28px #0008;font:12px Inter,sans-serif;display:flex;align-items:center;gap:10px;flex-wrap:wrap';
+  banner.innerHTML='<span style="flex:1;min-width:190px">Terminal is open in safe reconnect mode. Secure session is still loading; account data and trading actions will activate after authentication reconnects.</span><button id="bb-session-retry" style="padding:9px 12px;border-radius:9px;background:#2563eb;color:white;font-weight:700">Retry session</button>';
+  document.body.appendChild(banner);
+  document.getElementById('bb-session-retry')?.addEventListener('click',()=>{banner.remove();document.documentElement.classList.add('bb-auth-pending');start();});
+ }
+ console.warn('BIGBULLS terminal opened with session fallback:',error);
+ try{
+  const c=client();
+  if(!window.__bbTerminalFallbackAuthListener){
+   window.__bbTerminalFallbackAuthListener=true;
+   c.auth.onAuthStateChange(async(_event,s)=>{
+    if(!s?.user)return;
+    session=s;
+    try{await bbWithBootTimeout(accounts(),'Trading account hydration',BB_BOOT_TIMEOUT_MS);renderApp();await refresh(true);document.getElementById('bb-session-reconnect-fallback')?.remove();startBbookRealtime(c);startBiQuoteRealtime().catch(e=>console.warn('BiQuote startup:',e));bbStartBackgroundLoops(c);}
+    catch(e){console.warn('Terminal session restored; account hydration remains pending:',e);}
+   });
+  }
+ }catch(listenerError){console.warn('Terminal auth reconnect listener unavailable:',listenerError);}
+}
 function bbShowAccountFallback(){
  let banner=document.getElementById('bb-account-hydration-fallback');if(banner)return;
  banner=document.createElement('div');banner.id='bb-account-hydration-fallback';
@@ -2404,13 +2434,13 @@ async function start(){
     session=s||null;if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}
     accounts().then(()=>{ready=true;renderApp();refresh(true);}).catch(e=>{console.error('Account refresh failed:',e);notify('Account refresh failed',e.message||'Could not reload trading accounts.','error');});
    });
-  }catch(e){bbShowBootError(e);}
+  }catch(e){bbShowBootFallback(e);}
  })().finally(()=>{startupPromise=null;});
  return startupPromise;
 }
 window.__bbTerminalRetryStartup=start;
 // Fail safe: never leave the client staring at an endless session spinner if startup code stalls.
-window.setTimeout(()=>{if(document.documentElement.classList.contains('bb-auth-pending'))bbShowBootError(new Error('Terminal startup did not finish. Use Retry to reconnect your secure session.'));},12000);
+window.setTimeout(()=>{if(document.documentElement.classList.contains('bb-auth-pending'))bbShowBootError(new Error('Terminal startup did not finish. Use Retry to reconnect your secure session.'));},BB_BOOT_TIMEOUT_MS);
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
 </script>
