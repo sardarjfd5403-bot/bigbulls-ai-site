@@ -74,6 +74,7 @@ function walletModal(){
 }
 function init(){
  ensureTopbar();
+ if(window.__bbUserId&&cacheUser!==window.__bbUserId)refreshAccountCache();
  const main=$(".terminal-main");if(!main)return;
  if(!main.dataset.bbAppShellEvents){
   main.dataset.bbAppShellEvents="1";
