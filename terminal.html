@@ -2376,7 +2376,7 @@ let startupPromise=null,backgroundLoopsStarted=false;
 const BB_BOOT_TIMEOUT_MS=2000;
 // Keep the terminal UI responsive even when the parent session snapshot is late. The parent portal primes this snapshot before iframe creation.
 function bbWithBootTimeout(promise,label,remaining){
- return Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label+' timed out after 3 seconds.')),Math.max(0,remaining)))]);
+ return Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label+' timed out during the 2-second startup window.')),Math.max(0,remaining)))]);
 }
 function bbShowBootError(error){
  document.documentElement.classList.remove('bb-auth-pending');
