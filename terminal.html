@@ -1984,7 +1984,17 @@ function client(){
  if(window.supabase?.createClient){window.__bbSupabaseClient=window.supabase.createClient(BB_URL,BB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});return window.__bbSupabaseClient;}
  throw new Error('Supabase client library is unavailable.');
 }
-async function call(fn,body){const r=await client().functions.invoke(fn,{body});if(r.error)throw new Error(r.data?.error||r.error.message||fn+' request failed.');if(r.data?.error)throw new Error(r.data.error);return r.data||{};}
+async function call(fn,body){
+ const r=await client().functions.invoke(fn,{body});
+ if(r.error){
+  let payload=r.data||{};const context=r.error?.context;
+  if(context){try{payload=typeof context.clone==='function'?await context.clone().json():typeof context.json==='function'?await context.json():payload;}catch(_){}}
+  const error=new Error(payload?.error||payload?.message||r.error.message||fn+' request failed.');
+  error.code=payload?.code||r.error?.code||null;error.details=payload?.details||null;throw error;
+ }
+ if(r.data?.error){const error=new Error(r.data.error);error.code=r.data.code||null;throw error;}
+ return r.data||{};
+}
 const mode=a=>String(a?.type||'Demo').toLowerCase()==='real'?'real':'demo';
 function mapSymbol(s){
  const raw=String(s||'').toUpperCase().trim(),key=raw.replaceAll('/','').replaceAll('-','');
