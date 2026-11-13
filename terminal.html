@@ -1927,8 +1927,10 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 <script>
 (function(){
 'use strict';
-let session=null,ready=false,busy=false,refreshEpoch=0,candleEpoch=0,lastAccount='',lastMarket='';
+let session=null,ready=false,busy=false,refreshEpoch=0,candleEpoch=0,lastAccount='',lastMarket='',launchAccountConsumed=false;
 document.documentElement.classList.add('bb-auth-pending');
+// Do not expose the old hard-coded sample accounts while auth/account hydration is pending.
+state.accounts=[];state.activeAccountId='';
 const BB_URL='https://ztiiyulusburxjkpcfxu.supabase.co',BB_KEY='sb_publishable_5hDwqvbcUHeSJdXFHf9ugw_VPYGN4J_';
 const MARKET={
  'XAU/USD':'XAU/USD','XAG/USD':'XAG/USD','XPT/USD':'XPT/USD','XPD/USD':'XPD/USD',
@@ -2124,10 +2126,23 @@ async function accounts(preferredBackendId=null){
   server:a.server_name||'BigBulls',archived:false,status:String(a.status||'pending').toLowerCase(),currency:a.currency||'USD'
  }));
  state.accounts=rows.length?rows:[{id:'__no_account__',accountNumber:null,backendId:null,nickname:'No trading account',type:'Demo',platform:'BIGBULLS',accountClass:'—',balance:0,leverage:'1:100',server:'BIGBULLS',archived:false,status:'unavailable',currency:'USD'}];
- let preferred='demo',selected=null;const launch=new URLSearchParams(location.search).get('account_id');
+ let preferred='demo',selected=null;
  try{const sm=sessionStorage.getItem('bb:terminal:active-mode:'+session.user.id);if(sm==='demo'||sm==='real')preferred=sm;}catch(_){}
  const findByBackend=id=>state.accounts.find(a=>a.backendId===String(id)&&a.status==='approved');
- if(launch){selected=findByBackend(launch)||null;if(!selected)throw new Error("The selected account is not available or not approved for terminal access. Return to My Accounts and open the account again.");}
+ let launch=null;
+ if(!launchAccountConsumed){
+  try{launch=new URLSearchParams(location.search).get('account_id')||sessionStorage.getItem('bb:terminal:launch-account:'+session.user.id)||null;}catch(_){}
+  if(launch){
+   selected=findByBackend(launch)||null;
+   if(!selected)throw new Error("The selected account is not available or not approved for terminal access. Return to My Accounts and open the account again.");
+   launchAccountConsumed=true;
+   try{
+    sessionStorage.removeItem('bb:terminal:launch-account:'+session.user.id);
+    const cleanUrl=new URL(location.href);cleanUrl.searchParams.delete('account_id');
+    history.replaceState(history.state,'',cleanUrl.pathname+(cleanUrl.search?cleanUrl.search:'')+cleanUrl.hash);
+   }catch(_){}
+  }
+ }
  if(!selected&&preferredBackendId)selected=findByBackend(preferredBackendId)||null;
  try{const sid=sessionStorage.getItem('bb:terminal:selected-account:'+session.user.id+':'+preferred);if(!selected&&sid)selected=findByBackend(sid)||null;}catch(_){}
  if(!selected)selected=state.accounts.find(a=>mode(a)===preferred&&a.status==='approved')||state.accounts.find(a=>a.status==='approved')||state.accounts[0];
