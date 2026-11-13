@@ -136,6 +136,12 @@ Deno.serve(async (req:Request) => {
         const tpDistance=rewardAmount/(quantity*contract);
         const tp=side==="BUY"?entry+tpDistance:entry-tpDistance;
         const spreadCost=(ask-bid)*quantity*contract;
+        // Re-read opt-in immediately before order submission so OFF takes effect at the final execution gate.
+        const {data:latestOptIn,error:optInCheckErr}=await db.from("bb_ai_auto_trade_settings")
+          .select("enabled").eq("user_id",opt.user_id).eq("account_id",opt.account_id).maybeSingle();
+        if(optInCheckErr) throw optInCheckErr;
+        if(latestOptIn?.enabled!==true) throw new Error("AI Auto-Trade was switched OFF before order submission.");
+
         const {data:opened,error:openErr}=await db.rpc("bb_bbook_open_position",{p:{
           user_id:opt.user_id,account_id:opt.account_id,symbol,side,quantity,contract_size:contract,
           mid,bid,ask,stop_loss:sl,take_profit:tp,spread_cost:spreadCost
