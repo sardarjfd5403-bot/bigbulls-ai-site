@@ -45,7 +45,10 @@ function renderMetrics(){
  document.querySelectorAll(".bb-account-card").forEach(n=>n.classList.toggle("bb-account-selected",n.querySelector('[data-account-terminal="'+CSS.escape(a.id)+'"]')!==null||n.textContent.includes("#"+a.account_number)));
 }
 function ensureTopbar(){
- const main=$(".terminal-main"),page=$("#client-page");if(!main||!page||!document.body.classList.contains("bb-v3-active"))return;
+ const main=$(".terminal-main"),page=$("#client-page");
+ if(!main||!page||!document.body.classList.contains("bb-v3-active")){document.querySelector("#bb-client-appbar")?.remove();return;}
+ const isAccountsPage=!!$("#my-trading-accounts",page)||!!$(".accounts-workspace",page);
+ if(!isAccountsPage){$("#bb-client-appbar",main)?.remove();return;}
  let bar=$("#bb-client-appbar",main);
  if(!bar){bar=document.createElement("section");bar.id="bb-client-appbar";bar.className="bb-client-appbar";bar.innerHTML='<div class="bb-appbar-switch"><small>ACTIVE TRADING ACCOUNT</small><b id="bb-active-account-label">Select account</b><select id="bb-active-account-select" aria-label="Switch trading account"></select></div><div id="bb-live-account-metrics" class="bb-live-account-metrics"></div><button type="button" class="bb-app-terminal" id="bb-app-open-terminal">OPEN TERMINAL ↗</button>';const head=$(".terminal-page-head",main)||$(".bb-v3-page-head",main);if(head)head.insertAdjacentElement("afterend",bar);else main.insertBefore(bar,page);}
  const select=$("#bb-active-account-select",bar),rows=accounts(),current=active();
