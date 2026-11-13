@@ -284,7 +284,7 @@ Deno.serve(async (req: Request) => {
       const quoteSymbols=[...new Set(open.map((p:any)=>p.symbol))] as string[];
       if(open.some((p:any)=>p.symbol.endsWith("JPY")&&p.symbol!=="USDJPY"))quoteSymbols.push("USDJPY");
       if(open.some((p:any)=>p.symbol==="EURGBP"))quoteSymbols.push("GBPUSD");
-      await Promise.all([...new Set(quoteSymbols)].filter(marketOpen).map(async symbol=>{
+      await Promise.all([...new Set(quoteSymbols)].filter(symbol=>marketOpen(symbol)).map(async symbol=>{
         try{
           quotes[symbol]=await quote(symbol,settings,url,anon,db);
           const {error}=await db.from("bb_bbook_quotes").upsert({symbol,mid:quotes[symbol].mid,bid:quotes[symbol].bid,ask:quotes[symbol].ask,spread_bps:quotes[symbol].spread_bps,provider:quotes[symbol].provider,quote_time:quotes[symbol].quote_time,updated_at:new Date().toISOString()});

@@ -1,17 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" content="#f8fafc" />
+  <meta name="theme-color" content="#0E1117" />
   <title>BigBull Terminal — Pro Trading Platform</title>
   <script async src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <script>
-    window.tailwind = window.tailwind || {};\n    window.tailwind.config = {
-      darkMode: false,
+    window.tailwind = window.tailwind || {};
+    window.tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           fontFamily: {
@@ -19,11 +20,11 @@
             mono: ['JetBrains Mono', 'monospace'],
           },
           colors: {
-            bgDark: '#f8fafc',
-            surface: '#ffffff',
-            surfaceHover: '#f1f5f9',
-            surfaceLight: '#e2e8f0',
-            borderDark: '#e2e8f0',
+            bgDark: '#0E1117',
+            surface: '#131722',
+            surfaceHover: '#1A1F29',
+            surfaceLight: '#252B36',
+            borderDark: '#252B36',
             bullYellow: '#2979FF',
             bullYellowHover: '#1D63DC',
             bullGreen: '#00C076',
@@ -122,7 +123,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 </style>
   <script async src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
   <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="stylesheet" href="terminal-theme.css?v=20261113-pro-terminal-complete">
+  <link rel="stylesheet" href="terminal-theme.css?v=20261113-final-live">
 <script id="bb-cache-cleanup">
 (function(){
   try {
@@ -163,8 +164,6 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 </script>
 </head>
 <body class="h-screen min-h-screen flex flex-col overflow-hidden">
-  <button id="bb-terminal-back" type="button" aria-label="Back to Client Area" style="position:fixed;top:max(10px,env(safe-area-inset-top));left:max(10px,env(safe-area-inset-left));z-index:10001;display:flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid #2563eb;border-radius:12px;background:#2563eb;color:#ffffff;font:700 13px Inter,sans-serif;box-shadow:0 6px 20px #0008;cursor:pointer">← <span>Back to Client Area</span></button>
-  <script>document.getElementById("bb-terminal-back")?.addEventListener("click",()=>{try{if(window.parent!==window&&typeof window.parent.__bbReturnToClientArea==="function"){window.parent.__bbReturnToClientArea();return;}const link=window.parent.document.querySelector("#app-shell [data-page=\"accounts\"]");if(link){link.click();return;}}catch(e){console.warn("Client Area return bridge unavailable:",e);}location.href="index.html";});</script>
   <div id="bb-auth-boot" role="status" aria-live="polite"><span class="bb-auth-spinner"></span><span>BIGBULLS · Securing your session…</span></div>
 
   <!-- MAIN VIEWPORT STAGE -->
@@ -184,8 +183,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 
   <script>
     // ==========================================
-    (function(){const native=window.setInterval.bind(window);window.setInterval=function(fn,delay,...args){if(delay===900||delay===12000)return 0;return native(fn,delay,...args);};})();
-// 1. APPLICATION STATE & MOCK LIVE MARKET DATA
+    // 1. APPLICATION STATE & MOCK LIVE MARKET DATA
     // ==========================================
     const state = {
       viewportMode: window.innerWidth < 768 ? 'mobile' : 'desktop', // automatically follows viewport width
@@ -373,27 +371,11 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
       }
     };
 
-    // Initialize realistic historical candles for each instrument
+    // Historical candles are loaded from the live market-data service; never synthesize candles in the client.
     function initCandles() {
-      Object.values(state.instruments).forEach(inst => {
-        let price = inst.bid;
-        const step = inst.digits === 5 ? 0.0004 : inst.digits === 3 && inst.bid < 200 ? 0.04 : inst.digits === 3 ? 2.2 : 35;
-        const arr = [];
-        for (let i = 0; i < 42; i++) {
-          const open = price;
-          const delta = (Math.random() - 0.51) * step;
-          const close = Number((open + delta).toFixed(inst.digits));
-          const high = Number((Math.max(open, close) + Math.random() * step * 0.6).toFixed(inst.digits));
-          const low = Number((Math.min(open, close) - Math.random() * step * 0.6).toFixed(inst.digits));
-          arr.push({ open, high, low, close, time: i });
-          price = close;
-        }
-        inst.candles = arr;
-        inst.bid = price;
-        inst.ask = Number((price + inst.spread).toFixed(inst.digits));
-      });
+      Object.values(state.instruments).forEach(inst => { inst.candles = []; });
     }
-    Object.values(state.instruments).forEach(inst=>{inst.candles=[];});
+    Object.values(state.instruments).forEach(inst=>{inst.candles=[];inst.bid=0;inst.ask=0;});
 
     // ==========================================
     // 2. HELPERS & CALCULATIONS
@@ -492,80 +474,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
       }, 3200);
     }
 
-    // ==========================================
-    // 3. LIVE MARKET TICK SIMULATION (EVERY 900ms)
-    // ==========================================
-    setInterval(() => {
-      Object.values(state.instruments).forEach(inst => {
-        const volatility = inst.digits === 5 ? 0.00018 : inst.digits === 3 && inst.bid < 200 ? 0.015 : inst.digits === 3 ? 0.65 : 14.0;
-        const delta = (Math.random() - 0.495) * volatility;
-        inst.bid = Number((inst.bid + delta).toFixed(inst.digits));
-        inst.ask = Number((inst.bid + inst.spread).toFixed(inst.digits));
-
-        // Update latest candle
-        const lastCandle = inst.candles[inst.candles.length - 1];
-        if (lastCandle) {
-          lastCandle.close = inst.bid;
-          if (inst.bid > lastCandle.high) lastCandle.high = inst.bid;
-          if (inst.bid < lastCandle.low) lastCandle.low = inst.bid;
-        }
-      });
-
-      // Check Pending Orders Execution
-      for (let i = state.pendingOrders.length - 1; i >= 0; i--) {
-        const pOrder = state.pendingOrders[i];
-        const inst = state.instruments[pOrder.symbol];
-        if (!inst) continue;
-        const execPrice = pOrder.side === 'Buy' ? inst.ask : inst.bid;
-        const triggered = Math.abs(execPrice - pOrder.targetPrice) <= (inst.spread * 2.5);
-        if (triggered) {
-          state.pendingOrders.splice(i, 1);
-          const newTrade = {
-            id: pOrder.id,
-            accountId: pOrder.accountId,
-            symbol: pOrder.symbol,
-            side: pOrder.side,
-            lots: pOrder.lots,
-            openPrice: execPrice,
-            sl: pOrder.sl,
-            tp: pOrder.tp,
-            openTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-          };
-          state.openOrders.unshift(newTrade);
-          showToast(
-            'Pending order executed',
-            `Your ${pOrder.side.toUpperCase()} order #${pOrder.id} for ${pOrder.lots} lot(s) ${pOrder.symbol} opened`,
-            'success'
-          );
-        }
-      }
-
-      // Check TP / SL Hit on Open Orders
-      for (let i = state.openOrders.length - 1; i >= 0; i--) {
-        const o = state.openOrders[i];
-        const inst = state.instruments[o.symbol];
-        if (!inst) continue;
-        const curr = o.side === 'Buy' ? inst.bid : inst.ask;
-        if (o.tp && ((o.side === 'Buy' && curr >= parseFloat(o.tp)) || (o.side === 'Sell' && curr <= parseFloat(o.tp)))) {
-          executeCloseOrder(o.id, true, 'Take Profit Hit');
-        } else if (o.sl && ((o.side === 'Buy' && curr <= parseFloat(o.sl)) || (o.side === 'Sell' && curr >= parseFloat(o.sl)))) {
-          executeCloseOrder(o.id, true, 'Stop Loss Hit');
-        }
-      }
-
-      updateLiveDOMElements();
-    }, 900);
-
-    // Add a new candle every 12 seconds
-    setInterval(() => {
-      Object.values(state.instruments).forEach(inst => {
-        const prev = inst.candles[inst.candles.length - 1];
-        const open = prev ? prev.close : inst.bid;
-        inst.candles.push({ open, high: open, low: open, close: open, time: Date.now() });
-        if (inst.candles.length > 50) inst.candles.shift();
-      });
-    }, 12000);
-
+    // Live quotes and candles are supplied only by the authenticated market-data / BiQuote feeds.
     function updateLiveDOMElements() {
       const metrics = getAccountMetrics();
       const acc = getActiveAccount();
@@ -897,6 +806,19 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
       return cryptoSymbols.has(key);
     }
     window.bbIsCryptoSymbol = bbIsCryptoSymbol;
+
+    function bbUpdateTicketMargin(){
+      const inst=state.instruments[state.selectedSymbol],acc=getActiveAccount(),m=state.orderTicket;
+      const lev=Math.max(1,parseInt(String(acc?.leverage||'1:100').split(':')[1],10)||100);
+      const price=m.mode==='Market'?(m.side==='Buy'?Number(inst?.ask):Number(inst?.bid)):Number(m.targetPrice);
+      const valid=Number.isFinite(price)&&price>0;
+      const required=valid?(Number(m.lots||0)*Number(inst?.contractSize||1)*price)/lev:0;
+      document.querySelectorAll('[data-ticket-required-margin]').forEach(el=>{el.textContent=valid?formatMoney(required)+' USD':'Waiting for live quote';});
+      const free=getAccountMetrics().freeMargin;
+      document.querySelectorAll('[data-ticket-free-margin]').forEach(el=>{el.textContent=formatMoney(free)+' USD';});
+      return required;
+    }
+    window.bbUpdateTicketMargin=bbUpdateTicketMargin;
 
     function openOrderTicketModal(side = 'Buy', mode = 'Market') {
       const inst = state.instruments[state.selectedSymbol];
@@ -2067,13 +1989,17 @@ function updateCandleFromTick(symbol,bid,stamp=Date.now()){
 let localTickTimer=null;
 function stopLocalSimulation(){if(localTickTimer){clearInterval(localTickTimer);localTickTimer=null;}document.getElementById('bb-local-sim-banner')?.remove();updateLiveDOMElements();}
 function startLocalSimulation(){
- if(localTickTimer)return;
- const seeds={'XAU/USD':4000,'XAG/USD':50,'XPT/USD':1500,'XPD/USD':1200,'EUR/USD':1.16,'GBP/USD':1.32,'USD/JPY':154,'USD/CAD':1.39,'AUD/USD':0.65,'NZD/USD':0.58,'USD/CHF':0.80,'EUR/GBP':0.86,'EUR/JPY':178,'GBP/JPY':202,'US30':45000,'USTEC':22000,'SPX500':6500,'GER40':24000,'UK100':9500,'JPN225':50000,'USOIL':65,'UKOIL':69,'NATGAS':3.5,'BTC':95000,'ETH/USD':3200,'SOL/USD':180,'XRP/USD':2.4,'BNB/USD':900};
- Object.entries(state.instruments).forEach(([symbol,inst])=>{if(!(Number(inst.bid)>0))inst.bid=Number(seeds[symbol]||100);if(!(Number(inst.spread)>0))inst.spread=inst.digits>=4?0.00012:inst.digits===3?0.02:0.5;inst.ask=Number((inst.bid+inst.spread).toFixed(inst.digits||2));if(!inst.candles?.length)updateCandleFromTick(symbol,inst.bid,Date.now());});
+ if(localTickTimer){clearInterval(localTickTimer);localTickTimer=null;}
+ const hasLiveQuote=Object.values(state.instruments).some(inst=>Number(inst.bid)>0&&Number(inst.ask)>=Number(inst.bid));
+ if(hasLiveQuote){document.getElementById('bb-local-sim-banner')?.remove();return;}
+ Object.values(state.instruments).forEach(inst=>{inst.bid=0;inst.ask=0;inst.candles=[];});
  let banner=document.getElementById('bb-local-sim-banner');
- if(!banner){banner=document.createElement('div');banner.id='bb-local-sim-banner';banner.textContent='LOCAL SIMULATION · NOT LIVE MARKET DATA · ORDERS DISABLED';banner.style.cssText='position:fixed;z-index:10020;top:8px;left:50%;transform:translateX(-50%);max-width:94vw;padding:8px 12px;border:1px solid #f59e0b;border-radius:10px;background:#fffbeb;color:#92400e;font:700 10px Inter,sans-serif;letter-spacing:.04em;text-align:center;box-shadow:0 4px 18px #0f172a22';document.body.appendChild(banner);}
- document.querySelectorAll('button').forEach(b=>{if(/^(BUY|SELL)(\b|\s)/i.test(String(b.textContent||'').trim()))b.disabled=true;});
- localTickTimer=setInterval(()=>{Object.entries(state.instruments).forEach(([symbol,inst],n)=>{const mid=Number(inst.bid||seeds[symbol]||100),step=inst.digits>=4?0.00003:inst.digits===3?0.004:Math.max(mid*0.00004,0.01),next=Number((mid+Math.sin(Date.now()/1900+n)*step+(Math.random()-.5)*step).toFixed(inst.digits||2));inst.bid=next;inst.ask=Number((next+Number(inst.spread||step*1.5)).toFixed(inst.digits||2));updateCandleFromTick(symbol,(inst.bid+inst.ask)/2,Date.now());});updateLiveDOMElements();},1000);
+ if(!banner){
+  banner=document.createElement('div');banner.id='bb-local-sim-banner';
+  banner.textContent='WAITING FOR LIVE MARKET DATA · NO SIMULATED PRICES · TRADING LOCKED';
+  banner.style.cssText='position:fixed;z-index:10020;top:8px;left:50%;transform:translateX(-50%);max-width:94vw;padding:8px 12px;border:1px solid #f59e0b;border-radius:10px;background:#211a10;color:#fcd34d;font:700 10px Inter,sans-serif;letter-spacing:.04em;text-align:center;box-shadow:0 4px 18px #0008';
+  document.body.appendChild(banner);
+ }
  updateLiveDOMElements();
 }
 
@@ -2312,6 +2238,7 @@ async function place(){
  if(!a.backendId||a.status!=='approved'){notify('Account approval required','Only approved Client Area trading accounts can place orders.','error');return;}
  if(!session){notify('Login required','Sign in to your client account before trading.','error');return;}
  const symbol=PAPER[s],quantity=Number(m.lots),sl=m.sl===''||m.sl==null?null:Number(m.sl),tp=m.tp===''||m.tp==null?null:Number(m.tp);
+ const liveQuote=state.instruments[s];if(!liveQuote||!(Number(liveQuote.bid)>0)||!(Number(liveQuote.ask)>=Number(liveQuote.bid))){notify('Live feed unavailable','Trading is locked until the market-data provider reconnects.','error');return;}
  if(!symbol){notify('Instrument unavailable','This instrument is not enabled by the connected execution service.','error');return;}
  if(!(quantity>0)||!Number.isFinite(quantity)){notify('Invalid lot size','Enter a valid lot size.','error');return;}
  if(sl!==null&&(!(sl>0)||!Number.isFinite(sl))){notify('Invalid Stop Loss','Enter a valid Stop Loss or leave it empty.','error');return;}

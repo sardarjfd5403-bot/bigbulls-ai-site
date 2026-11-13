@@ -22,6 +22,38 @@ jobs:
           node --check admin-backoffice-shell.js
           node --check admin-client-management.js
           node --check v3-portal.js
+      - name: Check inline terminal JavaScript
+        run: |
+          python - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          class Scripts(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.current = None
+                  self.items = []
+              def handle_starttag(self, tag, attrs):
+                  if tag.lower() == "script":
+                      attrs = dict(attrs)
+                      self.current = None if attrs.get("src") else []
+              def handle_data(self, data):
+                  if self.current is not None:
+                      self.current.append(data)
+              def handle_endtag(self, tag):
+                  if tag.lower() == "script" and self.current is not None:
+                      code = "".join(self.current).strip()
+                      if code:
+                          self.items.append(code)
+                      self.current = None
+          parser = Scripts()
+          parser.feed(Path("terminal.html").read_text(encoding="utf-8"))
+          if not parser.items:
+              raise SystemExit("No inline terminal scripts found")
+          for index, code in enumerate(parser.items, 1):
+              Path(f"/tmp/bb-terminal-inline-{index}.js").write_text(code, encoding="utf-8")
+          print(f"Extracted {len(parser.items)} inline terminal scripts")
+          PY
+          for file in /tmp/bb-terminal-inline-*.js; do node --check "$file"; done
       - name: Set up Deno
         uses: denoland/setup-deno@v2
         with:
