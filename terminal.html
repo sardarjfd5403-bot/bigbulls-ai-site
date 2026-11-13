@@ -2071,9 +2071,15 @@ function filterMarketWatch(value){
 function applyQuote(s,p){const i=state.instruments[s];if(!i||!(Number(p)>0))return;i.bid=Number(p);i.ask=Number((i.bid+Number(i.spread||0)).toFixed(i.digits));}
 function applyBookQuote(s,q){const i=state.instruments[s];if(!i||!q)return;const bid=Number(q.bid),ask=Number(q.ask);if(bid>0&&ask>=bid){i.bid=bid;i.ask=ask;updateCandleFromTick(s,(bid+ask)/2,q.time||q.updated_at||Date.now());}}
 let bbookRealtimeChannel=null;
-function startBbookRealtime(c){
+async function startBbookRealtime(c){
  if(bbookRealtimeChannel){c.removeChannel(bbookRealtimeChannel);bbookRealtimeChannel=null;}
  if(!session?.user)return;
+ // Bind the current authenticated JWT to Realtime before opening the channel.
+ // The SDK refreshes the session itself; no token is exposed in a URL or log.
+ if(session.access_token&&c.realtime?.setAuth){
+  try{await Promise.race([c.realtime.setAuth(session.access_token),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Realtime auth timed out after 1.5 seconds')),1500))]);}
+  catch(e){console.warn('Realtime auth handshake deferred; REST fallback remains active:',e.message);}
+ }
  bbookRealtimeChannel=c.channel('bb-bbook-terminal-'+session.user.id)
   .on('postgres_changes',{event:'*',schema:'public',table:'bb_bbook_quotes'},payload=>{
    const row=payload.new||{};applyBookQuote(mapSymbol(row.symbol),row);updateLiveDOMElements();
@@ -2086,7 +2092,10 @@ function startBbookRealtime(c){
    try{const current=getActiveAccount()?.backendId||null;await accounts(current);renderApp();await refresh(true);}
    catch(e){notify('Account sync failed',e.message||'Client Area account updates could not be loaded.','error');}
   })
-  .subscribe();
+  .subscribe((status,error)=>{
+   if(status==='SUBSCRIBED')console.info('BIGBULLS Realtime channel connected.');
+   else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'||status==='CLOSED')console.warn('BIGBULLS Realtime channel unavailable:',status,error?.message||'REST polling fallback active.');
+  });
 }
 let biQuoteConnection=null,biQuoteStartPromise=null;
 let BIQUOTE_STREAM_SYMBOLS=['EURUSD','GBPUSD','USDJPY','USDCAD','AUDUSD','NZDUSD','USDCHF','EURGBP','EURJPY','GBPJPY','XAUUSD','XAGUSD','XPTUSD','XPDUSD','BTCUSD','ETHUSD','SOLUSD','XRPUSD','BNBUSD','US30','USTEC','SPX500','GER40','UK100','JPN225','USOIL','UKOIL','NATGAS'];
@@ -2487,7 +2496,7 @@ async function start(){
 }
 window.__bbTerminalRetryStartup=start;
 // Fail safe: never leave the client staring at an endless session spinner if startup code stalls.
-window.setTimeout(()=>{if(document.documentElement.classList.contains('bb-auth-pending'))bbShowBootFallback(new Error('Secure session is still reconnecting. Terminal layout remains available; trading stays locked until account verification completes.'));},BB_BOOT_TIMEOUT_MS);
+window.setTimeout(()=>{if(document.documentElement.classList.contains('bb-auth-pending'))bbShowBootFallback(new Error('Secure session is still reconnecting. Terminal layout remains available; trading stays locked until account verification completes.'));},BB_BOOT_TIMEOUT_MS);\n// If the Supabase SDK arrived after first paint, retry the authenticated handshake now.\nwindow.addEventListener('load',()=>{if(!session)start().catch(e=>console.warn('Post-load terminal retry:',e));},{once:true});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();\n// Async CDN scripts never block first paint; retry startup once they finish loading.\nwindow.addEventListener('load',()=>{if(!session)start().catch(e=>console.warn('Post-load terminal retry:',e));},{once:true});
 })();
 </script>
