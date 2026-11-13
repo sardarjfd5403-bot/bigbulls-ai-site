@@ -1997,7 +1997,7 @@ async function call(fn,body){
 }
 const mode=a=>String(a?.type||'Demo').toLowerCase()==='real'?'real':'demo';
 function mapSymbol(s){
- const raw=String(s||'').toUpperCase().trim(),key=raw.replaceAll('/','').replaceAll('-','');
+ const raw=String(s||'').toUpperCase().trim(),key=raw.replace(/[^A-Z0-9]/g,'');
  const aliases={XAUUSD:'XAU/USD',XAGUSD:'XAG/USD',XPTUSD:'XPT/USD',XPDUSD:'XPD/USD',EURUSD:'EUR/USD',GBPUSD:'GBP/USD',USDJPY:'USD/JPY',USDCAD:'USD/CAD',AUDUSD:'AUD/USD',NZDUSD:'NZD/USD',USDCHF:'USD/CHF',EURGBP:'EUR/GBP',EURJPY:'EUR/JPY',GBPJPY:'GBP/JPY',BTCUSDT:'BTC',BTCUSD:'BTC',ETHUSDT:'ETH/USD',ETHUSD:'ETH/USD',SOLUSDT:'SOL/USD',SOLUSD:'SOL/USD',XRPUSDT:'XRP/USD',XRPUSD:'XRP/USD',BNBUSDT:'BNB/USD',BNBUSD:'BNB/USD',WTIUSD:'USOIL',USOIL:'USOIL',WTI:'USOIL',UKOIL:'UKOIL',BRENT:'UKOIL',NATGAS:'NATGAS',NATGASUSDT:'NATGAS',NGAS:'NATGAS',NDX:'USTEC',NAS100:'USTEC',USTEC:'USTEC',DJI:'US30',US30:'US30',SP500:'SPX500',US500:'SPX500',SPX500:'SPX500',DE40:'GER40',DE30:'GER40',GER40:'GER40',FTSE100:'UK100',UK100:'UK100',JP225:'JPN225',JPN225:'JPN225'};
  return aliases[key]||(state.instruments[raw]?raw:null);
 }
@@ -2365,10 +2365,24 @@ function client(){
  if(window.supabase?.createClient){window.__bbSupabaseClient=window.supabase.createClient(BB_URL,BB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});return window.__bbSupabaseClient;}
  throw new Error('Supabase client library is unavailable.');
 }
-async function call(fn,body){const r=await client().functions.invoke(fn,{body});if(r.error)throw new Error(r.data?.error||r.error.message||fn+' request failed.');if(r.data?.error)throw new Error(r.data.error);return r.data||{};}
+async function call(fn,body){
+ const r=await client().functions.invoke(fn,{body});
+ if(r.error){
+  let payload=r.data||null;
+  const context=r.error.context;
+  if(!payload&&context){
+   try{payload=await (typeof context.clone==='function'?context.clone():context).json();}
+   catch(_){try{const raw=await (typeof context.clone==='function'?context.clone():context).text();payload=JSON.parse(raw);}catch(__){}}
+  }
+  const message=payload?.error||payload?.message||r.error.message||fn+' request failed.';
+  const failure=new Error(message);failure.code=payload?.code||r.error.code||null;failure.status=payload?.status||context?.status||null;failure.details=payload?.details||null;throw failure;
+ }
+ if(r.data?.error){const failure=new Error(r.data.error);failure.code=r.data.code||null;failure.status=r.data.status||null;failure.details=r.data.details||null;throw failure;}
+ return r.data||{};
+}
 const mode=a=>String(a?.type||'Demo').toLowerCase()==='real'?'real':'demo';
 function mapSymbol(s){
- const raw=String(s||'').toUpperCase().trim(),key=raw.replaceAll('/','').replaceAll('-','');
+ const raw=String(s||'').toUpperCase().trim(),key=raw.replace(/[^A-Z0-9]/g,'');
  const aliases={XAUUSD:'XAU/USD',XAGUSD:'XAG/USD',XPTUSD:'XPT/USD',XPDUSD:'XPD/USD',EURUSD:'EUR/USD',GBPUSD:'GBP/USD',USDJPY:'USD/JPY',USDCAD:'USD/CAD',AUDUSD:'AUD/USD',NZDUSD:'NZD/USD',USDCHF:'USD/CHF',EURGBP:'EUR/GBP',EURJPY:'EUR/JPY',GBPJPY:'GBP/JPY',BTCUSDT:'BTC',BTCUSD:'BTC',ETHUSDT:'ETH/USD',ETHUSD:'ETH/USD',SOLUSDT:'SOL/USD',SOLUSD:'SOL/USD',XRPUSDT:'XRP/USD',XRPUSD:'XRP/USD',BNBUSDT:'BNB/USD',BNBUSD:'BNB/USD',WTIUSD:'USOIL',USOIL:'USOIL',WTI:'USOIL',UKOIL:'UKOIL',BRENT:'UKOIL',NATGAS:'NATGAS',NGAS:'NATGAS',NDX:'USTEC',NAS100:'USTEC',USTEC:'USTEC',DJI:'US30',US30:'US30',SP500:'SPX500',SPX500:'SPX500',DE40:'GER40',GER40:'GER40',FTSE100:'UK100',UK100:'UK100',JP225:'JPN225',JPN225:'JPN225'};
  return aliases[key]||(state.instruments[raw]?raw:null);
 }
@@ -2636,10 +2650,24 @@ function client(){
  if(window.supabase?.createClient){window.__bbSupabaseClient=window.supabase.createClient(BB_URL,BB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});return window.__bbSupabaseClient;}
  throw new Error('Supabase client library is unavailable.');
 }
-async function call(fn,body){const r=await client().functions.invoke(fn,{body});if(r.error)throw new Error(r.data?.error||r.error.message||fn+' request failed.');if(r.data?.error)throw new Error(r.data.error);return r.data||{};}
+async function call(fn,body){
+ const r=await client().functions.invoke(fn,{body});
+ if(r.error){
+  let payload=r.data||null;
+  const context=r.error.context;
+  if(!payload&&context){
+   try{payload=await (typeof context.clone==='function'?context.clone():context).json();}
+   catch(_){try{const raw=await (typeof context.clone==='function'?context.clone():context).text();payload=JSON.parse(raw);}catch(__){}}
+  }
+  const message=payload?.error||payload?.message||r.error.message||fn+' request failed.';
+  const failure=new Error(message);failure.code=payload?.code||r.error.code||null;failure.status=payload?.status||context?.status||null;failure.details=payload?.details||null;throw failure;
+ }
+ if(r.data?.error){const failure=new Error(r.data.error);failure.code=r.data.code||null;failure.status=r.data.status||null;failure.details=r.data.details||null;throw failure;}
+ return r.data||{};
+}
 const mode=a=>String(a?.type||'Demo').toLowerCase()==='real'?'real':'demo';
 function mapSymbol(s){
- const raw=String(s||'').toUpperCase().trim(),key=raw.replaceAll('/','').replaceAll('-','');
+ const raw=String(s||'').toUpperCase().trim(),key=raw.replace(/[^A-Z0-9]/g,'');
  const aliases={XAUUSD:'XAU/USD',XAGUSD:'XAG/USD',XPTUSD:'XPT/USD',XPDUSD:'XPD/USD',EURUSD:'EUR/USD',GBPUSD:'GBP/USD',USDJPY:'USD/JPY',USDCAD:'USD/CAD',AUDUSD:'AUD/USD',NZDUSD:'NZD/USD',USDCHF:'USD/CHF',EURGBP:'EUR/GBP',EURJPY:'EUR/JPY',GBPJPY:'GBP/JPY',BTCUSDT:'BTC',BTCUSD:'BTC',ETHUSDT:'ETH/USD',ETHUSD:'ETH/USD',SOLUSDT:'SOL/USD',SOLUSD:'SOL/USD',XRPUSDT:'XRP/USD',XRPUSD:'XRP/USD',BNBUSDT:'BNB/USD',BNBUSD:'BNB/USD',WTIUSD:'USOIL',USOIL:'USOIL',WTI:'USOIL',UKOIL:'UKOIL',BRENT:'UKOIL',NATGAS:'NATGAS',NGAS:'NATGAS',NDX:'USTEC',NAS100:'USTEC',USTEC:'USTEC',DJI:'US30',US30:'US30',SP500:'SPX500',SPX500:'SPX500',DE40:'GER40',GER40:'GER40',FTSE100:'UK100',UK100:'UK100',JP225:'JPN225',JPN225:'JPN225'};
  return aliases[key]||(state.instruments[raw]?raw:null);
 }
@@ -2932,10 +2960,24 @@ function client(){
  if(window.supabase?.createClient){window.__bbSupabaseClient=window.supabase.createClient(BB_URL,BB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});return window.__bbSupabaseClient;}
  throw new Error('Supabase client library is unavailable.');
 }
-async function call(fn,body){const r=await client().functions.invoke(fn,{body});if(r.error)throw new Error(r.data?.error||r.error.message||fn+' request failed.');if(r.data?.error)throw new Error(r.data.error);return r.data||{};}
+async function call(fn,body){
+ const r=await client().functions.invoke(fn,{body});
+ if(r.error){
+  let payload=r.data||null;
+  const context=r.error.context;
+  if(!payload&&context){
+   try{payload=await (typeof context.clone==='function'?context.clone():context).json();}
+   catch(_){try{const raw=await (typeof context.clone==='function'?context.clone():context).text();payload=JSON.parse(raw);}catch(__){}}
+  }
+  const message=payload?.error||payload?.message||r.error.message||fn+' request failed.';
+  const failure=new Error(message);failure.code=payload?.code||r.error.code||null;failure.status=payload?.status||context?.status||null;failure.details=payload?.details||null;throw failure;
+ }
+ if(r.data?.error){const failure=new Error(r.data.error);failure.code=r.data.code||null;failure.status=r.data.status||null;failure.details=r.data.details||null;throw failure;}
+ return r.data||{};
+}
 const mode=a=>String(a?.type||'Demo').toLowerCase()==='real'?'real':'demo';
 function mapSymbol(s){
- const raw=String(s||'').toUpperCase().trim(),key=raw.replaceAll('/','').replaceAll('-','');
+ const raw=String(s||'').toUpperCase().trim(),key=raw.replace(/[^A-Z0-9]/g,'');
  const aliases={XAUUSD:'XAU/USD',XAGUSD:'XAG/USD',XPTUSD:'XPT/USD',XPDUSD:'XPD/USD',EURUSD:'EUR/USD',GBPUSD:'GBP/USD',USDJPY:'USD/JPY',USDCAD:'USD/CAD',AUDUSD:'AUD/USD',NZDUSD:'NZD/USD',USDCHF:'USD/CHF',EURGBP:'EUR/GBP',EURJPY:'EUR/JPY',GBPJPY:'GBP/JPY',BTCUSDT:'BTC',BTCUSD:'BTC',ETHUSDT:'ETH/USD',ETHUSD:'ETH/USD',SOLUSDT:'SOL/USD',SOLUSD:'SOL/USD',XRPUSDT:'XRP/USD',XRPUSD:'XRP/USD',BNBUSDT:'BNB/USD',BNBUSD:'BNB/USD',WTIUSD:'USOIL',USOIL:'USOIL',WTI:'USOIL',UKOIL:'UKOIL',BRENT:'UKOIL',NATGAS:'NATGAS',NGAS:'NATGAS',NDX:'USTEC',NAS100:'USTEC',USTEC:'USTEC',DJI:'US30',US30:'US30',SP500:'SPX500',SPX500:'SPX500',DE40:'GER40',GER40:'GER40',FTSE100:'UK100',UK100:'UK100',JP225:'JPN225',JPN225:'JPN225'};
  return aliases[key]||(state.instruments[raw]?raw:null);
 }
