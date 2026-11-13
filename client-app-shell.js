@@ -2,9 +2,29 @@
 "use strict";
 const $=(s,r=document)=>r.querySelector(s);
 const money=(v,c="USD")=>c+" "+Number(v||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
-let activeId="",walletObserver=null;
+let activeId="",walletObserver=null,cacheUser="",cachePromise=null;
+async function refreshAccountCache(){
+ const client=window.__bbSupabaseClient,uid=window.__bbUserId;
+ if(!client||!uid||(cachePromise&&cacheUser===uid))return cachePromise;
+ cacheUser=uid;
+ cachePromise=(async()=>{
+  const [a,d,l,p]=await Promise.all([
+   client.from("trading_accounts").select("id,user_id,account_mode,account_number,account_type,currency,balance,credit_bonus,status,display_name,requested_leverage,archived_at,deleted_at,created_at").eq("user_id",uid).is("deleted_at",null).order("created_at",{ascending:false}),
+   client.from("bb_paper_execution_accounts").select("account_id,virtual_balance").eq("user_id",uid).eq("account_mode","demo"),
+   client.from("bb_paper_execution_trades").select("account_id,unrealized_pnl,status").eq("user_id",uid).eq("account_mode","demo").eq("status","OPEN"),
+   client.from("bb_bbook_positions").select("account_id,floating_pnl,margin_used,status").eq("user_id",uid).eq("account_mode","real").eq("status","OPEN")
+  ]);
+  const err=[a,d,l,p].find(x=>x.error);if(err)throw err.error;
+  const demoBal=new Map((d.data||[]).map(x=>[x.account_id,Number(x.virtual_balance||0)])),demoFloat=new Map(),realFloat=new Map(),realMargin=new Map();
+  for(const x of l.data||[])demoFloat.set(x.account_id,(demoFloat.get(x.account_id)||0)+Number(x.unrealized_pnl||0));
+  for(const x of p.data||[]){realFloat.set(x.account_id,(realFloat.get(x.account_id)||0)+Number(x.floating_pnl||0));realMargin.set(x.account_id,(realMargin.get(x.account_id)||0)+Number(x.margin_used||0));}
+  window.bbClientAccounts=(a.data||[]).map(x=>{const demo=x.account_mode==="demo",balance=demo?(demoBal.get(x.id)??Number(x.balance||0)):Number(x.balance||0),floating=(demo?demoFloat:realFloat).get(x.id)||0,credit=demo?0:Number(x.credit_bonus||0),margin=demo?null:(realMargin.get(x.id)||0),equity=balance+credit+floating;return {...x,balance,credit_bonus:credit,floating_pnl:floating,equity,margin_used:margin,free_margin:margin===null?null:equity-margin,margin_level:margin>0?equity/margin*100:null};});
+  ensureTopbar();renderMetrics();
+ })().catch(e=>console.warn("BIGBULLS account switcher cache:",e.message)).finally(()=>{cachePromise=null;});
+ return cachePromise;
+}
 function accounts(){return Array.isArray(window.bbClientAccounts)?window.bbClientAccounts.filter(a=>!a.archived_at&&!a.deleted_at&&a.status==="approved"):[];}
-function active(){const rows=accounts();return rows.find(a=>a.id===activeId)||rows.find(a=>a.id===window.bbActiveAccountId)||rows[0]||null;}
+function active(){const rows=accounts();return rows.find(a=>a.id===activeId)||rows.find(a=>a.id===window.bbActiveAccountId)||rows.find(a=>a.id===window.__bbTerminalLaunchAccountId)||rows[0]||null;}
 function renderMetrics(){
  const host=$("#bb-live-account-metrics");if(!host)return;
  const a=active();
@@ -71,9 +91,9 @@ function init(){
  if(activePageIsWallet())walletModal();
 }
 function activePageIsWallet(){return !!$("#wallet-content");}
-window.addEventListener("bb:account-sync",()=>{ensureTopbar();renderMetrics();});
+window.addEventListener("bb:account-sync",()=>{refreshAccountCache();ensureTopbar();renderMetrics();});
 window.addEventListener("bb:realtime",()=>{ensureTopbar();renderMetrics();});
 const observer=new MutationObserver(()=>{if(document.body.classList.contains("bb-v3-active"))init();});
-function boot(){observer.observe(document.body,{attributes:true,attributeFilter:["class"]});init();setInterval(()=>{if(document.body.classList.contains("bb-v3-active")){ensureTopbar();renderMetrics();accountToolModal();}},1500);}
+function boot(){observer.observe(document.body,{attributes:true,attributeFilter:["class"]});init();refreshAccountCache();setInterval(()=>{if(document.body.classList.contains("bb-v3-active")){ensureTopbar();renderMetrics();accountToolModal();}},1500);}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});else boot();
 })();
