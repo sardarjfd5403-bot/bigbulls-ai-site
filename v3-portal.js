@@ -60,7 +60,21 @@
     let backdrop=$(".bb-drawer-backdrop",terminal);
     if(!backdrop){backdrop=document.createElement("button");backdrop.type="button";backdrop.className="bb-drawer-backdrop";backdrop.setAttribute("aria-label","Close navigation");backdrop.dataset.v3DrawerClose="";layout.prepend(backdrop);}
     const pageHead=$(".terminal-page-head",main);
-    if(pageHead){pageHead.classList.add("bb-v3-page-head");pageHead.innerHTML='<div><small>BIGBULLS FX MARKET / CLIENT PORTAL</small><h2>'+esc(pageLabel())+'</h2></div><button type="button" class="bb-open-account" data-account-wizard>Open Account</button>';}
+    if(pageHead){
+      pageHead.classList.add("bb-v3-page-head");
+      pageHead.innerHTML='<div><small>BIGBULLS FX MARKET / CLIENT PORTAL</small><h2>'+esc(pageLabel())+'</h2></div><button type="button" class="bb-open-account" data-account-wizard>Open Account</button>';
+      const syncAccountButton=()=>{
+        const label=(pageHead.querySelector("h2")?.textContent||"").trim().toLowerCase();
+        const visible=["my accounts","trading accounts","accounts"].includes(label);
+        const button=pageHead.querySelector("[data-account-wizard]");
+        if(button) button.style.display=visible?"":"none";
+      };
+      syncAccountButton();
+      if(!pageHead.dataset.bbAccountButtonObserver){
+        pageHead.dataset.bbAccountButtonObserver="1";
+        new MutationObserver(syncAccountButton).observe(pageHead,{subtree:true,childList:true,characterData:true});
+      }
+    }
     if(!$("#bb-v3-meta",main)){const meta=document.createElement("div");meta.id="bb-v3-meta";meta.className="bb-v3-meta";meta.textContent="Your account activity and available services are shown from your secure client profile.";main.insertBefore(meta,$("#client-page",main));}
     const drawer=$(".client-sidebar",layout);
     const open=()=>{drawer?.classList.add("bb-drawer-open");backdrop?.classList.add("is-open");document.body.classList.add("bb-drawer-active");};
