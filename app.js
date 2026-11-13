@@ -215,13 +215,19 @@ async function showApp(page){
  if(!user||!shell)return;
  // Resolve administrator access from the same database-side authorization function used by protected Edge Functions.
  // This avoids hiding Admin/SEO navigation when JWT app_metadata is stale in the browser session.
- try{
-  const adminResult=await Promise.race([sb.rpc("is_bigbulls_admin"),new Promise((_,reject)=>window.setTimeout(()=>reject(new Error("Administrator check timed out; opening the client workspace without admin tools.")),2500))]);
+ if(page==="terminal"){
+  // The terminal must not wait for an administrator RPC before its iframe can paint.
+  // Admin-only terminal controls independently verify permissions through trading-gateway.
+  window.__bbAdminAccess=window.__bbAdminAccess===true;
+ }else{
+  try{
+   const adminResult=await Promise.race([sb.rpc("is_bigbulls_admin"),new Promise((_,reject)=>window.setTimeout(()=>reject(new Error("Administrator check timed out; opening the client workspace without admin tools.")),2500))]);
    const {data:adminFlag,error:adminError}=adminResult;
-  window.__bbAdminAccess=!adminError&&adminFlag===true;
- }catch(error){
-  console.error("Administrator access check failed:",error);
-  window.__bbAdminAccess=false;
+   window.__bbAdminAccess=!adminError&&adminFlag===true;
+  }catch(error){
+   console.error("Administrator access check failed:",error);
+   window.__bbAdminAccess=false;
+  }
  }
  // AI analysis pages require an authenticated client with the latest KYC submission approved.
  let requested=pages.includes(page)?page:"accounts";
