@@ -124,6 +124,8 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="h-screen min-h-screen flex flex-col overflow-hidden">
+  <button id="bb-terminal-back" type="button" aria-label="Back to Client Area" style="position:fixed;top:max(10px,env(safe-area-inset-top));left:max(10px,env(safe-area-inset-left));z-index:10001;display:flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid #344054;border-radius:12px;background:#172033;color:#f8fafc;font:700 13px Inter,sans-serif;box-shadow:0 6px 20px #0008;cursor:pointer">← <span>Back to Client Area</span></button>
+  <script>document.getElementById("bb-terminal-back")?.addEventListener("click",()=>{try{if(window.parent!==window&&typeof window.parent.__bbReturnToClientArea==="function"){window.parent.__bbReturnToClientArea();return;}const link=window.parent.document.querySelector("#app-shell [data-page=\"accounts\"]");if(link){link.click();return;}}catch(e){console.warn("Client Area return bridge unavailable:",e);}location.href="index.html";});</script>
   <div id="bb-auth-boot" role="status" aria-live="polite"><span class="bb-auth-spinner"></span><span>BIGBULLS · Securing your session…</span></div>
 
   <!-- MAIN VIEWPORT STAGE -->
