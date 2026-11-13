@@ -1151,7 +1151,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 
           ${(acc.type==='Real' && acc.backendId ? `
           <section class="rounded-2xl border border-blue-500/40 bg-[#101827] p-4 space-y-3">
-            <div class="flex items-center justify-between gap-3"><div><div class="text-sm font-extrabold text-white">BIGBULLS AI Auto-Trade</div><div class="text-[11px] text-slate-400 mt-1">This account only · Manual trading remains available</div></div>${renderAiAutoTradeSwitch('account-card')}</div>
+            <div class="flex items-center justify-between gap-3"><div><div class="text-sm font-extrabold text-white">BIGBULLS AI Auto-Trade</div><div class="text-[11px] text-slate-400 mt-1">This account only · Manual trading remains available</div></div>${window.renderAiAutoTradeSwitch('account-card')}</div>
             <div class="grid grid-cols-2 gap-2 text-xs"><div class="rounded-xl bg-slate-900 p-2.5"><div class="text-slate-400">Trade risk limit</div><b class="text-white">Up to 3%* equity</b></div><div class="rounded-xl bg-slate-900 p-2.5"><div class="text-slate-400">Reward target</div><b class="text-white">2%–3% equity</b></div></div>
             <div class="flex items-center justify-between gap-2"><label class="text-xs text-slate-300">Reward target</label><select id="bb-ai-reward-target" class="rounded-lg bg-slate-900 border border-slate-700 text-white text-xs p-2"><option value="2">2%</option><option value="2.5" selected>2.5%</option><option value="3">3%</option></select></div>
             <p class="text-[10px] leading-relaxed text-slate-400">AI automation applies only to this selected account. Manual market orders, pending orders, SL/TP changes and closing positions stay available. *Platform risk limits may be stricter.</p>
@@ -1560,7 +1560,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
                 <span class="text-gray-400 text-[10px]">▾</span>
               </button>
 
-              ${renderAiAutoTradeSwitch('desktop')}
+              ${window.renderAiAutoTradeSwitch('desktop')}
               <button onclick="openDepositModal()" class="bg-[#e2e8f0] hover:bg-bullBlue text-white font-bold text-xs px-3.5 py-1.5 rounded-lg border border-[#323B4E] transition">
                 Deposit
               </button>
@@ -1849,7 +1849,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
         <div class="mobile-shell">
           <div class="shrink-0 flex items-center justify-between gap-3 bg-[#131722] border-b border-[#e2e8f0] px-3 py-2.5">
             <div class="min-w-0"><div class="text-sm font-extrabold tracking-tight text-white">BIGBULLS <span class="text-bullBlue">TERMINAL</span></div><div class="text-[10px] text-gray-500">Trading workspace</div></div>
-            ${renderAiAutoTradeSwitch('mobile')}
+            ${window.renderAiAutoTradeSwitch('mobile')}
             <button type="button" onclick="goToClientArea()" class="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-[#e2e8f0] bg-[#ffffff] active:bg-[#e2e8f0] px-3 py-2 text-xs font-bold text-white" aria-label="Return to Client Area">← Client Area</button>
           </div>
           ${mainBody}
@@ -2421,12 +2421,14 @@ window.switchTradingAccount=async function(backendId){
   const result=await call('trading-gateway',{action:'select_account',account_id:next.backendId});
   if(String(result.account?.id)!==next.backendId)throw new Error('The backend did not confirm the selected account.');
   state.activeAccountId=next.id;lastAccount=next.id;
+  window.bbAiAutoTradeEnabled=false;window.bbAiAutoTradeAccountId=null;
   window.__bbBbookMetrics=null;window.__bbBbookExecution=null;window.__bbPaperMetrics=null;
   state.openOrders=[];state.closedOrders=[];state.pendingOrders=[];
   try{sessionStorage.setItem('bb:terminal:active-mode:'+session.user.id,mode(next));sessionStorage.setItem('bb:terminal:selected-account:'+session.user.id+':'+mode(next),next.backendId);}catch(_){}
   closeModal();renderApp();updateLiveDOMElements();
   const loaded=await refresh(false);
   if(!loaded)return;
+  await window.bbLoadAiAutoTradeSetting();
   notify('Account switched',next.nickname+' · #'+(next.accountNumber||next.id),'success');
  }catch(e){notify('Account switch failed',e.message||'The selected account could not be loaded.','error');}
 };
@@ -2562,7 +2564,7 @@ function bbShowAccountFallback(){
 window.bbAiAutoTradeEnabled=false;
 window.bbAiAutoTradeBusy=false;
 window.bbAiAutoTradeAccountId=null;
-function renderAiAutoTradeSwitch(place){
+window.renderAiAutoTradeSwitch=function(place){
  const acc=getActiveAccount(),eligible=!!(acc?.backendId&&acc.type==='Real'&&acc.status==='approved');
  const on=eligible&&window.bbAiAutoTradeAccountId===acc.backendId&&window.bbAiAutoTradeEnabled;
  const disabled=!eligible||window.bbAiAutoTradeBusy;
@@ -2572,7 +2574,7 @@ function renderAiAutoTradeSwitch(place){
   '<button type="button" role="switch" aria-checked="'+(on?'true':'false')+'" aria-label="AI Auto-Trade '+(on?'ON':'OFF')+'" '+(disabled?'disabled':'')+
   ' onclick="bbToggleAiAutoTrade(\''+(acc?.backendId||'')+'\')" class="relative inline-flex h-7 w-12 items-center rounded-full transition '+(on?'bg-emerald-500':'bg-slate-600')+(disabled?' opacity-50 cursor-not-allowed':'')+'">'+
   '<span class="inline-block h-5 w-5 transform rounded-full bg-white shadow transition '+(on?'translate-x-6':'translate-x-1')+'"></span></button></div>';
-}
+};
 window.bbLoadAiAutoTradeSetting=async function(){
  try{
   const acc=getActiveAccount();
