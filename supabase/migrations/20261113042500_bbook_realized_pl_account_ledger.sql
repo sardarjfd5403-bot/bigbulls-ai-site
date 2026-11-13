@@ -130,4 +130,21 @@ begin
 end
 $function$;
 
+do $rounding$
+declare
+  v_definition text;
+  v_old text := '  v_balance_after:=v_acc.balance+v_net;';
+  v_new text := '  v_balance_after:=round(v_acc.balance+v_net,2);';
+begin
+  select pg_get_functiondef('public.bb_bbook_close_position(jsonb)'::regprocedure) into v_definition;
+  if position(v_new in v_definition)=0 then
+    if position(v_old in v_definition)=0 then
+      raise exception 'Expected B-Book settlement balance calculation not found';
+    end if;
+    v_definition:=replace(v_definition,v_old,v_new);
+    execute v_definition;
+  end if;
+end
+$rounding$;
+
 commit;
