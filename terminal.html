@@ -1151,11 +1151,11 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 
           ${(acc.type==='Real' && acc.backendId ? `
           <section class="rounded-2xl border border-blue-500/40 bg-[#101827] p-4 space-y-3">
-            <div class="flex items-center justify-between gap-3"><div><div class="text-sm font-extrabold text-white">BIGBULLS AI Auto-Trading</div><div class="text-[11px] text-slate-400 mt-1">Selected Real account · B-Book execution</div></div><span id="bb-ai-auto-status" class="text-xs font-extrabold px-2.5 py-1 rounded-full bg-slate-700 text-slate-200">${window.bbAiAutoTradeEnabled?'ON':'OFF'}</span></div>
+            <div class="flex items-center justify-between gap-3"><div><div class="text-sm font-extrabold text-white">BIGBULLS AI Auto-Trading Setup</div><div class="text-[11px] text-slate-400 mt-1">Selected Real account · B-Book execution</div></div><span id="bb-ai-auto-status" class="text-xs font-extrabold px-2.5 py-1 rounded-full bg-slate-700 text-slate-200">${window.bbAiAutoTradeEnabled?'ON':'OFF'}</span></div>
             <div class="grid grid-cols-2 gap-2 text-xs"><div class="rounded-xl bg-slate-900 p-2.5"><div class="text-slate-400">Risk / trade</div><b class="text-white">3% equity</b></div><div class="rounded-xl bg-slate-900 p-2.5"><div class="text-slate-400">Reward target</div><b class="text-white">2%–3% equity</b></div></div>
             <div class="flex items-center justify-between gap-2"><label class="text-xs text-slate-300">Reward target</label><select id="bb-ai-reward-target" class="rounded-lg bg-slate-900 border border-slate-700 text-white text-xs p-2"><option value="2">2%</option><option value="2.5" selected>2.5%</option><option value="3">3%</option></select></div>
-            <button onclick="bbToggleAiAutoTrade('${acc.backendId}')" class="w-full rounded-xl py-3 text-sm font-extrabold ${window.bbAiAutoTradeEnabled?'bg-rose-600':'bg-blue-600'} text-white">${window.bbAiAutoTradeEnabled?'Turn AI Auto-Trading OFF':'Enable AI Auto-Trading'}</button>
-            <p class="text-[10px] leading-relaxed text-slate-400">Optional and OFF by default. AI orders carry loss risk. 3% equity risk per trade; 2%–3% equity reward target. Manual trading remains available.</p>
+            <button onclick="bbToggleAiAutoTrade('${acc.backendId}')" class="w-full rounded-xl py-3 text-sm font-extrabold ${window.bbAiAutoTradeEnabled?'bg-rose-600':'bg-blue-600'} text-white">${window.bbAiAutoTradeEnabled?'Turn AI preference OFF':'Save AI Auto-Trading preference'}</button>
+            <p class="text-[10px] leading-relaxed text-slate-400">Optional and OFF by default. Preference only at this stage; server execution worker is not deployed yet. No AI orders will be placed. Manual trading remains available.</p>
           </section>` : `<section class="rounded-2xl border border-slate-700 bg-[#101827] p-3 text-xs text-slate-300">AI Auto-Trading is available on an approved Real account. Demo and manual trading remain available.</section>`)}
           <!-- Active Account Summary Card -->
           <div class="bg-[#ffffff] border border-[#e2e8f0] rounded-3xl p-4 space-y-4">
@@ -2567,7 +2567,7 @@ window.bbLoadAiAutoTradeSetting=async function(){
   window.bbAiAutoTradeEnabled=!!data?.enabled;
   const reward=document.getElementById('bb-ai-reward-target');if(reward&&data?.reward_pct)reward.value=String(data.reward_pct);
   const status=document.getElementById('bb-ai-auto-status');if(status)status.textContent=window.bbAiAutoTradeEnabled?'ON':'OFF';
-  const btn=document.querySelector('button[onclick^="bbToggleAiAutoTrade"]');if(btn){btn.textContent=window.bbAiAutoTradeEnabled?'Turn AI Auto-Trading OFF':'Enable AI Auto-Trading';btn.className='w-full rounded-xl py-3 text-sm font-extrabold '+(window.bbAiAutoTradeEnabled?'bg-rose-600':'bg-blue-600')+' text-white';}
+  const btn=document.querySelector('button[onclick^="bbToggleAiAutoTrade"]');if(btn){btn.textContent=window.bbAiAutoTradeEnabled?'Turn AI preference OFF':'Save AI Auto-Trading preference';btn.className='w-full rounded-xl py-3 text-sm font-extrabold '+(window.bbAiAutoTradeEnabled?'bg-rose-600':'bg-blue-600')+' text-white';}
  }catch(e){console.warn('AI Auto-Trading settings unavailable:',e.message||e);}
 };
 window.bbToggleAiAutoTrade=async function(accountId){
@@ -2577,7 +2577,7 @@ window.bbToggleAiAutoTrade=async function(accountId){
   const result=await client().rpc('bb_ai_set_auto_trade',{p_account_id:accountId,p_enabled:!window.bbAiAutoTradeEnabled,p_reward_pct:reward});
   if(result.error)throw result.error;
   window.bbAiAutoTradeEnabled=!!result.data?.enabled;
-  showToast(window.bbAiAutoTradeEnabled?'AI Auto-Trading enabled':'AI Auto-Trading disabled',window.bbAiAutoTradeEnabled?'Account opt-in saved. Automated execution is not yet active until the server execution worker is deployed.':'AI automation is disabled for this account.','success');
+  showToast(window.bbAiAutoTradeEnabled?'AI Auto-Trading preference saved':'AI Auto-Trading preference disabled',window.bbAiAutoTradeEnabled?'Account preference saved. Automated execution is not active yet; no AI orders are placed.':'AI automation preference is disabled for this account.','success');
   renderApp();window.bbLoadAiAutoTradeSetting();
  }catch(e){showToast('Could not update AI Auto-Trading',e.message||'Please retry.','error');if(btn){btn.disabled=false;btn.textContent=window.bbAiAutoTradeEnabled?'Turn AI Auto-Trading OFF':'Enable AI Auto-Trading';}}
 };
