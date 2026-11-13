@@ -2912,7 +2912,7 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
  });
 }
 
-async function showApp(page){
+async async function showApp(page){
  if(!user||!shell)return;
  const renderVersion=++portalRenderVersion;
  // Reveal the authenticated shell immediately; optional authorization/data checks must never send the client back to the public landing page.
