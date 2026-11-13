@@ -986,8 +986,8 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
           <div class="flex justify-between"><span class="text-gray-400">Lots</span><span class="font-mono font-bold text-white">${order.lots.toFixed(2)}</span></div>
           <div class="flex justify-between"><span class="text-gray-400">Closing price</span><span class="font-mono font-bold text-white">${closePrice.toFixed(inst.digits)}</span></div>
           <div class="flex justify-between"><span class="text-gray-400">Profit / Loss</span><span class="font-mono font-bold ${pl>=0?'text-bullGreen':'text-bullRed'}">${pl>=0?'+':''}${formatMoney(pl)} USD</span></div>
-          ${mode(getActiveAccount())==='real'&&Number(order.lots)>=0.02?'<button onclick="openPartialCloseModal(\\''+(order.backendTradeId||order.id)+'\\')" class="w-full py-2.5 rounded-xl bg-[#262C3A] text-white font-bold text-xs mt-2">Partial close</button>':''}
-          ${mode(getActiveAccount())==='real'?'<button onclick="openModifyPositionModal(\\\''+(order.backendTradeId||order.id)+'\\\')" class="w-full py-2.5 rounded-xl bg-[#262C3A] text-white font-bold text-xs mt-2">Modify SL / TP</button>':''}
+          ${mode(getActiveAccount())==='real'&&Number(order.lots)>=0.02 ? `<button onclick="openPartialCloseModal('${order.backendTradeId||order.id}')" class="w-full py-2.5 rounded-xl bg-[#262C3A] text-white font-bold text-xs mt-2">Partial close</button>` : ''}
+          ${mode(getActiveAccount())==='real' ? `<button onclick="openModifyPositionModal('${order.backendTradeId||order.id}')" class="w-full py-2.5 rounded-xl bg-[#262C3A] text-white font-bold text-xs mt-2">Modify SL / TP</button>` : ''}
           <button onclick="executeCloseOrder('${order.backendTradeId || order.id}', false)" class="w-full py-3 rounded-xl bg-bullBlue hover:bg-bullYellowHover text-white font-bold text-sm mt-2">Confirm</button>
           <button onclick="closeModal()" class="w-full py-2.5 rounded-xl bg-[#262C3A] text-gray-300 font-bold text-xs">Cancel</button>
         </div>
