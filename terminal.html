@@ -1994,6 +1994,19 @@ function updateCandleFromTick(symbol,bid,stamp=Date.now()){
  else if(Number(last.time)===bucket*1000){last.close=bid;last.high=Math.max(Number(last.high),bid);last.low=Math.min(Number(last.low),bid);}
  if(symbol===state.selectedSymbol)queueChartPaint();
 }
+let localTickTimer=null;
+function stopLocalSimulation(){if(localTickTimer){clearInterval(localTickTimer);localTickTimer=null;}document.getElementById('bb-local-sim-banner')?.remove();}
+function startLocalSimulation(){
+ if(localTickTimer)return;
+ const seeds={'XAU/USD':4000,'XAG/USD':50,'XPT/USD':1500,'XPD/USD':1200,'EUR/USD':1.16,'GBP/USD':1.32,'USD/JPY':154,'USD/CAD':1.39,'AUD/USD':0.65,'NZD/USD':0.58,'USD/CHF':0.80,'EUR/GBP':0.86,'EUR/JPY':178,'GBP/JPY':202,'US30':45000,'USTEC':22000,'SPX500':6500,'GER40':24000,'UK100':9500,'JPN225':50000,'USOIL':65,'UKOIL':69,'NATGAS':3.5,'BTC':95000,'ETH/USD':3200,'SOL/USD':180,'XRP/USD':2.4,'BNB/USD':900};
+ Object.entries(state.instruments).forEach(([symbol,inst])=>{if(!(Number(inst.bid)>0))inst.bid=Number(seeds[symbol]||100);if(!(Number(inst.spread)>0))inst.spread=inst.digits>=4?0.00012:inst.digits===3?0.02:0.5;inst.ask=Number((inst.bid+inst.spread).toFixed(inst.digits||2));if(!inst.candles?.length)updateCandleFromTick(symbol,inst.bid,Date.now());});
+ let banner=document.getElementById('bb-local-sim-banner');
+ if(!banner){banner=document.createElement('div');banner.id='bb-local-sim-banner';banner.textContent='LOCAL SIMULATION · NOT LIVE MARKET DATA · ORDERS DISABLED';banner.style.cssText='position:fixed;z-index:10020;top:8px;left:50%;transform:translateX(-50%);max-width:94vw;padding:8px 12px;border:1px solid #f59e0b;border-radius:10px;background:#fffbeb;color:#92400e;font:700 10px Inter,sans-serif;letter-spacing:.04em;text-align:center;box-shadow:0 4px 18px #0f172a22';document.body.appendChild(banner);}
+ document.querySelectorAll('button').forEach(b=>{if(/^(BUY|SELL)(\b|\s)/i.test(String(b.textContent||'').trim()))b.disabled=true;});
+ localTickTimer=setInterval(()=>{Object.entries(state.instruments).forEach(([symbol,inst],n)=>{const mid=Number(inst.bid||seeds[symbol]||100),step=inst.digits>=4?0.00003:inst.digits===3?0.004:Math.max(mid*0.00004,0.01),next=Number((mid+Math.sin(Date.now()/1900+n)*step+(Math.random()-.5)*step).toFixed(inst.digits||2));inst.bid=next;inst.ask=Number((next+Number(inst.spread||step*1.5)).toFixed(inst.digits||2));updateCandleFromTick(symbol,(inst.bid+inst.ask)/2,Date.now());});updateLiveDOMElements();},1000);
+ updateLiveDOMElements();
+}
+
 const notify=(t,s='',type='info')=>{if(typeof showToast==='function')showToast(t,s,type);};
 function client(){
  // Reuse the authenticated parent Client Area client and its in-memory session snapshot.
@@ -2164,6 +2177,7 @@ async function accounts(preferredBackendId=null){
 async function quotes(){
  const quoteSymbols=[...new Set([...Object.values(MARKET).slice(0,27),MARKET[state.selectedSymbol]].filter(Boolean))];
  const d=await call('market-data',{action:'quotes',symbols:quoteSymbols});
+ if((d.quotes||[]).some(q=>Number(q.bid)>0||Number(q.close)>0))stopLocalSimulation();
  (d.quotes||[]).forEach(q=>{
   const ui=mapSymbol(q.symbol),inst=state.instruments[ui];if(!inst||q.error)return;
   inst.brokerSpreadBps=Number(q.broker_spread_bps);
@@ -2399,6 +2413,7 @@ function bbShowBootError(error){
 }
 function bbShowBootFallback(error){
  document.documentElement.classList.remove('bb-auth-pending');
+ startLocalSimulation();
  ready=true;
  if(!state.accounts.length){
   state.accounts=[{id:'__session_pending__',accountNumber:null,backendId:null,nickname:'Session reconnecting',type:'Demo',platform:'BIGBULLS',accountClass:'—',balance:0,equity:0,floatingPL:0,leverage:'1:100',server:'BIGBULLS',archived:false,status:'unavailable',currency:'USD'}];
@@ -2428,6 +2443,7 @@ function bbShowBootFallback(error){
  }catch(listenerError){console.warn('Terminal auth reconnect listener unavailable:',listenerError);}
 }
 function bbShowAccountFallback(){
+ startLocalSimulation();
  let banner=document.getElementById('bb-account-hydration-fallback');if(banner)return;
  banner=document.createElement('div');banner.id='bb-account-hydration-fallback';
  banner.style.cssText='position:fixed;z-index:95;top:10px;left:50%;transform:translateX(-50%);width:min(94vw,520px);padding:12px 14px;border:1px solid #92400e;border-radius:14px;background:#211a10;color:#fef3c7;box-shadow:0 8px 28px #0008;font:12px Inter,sans-serif;display:flex;align-items:center;gap:10px;flex-wrap:wrap';
@@ -2456,6 +2472,7 @@ async function start(){
    ready=true;
    document.documentElement.classList.remove('bb-auth-pending');
    renderApp();
+   startLocalSimulation();
   }
  }catch(paintError){console.error('Immediate terminal shell render:',paintError);}
  startupPromise=(async()=>{
