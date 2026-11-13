@@ -208,7 +208,8 @@ async function showApp(page){
  // Resolve administrator access from the same database-side authorization function used by protected Edge Functions.
  // This avoids hiding Admin/SEO navigation when JWT app_metadata is stale in the browser session.
  try{
-  const {data:adminFlag,error:adminError}=await sb.rpc("is_bigbulls_admin");
+  const adminResult=await Promise.race([sb.rpc("is_bigbulls_admin"),new Promise((_,reject)=>window.setTimeout(()=>reject(new Error("Administrator check timed out; opening the client workspace without admin tools.")),2500))]);
+   const {data:adminFlag,error:adminError}=adminResult;
   window.__bbAdminAccess=!adminError&&adminFlag===true;
  }catch(error){
   console.error("Administrator access check failed:",error);
