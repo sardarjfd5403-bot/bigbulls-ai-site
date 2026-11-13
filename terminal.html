@@ -910,9 +910,10 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
             </div>
 
             <div class="flex justify-between text-[11px] text-gray-400 pt-1">
-              <span>Margin required: <strong class="text-white font-mono">${marginReq} USD</strong></span>
-              <span>Leverage: <strong class="text-white font-mono">${acc.leverage}</strong></span>
+              <span>Required margin: <strong class="text-white font-mono">${marginReq} USD</strong></span>
+              <span>Free margin: <strong data-ticket-free-margin class="text-white font-mono">${formatMoney(getAccountMetrics().freeMargin)} USD</strong></span>
             </div>
+            <div class="flex justify-between text-[10px] text-gray-500"><span>Contract size: ${Number(inst.contractSize||1).toLocaleString()} units</span><span>Leverage: ${acc.leverage}</span></div>
 
             <button onclick="submitOrderExecution()" class="w-full py-3.5 rounded-xl font-bold text-sm text-white transition shadow-lg ${m.side==='Buy' ? 'bg-bullBlue hover:bg-bullYellowHover' : 'bg-bullRed hover:bg-red-600'}">
               Confirm ${m.side} ${m.lots.toFixed(2)} lots
@@ -1358,7 +1359,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
                 <div class="flex items-center gap-3">
                   <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-extrabold text-white" style="background:${item.iconBg}">${item.iconText}</div>
                   <div>
-                    <div class="font-bold text-sm text-white">${item.symbol}</div>
+                    <div class="font-bold text-sm text-white flex items-center gap-2"><span>${item.symbol}</span><span data-market-status="${item.symbol}" class="inline-block w-2 h-2 rounded-full" title="Market status" style="background:#9ca3af"></span></div>
                     <div class="text-[11px] text-gray-400">${item.name}</div><div class="text-[10px] text-gray-500">${item.category} · Contract ${item.contractSize||1} · Tick ${item.tickSize||"—"} / ${item.tickValue||"—"}</div>
                   </div>
                 </div>
@@ -2330,7 +2331,7 @@ refresh=async function(silent=true){
 };
 async function start(){
  try{const c=client(),auth=await c.auth.getSession();if(auth.error)throw auth.error;session=auth.data?.session||null;if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}
- await loadBiQuoteCatalog();await accounts();Object.values(state.instruments).forEach(i=>{i.candles=[];i.bid=0;i.ask=0;});state.openOrders=[];state.pendingOrders=[];state.closedOrders=[];ready=true;document.documentElement.classList.remove('bb-auth-pending');startBbookRealtime(c);startBiQuoteRealtime();lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();
+ await loadBiQuoteCatalog();await accounts();await bbLoadMarketHolidays();Object.values(state.instruments).forEach(i=>{i.candles=[];i.bid=0;i.ask=0;});state.openOrders=[];state.pendingOrders=[];state.closedOrders=[];ready=true;document.documentElement.classList.remove('bb-auth-pending');startBbookRealtime(c);startBiQuoteRealtime();lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();
  try{await quotes();}catch(e){console.warn('Market quotes:',e.message);}try{await candles();}catch(e){notify('Market feed unavailable',e.message||'Provider candles could not be loaded.','error');}
  await refresh(true);setInterval(()=>{if(!document.hidden&&(!biQuoteConnection||!window.signalR||biQuoteConnection.state!==window.signalR.HubConnectionState.Connected))quotes().catch(()=>{});},15000);setInterval(async()=>{if(document.hidden)return;try{const current=getActiveAccount()?.backendId||null;await accounts(current);renderApp();await refresh(true);}catch(e){console.warn('Account balance refresh:',e.message);}},10000);
  c.auth.onAuthStateChange((_event,s)=>{session=s||null;if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}accounts().then(()=>{ready=true;document.documentElement.classList.remove('bb-auth-pending');startBbookRealtime(c);startBiQuoteRealtime();lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();refresh(true);}).catch(e=>notify('Account refresh failed',e.message,'error'));});
@@ -3252,6 +3253,60 @@ async function start(){
 }
 window.addEventListener('load',start,{once:true});
 })();
+
+/* BIGBULLS market calendar + session UX */
+const bbHolidayDates = new Map();
+async function bbLoadMarketHolidays(){
+ try{
+  const {data,error}=await client().from('market_holidays').select('holiday_date,holiday_name,is_closed').eq('is_closed',true).eq('market_scope','GLOBAL');
+  if(error)throw error;
+  bbHolidayDates.clear();
+  (data||[]).forEach(h=>bbHolidayDates.set(String(h.holiday_date).slice(0,10),String(h.holiday_name||'Market holiday')));
+ }catch(e){console.error('Market holiday calendar:',e);notify('Market calendar unavailable','Trading sessions could not be verified against the holiday calendar.','error');}
+}
+function bbSessionForSymbol(symbol,now=new Date()){
+ if(bbIsCryptoSymbol(symbol))return {open:true,crypto:true};
+ const day=now.getUTCDay(),date=now.toISOString().slice(0,10),holiday=bbHolidayDates.get(date);
+ const weekdayOpen=day>=1&&day<=5;
+ if(weekdayOpen&&!holiday)return {open:true,crypto:false};
+ const next=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate()+1,0,0,0));
+ for(let i=0;i<10;i++){
+  const d=next.toISOString().slice(0,10),wd=next.getUTCDay();
+  if(wd>=1&&wd<=5&&!bbHolidayDates.has(d))break;
+  next.setUTCDate(next.getUTCDate()+1);
+ }
+ return {open:false,crypto:false,nextOpen:next,holiday:holiday||null};
+}
+bbMarketSession=function(now=new Date()){return bbSessionForSymbol(state.selectedSymbol,now);};
+bbUpdateMarketSessionUI=function(){
+ const stage=document.getElementById('appStage');if(!stage)return;
+ const status=bbMarketSession();let banner=document.getElementById('bb-market-closed-banner');
+ if(status.open){if(banner)banner.remove();}
+ else{
+  if(!banner){banner=document.createElement('div');banner.id='bb-market-closed-banner';banner.setAttribute('role','status');banner.setAttribute('aria-live','polite');banner.style.cssText='position:fixed;z-index:70;top:8px;left:50%;transform:translateX(-50%);width:min(94vw,620px);padding:10px 14px;border:1px solid #854d0e;border-radius:12px;background:rgba(39,29,13,.97);box-shadow:0 8px 28px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:space-between;gap:12px;color:#fef3c7;font:600 12px Inter,sans-serif;pointer-events:none;';stage.appendChild(banner);}
+  const nextLabel=status.holiday?'Opens '+status.nextOpen.toLocaleDateString('en-US',{weekday:'short',timeZone:'UTC'})+' 00:00 UTC':'Opens Monday 00:00 UTC';
+  banner.innerHTML='<span style="display:flex;align-items:center;gap:8px;min-width:0"><span style="width:8px;height:8px;border-radius:50%;background:#9ca3af;flex:none"></span><span>Market Closed • '+nextLabel+'</span></span><span id="bb-market-countdown" style="font:700 12px JetBrains Mono,monospace;white-space:nowrap"></span>';
+  const cd=banner.querySelector('#bb-market-countdown');if(cd)cd.textContent=bbCountdownText(status.nextOpen-Date.now());
+ }
+ document.querySelectorAll('[data-market-status]').forEach(dot=>{
+  const symbol=dot.getAttribute('data-market-status'),s=bbSessionForSymbol(symbol);
+  dot.style.background=s.open?'#22c55e':'#9ca3af';dot.title=s.open?'Market open':(s.holiday||'Market closed');
+ });
+ document.querySelectorAll('#appStage button[onclick*="openOrderTicketModal"]').forEach(btn=>{
+  const symbol=state.selectedSymbol,s=bbSessionForSymbol(symbol),disabled=!s.open;
+  btn.setAttribute('aria-disabled',disabled?'true':'false');btn.style.filter=disabled?'grayscale(1)':'';btn.style.opacity=disabled?'.42':'';btn.style.cursor=disabled?'not-allowed':'';btn.title=disabled?'Market is currently closed':'';
+ });
+};
+document.addEventListener('click',function(event){
+ const btn=event.target?.closest?.('#appStage button[onclick*="openOrderTicketModal"]');
+ if(btn&&!bbSessionForSymbol(state.selectedSymbol).open){event.preventDefault();event.stopImmediatePropagation();notify('Market is currently closed','Market is currently closed','error');}
+},true);
+const bbBaseOpenTicket=window.openOrderTicketModal;
+if(typeof bbBaseOpenTicket==='function')window.openOrderTicketModal=function(side='Buy',orderMode='Market'){
+ if(!bbSessionForSymbol(state.selectedSymbol).open){notify('Market is currently closed','Market is currently closed','error');return;}
+ return bbBaseOpenTicket(side,orderMode);
+};
+
 </script>
 
 </body>
