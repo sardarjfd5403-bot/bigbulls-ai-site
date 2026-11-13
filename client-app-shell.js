@@ -58,10 +58,20 @@ function ensureTopbar(){
 function openTerminal(){
  const a=active();if(!a){alert("No approved trading account is available yet.");return;}
  window.__bbTerminalLaunchAccountId=a.id;
- let btn=document.querySelector('[data-account-terminal="'+CSS.escape(a.id)+'"]');
- if(!btn){const nav=document.querySelector('[data-page="terminal"]');if(nav)nav.click();return;}
- btn.click();
+ const uid=String(window.__bbUserId||"");
+ try{
+  if(uid){
+   localStorage.setItem("bb:terminal:launch-account:"+uid,String(a.id));
+   localStorage.setItem("bb:terminal:active-account:"+uid,String(a.id));
+   localStorage.setItem("bb:terminal:active-mode:"+uid,String(a.account_mode||"real").toLowerCase());
+  }
+ }catch(e){console.warn("Terminal account preference storage unavailable:",e);}
+ const url=new URL("/terminal.html",window.location.origin);
+ url.searchParams.set("v","20261113-force-open");
+ url.searchParams.set("account_id",String(a.id));
+ window.location.assign(url.pathname+url.search);
 }
+
 function accountToolModal(){
  const box=$("#bb-account-tools");if(!box)return;
  const visible=!box.hidden;
