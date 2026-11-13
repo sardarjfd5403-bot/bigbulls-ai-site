@@ -782,6 +782,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
           ${tab === 'Funds' ? `
             <div class="bg-[#131722] rounded-2xl p-3.5 border border-[#262C3A] space-y-2.5">
               <div class="flex justify-between"><span class="text-gray-400">Balance</span><span class="font-mono font-bold text-white">${formatMoney(m.balance)} USD</span></div>
+              ${m.creditBonus>0?`<div class="flex justify-between"><span class="text-gray-400">VIP Credit Bonus</span><span class="font-mono font-bold text-amber-300">+${formatMoney(m.creditBonus)} USD</span></div>`:""}
               <div class="flex justify-between"><span class="text-gray-400">Equity</span><span class="font-mono font-bold text-white">${formatMoney(m.equity)} USD</span></div>
               <div class="flex justify-between"><span class="text-gray-400">Floating P/L</span><span class="font-mono font-bold ${m.floatingPL>=0?'text-bullGreen':'text-bullRed'}">${m.floatingPL>=0?'+':''}${formatMoney(m.floatingPL)} USD</span></div>
               <div class="flex justify-between"><span class="text-gray-400">Margin</span><span class="font-mono font-bold text-white">${formatMoney(m.usedMargin)} USD</span></div>
@@ -2097,7 +2098,7 @@ async function accounts(preferredBackendId=null){
  const rows=(d.accounts||[]).filter(a=>['demo','real'].includes(String(a.account_mode||'').toLowerCase())&&!a.archived_at&&!a.deleted_at).map(a=>({
   id:String(a.account_number||a.id),accountNumber:a.account_number,backendId:String(a.id),nickname:a.display_name||a.account_type||String(a.account_mode).toUpperCase(),
   type:String(a.account_mode).toLowerCase()==='real'?'Real':'Demo',platform:a.platform||(a.account_mode==='real'?'BigBulls B-Book':'BigBulls Paper'),
-  accountClass:a.account_type||'Standard',balance:Number(a.account_mode==='demo'?(a.virtual_balance??a.balance):(a.balance||0)),equity:Number(a.equity??a.balance??0),floatingPL:Number(a.floating_pnl||0),leverage:a.requested_leverage||'1:100',
+  accountClass:a.account_type||'Standard',balance:Number(a.account_mode==='demo'?(a.virtual_balance??a.balance):(a.balance||0)),creditBonus:Number(a.credit_bonus||0),equity:Number(a.equity??a.balance??0),floatingPL:Number(a.floating_pnl||0),leverage:a.requested_leverage||'1:100',
   server:a.server_name||'BigBulls',archived:false,status:String(a.status||'pending').toLowerCase(),currency:a.currency||'USD'
  }));
  state.accounts=rows.length?rows:[{id:'__no_account__',accountNumber:null,backendId:null,nickname:'No trading account',type:'Demo',platform:'BIGBULLS',accountClass:'—',balance:0,leverage:'1:100',server:'BIGBULLS',archived:false,status:'unavailable',currency:'USD'}];
