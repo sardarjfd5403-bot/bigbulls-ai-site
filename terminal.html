@@ -122,7 +122,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 </style>
   <script async src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
   <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="stylesheet" href="terminal-theme.css?v=20261113-chart-fix">
+  <link rel="stylesheet" href="terminal-theme.css?v=20261113-pro-terminal-complete">
 <script id="bb-cache-cleanup">
 (function(){
   try {
@@ -896,11 +896,13 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
       const cryptoSymbols = new Set(['BTC','BTCUSD','BTC/USD','BTCUSDT','ETH','ETHUSD','ETH/USD','ETHUSDT','SOL','SOLUSD','SOL/USD','SOLUSDT','XRP','XRPUSD','XRP/USD','XRPUSDT','BNB','BNBUSD','BNB/USD','BNBUSDT']);
       return cryptoSymbols.has(key);
     }
+    window.bbIsCryptoSymbol = bbIsCryptoSymbol;
 
     function openOrderTicketModal(side = 'Buy', mode = 'Market') {
       const inst = state.instruments[state.selectedSymbol];
       state.orderTicket.side = side;
       state.orderTicket.mode = mode;
+      if(mode==='Pending')state.orderTicket.pendingType=side+' Limit';
       state.orderTicket.targetPrice = side === 'Buy' ? inst.ask : inst.bid;
 
       const renderTicketHTML = () => {
@@ -933,6 +935,10 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
             </div>
 
             ${m.mode === 'Pending' ? `
+              <div>
+                <label class="text-gray-400 block mb-1">Pending order type</label>
+                <select id="ticketPendingType" onchange="const v=this.value;state.orderTicket.side=v.startsWith('Buy')?'Buy':'Sell';state.orderTicket.pendingType=v;openModal(renderTicketInner())" class="w-full bg-[#f8fafc] border border-[#e2e8f0] rounded-xl px-3 py-2 text-white"><option ${m.pendingType==='Buy Limit'?'selected':''}>Buy Limit</option><option ${m.pendingType==='Sell Limit'?'selected':''}>Sell Limit</option><option ${m.pendingType==='Buy Stop'?'selected':''}>Buy Stop</option><option ${m.pendingType==='Sell Stop'?'selected':''}>Sell Stop</option></select>
+              </div>
               <div>
                 <label class="text-gray-400 block mb-1">Order Price (${m.pendingType})</label>
                 <input id="ticketTargetPrice" type="number" step="any" value="${m.targetPrice}" oninput="state.orderTicket.targetPrice=parseFloat(this.value);bbUpdateTicketMargin()" class="w-full bg-[#f8fafc] border border-[#e2e8f0] rounded-xl px-3 py-2 font-mono font-bold text-white" />
@@ -1111,6 +1117,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
       if(typeof window.requestAnimationFrame==='function')window.requestAnimationFrame(paint);
       else window.setTimeout(paint,16);
     }
+    window.queueChartPaint = queueChartPaint;
     let chartView={count:90,offset:0,priceShift:0};
     const chartPointers=new Map();
     let chartGesture=null;
@@ -1297,6 +1304,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
                         <div class="text-right">
                           <div data-order-pl="${o.id}" class="font-mono font-bold text-sm ${pl>=0?'text-bullGreen':'text-bullRed'}">${pl>=0?'+':''}${formatMoney(pl)} USD</div>
                           <div data-order-curr="${o.id}" class="text-xs font-mono text-gray-400 mt-0.5">${(o.side==='Buy'?inst.bid:inst.ask).toFixed(inst.digits)}</div>
+                          <div class="flex gap-1.5 mt-2 justify-end"><button onclick="event.stopPropagation();openModifyPositionModal('${o.backendTradeId||o.id}')" class="px-2 py-1 rounded-lg border border-slate-300 text-[10px] font-bold">Modify</button><button onclick="event.stopPropagation();executeCloseOrder('${o.backendTradeId||o.id}',false,'Closed manually')" class="px-2 py-1 rounded-lg bg-rose-600 text-white text-[10px] font-bold">Close</button></div>
                         </div>
                       </div>
                     `;
@@ -1794,7 +1802,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
                               <td class="py-1.5 text-gray-400">${o.sl || '--'} / ${o.tp || '--'}</td>
                               <td data-order-pl="${o.id}" class="py-1.5 text-right font-bold ${pl >= 0 ? 'text-bullGreen' : 'text-bullRed'}">${pl >= 0 ? '+' : ''}${formatMoney(pl)}</td>
                               <td class="py-1.5 text-right">
-                                <button onclick="openClosePositionModal(${o.id})" class="px-1.5 py-0.5 rounded hover:bg-bullRed text-gray-400 hover:text-white transition">✕</button>
+                                <div class="flex items-center gap-1"><button onclick="openModifyPositionModal('${o.backendTradeId||o.id}')" class="px-2 py-1 rounded bg-slate-100 text-slate-700 text-[10px] font-bold">Edit</button><button onclick="executeCloseOrder('${o.backendTradeId||o.id}',false,'Closed manually')" class="px-2 py-1 rounded bg-rose-600 text-white text-[10px] font-bold">Close</button></div>
                               </td>
                             </tr>
                           `;
@@ -2042,7 +2050,8 @@ state.instruments['DXY'].category='Forex';
 const candleCache=new Map();
 const TF_SECONDS={'1m':60,'5m':300,'15m':900,'30m':1800,'1h':3600,'4h':14400,'1d':86400,'1w':604800,'1M':2592000};
 let chartPaintQueued=false;
-function queueChartPaint(){if(chartPaintQueued)return;chartPaintQueued=true;requestAnimationFrame(()=>{chartPaintQueued=false;drawChartCanvas();updateLiveDOMElements();});}
+function queueChartPaint(){if(chartPaintQueued)return;chartPaintQueued=true;const paint=()=>{chartPaintQueued=false;try{drawChartCanvas();updateLiveDOMElements();}catch(e){console.error('[BIGBULLS chart] repaint failed:',e);}};if(typeof requestAnimationFrame==='function')requestAnimationFrame(paint);else setTimeout(paint,16);}
+window.queueChartPaint=queueChartPaint;
 function updateCandleFromTick(symbol,bid,stamp=Date.now()){
  const inst=state.instruments[symbol];if(!inst||!(bid>0))return;
  const raw=Number(stamp),parsed=Number.isFinite(raw)?raw:(Date.parse(stamp)/1000),epoch=Number.isFinite(parsed)?(parsed>1e12?parsed/1000:parsed):Date.now()/1000;
@@ -2313,7 +2322,7 @@ async function place(){
   const b={action:m.mode==='Market'?'open':'pending',account_mode:mode(a),symbol,side:m.side.toUpperCase(),quantity,stop_loss:sl,take_profit:tp};
   if(a.backendId)b.account_id=a.backendId;
   if(m.mode!=='Market'){
-    const map={ 'Buy Limit':'BUY_LIMIT','Sell Limit':'SELL_LIMIT','Buy Stop':'BUY_STOP','Sell Stop':'SELL_STOP' };
+    const map={ 'Limit':m.side.toUpperCase()+'_LIMIT','Stop':m.side.toUpperCase()+'_STOP','Buy Limit':'BUY_LIMIT','Sell Limit':'SELL_LIMIT','Buy Stop':'BUY_STOP','Sell Stop':'SELL_STOP' };
     b.order_type=map[m.pendingType]||String(m.pendingType||'').toUpperCase().replaceAll(' ','_');
     b.target_price=Number(m.targetPrice);
     if(!(b.target_price>0)||!Number.isFinite(b.target_price))throw new Error('Enter a valid pending-order target price.');
@@ -2328,6 +2337,20 @@ async function place(){
  }catch(e){const msg=/insufficient/i.test(e.message)?'Insufficient Funds':e.message;playTerminalSound('error');notify('Order not placed',msg,'error');}
 }
 const closingPositions=new Set();
+window.openModifyPositionModal=function(positionId){
+ const order=state.openOrders.find(x=>String(x.backendTradeId||x.id)===String(positionId));
+ if(!order){notify('Modify failed','Open position not found. Refresh the ledger and try again.','error');return;}
+ const html=`<div class="p-4 border-b border-slate-200 flex items-center justify-between"><strong class="text-sm">Modify ${order.symbol} · ${order.side}</strong><button onclick="closeModal()" class="rounded-lg px-3 py-1 bg-slate-100">✕</button></div><form class="p-4 space-y-3" onsubmit="event.preventDefault();window.bbSubmitPositionModify('${String(order.backendTradeId||order.id)}')"><label class="block text-xs">Stop Loss<input id="bbModifySL" type="number" step="any" value="${order.sl==null?'':String(order.sl)}" placeholder="Not set" class="mt-1 w-full rounded-xl border border-slate-200 p-3" /></label><label class="block text-xs">Take Profit<input id="bbModifyTP" type="number" step="any" value="${order.tp==null?'':String(order.tp)}" placeholder="Not set" class="mt-1 w-full rounded-xl border border-slate-200 p-3" /></label><p class="text-[11px] text-slate-500">Changes are validated and saved by the authenticated execution service.</p><button type="submit" class="w-full rounded-xl bg-blue-600 text-white font-bold p-3">Save SL / TP</button></form>`;
+ openModal(html);
+};
+window.bbSubmitPositionModify=async function(positionId){
+ const order=state.openOrders.find(x=>String(x.backendTradeId||x.id)===String(positionId));if(!order)return;
+ const a=getActiveAccount(),real=mode(a)==='real';
+ const slText=document.getElementById('bbModifySL')?.value??'',tpText=document.getElementById('bbModifyTP')?.value??'';
+ const sl=slText.trim()===''?null:Number(slText),tp=tpText.trim()===''?null:Number(tpText);
+ if((sl!==null&&(!(sl>0)||!Number.isFinite(sl)))||(tp!==null&&(!(tp>0)||!Number.isFinite(tp)))){notify('Invalid protection level','SL and TP must be positive prices or left blank.','error');return;}
+ try{if(real){await call('bbook-engine',{action:'modify_position',account_id:a.backendId,position_id:order.backendTradeId,stop_loss:sl,take_profit:tp});}else{if(sl===null)throw new Error('Demo positions require a Stop Loss; keep the current SL or enter a new one.');await call('paper-execution',{action:'modify',account_mode:'demo',account_id:a.backendId,trade_id:order.backendTradeId,stop_loss:sl,take_profit:tp});}closeModal();await refresh(true);notify('Protection updated',order.symbol+' SL / TP saved.','success');}catch(e){notify('Modify failed',e.message||'SL / TP could not be updated.','error');}
+};
 async function closePosition(id,silent=false,reason='Closed manually'){
  const o=state.openOrders.find(x=>String(x.id)===String(id)||String(x.backendTradeId)===String(id));
  if(!o){notify('Close failed','This position is no longer open. Refreshing the account ledger.','error');await refresh(true);return false;}
