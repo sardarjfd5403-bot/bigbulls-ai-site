@@ -986,6 +986,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
           <div class="flex justify-between"><span class="text-gray-400">Lots</span><span class="font-mono font-bold text-white">${order.lots.toFixed(2)}</span></div>
           <div class="flex justify-between"><span class="text-gray-400">Closing price</span><span class="font-mono font-bold text-white">${closePrice.toFixed(inst.digits)}</span></div>
           <div class="flex justify-between"><span class="text-gray-400">Profit / Loss</span><span class="font-mono font-bold ${pl>=0?'text-bullGreen':'text-bullRed'}">${pl>=0?'+':''}${formatMoney(pl)} USD</span></div>
+          \${mode(getActiveAccount())==='real'&&Number(order.lots)>=0.02?'<button onclick="openPartialCloseModal(\\''+(order.backendTradeId||order.id)+'\\')" class="w-full py-2.5 rounded-xl bg-[#262C3A] text-white font-bold text-xs mt-2">Partial close</button>':''}
           <button onclick="executeCloseOrder('${order.backendTradeId || order.id}', false)" class="w-full py-3 rounded-xl bg-bullBlue hover:bg-bullYellowHover text-white font-bold text-sm mt-2">Confirm</button>
           <button onclick="closeModal()" class="w-full py-2.5 rounded-xl bg-[#262C3A] text-gray-300 font-bold text-xs">Cancel</button>
         </div>
@@ -3319,6 +3320,27 @@ function bbUpdateTicketMargin(){
  if(free)free.textContent=formatMoney(getAccountMetrics().freeMargin)+' USD';
 }
 setInterval(bbUpdateTicketMargin,1000);
+
+window.openPartialCloseModal=function(id){
+ const order=state.openOrders.find(o=>String(o.backendTradeId||o.id)===String(id));if(!order)return;
+ const max=Number(order.lots)-0.01;if(max<0.01){notify('Partial close unavailable','At least 0.02 lots are required to leave a 0.01-lot remainder.','error');return;}
+ const def=Math.max(0.01,Math.floor(Number(order.lots)/2*100)/100).toFixed(2);
+ openModal('<div class="p-4 border-b border-[#262C3A] flex items-center justify-between"><h3 class="font-bold text-sm text-white">Partially close '+order.symbol+'</h3><button onclick="closeModal()" class="w-7 h-7 rounded-full bg-[#262C3A] text-gray-300">✕</button></div><div class="p-4 space-y-3 text-xs"><div class="text-gray-400">Open volume: <strong class="text-white">'+Number(order.lots).toFixed(2)+' lots</strong></div><label class="block text-gray-400">Volume to close (lots)<input id="bbPartialCloseLots" type="number" min="0.01" max="'+max.toFixed(2)+'" step="0.01" value="'+def+'" class="mt-1 w-full bg-[#0E1117] border border-[#2D3545] rounded-xl px-3 py-3 font-mono text-white"/></label><div class="text-[10px] text-gray-500">The remaining position stays open. Execution uses the latest verified market quote.</div><button onclick="submitPartialClose(\\''+id+'\\')" class="w-full py-3 rounded-xl bg-bullBlue text-white font-bold">Confirm partial close</button><button onclick="closeModal()" class="w-full py-2 rounded-xl bg-[#262C3A] text-gray-300">Cancel</button></div>');
+};
+window.submitPartialClose=async function(id){
+ const order=state.openOrders.find(o=>String(o.backendTradeId||o.id)===String(id));if(!order)return;
+ const quantity=Number(document.getElementById('bbPartialCloseLots')?.value),a=getActiveAccount();
+ if(mode(a)!=='real'||!a?.backendId){notify('Partial close failed','Select an approved REAL trading account.','error');return;}
+ if(!(quantity>0&&quantity<Number(order.lots))){notify('Invalid volume','Partial close volume must be less than the open volume.','error');return;}
+ try{
+  const result=await call('bbook-engine',{action:'partial_close',account_mode:'real',account_id:a.backendId,position_id:order.backendTradeId,close_quantity:quantity,reason:'CLIENT PARTIAL CLOSE'});
+  if(!result.success||!result.position)throw new Error(result.error||'Partial close was not confirmed.');
+  closeModal();await refresh(true);
+  notify('Partial close completed',quantity.toFixed(2)+' lots closed · '+Number(result.realized_pnl||0).toFixed(2)+' USD realized','success');
+  playTerminalSound('placed');
+ }catch(e){notify('Partial close failed',e.message||'The partial close could not be completed.','error');playTerminalSound('error');}
+};
+
 </script>
 
 </body>
