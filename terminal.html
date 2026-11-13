@@ -1983,6 +1983,9 @@ function updateCandleFromTick(symbol,bid,stamp=Date.now()){
 }
 const notify=(t,s='',type='info')=>{if(typeof showToast==='function')showToast(t,s,type);};
 function client(){
+ // Reuse the authenticated parent Client Area client inside the same-origin terminal iframe.
+ // This avoids two Supabase Auth clients competing for the same browser session lock/storage.
+ try{const parentClient=window.parent!==window?window.parent.__bbSupabaseClient:null;if(parentClient?.auth&&parentClient?.functions){window.__bbSupabaseClient=parentClient;return parentClient;}}catch(e){console.warn('Parent BIGBULLS session bridge unavailable:',e);}
  if(window.__bbSupabaseClient?.auth&&window.__bbSupabaseClient?.functions)return window.__bbSupabaseClient;
  if(window.bigbullsSupabase?.auth&&window.bigbullsSupabase?.functions)return window.bigbullsSupabase;
  if(window.supabase?.createClient){window.__bbSupabaseClient=window.supabase.createClient(BB_URL,BB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});return window.__bbSupabaseClient;}
@@ -2404,6 +2407,8 @@ async function start(){
  return startupPromise;
 }
 window.__bbTerminalRetryStartup=start;
+// Fail safe: never leave the client staring at an endless session spinner if startup code stalls.
+window.setTimeout(()=>{if(document.documentElement.classList.contains('bb-auth-pending'))bbShowBootError(new Error('Terminal startup did not finish. Use Retry to reconnect your secure session.'));},12000);
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
 </script>
