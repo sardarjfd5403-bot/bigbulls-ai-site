@@ -23,10 +23,10 @@ const CRYPTO_SYMBOLS = new Set(["BTCUSDT","ETHUSDT","SOLUSDT","XRPUSDT","BNBUSDT
 const SYMBOLS = new Set(Object.keys(CONTRACT_SIZES));
 const normalize = (v: unknown) => String(v || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
 const contractSize = (s: string) => CONTRACT_SIZES[s] || 0;
-const marketOpen = (symbol: string, now = new Date()) => {
+const marketOpen = (symbol: string, now = new Date(), holidays: Set<string> = new Set()) => {
   if (CRYPTO_SYMBOLS.has(normalize(symbol))) return true;
   const day = now.getUTCDay();
-  return day >= 1 && day <= 5;
+  return day >= 1 && day <= 5 && !holidays.has(now.toISOString().slice(0,10));
 };
 const category = (s: string) => CRYPTO_SYMBOLS.has(s) ? "CRYPTO" : ["XAUUSD","XAGUSD","XPTUSD","XPDUSD"].includes(s) ? "XAUUSD" : ["USOIL","UKOIL","NATGASUSDT"].includes(s) ? "COMMODITY" : ["US30","USTEC","US500","DE30","UK100","JP225","DXY"].includes(s) ? "INDEX" : "FX";
 const num = (v: unknown, label: string) => {
@@ -117,6 +117,11 @@ Deno.serve(async (req: Request) => {
     const action = String(body.action || "status");
     const { data: settings, error: settingsError } = await db.from("bb_bbook_settings").select("*").eq("singleton",true).single();
     if (settingsError) throw settingsError;
+    const { data: holidayRows, error: holidayError } = await db.from("market_holidays").select("holiday_date").eq("is_closed",true).eq("market_scope","GLOBAL");
+    if (holidayError) throw holidayError;
+    const holidayDates = new Set<string>((holidayRows || []).map((row:any) => String(row.holiday_date).slice(0,10)));
+    const isMarketOpen = (symbol:string, now=new Date()) => marketOpen(symbol,now,holidayDates);
+
 
     if (action.startsWith("admin_")) {
       await adminCheck(auth);
@@ -208,7 +213,7 @@ Deno.serve(async (req: Request) => {
     if(action==="pending"){
       if(!settings.enabled)return json({error:"B-Book execution is not enabled."},423);
       const symbol=normalize(body.symbol),side=String(body.side||"").toUpperCase();
-      if (!marketOpen(symbol)) return json({error:"Market is closed for this instrument. New orders resume Monday 00:00 UTC.",code:"MARKET_CLOSED"},423);
+      if (!isMarketOpen(symbol)) return json({error:"Market is closed for this instrument. New orders resume Monday 00:00 UTC.",code:"MARKET_CLOSED"},423);
        const orderType=String(body.order_type||"").toUpperCase(),quantity=num(body.quantity,"Lot size");
       const target=num(body.target_price,"Target price");
       const sl=body.stop_loss==null||body.stop_loss===""?null:num(body.stop_loss,"Stop Loss");
@@ -231,6 +236,7 @@ Deno.serve(async (req: Request) => {
       const symbol=normalize(body.symbol),side=String(body.side||"").toUpperCase(),quantity=num(body.quantity,"Lot size");
       const sl=body.stop_loss==null||body.stop_loss===""?null:num(body.stop_loss,"Stop Loss"),tp=body.take_profit==null||body.take_profit===""?null:num(body.take_profit,"Take Profit");
       if(!["BUY","SELL"].includes(side)||quantity<=0)return json({error:"Invalid side or lot size."},400);
+      if(!marketOpen(symbol))return json({error:"Market is closed for this instrument. New orders resume Monday 00:00 UTC.",code:"MARKET_CLOSED"},423);
       const q=await quote(symbol,settings,url,anon,db);
       if(q.fallback)throw new Error("A fresh live quote is required to execute a REAL order. Cached prices are display-only.");
       const size=contractSize(symbol);
@@ -246,6 +252,7 @@ Deno.serve(async (req: Request) => {
       const {data:position,error}=await auth.from("bb_bbook_positions").select("id,symbol,side,quantity,contract_size").eq("id",positionId).eq("account_id",accountId).eq("user_id",user.id).eq("status","OPEN").maybeSingle();
       if(error)throw error;
       if(!position)return json({error:"Open B-Book position not found."},404);
+      if(!marketOpen(position.symbol))return json({error:"Market is closed for this instrument. Position settlement will resume when the market reopens.",code:"MARKET_CLOSED"},423);
       const q=await quote(position.symbol,settings,url,anon,db);
       if(q.fallback)throw new Error("A fresh live quote is required to close a REAL position. Cached prices cannot be used for settlement.");
       const exit=position.side==="BUY"?q.bid:q.ask;
@@ -310,7 +317,7 @@ Deno.serve(async (req: Request) => {
       const marginLevel=margin>0?equity/margin*100:0;
       if(active.length&&margin>0&&marginLevel<=Number(settings.stop_out_level_pct||50)){
         for(const p of [...active].sort((a:any,b:any)=>Number(a.floating_pnl)-Number(b.floating_pnl))){
-          if (!marketOpen(p.symbol)) continue;
+          if (!isMarketOpen(p.symbol)) continue;
           const q=quotes[p.symbol]||await quote(p.symbol,settings,url,anon,db);
           if(q.fallback)continue;
           const exit=p.side==="BUY"?q.bid:q.ask;
@@ -344,10 +351,11 @@ Deno.serve(async (req: Request) => {
     const positionLimit = /maximum open positions reached/i.test(message);
     const riskRejected = /order exceeds account exposure limit|insufficient free margin|insufficient funds|negative client account balance/i.test(message);
     const invalidOrder = /invalid b-book order parameters|invalid side or lot size|sl\/tp levels are invalid|target price must|stop loss must|take profit must|instrument is not enabled/i.test(message);
-    const status = positionLimit || riskRejected ? 409 : invalidOrder ? 422 : kycRequired ? 403 : locked ? 423 : feedUnavailable ? 503 : 500;
+    const adminDenied = /admin permission required/i.test(message);
+    const status = positionLimit || riskRejected ? 409 : invalidOrder ? 422 : kycRequired || adminDenied ? 403 : locked ? 423 : feedUnavailable ? 503 : 500;
     return json({
       error: message,
-      code: positionLimit ? "MAX_OPEN_POSITIONS" : riskRejected ? "RISK_LIMIT_REJECTED" : invalidOrder ? "INVALID_ORDER" : kycRequired ? "KYC_REQUIRED" : locked ? "EXECUTION_LOCKED" : feedUnavailable ? "MARKET_DATA_UNAVAILABLE" : "BBOOK_EXECUTION_ERROR",
+      code: positionLimit ? "MAX_OPEN_POSITIONS" : riskRejected ? "RISK_LIMIT_REJECTED" : invalidOrder ? "INVALID_ORDER" : kycRequired ? "KYC_REQUIRED" : adminDenied ? "ADMIN_REQUIRED" : locked ? "EXECUTION_LOCKED" : feedUnavailable ? "MARKET_DATA_UNAVAILABLE" : "BBOOK_EXECUTION_ERROR",
       ...(dbCode ? { database_code: dbCode } : {}),
       request_id: req.headers.get("x-request-id") || null
     }, status);
