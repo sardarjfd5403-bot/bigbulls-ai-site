@@ -122,7 +122,45 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 </style>
   <script async src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
   <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="stylesheet" href="terminal-theme.css?v=20261113-white-blue-scoped-card">
+  <link rel="stylesheet" href="terminal-theme.css?v=20261113-force-open">
+<script id="bb-cache-cleanup">
+(function(){
+  try {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs){
+        return Promise.all(regs.map(function(reg){return reg.unregister();}));
+      }).catch(function(err){console.warn('[BIGBULLS cache cleanup] Service Worker:',err);});
+    }
+    if ('caches' in window) {
+      caches.keys().then(function(keys){
+        return Promise.all(keys.map(function(key){return caches.delete(key);}));
+      }).catch(function(err){console.warn('[BIGBULLS cache cleanup] Cache Storage:',err);});
+    }
+  } catch(err) { console.warn('[BIGBULLS cache cleanup] unavailable:',err); }
+})();
+</script>
+<script id="bb-terminal-runtime-diagnostics">
+(function(){
+  function show(kind,message,source,line,column,stack){
+    try{
+      var box=document.getElementById('bb-terminal-runtime-error');
+      if(!box){
+        box=document.createElement('section');box.id='bb-terminal-runtime-error';
+        box.style.cssText='position:fixed;z-index:2147483647;inset:12px;padding:18px;overflow:auto;background:#fff;color:#7f1d1d;border:2px solid #dc2626;border-radius:14px;box-shadow:0 12px 40px #0005;font:13px/1.5 ui-monospace,monospace;white-space:pre-wrap';
+        var title=document.createElement('h2');title.textContent='BIGBULLS TERMINAL — JAVASCRIPT ERROR';title.style.cssText='font:800 16px sans-serif;margin:0 0 12px';box.appendChild(title);
+        var details=document.createElement('pre');details.id='bb-terminal-runtime-error-details';details.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;margin:0';box.appendChild(details);
+        (document.body||document.documentElement).appendChild(box);
+      }
+      var details=document.getElementById('bb-terminal-runtime-error-details');
+      var text='Type: '+kind+'\nMessage: '+String(message||'Unknown error')+'\nSource: '+String(source||'(not supplied)')+'\nLine: '+String(line||'?')+'  Column: '+String(column||'?');
+      if(stack)text+='\n\nStack:\n'+String(stack);
+      details.textContent+=(details.textContent?'\n\n--- NEXT ERROR ---\n\n':'')+text;
+    }catch(_){}
+  }
+  window.addEventListener('error',function(e){show('window.error',e.message,e.filename,e.lineno,e.colno,e.error&&e.error.stack);},true);
+  window.addEventListener('unhandledrejection',function(e){var r=e.reason;show('unhandledrejection',r&&r.message||r,'',0,0,r&&r.stack);});
+})();
+</script>
 </head>
 <body class="h-screen min-h-screen flex flex-col overflow-hidden">
   <button id="bb-terminal-back" type="button" aria-label="Back to Client Area" style="position:fixed;top:max(10px,env(safe-area-inset-top));left:max(10px,env(safe-area-inset-left));z-index:10001;display:flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid #2563eb;border-radius:12px;background:#2563eb;color:#ffffff;font:700 13px Inter,sans-serif;box-shadow:0 6px 20px #0008;cursor:pointer">← <span>Back to Client Area</span></button>
