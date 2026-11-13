@@ -2404,7 +2404,7 @@ async function start(){
  return startupPromise;
 }
 window.__bbTerminalRetryStartup=start;
-window.addEventListener('load',start,{once:true});
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
 </script>
 
