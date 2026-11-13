@@ -47,3 +47,16 @@ body.bb-account-modal-active:after,body.bb-wallet-modal-active:after{content:"";
 .bb-account-info-row b{display:block;color:#172235;font-size:13px;font-weight:850;overflow-wrap:anywhere}
 .bb-account-info-note{margin:15px 0 0;color:#64748b;font-size:11px}
 @media(max-width:560px){.bb-account-info-grid{grid-template-columns:1fr 1fr;gap:7px}.bb-account-info-row{padding:10px}.bb-account-info-row b{font-size:12px}}
+
+/* Keep account actions off the scrolling account cards and inside the account-info popup. */
+.bb-v3-active #client-page .bb-account-actions.account-financial-actions{display:none!important}
+.bb-account-modal-actions{margin-top:20px;padding-top:17px;border-top:1px solid #e7edf5}
+.bb-account-action-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:10px}
+.bb-account-action-grid button{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:47px;padding:11px 13px;border:1px solid #dce6f2;border-radius:12px;background:#fff;color:#172235;font-size:12px;font-weight:800;text-align:left;cursor:pointer;transition:background .16s,border-color .16s,transform .16s}
+.bb-account-action-grid button:hover:not(:disabled){border-color:#0066ff;background:#f1f7ff;transform:translateY(-1px)}
+.bb-account-action-grid button span:last-child{color:#0066ff;font-size:19px}
+.bb-account-action-grid button:disabled{opacity:.42;cursor:not-allowed;background:#f8fafc}
+.bb-account-tool-modal{color:#172235}
+.bb-account-tool-modal h2{margin:8px 0 16px;font-size:20px;font-weight:850}
+.bb-account-tool-modal .admin-row{margin:8px 0}
+@media(max-width:480px){.bb-account-action-grid{grid-template-columns:1fr}.bb-account-action-grid button{min-height:44px}}
