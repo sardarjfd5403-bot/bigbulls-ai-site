@@ -30,6 +30,41 @@ document.addEventListener("click",e=>{
  if(t.closest('[data-bb-tab="finance"]'))setTimeout(refresh,120);
  if(t.closest("[data-bb-finance-refresh]")){e.preventDefault();refresh()}
 });
+document.addEventListener("click",async e=>{
+ const target=e.target instanceof Element?e.target:null;if(!target)return;
+ const review=target.closest("[data-review]"),complete=target.closest("[data-complete-withdrawal]");
+ const button=review||complete;if(!button||button.disabled)return;
+ e.preventDefault();
+ client=window.__bbSupabaseClient||client;if(!client)return;
+ const id=String(review?review.dataset.review:complete.dataset.completeWithdrawal||"");
+ if(!id)return;
+ let status=null,noteText="",payoutReference="";
+ if(review){
+  status=String(review.dataset.status||"");
+  if(!["approved","rejected"].includes(status))return;
+  noteText=String(prompt(status==="rejected"?"Required rejection reason (minimum 4 characters):":"Admin note (optional):","")??"");
+  if(status==="rejected"&&noteText.trim().length<4){if(noteText!=="")alert("Please enter a clear rejection reason of at least 4 characters.");return;}
+  if(status==="approved"&&noteText===null)return;
+ }else{
+  payoutReference=String(prompt("Enter the confirmed payout TXID / payment reference (minimum 5 characters):","")??"");
+  if(payoutReference.trim().length<5){if(payoutReference!=="")alert("A payout reference of at least 5 characters is required.");return;}
+ }
+ button.disabled=true;
+ try{
+  const auth=await client.auth.getUser();if(auth.error||!auth.data.user)throw new Error("Your admin session has expired. Sign in again.");
+  const role=await client.rpc("is_bigbulls_admin");if(role.error)throw role.error;if(role.data!==true)throw new Error("Administrator permission required.");
+  const result=review
+   ?await client.rpc("admin_review_wallet_transaction",{p_transaction_id:id,p_status:status,p_admin_note:noteText.trim()||null})
+   :await client.rpc("admin_complete_withdrawal",{p_transaction_id:id,p_payout_reference:payoutReference.trim()});
+  if(result.error)throw result.error;
+  const host=$("#admin-transactions");
+  if(host)host.innerHTML=note(review?(status==="approved"?"Wallet request approved / withdrawal reserved.":"Wallet request rejected and audited."):"Withdrawal payout marked completed and reconciled.",false);
+  await refresh();
+ }catch(err){
+  const host=$("#admin-transactions");
+  if(host)host.innerHTML=note("Finance action failed: "+(err?.message||"Unknown error"),true)+'<button type="button" data-bb-finance-refresh>Retry finance queue</button>';
+ }finally{button.disabled=false;}
+});
 document.addEventListener("DOMContentLoaded",()=>{start();setTimeout(refresh,700)});
 const observer=new MutationObserver(()=>{if(window.__bbSupabaseClient){start();if($("#admin-transactions")&&!lastAdmin)refresh()}});
 observer.observe(document.documentElement,{childList:true,subtree:true});
