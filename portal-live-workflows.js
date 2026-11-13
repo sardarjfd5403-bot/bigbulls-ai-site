@@ -84,31 +84,38 @@ async function startRealtime(){
 let brainBusy=false,brainTimer=null;
 async function loadMarketBrain(){
  const summary=$("#bb-brain-summary"),host=$("#bb-brain-signals"),back=$("#bb-brain-backtests"),status=$("#bb-brain-status");if(!summary||!host||brainBusy)return;
- brainBusy=true;if(status)status.textContent="LOADING PUBLISHED CLIENT SIGNALS…";
+ brainBusy=true;if(status)status.textContent="CHECKING KYC ACCESS…";
  try{
-  const rows=await getRows(sb().from("bb_market_signal_feed").select("symbol,direction,score,signal_data,backtests,generated_at,expires_at").eq("published",true).gt("expires_at",new Date().toISOString()).order("generated_at",{ascending:false}));
+  const c=sb(),who=await user();
+  const kyc=await c.from("kyc_submissions").select("status").eq("user_id",who.id).order("created_at",{ascending:false}).limit(1).maybeSingle();
+  if(kyc.error)throw kyc.error;
+  if(kyc.data?.status!=="approved"){
+   summary.innerHTML='<article><small>ACCESS</small><b>LOCKED</b></article><article><small>KYC STATUS</small><b>'+esc(kyc.data?.status||"NOT SUBMITTED").toUpperCase()+'</b></article><article><small>LIVE SIGNALS</small><b>RESTRICTED</b></article><article><small>REQUIREMENT</small><b>KYC APPROVAL</b></article>';
+   host.innerHTML='<section class="client-panel" style="grid-column:1/-1;text-align:center;padding:30px 18px"><div style="font-size:34px" aria-hidden="true">🔒</div><strong style="display:inline-block;margin:10px 0;padding:6px 12px;border-radius:99px;background:#fff3cd;color:#805b00;font-size:11px">KYC VERIFICATION REQUIRED</strong><h3>Complete KYC Verification to unlock live AI Market Signals</h3><p style="color:#64748b">Submit your identity verification documents and wait until your KYC status is approved. Live AI Market Signals are available only to verified clients.</p></section>';
+   if(back)back.innerHTML='<p class="bb-live-muted">Backtest snapshots are available after KYC approval.</p>';
+   if(status)status.textContent="SIGNALS LOCKED · KYC APPROVAL REQUIRED";
+   return;
+  }
+  if(status)status.textContent="LOADING AUTOMATICALLY PUBLISHED CLIENT SIGNALS…";
+  const rows=await getRows(c.from("bb_market_signal_feed").select("symbol,direction,score,signal_data,backtests,generated_at,expires_at").eq("published",true).gt("expires_at",new Date().toISOString()).order("generated_at",{ascending:false}));
   const signals=rows.map(x=>({...x.signal_data,direction:x.direction,score:x.score,generated_at:x.generated_at})),tests=rows[0]?.backtests||[],actionable=signals.filter(x=>x.direction==="BUY"||x.direction==="SELL").length;
-  summary.innerHTML=[["ENGINE",rows.length?"PUBLISHED":"AWAITING ADMIN"],["MARKETS SCANNED",signals.length],["ACTIVE SETUPS",actionable],["LAST PUBLISH",rows[0]?.generated_at?new Date(rows[0].generated_at).toLocaleTimeString():"—"]].map(x=>'<article><small>'+esc(x[0])+'</small><b>'+esc(x[1])+'</b></article>').join("");
-  host.innerHTML=signals.map(x=>'<article class="client-panel bb-live-card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>'+esc(x.name||x.symbol)+'</b><strong style="color:'+(x.direction==="BUY"?"#07845b":x.direction==="SELL"?"#c33d4b":"#64748b")+'">'+esc(x.direction||"WAIT")+'</strong></div><p>'+esc(x.setup_status||"Research only")+' · Score '+Number(x.score||0)+'/100 · '+esc(x.data_status||"")+'</p><div class="bb-live-grid"><div class="bb-live-stat"><small>LAST PRICE</small><b>'+((x.price==null)?"—":Number(x.price).toFixed(Number(x.digits||5)))+'</b></div><div class="bb-live-stat"><small>TIMEFRAME BIAS</small><b style="font-size:11px">'+esc(x.bias||"—")+'</b></div></div><p class="bb-live-muted">Frames: '+esc((x.timeframes||[]).join(" · "))+'</p>'+(x.direction!=="WAIT"?'<p class="bb-live-muted">Research entry '+Number(x.entry_low).toFixed(Number(x.digits||5))+' – '+Number(x.entry_high).toFixed(Number(x.digits||5))+' · SL '+Number(x.stop_loss).toFixed(Number(x.digits||5))+' · TP '+Number(x.take_profit).toFixed(Number(x.digits||5))+'</p>':"")+'<details><summary>Evidence & news context</summary><ul>'+(x.reasons||[]).map(z=>'<li>'+esc(z)+'</li>').join("")+'</ul><p class="bb-live-muted">VSA: '+esc(x.vsa||"Unavailable")+'</p><p class="bb-live-muted">News: '+esc(x.news_status||"")+' · '+esc((x.news_context||[]).map(n=>n.title+" ("+n.currency+")").join("; "))+'</p></details></article>').join("")||note("No currently published signals. Admin must run and publish a fresh Market Brain scan.");
+  summary.innerHTML=[["ENGINE",rows.length?"AUTOMATED PUBLISHED":"SCANNING"],["MARKETS SCANNED",signals.length],["ACTIVE SETUPS",actionable],["LAST SCAN",rows[0]?.generated_at?new Date(rows[0].generated_at).toLocaleTimeString():"—"]].map(x=>'<article><small>'+esc(x[0])+'</small><b>'+esc(x[1])+'</b></article>').join("");
+  host.innerHTML=signals.map(x=>'<article class="client-panel bb-live-card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>'+esc(x.name||x.symbol)+'</b><strong style="color:'+(x.direction==="BUY"?"#07845b":x.direction==="SELL"?"#c33d4b":"#64748b")+'">'+esc(x.direction||"WAIT")+'</strong></div><p>'+esc(x.setup_status||"Research only")+' · Score '+Number(x.score||0)+'/100 · '+esc(x.data_status||"")+'</p><div class="bb-live-grid"><div class="bb-live-stat"><small>LAST PRICE</small><b>'+((x.price==null)?"—":Number(x.price).toFixed(Number(x.digits||5)))+'</b></div><div class="bb-live-stat"><small>TIMEFRAME BIAS</small><b style="font-size:11px">'+esc(x.bias||"—")+'</b></div></div><p class="bb-live-muted">Frames: '+esc((x.timeframes||[]).join(" · "))+'</p>'+(x.direction!=="WAIT"?'<p class="bb-live-muted">Research entry '+Number(x.entry_low).toFixed(Number(x.digits||5))+' – '+Number(x.entry_high).toFixed(Number(x.digits||5))+' · SL '+Number(x.stop_loss).toFixed(Number(x.digits||5))+' · TP '+Number(x.take_profit).toFixed(Number(x.digits||5))+'</p>':"")+'<details><summary>Evidence & news context</summary><ul>'+(x.reasons||[]).map(z=>'<li>'+esc(z)+'</li>').join("")+'</ul><p class="bb-live-muted">VSA: '+esc(x.vsa||"Unavailable")+'</p><p class="bb-live-muted">News: '+esc(x.news_status||"")+' · '+esc((x.news_context||[]).map(n=>n.title+" ("+n.currency+")").join("; "))+'</p></details></article>').join("")||note("No current published snapshots. The automated Market Brain scans every 15 minutes; only valid setups pass the publishing rules.");
   if(back)back.innerHTML=tests.map(x=>'<div class="bb-live-row"><span><b>'+esc(x.symbol)+' · '+esc(x.strategy)+'</b><small>'+Number(x.trades||0)+' trades · '+Number(x.win_rate||0)+'% wins · PF '+esc(x.profit_factor)+'</small><small>Max DD '+Number(x.max_drawdown||0).toFixed(2)+'R · '+esc(x.cost_model||"")+'</small></span><b class="'+(Number(x.net_r)>=0?"bb-live-positive":"bb-live-negative")+'">'+Number(x.net_r||0).toFixed(2)+'R</b></div>').join("")||'<p class="bb-live-muted">No backtest snapshot published.</p>';
-  if(status)status.textContent=rows.length?"PUBLISHED FEED · "+signals.length+" markets · "+actionable+" directional setups · "+new Date(rows[0].generated_at).toLocaleString():"WAITING FOR ADMIN PUBLISH";
+  if(status)status.textContent=rows.length?"AUTOMATED FEED · "+signals.length+" markets · "+actionable+" directional setups · "+new Date(rows[0].generated_at).toLocaleString():"WAITING FOR NEXT AUTOMATED SCAN";
  }catch(e){if(status)status.textContent="SIGNAL FEED UNAVAILABLE";host.innerHTML=note("Published Market Brain feed could not load: "+e.message,true);}
  finally{brainBusy=false;}
 }
 async function publishMarketBrain(){
  const button=$("#bb-admin-market-run"),status=$("#bb-admin-market-status");if(!button||button.disabled)return;
- button.disabled=true;if(status)status.textContent="Running live market research and validating feed…";
+ button.disabled=true;if(status)status.textContent="Running Market Brain scan and publishing automatically…";
  try{
-  const who=await user(),r=await sb().functions.invoke("market-brain",{body:{}});
-  if(r.error||r.data?.error)throw Error(r.data?.error||r.error?.message||"Market Brain unavailable.");
-  const d=r.data||{},signals=d.signals||[],tests=d.backtests||[];
-  if(!signals.length)throw Error("The engine returned no market rows; nothing was published.");
-  const generatedAt=d.generated_at||new Date().toISOString(),expiresAt=new Date(Date.now()+20*60*1000).toISOString();
-  const payload=signals.map(x=>({symbol:String(x.name||x.symbol),direction:["BUY","SELL","WAIT"].includes(x.direction)?x.direction:"WAIT",score:Math.max(0,Math.min(100,Math.round(Number(x.score)||0))),signal_data:x,backtests:tests,published:true,generated_at:generatedAt,expires_at:expiresAt,created_by:who.id,updated_at:new Date().toISOString()}));
-  const hide=await sb().from("bb_market_signal_feed").update({published:false,updated_at:new Date().toISOString()}).eq("published",true);if(hide.error)throw hide.error;
-  const saved=await sb().from("bb_market_signal_feed").upsert(payload,{onConflict:"symbol"});if(saved.error)throw saved.error;
-  if(status)status.textContent="SUCCESS · "+payload.length+" market snapshots published to the KYC-approved client Signals page. Expiry: "+new Date(expiresAt).toLocaleTimeString()+".";
- }catch(e){if(status)status.textContent="PUBLISH FAILED · "+e.message;}
+  const r=await sb().functions.invoke("market-brain",{body:{}}),d=r.data||{};
+  if(r.error||d.error)throw Error(d.error||r.error?.message||"Market Brain unavailable.");
+  if(d.published!==true)throw Error("Market Brain completed without confirming database publication.");
+  if(status)status.textContent="SUCCESS · "+Number(d.published_count||0)+" market snapshots auto-published · "+Number(d.actionable_count||0)+" valid BUY/SELL setups · Expires "+new Date(d.expires_at).toLocaleTimeString()+".";
+  await loadMarketBrain();
+ }catch(e){console.error("BIGBULLS Market Brain publish request failed:",e);if(status)status.textContent="PUBLISH FAILED · "+e.message;}
  finally{button.disabled=false;}
 }
 function enhanceAdminMarketPublisher(){
