@@ -122,7 +122,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 </style>
   <script async src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
   <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="stylesheet" href="terminal-theme.css?v=20261113-force-open">
+  <link rel="stylesheet" href="terminal-theme.css?v=20261113-unfreeze">
 <script id="bb-cache-cleanup">
 (function(){
   try {
@@ -2524,7 +2524,7 @@ async function start(){
    const auth=bridgedSession?{data:{session:bridgedSession},error:null}:await bbWithBootTimeout(c.auth.getSession(),'Session hydration',Math.max(250,deadline-Date.now()));
    if(auth.error)throw auth.error;
    session=auth.data?.session||null;
-   if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}
+   if(!session?.user){bbShowBootFallback(new Error('Secure session is not ready. Terminal remains open in safe mode; sign in to enable account access and trading.'));return;}
    // Paint the authenticated terminal shell immediately; account lookup is background-only.
    state.accounts=[{id:'__account_loading__',accountNumber:null,backendId:null,nickname:'Loading approved accounts…',type:'Demo',platform:'BIGBULLS',accountClass:'—',balance:0,creditBonus:0,equity:0,floatingPL:0,leverage:'1:100',server:'BIGBULLS',archived:false,status:'unavailable',currency:'USD'}];
    state.activeAccountId='__account_loading__';lastAccount='__account_loading__';
@@ -2543,7 +2543,7 @@ async function start(){
    });
    bbStartBackgroundLoops(c);
    c.auth.onAuthStateChange((_event,s)=>{
-    session=s||null;if(!session?.user){location.href='auth.html?mode=login&next=terminal.html';return;}
+    session=s||null;if(!session?.user){bbShowBootFallback(new Error('Session is reconnecting. Terminal remains open in safe mode; trading is locked until sign-in is restored.'));return;}
     accounts().then(()=>{ready=true;renderApp();refresh(true);}).catch(e=>{console.error('Account refresh failed:',e);notify('Account refresh failed',e.message||'Could not reload trading accounts.','error');});
    });
   }catch(e){bbShowBootFallback(e);}
