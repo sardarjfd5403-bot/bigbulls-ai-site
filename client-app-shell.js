@@ -56,7 +56,7 @@ function openTerminal(){
  const a=active();if(!a){alert("No approved trading account is available yet.");return;}
  window.__bbTerminalLaunchAccountId=a.id;
  let btn=document.querySelector('[data-account-terminal="'+CSS.escape(a.id)+'"]');
- if(!btn){const nav=document.querySelector('[data-page="accounts"]');if(nav){nav.click();window.setTimeout(()=>document.querySelector('[data-account-terminal="'+CSS.escape(a.id)+'"]')?.click(),350);}return;}
+ if(!btn){const nav=document.querySelector('[data-page="terminal"]');if(nav)nav.click();return;}
  btn.click();
 }
 function accountToolModal(){
