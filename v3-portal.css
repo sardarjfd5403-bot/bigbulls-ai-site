@@ -225,7 +225,7 @@ body.app-mode>.public-header,body.app-mode>main,body.app-mode>footer{display:non
 #client-page .bb-support-review-actions button:hover{border-color:#1769e8;background:#edf4ff;color:#1769e8}
 
 /* BIGBULLS fixed-height client workflow modals */
-#portal-modal.modal-backdrop{display:none;position:fixed;inset:0;z-index:1000;align-items:center;justify-content:center;padding:14px;background:rgba(9,20,37,.58);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+#portal-modal.modal-backdrop{display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;padding:14px;background:rgba(9,20,37,.58);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
 #portal-modal.modal-backdrop.show{display:flex}
 #portal-modal .modal{position:relative;width:min(100%,560px);max-height:calc(100dvh - 28px);overflow-y:auto;overscroll-behavior:contain;padding:26px;background:#fff;color:#18283e;border:1px solid #dfe8f3;border-radius:20px;box-shadow:0 24px 80px rgba(10,30,60,.24)}
 #portal-modal .modal>.close{position:absolute;right:14px;top:12px;width:34px;height:34px;border:0;border-radius:10px;background:#f1f5fa;color:#52647d;font-size:22px;cursor:pointer}
