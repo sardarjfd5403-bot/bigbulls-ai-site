@@ -2552,8 +2552,10 @@ async function start(){
 }
 window.__bbTerminalRetryStartup=start;
 // Fail safe: never leave the client staring at an endless session spinner if startup code stalls.
-window.setTimeout(()=>{if(document.documentElement.classList.contains('bb-auth-pending'))bbShowBootFallback(new Error('Secure session is still reconnecting. Terminal layout remains available; trading stays locked until account verification completes.'));},BB_BOOT_TIMEOUT_MS);\n// If the Supabase SDK arrived after first paint, retry the authenticated handshake now.\nwindow.addEventListener('load',()=>{if(!session)start().catch(e=>console.warn('Post-load terminal retry:',e));},{once:true});
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();\n// Async CDN scripts never block first paint; retry startup once they finish loading.\nwindow.addEventListener('load',()=>{if(!session)start().catch(e=>console.warn('Post-load terminal retry:',e));},{once:true});
+window.setTimeout(()=>{if(document.documentElement.classList.contains('bb-auth-pending'))bbShowBootFallback(new Error('Secure session is still reconnecting. Terminal layout remains available; trading stays locked until account verification completes.'));},BB_BOOT_TIMEOUT_MS);
+// Retry the authenticated handshake after page load in case the Supabase SDK arrived late.
+window.addEventListener('load',()=>{if(!session)start().catch(e=>console.warn('Post-load terminal retry:',e));},{once:true});
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
 </script>
 
