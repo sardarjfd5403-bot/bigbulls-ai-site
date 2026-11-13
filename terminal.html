@@ -2190,17 +2190,17 @@ async function accounts(preferredBackendId=null){
  }));
  state.accounts=rows.length?rows:[{id:'__no_account__',accountNumber:null,backendId:null,nickname:'No trading account',type:'Demo',platform:'BIGBULLS',accountClass:'—',balance:0,leverage:'1:100',server:'BIGBULLS',archived:false,status:'unavailable',currency:'USD'}];
  let preferred='demo',selected=null;
- try{const sm=sessionStorage.getItem('bb:terminal:active-mode:'+session.user.id);if(sm==='demo'||sm==='real')preferred=sm;}catch(_){}
+ try{const sm=sessionStorage.getItem('bb:terminal:active-mode:'+session.user.id)||localStorage.getItem('bb:terminal:active-mode:'+session.user.id);if(sm==='demo'||sm==='real')preferred=sm;}catch(_){}
  const findByBackend=id=>state.accounts.find(a=>a.backendId===String(id)&&a.status==='approved');
  let launch=null;
  if(!launchAccountConsumed){
-  try{launch=new URLSearchParams(location.search).get('account_id')||sessionStorage.getItem('bb:terminal:launch-account:'+session.user.id)||null;}catch(_){}
+  try{launch=new URLSearchParams(location.search).get('account_id')||sessionStorage.getItem('bb:terminal:launch-account:'+session.user.id)||localStorage.getItem('bb:terminal:launch-account:'+session.user.id)||localStorage.getItem('bb:terminal:active-account:'+session.user.id)||null;}catch(_){}
   if(launch){
    selected=findByBackend(launch)||null;
    if(!selected)throw new Error("The selected account is not available or not approved for terminal access. Return to My Accounts and open the account again.");
    launchAccountConsumed=true;
    try{
-    sessionStorage.removeItem('bb:terminal:launch-account:'+session.user.id);
+    sessionStorage.removeItem('bb:terminal:launch-account:'+session.user.id);localStorage.removeItem('bb:terminal:launch-account:'+session.user.id);
     const cleanUrl=new URL(location.href);cleanUrl.searchParams.delete('account_id');
     history.replaceState(history.state,'',cleanUrl.pathname+(cleanUrl.search?cleanUrl.search:'')+cleanUrl.hash);
    }catch(_){}
