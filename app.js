@@ -1156,12 +1156,12 @@ async function openAccountWizard(){
  ]);
  if(kycError||countError){message("KYC / account eligibility could not be checked. Please retry.",true);return;}
  const verified=isAdmin()||["approved","verified"].includes(String(kyc?.status||"").toLowerCase());
- const realCount=Number(count||0),limitReached=realCount>=5;
+ const realCount=Number(count||0),limitReached=realCount>=50;
  const initial=window.bbAccountMode==="demo"?"demo":"real";
  body.innerHTML=`<p class="eyebrow">ACCOUNT CENTRE · INSTANT SETUP</p><h2>Configure your trading account</h2><p class="muted">Your account is created instantly after the server validates eligibility.</p><form id="bb-account-wizard" class="client-form">
  <label>Account environment<select name="account_mode"><option value="demo" ${initial==="demo"||!verified?"selected":""}>Demo · Practice (no KYC)</option><option value="real" ${initial==="real"&&verified&&!limitReached?"selected":""} ${!verified||limitReached?"disabled":""}>Real · Live account</option></select></label>
  ${!verified?'<div class="notice">Real accounts require verified/approved KYC. Demo accounts remain available. <button type="button" class="copy-wallet" data-page="verification">Complete KYC</button></div>':""}
- ${limitReached?'<div class="notice">You have reached the limit of 5 active Real accounts. Archive or delete an existing account to create another.</div>':""}
+ ${limitReached?'<div class="notice">You have reached the limit of 50 active Real accounts. Archive or delete an existing account to create another.</div>':""}
  <label>Account type<select name="account_type"><option value="Standard">Standard</option><option value="Pro">Pro</option><option value="Raw Spread">Raw Spread</option><option value="Zero">Zero</option></select></label>
  <label>Trading platform<select name="platform"><option value="BIGBULLS">BIGBULLS Native Terminal</option></select></label>
  <label>Leverage request<select name="leverage"><option>1:100</option><option>1:200</option><option>1:500</option><option>1:1000</option><option>1:2000</option><option>Unlimited</option></select></label>
