@@ -1894,7 +1894,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
       const email = window.__bbProfileEmail || window.__bbParentAuthSession?.user?.email || 'Loading secure profile…';
       const meta = window.__bbParentAuthSession?.user?.user_metadata || {};
       const fullName = window.__bbProfileName || meta.full_name || meta.name || (email.includes('@') ? email.split('@')[0] : 'BIGBULLS Client');
-      const initials = String(fullName).trim().split(/\\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase() || 'BB';
+      const initials = String(fullName).trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase() || 'BB';
       const tile = (icon,title,desc,action,accent='blue') => `
         <button type="button" onclick="${action}" class="w-full text-left rounded-2xl border border-[#252B36] bg-[#131722] hover:bg-[#1A1F29] active:scale-[.99] transition p-4 flex items-center gap-3">
           <span class="w-11 h-11 rounded-xl flex items-center justify-center text-lg ${accent==='sky'?'bg-sky-500/10 text-sky-300':accent==='violet'?'bg-violet-500/10 text-violet-300':'bg-blue-500/10 text-blue-300'}">${icon}</span>
