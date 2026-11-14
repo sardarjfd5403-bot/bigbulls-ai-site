@@ -4,12 +4,12 @@ const root=path.join(process.cwd(),"android");
 const manifest=path.join(root,"app/src/main/AndroidManifest.xml");
 if(!fs.existsSync(manifest)) throw new Error("Generated AndroidManifest.xml is missing.");
 let xml=fs.readFileSync(manifest,"utf8");
-if(/<application\\b[^>]*android:hardwareAccelerated=/.test(xml)) {
-  xml=xml.replace(/(<application\\b[^>]*?)android:hardwareAccelerated="[^"]*"/,'$1android:hardwareAccelerated="true"');
+if(/<application\b[^>]*android:hardwareAccelerated=/.test(xml)) {
+  xml=xml.replace(/(<application\b[^>]*?)android:hardwareAccelerated="[^"]*"/,'$1android:hardwareAccelerated="true"');
 } else {
-  xml=xml.replace(/<application\\b/,'<application android:hardwareAccelerated="true"');
+  xml=xml.replace(/<application\b/,'<application android:hardwareAccelerated="true"');
 }
-xml=xml.replace(/<activity\\b([^>]*)>/g,(tag,attrs)=>{
+xml=xml.replace(/<activity\b([^>]*)>/g,(tag,attrs)=>{
   let next=attrs;
   if(/android:hardwareAccelerated=/.test(next)) next=next.replace(/android:hardwareAccelerated="[^"]*"/,'android:hardwareAccelerated="true"');
   else next+=' android:hardwareAccelerated="true"';
@@ -24,4 +24,4 @@ if(fs.existsSync(styles)){
   if(!x.includes("android:statusBarColor")) x=x.replace(/<style name="AppTheme.NoActionBar"([^>]*)>/,'<style name="AppTheme.NoActionBar"$1><item name="android:statusBarColor">#FFFFFF</item><item name="android:navigationBarColor">#FFFFFF</item><item name="android:windowLightStatusBar">true</item><item name="android:windowLightNavigationBar">true</item><item name="colorAccent">#0B3D91</item>');
   fs.writeFileSync(styles,x);
 }
-console.log("Enabled Android hardware acceleration, resize-safe keyboard, white system bars and BB blue accent.");
+console.log("Enabled Android hardware acceleration and clean white/blue native UI.");
