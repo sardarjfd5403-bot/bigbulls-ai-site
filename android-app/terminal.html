@@ -1864,16 +1864,18 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
       ];
 
       stage.innerHTML = `
-        <div class="mobile-shell">
-          <div class="shrink-0 flex items-center justify-between gap-3 bg-[#131722] border-b border-[#252B36] px-3 py-2.5">
+        <div class="mobile-shell flex flex-col h-[100dvh] min-h-0 overflow-hidden">
+          <div class="relative z-50 shrink-0 flex items-center justify-between gap-3 bg-[#131722] border-b border-[#252B36] px-3 py-2.5 shadow-lg">
             <div class="min-w-0"><div class="text-sm font-extrabold tracking-tight text-white">BigbullsGlobal <span class="text-bullBlue">TERMINAL</span></div><div class="text-[10px] text-gray-500">Trading workspace</div></div>
             ${window.renderAiAutoTradeSwitch('mobile')}
             <button type="button" onclick="switchTab('profile')" class="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-[#e2e8f0] bg-[#1A1F29] active:bg-[#252B36] border-[#252B36] px-3 py-2 text-xs font-bold text-white" aria-label="Open Profile">Profile</button>
           </div>
-          ${mainBody}
+          <main class="flex-1 min-h-0 overflow-y-auto overscroll-contain relative z-0">
+            ${mainBody}
+          </main>
 
-          <!-- Bottom 5-Tab Navigation Bar -->
-          <nav class="bg-[#131722] border-t border-[#252B36] px-2 pt-2 pb-[max(8px,env(safe-area-inset-bottom))] grid grid-cols-5 shrink-0 z-40">
+          <!-- Fixed, always-visible Bottom 5-Tab Navigation Bar -->
+          <nav class="relative z-50 bg-[#131722] border-t border-[#252B36] px-2 pt-2 pb-[max(8px,env(safe-area-inset-bottom))] grid grid-cols-5 shrink-0 shadow-[0_-8px_24px_rgba(0,0,0,.25)]">
             ${tabs.map(t => {
               const active = state.activeTab === t.id;
               return `
