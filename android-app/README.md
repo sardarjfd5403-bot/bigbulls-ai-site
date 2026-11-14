@@ -14,6 +14,9 @@ This is a separate Android app project. It does not edit or replace the existing
 ## Shared session
 The Capacitor app is configured to load from the same website origin under `/android-app/`. The login page, Android terminal and embedded Client Portal therefore share the website origin and the existing Supabase auth storage key. No service-role key is included.
 
+## Branding
+The Android build script applies a blue adaptive launcher icon with the white BIGBULLS mark after generating the native Android project.
+
 ## Build a debug APK
 From this directory:
 ```bash
