@@ -23,8 +23,11 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-      - name: Install Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Verify preinstalled Android SDK
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          test -d "$ANDROID_HOME/platform-tools"
+          test -x "$ANDROID_HOME/platform-tools/adb"
       - name: Install Capacitor dependencies
         working-directory: android-app
         run: npm install
