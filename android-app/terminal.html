@@ -1872,7 +1872,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
           ${mainBody}
 
           <!-- Bottom 5-Tab Navigation Bar -->
-          <nav class="bg-[#131722] border-t border-[#252B36] px-2 py-2 grid grid-cols-5 shrink-0 z-20">
+          <nav class="bg-[#131722] border-t border-[#252B36] px-2 pt-2 pb-[max(8px,env(safe-area-inset-bottom))] grid grid-cols-5 shrink-0 z-40">
             ${tabs.map(t => {
               const active = state.activeTab === t.id;
               return `
@@ -1889,49 +1889,87 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
       setTimeout(drawChartCanvas, 20);
     }
 
+    let bbClientMenuOpen = false;
+    function bbClientMenuAction(section) {
+      bbClientMenuOpen = false;
+      if (section === 'accounts') { switchTab('accounts'); return; }
+      if (section === 'finance') { openClientPortal('wallet'); return; }
+      if (section === 'history') { openClientPortal('history'); return; }
+      if (section === 'ibprogram') { openClientPortal('support'); return; }
+      if (section === 'performance') { switchTab('performance'); return; }
+      if (section === 'benefits') { openClientPortal('benefits'); return; }
+      openClientPortal(section);
+    }
+    function bbCloseClientMenu() {
+      bbClientMenuOpen = false;
+      renderApp();
+    }
     function renderProfileTab() {
       const safe = value => String(value == null ? '' : value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
       const email = window.__bbProfileEmail || window.__bbParentAuthSession?.user?.email || 'Loading secure profile…';
       const meta = window.__bbParentAuthSession?.user?.user_metadata || {};
       const fullName = window.__bbProfileName || meta.full_name || meta.name || (email.includes('@') ? email.split('@')[0] : 'BIGBULLS Client');
-      const initials = String(fullName).trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase() || 'BB';
-      const tile = (icon,title,desc,action,accent='blue') => `
-        <button type="button" onclick="${action}" class="w-full text-left rounded-2xl border border-[#252B36] bg-[#131722] hover:bg-[#1A1F29] active:scale-[.99] transition p-4 flex items-center gap-3">
-          <span class="w-11 h-11 rounded-xl flex items-center justify-center text-lg ${accent==='sky'?'bg-sky-500/10 text-sky-300':accent==='violet'?'bg-violet-500/10 text-violet-300':'bg-blue-500/10 text-blue-300'}">${icon}</span>
+      const initials = String(fullName).trim().split(/\\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase() || 'BB';
+      const menuItem = (icon,title,desc,section,accent='blue') => `
+        <button type="button" onclick="bbClientMenuAction('${section}')" class="w-full text-left rounded-xl border border-[#252B36] bg-[#131722] hover:bg-[#1A1F29] active:scale-[.99] transition px-3 py-3 flex items-center gap-3">
+          <span class="w-10 h-10 shrink-0 rounded-xl flex items-center justify-center text-base ${accent==='sky'?'bg-sky-500/10 text-sky-300':accent==='violet'?'bg-violet-500/10 text-violet-300':'bg-blue-500/10 text-blue-300'}">${icon}</span>
           <span class="min-w-0 flex-1"><b class="block text-sm text-white">${title}</b><small class="block text-[11px] text-slate-400 mt-1">${desc}</small></span>
           <span class="text-slate-500 text-lg">›</span>
         </button>`;
       return `
-        <section class="flex-1 min-h-0 overflow-y-auto bg-[#0E1117] text-white px-4 pt-5 pb-6 space-y-5" aria-label="BIGBULLS Profile and Client Portal">
-          <header class="flex items-center justify-between gap-3"><div><p class="text-[10px] font-bold tracking-[.18em] text-blue-400 uppercase">Client workspace</p><h1 class="text-2xl font-extrabold tracking-tight mt-1">Profile</h1><p class="text-xs text-slate-400 mt-1">Your identity, accounts and client services</p></div><span class="rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 px-3 py-1.5 text-[10px] font-bold">● SECURE</span></header>
+        <section class="relative flex-1 min-h-0 overflow-y-auto bg-[#0E1117] text-white px-4 pt-5 pb-5 space-y-5" aria-label="BIGBULLS Profile and Client Portal">
+          <header class="flex items-center justify-between gap-3">
+            <div><p class="text-[10px] font-bold tracking-[.18em] text-blue-400 uppercase">Client workspace</p><h1 class="text-2xl font-extrabold tracking-tight mt-1">Profile</h1><p class="text-xs text-slate-400 mt-1">Manage your profile and client services</p></div>
+            <button type="button" onclick="bbClientMenuOpen=true;renderApp()" class="shrink-0 inline-flex items-center gap-2 rounded-xl border border-blue-500/40 bg-blue-500/10 hover:bg-blue-500/20 px-3 py-2.5 text-xs font-bold text-blue-200"><span>☰</span> Client menu</button>
+          </header>
           <div class="rounded-2xl border border-[#263449] bg-gradient-to-br from-[#14243d] to-[#131722] p-4 flex items-center gap-4">
-            <div class="w-14 h-14 rounded-2xl bg-blue-500/15 border border-blue-400/30 flex items-center justify-center text-lg font-extrabold text-blue-200">${safe(initials)}</div>
+            <div class="w-14 h-14 shrink-0 rounded-2xl bg-blue-500/15 border border-blue-400/30 flex items-center justify-center text-lg font-extrabold text-blue-200">${safe(initials)}</div>
             <div class="min-w-0 flex-1"><b class="block text-base text-white truncate">${safe(fullName)}</b><span class="block text-xs text-slate-400 truncate mt-1">${safe(email)}</span><span class="inline-flex mt-2 text-[10px] text-sky-300 font-semibold">BIGBULLS CLIENT IDENTITY</span></div>
+            <span class="rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 px-2 py-1 text-[9px] font-bold">SECURE</span>
           </div>
           <div class="grid grid-cols-2 gap-3">
-            <div class="rounded-2xl border border-[#252B36] bg-[#131722] p-4"><span class="text-[10px] uppercase tracking-wider text-slate-500">Account centre</span><b class="block text-xl mt-2 text-white">Manage</b><small class="text-[10px] text-slate-400">Trading accounts & access</small></div>
-            <div class="rounded-2xl border border-[#252B36] bg-[#131722] p-4"><span class="text-[10px] uppercase tracking-wider text-slate-500">Client portal</span><b class="block text-xl mt-2 text-white">Connected</b><small class="text-[10px] text-slate-400">Wallet, KYC & services</small></div>
+            <button type="button" onclick="bbClientMenuAction('accounts')" class="text-left rounded-2xl border border-[#252B36] bg-[#131722] p-4 hover:bg-[#1A1F29]"><span class="text-[10px] uppercase tracking-wider text-slate-500">Account centre</span><b class="block text-lg mt-2 text-white">Manage</b><small class="text-[10px] text-slate-400">Trading accounts</small></button>
+            <button type="button" onclick="bbClientMenuAction('finance')" class="text-left rounded-2xl border border-[#252B36] bg-[#131722] p-4 hover:bg-[#1A1F29]"><span class="text-[10px] uppercase tracking-wider text-slate-500">Wallet & payments</span><b class="block text-lg mt-2 text-white">Open wallet</b><small class="text-[10px] text-slate-400">Deposit & withdrawal</small></button>
           </div>
-          <div class="space-y-2">
-            <p class="px-1 text-[10px] font-bold tracking-[.16em] text-slate-500 uppercase">Personal profile</p>
-            ${tile('◉','Profile details','Personal information and contact details',"openClientPortal('profile')")}
-            ${tile('✓','KYC verification','Identity verification and document status',"openClientPortal('verification')",'sky')}
-            ${tile('⌘','Security & settings','Password, session and account security',"openClientPortal('settings')",'violet')}
+          <div class="rounded-2xl border border-[#252B36] bg-[#131722] p-4">
+            <p class="text-sm font-bold text-white">Your client portal</p>
+            <p class="text-xs text-slate-400 mt-1 leading-relaxed">Open the menu to access profile details, KYC, security, accounts, wallet, transaction history, partner tools and support. Your five terminal tabs stay available below.</p>
+            <button type="button" onclick="bbClientMenuOpen=true;renderApp()" class="mt-4 w-full rounded-xl bg-blue-600 hover:bg-blue-500 text-white py-3 text-sm font-bold">Open all client services <span class="ml-1">→</span></button>
           </div>
-          <div class="space-y-2">
-            <p class="px-1 text-[10px] font-bold tracking-[.16em] text-slate-500 uppercase">Client portal</p>
-            ${tile('▦','Account centre','Real and demo accounts, account status',"switchTab('accounts')")}
-            ${tile('◈','Wallet & payments','Deposits, withdrawals and transaction history',"openClientPortal('wallet')",'sky')}
-            ${tile('↗','Partner & support','IB partner tools and client support',"openClientPortal('support')",'violet')}
-          </div>
-          <p class="text-[10px] leading-relaxed text-slate-500 text-center px-3">Your app profile uses the existing BIGBULLS client session. Account changes and financial requests remain protected by the current server-side approval workflows.</p>
+          <p class="text-[10px] leading-relaxed text-slate-500 text-center px-3">Account changes and financial requests remain protected by the existing BIGBULLS server-side approval workflows.</p>
+          ${bbClientMenuOpen ? `
+            <div class="fixed inset-0 z-30" role="dialog" aria-modal="true" aria-label="Client portal menu">
+              <button type="button" aria-label="Close client menu" onclick="bbCloseClientMenu()" class="absolute inset-0 w-full h-full bg-black/65"></button>
+              <aside class="absolute right-0 top-0 bottom-[68px] w-[min(88vw,370px)] max-w-full overflow-y-auto bg-[#111722] border-l border-[#2A3445] shadow-2xl p-4 space-y-4" style="animation:bbClientDrawerIn .22s ease-out">
+                <div class="flex items-center justify-between gap-3 pb-3 border-b border-[#2A3445]"><div><p class="text-[10px] font-bold tracking-[.16em] uppercase text-blue-400">BIGBULLS CLIENT PORTAL</p><h2 class="text-lg font-extrabold text-white mt-1">All services</h2></div><button type="button" onclick="bbCloseClientMenu()" class="w-9 h-9 rounded-xl bg-[#202938] text-white text-lg" aria-label="Close">×</button></div>
+                <div class="space-y-2"><p class="text-[10px] font-bold uppercase tracking-[.15em] text-slate-500 px-1">Personal profile</p>
+                  ${menuItem('◉','Profile details','Personal information and contact details','profile')}
+                  ${menuItem('✓','KYC verification','Identity documents and verification status','verification','sky')}
+                  ${menuItem('⌘','Security & settings','Password and account security','settings','violet')}
+                </div>
+                <div class="space-y-2"><p class="text-[10px] font-bold uppercase tracking-[.15em] text-slate-500 px-1">Accounts & funds</p>
+                  ${menuItem('▦','Account centre','Real and demo trading accounts','accounts')}
+                  ${menuItem('◈','Wallet & payments','Deposits, withdrawals and wallet','finance','sky')}
+                  ${menuItem('↔','Transaction history','Wallet and account activity','history')}
+                </div>
+                <div class="space-y-2"><p class="text-[10px] font-bold uppercase tracking-[.15em] text-slate-500 px-1">Partner & client services</p>
+                  ${menuItem('↗','IB partner program','Partner dashboard and referrals','ibprogram','violet')}
+                  ${menuItem('▤','Trading performance','Performance overview','performance')}
+                  ${menuItem('✦','Client benefits','Membership and rewards','benefits','sky')}
+                  ${menuItem('?','Partner & support','Support and partner services','support','violet')}
+                </div>
+                <div class="pt-2 border-t border-[#2A3445]"><button type="button" onclick="bbCloseClientMenu();signOut()" class="w-full rounded-xl border border-red-500/30 bg-red-500/10 text-red-300 py-3 text-sm font-bold">Sign out</button></div>
+              </aside>
+            </div>
+            <style>@keyframes bbClientDrawerIn{from{transform:translateX(100%);opacity:.7}to{transform:translateX(0);opacity:1}}</style>
+          ` : ''}
         </section>`;
     }
 
     function openClientPortal(section) {
-      const routes = {profile:'profile',verification:'verification',settings:'settings',accounts:'accounts',wallet:'wallet',support:'support'};
+      const routes = {profile:'profile',verification:'profile',settings:'profile',accounts:'accounts',wallet:'finance',support:'ibprogram',history:'history',benefits:'benefits'};
       const target = routes[section] || 'profile';
-      window.location.href = './client-portal.html?view=' + encodeURIComponent(target==='wallet'?'finance':target==='verification'?'profile':target==='settings'?'profile':target==='support'?'ibprogram':target);
+      window.location.href = './client-portal.html?view=' + encodeURIComponent(target);
     }
 
     // Initial render & resize handler
