@@ -186,7 +186,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
     // 1. APPLICATION STATE & MOCK LIVE MARKET DATA
     // ==========================================
     const state = {
-      viewportMode: window.innerWidth < 768 ? 'mobile' : 'desktop', // automatically follows viewport width
+      viewportMode: 'mobile', // automatically follows viewport width
       activeTab: 'accounts',  // 'accounts' | 'trade' | 'insights' | 'performance' | 'profile'
       tradeSubView: 'list',   // 'list' | 'chart' (in mobile)
       selectedSymbol: 'XAU/USD',
@@ -1807,7 +1807,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
     function renderApp() {
       const stage = document.getElementById('appStage');
       // Preserve all application state; only switch the presentation at the 768px breakpoint.
-      state.viewportMode = window.innerWidth < 768 ? 'mobile' : 'desktop';
+      state.viewportMode = 'mobile';
 
       if (state.viewportMode === 'desktop') {
         stage.innerHTML = renderDesktopWorkspace();
@@ -1931,9 +1931,9 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
       window.addEventListener('touchend', onEnd);
     }
 
-    let lastResponsiveMode = window.innerWidth < 768 ? 'mobile' : 'desktop';
+    let lastResponsiveMode = 'mobile';
     function syncResponsiveLayout() {
-      const nextMode = window.innerWidth < 768 ? 'mobile' : 'desktop';
+      const nextMode = 'mobile';
       if (nextMode !== lastResponsiveMode) {
         lastResponsiveMode = nextMode;
         state.viewportMode = nextMode;
