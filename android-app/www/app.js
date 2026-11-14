@@ -40,7 +40,7 @@ $("#accountSelect").onchange=async e=>{activeAccount=accounts.find(a=>a.id===e.t
 $("#authSwitch").onclick=()=>authView($("#authForm").dataset.mode==="signup"?"login":"signup");
 $("#authForm").onsubmit=async e=>{e.preventDefault();const d=new FormData(e.currentTarget),mode=e.currentTarget.dataset.mode;try{if(mode==="signup"){const r=await client().auth.signUp({email:String(d.get("email")).trim(),password:String(d.get("password")),options:{emailRedirectTo:location.origin+location.pathname,data:{full_name:String(d.get("full_name")).trim(),country:String(d.get("country")||""),phone:String(d.get("phone")||""),account_type:"Individual",referral_code:String(d.get("referral_code")||"")}}});if(r.error)throw r.error;if(!r.data.session){say("Registration submitted. Verify email then login.");return;}await sessionReady(r.data.session);}else{const r=await client().auth.signInWithPassword({email:String(d.get("email")).trim(),password:String(d.get("password"))});if(r.error)throw r.error;await sessionReady(r.data.session);}}catch(x){say(x.message,true)}};
 $("#logout").onclick=async()=>{if(!confirm("Log out of your BIGBULLS account on this device?"))return;await client().auth.signOut();await sessionReady(null);};
-$("#changePasscode").onclick=changeAppPasscode;
+
 $("#createAccount").onclick=()=>createAccount().catch(e=>say(e.message,true));
 $("#depositForm").onsubmit=e=>deposit(e).catch(x=>say(x.message,true));
 $("#withdrawForm").onsubmit=e=>withdrawal(e).catch(x=>say(x.message,true));
