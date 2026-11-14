@@ -46,8 +46,42 @@ window.addEventListener("pagehide",()=>{if(user&&appUnlocked)wasBackgrounded=tru
 function startRealtime(){if(realtime)client().removeChannel(realtime);realtime=client().channel("bb-android-"+user.id).on("postgres_changes",{event:"*",schema:"public",table:"trading_accounts",filter:"user_id=eq."+user.id},()=>loadAccounts(true)).on("postgres_changes",{event:"*",schema:"public",table:"wallet_transactions",filter:"user_id=eq."+user.id},()=>loadWalletHistory()).on("postgres_changes",{event:"*",schema:"public",table:"kyc_submissions",filter:"user_id=eq."+user.id},()=>loadKyc()).on("postgres_changes",{event:"*",schema:"public",table:"bb_bbook_positions",filter:"user_id=eq."+user.id},()=>loadAccounts(true)).on("postgres_changes",{event:"*",schema:"public",table:"bb_paper_execution_accounts",filter:"user_id=eq."+user.id},()=>loadAccounts(true)).on("postgres_changes",{event:"*",schema:"public",table:"bb_paper_execution_trades",filter:"user_id=eq."+user.id},()=>loadAccounts(true)).subscribe();}
 document.addEventListener("click",async e=>{const u=e.target.closest("[data-use-account]");if(u){activeAccount=accounts.find(a=>String(a.id)===u.dataset.useAccount)||null;$("#accountSelect").value=activeAccount?.id||"";try{await refreshExecution()}catch(x){say(x.message,true)}}const c=e.target.closest("[data-close-position]");if(c){try{await closePosition(c.dataset.closePosition)}catch(x){say(x.message,true)}}});
 $("#accountSelect").onchange=async e=>{activeAccount=accounts.find(a=>a.id===e.target.value)||null;try{await refreshExecution()}catch(x){say(x.message,true)}};
-$("#authSwitch").onclick=()=>authView($("#authForm").dataset.mode==="signup"?"login":"signup");
-$("#authForm").onsubmit=async e=>{e.preventDefault();const form=e.currentTarget,d=new FormData(form),mode=form.dataset.mode,button=$("#authSubmit");button.disabled=true;button.textContent="Please wait…";try{if(mode==="signup"){const {data,error}=await client().auth.signUp({email:String(d.get("email")).trim(),password:String(d.get("password")),options:{emailRedirectTo:location.origin+location.pathname,data:{full_name:String(d.get("full_name")).trim(),country:String(d.get("country")||"").trim(),phone:String(d.get("phone")||"").trim(),account_type:"Individual",referral_code:String(d.get("referral_code")||"").trim()}}});if(error)throw error;if(data?.session&&data?.user){await sessionReady(data.session);}else{say("Registration submitted. Check your email and verify the address, then return to Login.",false);button.disabled=false;button.textContent="Create account";}}else{const {data,error}=await client().auth.signInWithPassword({email:String(d.get("email")).trim(),password:String(d.get("password"))});if(error)throw error;if(!data?.session?.user)throw Error("Supabase returned no active session. Verify the email address and try again.");await sessionReady(data.session);}}catch(x){say(x.message||"Authentication failed. Please try again.",true);button.disabled=false;button.textContent=mode==="signup"?"Create account":"Login";}};
+$("#authSwitch").addEventListener("click",()=>authView($("#authForm").dataset.mode==="signup"?"login":"signup"));
+const authForm=$("#authForm");
+const authSubmit=$("#authSubmit");
+authForm.addEventListener("submit",async e=>{
+  e.preventDefault();
+  const d=new FormData(authForm),mode=authForm.dataset.mode;
+  authSubmit.disabled=true;
+  authSubmit.textContent=mode==="signup"?"Creating account…":"Signing in…";
+  const showAuthError=err=>{
+    console.error("[BIGBULLS AUTH]",err);
+    const message=err?.message||String(err)||"Authentication failed. Please try again.";
+    say(message,true);
+  };
+  try{
+    const supabase=client();
+    const email=String(d.get("email")||"").trim().toLowerCase();
+    const password=String(d.get("password")||"");
+    if(!email||!password)throw Error("Enter your email and password.");
+    if(mode==="signup"){
+      const {data,error}=await supabase.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname,data:{full_name:String(d.get("full_name")||"").trim(),country:String(d.get("country")||"").trim(),phone:String(d.get("phone")||"").trim(),account_type:"Individual",referral_code:String(d.get("referral_code")||"").trim()}}});
+      if(error)throw error;
+      if(data?.session?.user){await sessionReady(data.session);}
+      else{say("Account created. Check your email to verify it, then sign in.",false);authSubmit.disabled=false;authSubmit.textContent="Create account";}
+    }else{
+      const {data,error}=await supabase.auth.signInWithPassword({email,password});
+      if(error)throw error;
+      if(!data?.session?.user)throw Error("Login returned no active session. Verify your email and try again.");
+      console.info("[BIGBULLS AUTH] Login successful for",data.user?.id);
+      await sessionReady(data.session);
+    }
+  }catch(err){
+    showAuthError(err);
+    authSubmit.disabled=false;
+    authSubmit.textContent=mode==="signup"?"Create account":"Login";
+  }
+});
 $("#logout").onclick=async()=>{if(!confirm("Log out of your BIGBULLS account on this device?"))return;await client().auth.signOut();await sessionReady(null);};
 $("#changeAppPin").onclick=changeAppPin;
 $("#toggleBiometric").onclick=()=>setBiometricPreference($("#toggleBiometric").dataset.enabled!=="1").catch(e=>say(e.message,true));
