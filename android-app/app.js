@@ -25,7 +25,15 @@
   }
   window.bbOpenAuth=function(mode){
     const target=mode==="signup"?"signup":"login";
-    show("../auth.html?mode="+target+"&next=terminal.html");
+    const modal=document.getElementById("authPopup"),frame=document.getElementById("authPopupFrame");
+    if(!modal||!frame)return;
+    frame.src="../auth.html?mode="+target+"&next=terminal.html&embedded=1";
+    modal.classList.add("open");modal.setAttribute("aria-hidden","false");
+  };
+  window.bbCloseAuth=function(){
+    const modal=document.getElementById("authPopup"),frame=document.getElementById("authPopupFrame");
+    if(modal){modal.classList.remove("open");modal.setAttribute("aria-hidden","true");}
+    if(frame)frame.src="about:blank";
   };
   function start(){
     if(!window.supabase||!window.supabase.createClient){
