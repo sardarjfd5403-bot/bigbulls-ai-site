@@ -2475,7 +2475,7 @@ function mountTerminalSoundToggle(){
  btn.addEventListener('click',()=>{bbSoundEnabled=!bbSoundEnabled;try{localStorage.setItem('bb-terminal-sound',bbSoundEnabled?'on':'off');}catch(_){}paint();if(bbSoundEnabled){try{const C=window.AudioContext||window.webkitAudioContext;if(C){window.__bbAudioContext=window.__bbAudioContext||new C();window.__bbAudioContext.resume?.();}}catch(_){}playTerminalSound('placed');}});
  paint();document.body.appendChild(btn);
 }
-mountTerminalSoundToggle();
+// Android app: keep terminal sound cues active, but do not render the floating sound control.
 // Detect a server-side pending-order transition after ledger refresh.
 const bbRefreshWithPendingCue=refresh;
 refresh=async function(silent=true){
