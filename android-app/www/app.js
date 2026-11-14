@@ -64,6 +64,7 @@ authForm.addEventListener("submit",async e=>{
     const email=String(d.get("email")||"").trim().toLowerCase();
     const password=String(d.get("password")||"");
     if(!email||!password)throw Error("Enter your email and password.");
+    if(mode==="signup"&&password.length<8)throw Error("For new registrations, password must be at least 8 characters. Existing client passwords are accepted as originally created.");
     if(mode==="signup"){
       const {data,error}=await supabase.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname,data:{full_name:String(d.get("full_name")||"").trim(),country:String(d.get("country")||"").trim(),phone:String(d.get("phone")||"").trim(),account_type:"Individual",referral_code:String(d.get("referral_code")||"").trim()}}});
       if(error)throw error;
