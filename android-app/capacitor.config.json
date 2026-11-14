@@ -1,0 +1,13 @@
+{
+  "appId": "com.bigbullsglobal.market",
+  "appName": "BigbullsGlobal",
+  "webDir": "www",
+  "server": {
+    "url": "https://bigbullsglobalmarket.is-an.ai/android-app/",
+    "cleartext": false,
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}
