@@ -31,12 +31,15 @@ jobs:
       - name: Install Capacitor dependencies
         working-directory: android-app
         run: npm install
+      - name: Generate BigBull icon and splash source images
+        working-directory: android-app
+        run: npm run assets
       - name: Generate Android project
         working-directory: android-app
         run: npx cap add android
-      - name: Apply BigbullsGlobal launcher branding
+      - name: Apply BigBull native launcher icon and splash screen
         working-directory: android-app
-        run: node scripts/apply-android-branding.mjs
+        run: npx capacitor-assets generate --android
       - name: Sync Android project
         working-directory: android-app
         run: npx cap sync android
