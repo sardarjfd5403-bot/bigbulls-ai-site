@@ -28,6 +28,14 @@
     .modal-backdrop{background-color:rgba(15,23,42,.6);backdrop-filter:blur(4px)}
   </style>
 
+<style id="bb-android-embedded-mode">
+html.bb-android-embedded,html.bb-android-embedded body{height:100%!important;min-height:100%!important;overflow:hidden!important}
+html.bb-android-embedded body{display:flex!important;flex-direction:column!important}
+html.bb-android-embedded body>header,html.bb-android-embedded #drawerOverlay,html.bb-android-embedded #sidebarDrawer{display:none!important}
+html.bb-android-embedded body>.flex.flex-1{min-height:0!important;overflow:auto!important}
+html.bb-android-embedded body>.flex.flex-1>main{padding-top:12px!important}
+</style>
+<script>(function(){if(new URLSearchParams(location.search).get('embed')==='1')document.documentElement.classList.add('bb-android-embedded')})();</script>
 <style id="bb-android-client-portal-theme">
 :root{color-scheme:dark}
 html,body{background:#0E1117!important;color:#E5E7EB!important}
