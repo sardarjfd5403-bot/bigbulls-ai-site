@@ -48,7 +48,7 @@
     /* Custom scrollbar */
     ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb { background: #252D3D; border-radius: 9999px; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
@@ -96,7 +96,7 @@
       width: 100%;
       height: 4px;
       cursor: pointer;
-      background: #e2e8f0;
+      background: #252D3D;
       border-radius: 2px;
     }
 
@@ -604,18 +604,18 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
       const safe = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
       const renderList = type => {
         const list = state.accounts.filter(a => a.type === type && !a.archived && a.id !== '__no_account__');
-        if (!list.length) return '<div class="text-xs text-gray-500 rounded-xl border border-dashed border-[#e2e8f0] p-3">No '+type+' accounts found.</div>';
+        if (!list.length) return '<div class="text-xs text-gray-500 rounded-xl border border-dashed border-[#252D3D] p-3">No '+type+' accounts found.</div>';
         return list.map(a => {
           const approved = a.status === 'approved' && !!a.backendId;
           const selected = a.id === activeAcc?.id;
-          return `<button type="button" ${approved ? 'onclick="switchTradingAccount(\''+safe(a.backendId)+'\')"' : 'disabled'} class="w-full text-left p-3.5 rounded-2xl border ${selected ? 'border-bullBlue bg-bullBlue/10' : 'border-[#e2e8f0] bg-[#131722]'} ${approved ? 'hover:bg-[#1E2430] cursor-pointer' : 'opacity-60 cursor-not-allowed'} transition flex items-center justify-between gap-3 mb-2">
-            <span class="min-w-0"><span class="flex items-center gap-2 flex-wrap"><b class="font-bold text-sm text-white">${safe(a.nickname)}</b><small class="text-[10px] px-1.5 py-0.5 rounded bg-[#e2e8f0] text-gray-300">${safe(a.platform)}</small><small class="text-[10px] px-1.5 py-0.5 rounded bg-[#e2e8f0] text-gray-300">${safe(a.accountClass)}</small><small class="text-[10px] px-1.5 py-0.5 rounded ${approved ? 'text-emerald-400' : 'text-amber-300'}">${safe(String(a.status||'pending').toUpperCase())}</small></span><span class="block text-xs font-mono text-gray-400 mt-1"># ${safe(a.accountNumber||a.id)}</span></span>
+          return `<button type="button" ${approved ? 'onclick="switchTradingAccount(\''+safe(a.backendId)+'\')"' : 'disabled'} class="w-full text-left p-3.5 rounded-2xl border ${selected ? 'border-bullBlue bg-bullBlue/10' : 'border-[#252D3D] bg-[#131722]'} ${approved ? 'hover:bg-[#1E2430] cursor-pointer' : 'opacity-60 cursor-not-allowed'} transition flex items-center justify-between gap-3 mb-2">
+            <span class="min-w-0"><span class="flex items-center gap-2 flex-wrap"><b class="font-bold text-sm text-white">${safe(a.nickname)}</b><small class="text-[10px] px-1.5 py-0.5 rounded bg-[#252D3D] text-gray-300">${safe(a.platform)}</small><small class="text-[10px] px-1.5 py-0.5 rounded bg-[#252D3D] text-gray-300">${safe(a.accountClass)}</small><small class="text-[10px] px-1.5 py-0.5 rounded ${approved ? 'text-emerald-400' : 'text-amber-300'}">${safe(String(a.status||'pending').toUpperCase())}</small></span><span class="block text-xs font-mono text-gray-400 mt-1"># ${safe(a.accountNumber||a.id)}</span></span>
             <span class="text-right whitespace-nowrap"><b class="block font-mono text-sm text-white">${formatMoney(a.balance)} ${safe(a.currency||'USD')}</b><small class="block text-[10px] text-gray-400">Equity ${formatMoney(a.equity??a.balance)} ${safe(a.currency||'USD')}</small></span>
           </button>`;
         }).join('');
       };
       openModal(`
-        <div class="p-4 border-b border-[#e2e8f0] flex items-center justify-between"><h3 class="font-bold text-base text-white">Switch Account</h3><button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#e2e8f0] text-gray-300 flex items-center justify-center">✕</button></div>
+        <div class="p-4 border-b border-[#252D3D] flex items-center justify-between"><h3 class="font-bold text-base text-white">Switch Account</h3><button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#252D3D] text-gray-300 flex items-center justify-center">✕</button></div>
         <div class="p-4 overflow-y-auto space-y-4">
           <section><div class="text-xs font-bold uppercase tracking-wider text-bullBlue mb-2">Demo Accounts</div>${renderList('Demo')}</section>
           <section><div class="text-xs font-bold uppercase tracking-wider text-bullGreen mb-2">Real Accounts</div>${renderList('Real')}</section>
@@ -625,7 +625,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 
     function openNewAccountModal() {
       openModal(`
-        <div class="p-4 border-b border-[#e2e8f0] flex items-center justify-between"><h3 class="font-bold text-base text-white">Manage Trading Accounts</h3><button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#e2e8f0] text-gray-300 flex items-center justify-center">✕</button></div>
+        <div class="p-4 border-b border-[#252D3D] flex items-center justify-between"><h3 class="font-bold text-base text-white">Manage Trading Accounts</h3><button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#252D3D] text-gray-300 flex items-center justify-center">✕</button></div>
         <div class="p-4 space-y-3"><p class="text-sm text-gray-300">Account creation, approval and funding are managed centrally in your BIGBULLS Client Area. The terminal will only use accounts provisioned by that workflow.</p><button onclick="closeModal()" class="w-full py-3 rounded-xl bg-bullBlue text-white font-bold text-sm">Close</button></div>`);
     }
 
@@ -654,21 +654,21 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
     function openDepositModal() {
       const acc = getActiveAccount();
       openModal(`
-        <div class="p-4 border-b border-[#e2e8f0] flex items-center justify-between">
+        <div class="p-4 border-b border-[#252D3D] flex items-center justify-between">
           <h3 class="font-bold text-base text-white">Deposit — ${acc.type}</h3>
-          <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#e2e8f0] text-gray-300 flex items-center justify-center">✕</button>
+          <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#252D3D] text-gray-300 flex items-center justify-center">✕</button>
         </div>
         <div class="p-4 space-y-4">
-          <div class="bg-[#131722] p-3 rounded-xl border border-[#e2e8f0] flex justify-between text-xs">
+          <div class="bg-[#131722] p-3 rounded-xl border border-[#252D3D] flex justify-between text-xs">
             <span class="text-gray-400">Target Account</span>
             <span class="font-mono font-bold text-white">${acc.nickname} (#${acc.id})</span>
           </div>
           <div>
             <label class="text-xs text-gray-400 block mb-1.5">Enter deposit amount (USD)</label>
-            <input id="depositAmountInput" type="number" value="5000" min="1" class="w-full bg-[#f8fafc] border border-[#e2e8f0] focus:border-bullBlue rounded-xl px-3.5 py-3 text-xl font-mono font-bold text-white outline-none" />
+            <input id="depositAmountInput" type="number" value="5000" min="1" class="w-full bg-[#131722] border border-[#252D3D] focus:border-bullBlue rounded-xl px-3.5 py-3 text-xl font-mono font-bold text-white outline-none" />
             <div class="flex gap-2 mt-2">
               ${[500, 1000, 5000, 10000].map(amt => `
-                <button onclick="document.getElementById('depositAmountInput').value=${amt}" class="flex-1 py-1.5 rounded-lg bg-[#e2e8f0] hover:bg-bullBlue text-xs font-mono font-semibold text-white transition">+${amt}</button>
+                <button onclick="document.getElementById('depositAmountInput').value=${amt}" class="flex-1 py-1.5 rounded-lg bg-[#252D3D] hover:bg-bullBlue text-xs font-mono font-semibold text-white transition">+${amt}</button>
               `).join('')}
             </div>
           </div>
@@ -691,7 +691,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
             <h3 class="font-bold text-lg text-white">Deposit is in Your Account!</h3>
             <p class="text-xs text-gray-400 mt-1">Your deposit is accepted. You can start trading now.</p>
           </div>
-          <div class="bg-[#131722] rounded-2xl p-3.5 border border-[#e2e8f0] space-y-2 text-xs">
+          <div class="bg-[#131722] rounded-2xl p-3.5 border border-[#252D3D] space-y-2 text-xs">
             <div class="flex justify-between">
               <span class="text-gray-400">Status</span>
               <span class="text-bullGreen font-bold">● Accepted</span>
@@ -709,13 +709,13 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
     function openWithdrawModal() {
       const acc = getActiveAccount();
       openModal(`
-        <div class="p-4 border-b border-[#e2e8f0] flex items-center justify-between">
+        <div class="p-4 border-b border-[#252D3D] flex items-center justify-between">
           <h3 class="font-bold text-base text-white">Withdraw Funds</h3>
-          <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#e2e8f0] text-gray-300 flex items-center justify-center">✕</button>
+          <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#252D3D] text-gray-300 flex items-center justify-center">✕</button>
         </div>
         <div class="p-4 space-y-4">
           <div class="text-xs text-gray-400">Available balance: <span class="font-mono font-bold text-white">${formatMoney(acc.balance)} USD</span></div>
-          <input id="withdrawAmountInput" type="number" value="100" min="1" max="${acc.balance}" class="w-full bg-[#f8fafc] border border-[#e2e8f0] rounded-xl px-3.5 py-3 text-xl font-mono font-bold text-white outline-none" />
+          <input id="withdrawAmountInput" type="number" value="100" min="1" max="${acc.balance}" class="w-full bg-[#131722] border border-[#252D3D] rounded-xl px-3.5 py-3 text-xl font-mono font-bold text-white outline-none" />
           <button onclick="submitWithdraw()" class="w-full py-3.5 rounded-xl bg-bullBlue hover:bg-bullYellowHover text-white font-bold text-sm">Confirm Withdrawal</button>
         </div>
       `);
@@ -738,17 +738,17 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
       const acc = getActiveAccount();
       const m = getAccountMetrics();
       openModal(`
-        <div class="p-4 border-b border-[#e2e8f0] flex items-center justify-between">
+        <div class="p-4 border-b border-[#252D3D] flex items-center justify-between">
           <h3 class="font-bold text-base text-white">${acc.nickname}</h3>
-          <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#e2e8f0] text-gray-300 flex items-center justify-center">✕</button>
+          <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#252D3D] text-gray-300 flex items-center justify-center">✕</button>
         </div>
-        <div class="grid grid-cols-2 border-b border-[#e2e8f0] text-xs font-bold">
+        <div class="grid grid-cols-2 border-b border-[#252D3D] text-xs font-bold">
           <button onclick="openAccountSettingsModal('Funds')" class="py-2.5 border-b-2 ${tab==='Funds'?'border-bullBlue text-white':'border-transparent text-gray-400'}">Funds</button>
           <button onclick="openAccountSettingsModal('Settings')" class="py-2.5 border-b-2 ${tab==='Settings'?'border-bullBlue text-white':'border-transparent text-gray-400'}">Settings</button>
         </div>
         <div class="p-4 overflow-y-auto space-y-3 text-xs">
           ${tab === 'Funds' ? `
-            <div class="bg-[#131722] rounded-2xl p-3.5 border border-[#e2e8f0] space-y-2.5">
+            <div class="bg-[#131722] rounded-2xl p-3.5 border border-[#252D3D] space-y-2.5">
               <div class="flex justify-between"><span class="text-gray-400">Balance</span><span class="font-mono font-bold text-white">${formatMoney(m.balance)} USD</span></div>
               ${m.creditBonus>0?`<div class="flex justify-between"><span class="text-gray-400">VIP Credit Bonus</span><span class="font-mono font-bold text-amber-300">+${formatMoney(m.creditBonus)} USD</span></div>`:""}
               <div class="flex justify-between"><span class="text-gray-400">Equity</span><span class="font-mono font-bold text-white">${formatMoney(m.equity)} USD</span></div>
@@ -758,7 +758,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
               <div class="flex justify-between"><span class="text-gray-400">Leverage</span><span class="font-mono font-bold text-white">${acc.leverage}</span></div>
             </div>
           ` : `
-            <div class="bg-[#131722] rounded-2xl p-3.5 border border-[#e2e8f0] space-y-2.5">
+            <div class="bg-[#131722] rounded-2xl p-3.5 border border-[#252D3D] space-y-2.5">
               <div class="flex justify-between"><span class="text-gray-400">Type</span><span class="font-bold text-white">${acc.platform} · ${acc.accountClass} · ${acc.type}</span></div>
               <div class="flex justify-between"><span class="text-gray-400">Number</span><span class="font-mono font-bold text-white">#${acc.id}</span></div>
               <div class="flex justify-between"><span class="text-gray-400">Max leverage</span><span class="font-mono font-bold text-white">${acc.leverage}</span></div>
@@ -778,19 +778,19 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 
     function openChartPreferencesModal() {
       openModal(`
-        <div class="p-4 border-b border-[#e2e8f0] flex items-center justify-between">
+        <div class="p-4 border-b border-[#252D3D] flex items-center justify-between">
           <h3 class="font-bold text-base text-white">Chart Preferences</h3>
-          <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#e2e8f0] text-gray-300 flex items-center justify-center">✕</button>
+          <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#252D3D] text-gray-300 flex items-center justify-center">✕</button>
         </div>
         <div class="p-4 space-y-3 text-xs">
-          <div class="bg-[#131722] p-3.5 rounded-2xl border border-[#e2e8f0] flex items-center justify-between">
+          <div class="bg-[#131722] p-3.5 rounded-2xl border border-[#252D3D] flex items-center justify-between">
             <div>
               <div class="font-bold text-white">One-Click Trading</div>
               <div class="text-gray-400 mt-0.5">Execute market orders immediately without confirmation</div>
             </div>
             <input type="checkbox" ${state.oneClickTrade ? 'checked' : ''} onchange="state.oneClickTrade=this.checked; renderApp()" class="w-5 h-5 accent-bullBlue" />
           </div>
-          <div class="bg-[#131722] p-3.5 rounded-2xl border border-[#e2e8f0] flex justify-between">
+          <div class="bg-[#131722] p-3.5 rounded-2xl border border-[#252D3D] flex justify-between">
             <span class="text-gray-400">Chart Provider</span>
             <span class="font-bold text-white">BigBulls TradingView Engine</span>
           </div>
@@ -847,23 +847,23 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
         const marginReq = ((m.lots * inst.contractSize * execPrice) / lev).toFixed(2);
 
         return `
-          <div class="p-4 border-b border-[#e2e8f0] flex items-center justify-between">
+          <div class="p-4 border-b border-[#252D3D] flex items-center justify-between">
             <div class="flex items-center gap-2">
               <span class="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white" style="background:${inst.iconBg}">${inst.iconText}</span>
               <h3 class="font-bold text-sm text-white">${inst.symbol} Order</h3>
             </div>
-            <button onclick="closeModal()" class="w-7 h-7 rounded-full bg-[#e2e8f0] text-gray-300 flex items-center justify-center text-xs">✕</button>
+            <button onclick="closeModal()" class="w-7 h-7 rounded-full bg-[#252D3D] text-gray-300 flex items-center justify-center text-xs">✕</button>
           </div>
-          <div class="grid grid-cols-2 border-b border-[#e2e8f0] text-xs font-bold">
+          <div class="grid grid-cols-2 border-b border-[#252D3D] text-xs font-bold">
             <button onclick="state.orderTicket.mode='Market'; openModal(renderTicketInner())" class="py-2.5 border-b-2 ${m.mode==='Market'?'border-bullBlue text-white':'border-transparent text-gray-400'}">Market</button>
             <button onclick="state.orderTicket.mode='Pending'; state.orderTicket.pendingType=state.orderTicket.side+' Limit'; openModal(renderTicketInner())" class="py-2.5 border-b-2 ${m.mode==='Pending'?'border-bullBlue text-white':'border-transparent text-gray-400'}">Pending</button>
           </div>
           <div class="p-4 space-y-3.5 text-xs">
             <div class="grid grid-cols-2 gap-2">
-              <button onclick="state.orderTicket.side='Sell'; openModal(renderTicketInner())" class="py-2.5 rounded-xl font-bold border ${m.side==='Sell' ? 'bg-bullRed border-bullRed text-white' : 'bg-[#131722] border-[#e2e8f0] text-gray-400'}">
+              <button onclick="state.orderTicket.side='Sell'; openModal(renderTicketInner())" class="py-2.5 rounded-xl font-bold border ${m.side==='Sell' ? 'bg-bullRed border-bullRed text-white' : 'bg-[#131722] border-[#252D3D] text-gray-400'}">
                 Sell <span class="font-mono block text-sm">${inst.bid.toFixed(inst.digits)}</span>
               </button>
-              <button onclick="state.orderTicket.side='Buy'; openModal(renderTicketInner())" class="py-2.5 rounded-xl font-bold border ${m.side==='Buy' ? 'bg-bullBlue border-bullBlue text-white' : 'bg-[#131722] border-[#e2e8f0] text-gray-400'}">
+              <button onclick="state.orderTicket.side='Buy'; openModal(renderTicketInner())" class="py-2.5 rounded-xl font-bold border ${m.side==='Buy' ? 'bg-bullBlue border-bullBlue text-white' : 'bg-[#131722] border-[#252D3D] text-gray-400'}">
                 Buy <span class="font-mono block text-sm">${inst.ask.toFixed(inst.digits)}</span>
               </button>
             </div>
@@ -871,11 +871,11 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
             ${m.mode === 'Pending' ? `
               <div>
                 <label class="text-gray-400 block mb-1">Pending order type</label>
-                <select id="ticketPendingType" onchange="const v=this.value;state.orderTicket.side=v.startsWith('Buy')?'Buy':'Sell';state.orderTicket.pendingType=v;openModal(renderTicketInner())" class="w-full bg-[#f8fafc] border border-[#e2e8f0] rounded-xl px-3 py-2 text-white"><option ${m.pendingType==='Buy Limit'?'selected':''}>Buy Limit</option><option ${m.pendingType==='Sell Limit'?'selected':''}>Sell Limit</option><option ${m.pendingType==='Buy Stop'?'selected':''}>Buy Stop</option><option ${m.pendingType==='Sell Stop'?'selected':''}>Sell Stop</option></select>
+                <select id="ticketPendingType" onchange="const v=this.value;state.orderTicket.side=v.startsWith('Buy')?'Buy':'Sell';state.orderTicket.pendingType=v;openModal(renderTicketInner())" class="w-full bg-[#131722] border border-[#252D3D] rounded-xl px-3 py-2 text-white"><option ${m.pendingType==='Buy Limit'?'selected':''}>Buy Limit</option><option ${m.pendingType==='Sell Limit'?'selected':''}>Sell Limit</option><option ${m.pendingType==='Buy Stop'?'selected':''}>Buy Stop</option><option ${m.pendingType==='Sell Stop'?'selected':''}>Sell Stop</option></select>
               </div>
               <div>
                 <label class="text-gray-400 block mb-1">Order Price (${m.pendingType})</label>
-                <input id="ticketTargetPrice" type="number" step="any" value="${m.targetPrice}" oninput="state.orderTicket.targetPrice=parseFloat(this.value);bbUpdateTicketMargin()" class="w-full bg-[#f8fafc] border border-[#e2e8f0] rounded-xl px-3 py-2 font-mono font-bold text-white" />
+                <input id="ticketTargetPrice" type="number" step="any" value="${m.targetPrice}" oninput="state.orderTicket.targetPrice=parseFloat(this.value);bbUpdateTicketMargin()" class="w-full bg-[#131722] border border-[#252D3D] rounded-xl px-3 py-2 font-mono font-bold text-white" />
               </div>
             ` : ''}
 
@@ -885,13 +885,13 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
                 <span class="font-mono text-white font-bold">${m.lots.toFixed(2)}</span>
               </div>
               <div class="flex items-center gap-2">
-                <button onclick="state.orderTicket.lots=Math.max(0.01, Number((state.orderTicket.lots-0.01).toFixed(2))); openModal(renderTicketInner())" class="w-10 h-10 rounded-xl bg-[#e2e8f0] text-white font-bold text-base">−</button>
-                <input type="number" step="0.01" min="0.01" value="${m.lots}" oninput="state.orderTicket.lots=Math.max(0.01, parseFloat(this.value)||0.01);bbUpdateTicketMargin()" class="flex-1 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl h-10 text-center font-mono font-bold text-sm text-white" />
-                <button onclick="state.orderTicket.lots=Number((state.orderTicket.lots+0.01).toFixed(2)); openModal(renderTicketInner())" class="w-10 h-10 rounded-xl bg-[#e2e8f0] text-white font-bold text-base">+</button>
+                <button onclick="state.orderTicket.lots=Math.max(0.01, Number((state.orderTicket.lots-0.01).toFixed(2))); openModal(renderTicketInner())" class="w-10 h-10 rounded-xl bg-[#252D3D] text-white font-bold text-base">−</button>
+                <input type="number" step="0.01" min="0.01" value="${m.lots}" oninput="state.orderTicket.lots=Math.max(0.01, parseFloat(this.value)||0.01);bbUpdateTicketMargin()" class="flex-1 bg-[#131722] border border-[#252D3D] rounded-xl h-10 text-center font-mono font-bold text-sm text-white" />
+                <button onclick="state.orderTicket.lots=Number((state.orderTicket.lots+0.01).toFixed(2)); openModal(renderTicketInner())" class="w-10 h-10 rounded-xl bg-[#252D3D] text-white font-bold text-base">+</button>
               </div>
               <div class="flex gap-1.5 mt-2">
                 ${[0.01, 0.05, 0.10, 0.50, 1.00].map(l => `
-                  <button onclick="state.orderTicket.lots=${l}; openModal(renderTicketInner())" class="flex-1 py-1 rounded-lg bg-[#131722] border border-[#e2e8f0] hover:border-bullBlue font-mono text-[11px] text-gray-300">${l.toFixed(2)}</button>
+                  <button onclick="state.orderTicket.lots=${l}; openModal(renderTicketInner())" class="flex-1 py-1 rounded-lg bg-[#131722] border border-[#252D3D] hover:border-bullBlue font-mono text-[11px] text-gray-300">${l.toFixed(2)}</button>
                 `).join('')}
               </div>
             </div>
@@ -899,11 +899,11 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
             <div class="grid grid-cols-2 gap-2">
               <div>
                 <label class="text-gray-400 block mb-1">Stop Loss (SL)</label>
-                <input id="ticketSL" type="number" step="any" placeholder="Not set" value="${m.sl}" oninput="state.orderTicket.sl=this.value" class="w-full bg-[#f8fafc] border border-[#e2e8f0] rounded-xl px-3 py-2 font-mono text-white" />
+                <input id="ticketSL" type="number" step="any" placeholder="Not set" value="${m.sl}" oninput="state.orderTicket.sl=this.value" class="w-full bg-[#131722] border border-[#252D3D] rounded-xl px-3 py-2 font-mono text-white" />
               </div>
               <div>
                 <label class="text-gray-400 block mb-1">Take Profit (TP)</label>
-                <input id="ticketTP" type="number" step="any" placeholder="Not set" value="${m.tp}" oninput="state.orderTicket.tp=this.value" class="w-full bg-[#f8fafc] border border-[#e2e8f0] rounded-xl px-3 py-2 font-mono text-white" />
+                <input id="ticketTP" type="number" step="any" placeholder="Not set" value="${m.tp}" oninput="state.orderTicket.tp=this.value" class="w-full bg-[#131722] border border-[#252D3D] rounded-xl px-3 py-2 font-mono text-white" />
               </div>
             </div>
 
@@ -980,18 +980,18 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
       const closePrice = Number.isFinite(rawClosePrice) && rawClosePrice > 0 ? rawClosePrice : Number(order.openPrice || 0);
 
       openModal(`
-        <div class="p-4 border-b border-[#e2e8f0] flex items-center justify-between">
+        <div class="p-4 border-b border-[#252D3D] flex items-center justify-between">
           <h3 class="font-bold text-sm text-white">Close position #${order.id} ?</h3>
-          <button onclick="closeModal()" class="w-7 h-7 rounded-full bg-[#e2e8f0] text-gray-300 flex items-center justify-center text-xs">✕</button>
+          <button onclick="closeModal()" class="w-7 h-7 rounded-full bg-[#252D3D] text-gray-300 flex items-center justify-center text-xs">✕</button>
         </div>
         <div class="p-4 space-y-3 text-xs">
           <div class="flex justify-between"><span class="text-gray-400">Lots</span><span class="font-mono font-bold text-white">${Number(order.lots||0).toFixed(2)}</span></div>
           <div class="flex justify-between"><span class="text-gray-400">Closing price</span><span class="font-mono font-bold text-white">${closePrice.toFixed(Number(inst.digits)||2)}</span></div>
           <div class="flex justify-between"><span class="text-gray-400">Profit / Loss</span><span class="font-mono font-bold ${pl>=0?'text-bullGreen':'text-bullRed'}">${pl>=0?'+':''}${formatMoney(pl)} USD</span></div>
-          ${positionMode==='real'&&Number(order.lots)>=0.02 ? `<button onclick="openPartialCloseModal('${order.backendTradeId||order.id}')" class="w-full py-2.5 rounded-xl bg-[#e2e8f0] text-white font-bold text-xs mt-2">Partial close</button>` : ''}
-          ${positionMode==='real' ? `<button onclick="openModifyPositionModal('${order.backendTradeId||order.id}')" class="w-full py-2.5 rounded-xl bg-[#e2e8f0] text-white font-bold text-xs mt-2">Modify SL / TP</button>` : ''}
+          ${positionMode==='real'&&Number(order.lots)>=0.02 ? `<button onclick="openPartialCloseModal('${order.backendTradeId||order.id}')" class="w-full py-2.5 rounded-xl bg-[#252D3D] text-white font-bold text-xs mt-2">Partial close</button>` : ''}
+          ${positionMode==='real' ? `<button onclick="openModifyPositionModal('${order.backendTradeId||order.id}')" class="w-full py-2.5 rounded-xl bg-[#252D3D] text-white font-bold text-xs mt-2">Modify SL / TP</button>` : ''}
           <button onclick="executeCloseOrder('${order.backendTradeId || order.id}', false)" class="w-full py-3 rounded-xl bg-bullBlue hover:bg-bullYellowHover text-white font-bold text-sm mt-2">Confirm</button>
-          <button onclick="closeModal()" class="w-full py-2.5 rounded-xl bg-[#e2e8f0] text-gray-300 font-bold text-xs">Cancel</button>
+          <button onclick="closeModal()" class="w-full py-2.5 rounded-xl bg-[#252D3D] text-gray-300 font-bold text-xs">Cancel</button>
         </div>
       `);
     }
@@ -1173,7 +1173,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
             <p class="text-[10px] leading-relaxed text-slate-400">AI automation applies only to this selected account. Manual market orders, pending orders, SL/TP changes and closing positions stay available. *Platform risk limits may be stricter.</p>
           </section>` : `<section class="rounded-2xl border border-slate-700 bg-[#101827] p-3 text-xs text-slate-300">AI Auto-Trade is available on eligible approved Real accounts. Manual trading is always available.</section>`)}
           <!-- Active Account Summary Card -->
-          <div class="bg-[#ffffff] border border-[#e2e8f0] rounded-3xl p-4 space-y-4">
+          <div class="bg-[#ffffff] border border-[#252D3D] rounded-3xl p-4 space-y-4">
             <div class="flex items-center justify-between">
               <div onclick="openSwitchAccountModal()" class="cursor-pointer">
                 <div class="text-xs font-bold text-white flex items-center gap-1.5">
@@ -1183,11 +1183,11 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
                 </div>
                 <div class="flex items-center gap-1.5 mt-1.5">
                   <span class="text-[10px] font-bold px-2 py-0.5 rounded-md ${acc.type==='Demo' ? 'bg-bullGreen/15 text-bullGreen' : 'bg-bullBlue/15 text-bullBlue'}">${acc.type}</span>
-                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#e2e8f0] text-gray-300">${acc.platform}</span>
-                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#e2e8f0] text-gray-300">${acc.accountClass}</span>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#252D3D] text-gray-300">${acc.platform}</span>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#252D3D] text-gray-300">${acc.accountClass}</span>
                 </div>
               </div>
-              <button onclick="openAccountSettingsModal('Settings')" class="w-9 h-9 rounded-full bg-[#e2e8f0] hover:bg-bullBlue text-gray-300 hover:text-white flex items-center justify-center transition">⚙️</button>
+              <button onclick="openAccountSettingsModal('Settings')" class="w-9 h-9 rounded-full bg-[#252D3D] hover:bg-bullBlue text-gray-300 hover:text-white flex items-center justify-center transition">⚙️</button>
             </div>
 
             <div data-live-equity class="text-3xl font-extrabold font-mono text-white tracking-tight">
@@ -1202,11 +1202,11 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
                 <span class="text-xs font-semibold text-white">Trade</span>
               </button>
               <button onclick="openDepositModal()" class="flex flex-col items-center gap-1.5 group">
-                <div class="w-12 h-12 rounded-full bg-[#e2e8f0] group-hover:bg-bullBlue text-white flex items-center justify-center text-lg font-bold transition">↓</div>
+                <div class="w-12 h-12 rounded-full bg-[#252D3D] group-hover:bg-bullBlue text-white flex items-center justify-center text-lg font-bold transition">↓</div>
                 <span class="text-xs font-semibold text-gray-300">Deposit</span>
               </button>
               <button onclick="openWithdrawModal()" class="flex flex-col items-center gap-1.5 group">
-                <div class="w-12 h-12 rounded-full bg-[#e2e8f0] group-hover:bg-bullBlue text-white flex items-center justify-center text-lg font-bold transition">↗</div>
+                <div class="w-12 h-12 rounded-full bg-[#252D3D] group-hover:bg-bullBlue text-white flex items-center justify-center text-lg font-bold transition">↗</div>
                 <span class="text-xs font-semibold text-gray-300">Withdraw</span>
               </button>
             </div>
@@ -1214,13 +1214,13 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 
           <!-- Orders Sub-Tabs: Open | Pending | Closed -->
           <div>
-            <div class="flex items-center justify-between border-b border-[#e2e8f0] pb-2">
+            <div class="flex items-center justify-between border-b border-[#252D3D] pb-2">
               <div class="flex items-center gap-5 text-xs font-bold">
                 <button onclick="state.ordersSubTab='open'; renderApp()" class="pb-1.5 border-b-2 ${state.ordersSubTab==='open' ? 'border-bullBlue text-white' : 'border-transparent text-gray-400'}">
-                  Open ${accOpenOrders.length > 0 ? `<span class="ml-1 px-1.5 py-0.5 rounded-full bg-[#e2e8f0] text-[10px]">${accOpenOrders.length}</span>` : ''}
+                  Open ${accOpenOrders.length > 0 ? `<span class="ml-1 px-1.5 py-0.5 rounded-full bg-[#252D3D] text-[10px]">${accOpenOrders.length}</span>` : ''}
                 </button>
                 <button onclick="state.ordersSubTab='pending'; renderApp()" class="pb-1.5 border-b-2 ${state.ordersSubTab==='pending' ? 'border-bullBlue text-white' : 'border-transparent text-gray-400'}">
-                  Pending ${accPendingOrders.length > 0 ? `<span class="ml-1 px-1.5 py-0.5 rounded-full bg-[#e2e8f0] text-[10px]">${accPendingOrders.length}</span>` : ''}
+                  Pending ${accPendingOrders.length > 0 ? `<span class="ml-1 px-1.5 py-0.5 rounded-full bg-[#252D3D] text-[10px]">${accPendingOrders.length}</span>` : ''}
                 </button>
                 <button onclick="state.ordersSubTab='closed'; renderApp()" class="pb-1.5 border-b-2 ${state.ordersSubTab==='closed' ? 'border-bullBlue text-white' : 'border-transparent text-gray-400'}">
                   Closed
@@ -1241,7 +1241,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
                     const pl = calculateOrderPL(o);
                     const inst = state.instruments[o.symbol];
                     return `
-                      <div onclick="openClosePositionModal(${o.id})" class="bg-[#ffffff] border border-[#e2e8f0] rounded-2xl p-3.5 flex items-center justify-between cursor-pointer hover:border-bullBlue transition">
+                      <div onclick="openClosePositionModal(${o.id})" class="bg-[#ffffff] border border-[#252D3D] rounded-2xl p-3.5 flex items-center justify-between cursor-pointer hover:border-bullBlue transition">
                         <div>
                           <div class="font-bold text-sm text-white">${o.symbol}</div>
                           <div class="text-xs font-semibold ${o.side==='Buy'?'text-bullBlue':'text-bullRed'} mt-0.5">${o.side} ${o.lots.toFixed(2)} lot at ${o.openPrice.toFixed(inst.digits)}</div>
@@ -1260,7 +1260,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
                     ${quickPairs.map(sym => {
                       const item = state.instruments[sym];
                       return `
-                        <div onclick="openSymbolChart('${sym}')" class="bg-[#ffffff] border border-[#e2e8f0] hover:border-bullBlue rounded-2xl p-3 text-center cursor-pointer transition">
+                        <div onclick="openSymbolChart('${sym}')" class="bg-[#ffffff] border border-[#252D3D] hover:border-bullBlue rounded-2xl p-3 text-center cursor-pointer transition">
                           <div class="text-xs font-bold text-white">${sym}</div>
                           <div class="w-8 h-8 rounded-full mx-auto my-2 flex items-center justify-center text-xs font-extrabold text-white" style="background:${item.iconBg}">${item.iconText}</div>
                           <div data-bid="${sym}" class="font-mono font-bold text-xs text-white">${item.bid.toFixed(item.digits)}</div>
@@ -1272,7 +1272,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
                 `
               ) : state.ordersSubTab === 'pending' ? (
                 accPendingOrders.length > 0 ? accPendingOrders.map(o => `
-                  <div class="bg-[#ffffff] border border-[#e2e8f0] rounded-2xl p-3.5 flex items-center justify-between">
+                  <div class="bg-[#ffffff] border border-[#252D3D] rounded-2xl p-3.5 flex items-center justify-between">
                     <div>
                       <div class="font-bold text-sm text-white">${o.symbol}</div>
                       <div class="text-xs text-bullBlue">${o.side} ${o.pendingType} ${o.lots.toFixed(2)} lot @ ${o.targetPrice}</div>
@@ -1285,7 +1285,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
                 `).join('') : `<div class="text-xs text-gray-400 py-4 text-center">No pending orders.</div>`
               ) : (
                 accClosedOrders.length > 0 ? accClosedOrders.map(o => `
-                  <div class="bg-[#ffffff] border border-[#e2e8f0] rounded-2xl p-3.5 flex items-center justify-between">
+                  <div class="bg-[#ffffff] border border-[#252D3D] rounded-2xl p-3.5 flex items-center justify-between">
                     <div>
                       <div class="font-bold text-sm text-white">${o.symbol}</div>
                       <div class="text-xs text-gray-400">${o.side} ${o.lots.toFixed(2)} lot • Entry ${Number(o.openPrice).toFixed((state.instruments[o.symbol]||{}).digits||2)} → Close ${Number(o.closePrice).toFixed((state.instruments[o.symbol]||{}).digits||2)} • ${o.closeTime||''}</div>
@@ -1308,11 +1308,11 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
       if (state.tradeSubView === 'chart') {
         const symOrders = state.openOrders.filter(o => o.accountId === acc.id && o.symbol === inst.symbol);
         return `
-          <div class="flex-1 flex flex-col overflow-hidden bg-[#f8fafc]">
+          <div class="flex-1 flex flex-col overflow-hidden bg-[#131722]">
             <!-- Top Chart Bar -->
-            <div class="px-3 py-2.5 border-b border-[#e2e8f0] flex items-center justify-between shrink-0">
+            <div class="px-3 py-2.5 border-b border-[#252D3D] flex items-center justify-between shrink-0">
               <button onclick="state.tradeSubView='list'; renderApp()" class="w-8 h-8 rounded-full bg-[#ffffff] text-white flex items-center justify-center font-bold">←</button>
-              <button onclick="openSwitchAccountModal()" class="flex items-center gap-1.5 bg-[#ffffff] px-3 py-1 rounded-full border border-[#e2e8f0] text-xs">
+              <button onclick="openSwitchAccountModal()" class="flex items-center gap-1.5 bg-[#ffffff] px-3 py-1 rounded-full border border-[#252D3D] text-xs">
                 <span class="text-bullGreen font-bold">${acc.type}</span>
                 <span data-live-equity class="font-mono font-bold text-white">${formatMoney(m.equity)} USD</span>
                 <span class="text-gray-400">⋮</span>
@@ -1327,7 +1327,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
                 <span class="font-bold text-sm text-white">${inst.symbol} ▾</span>
               </div>
               ${symOrders.length > 0 ? `
-                <div onclick="openClosePositionModal(${symOrders[0].id})" class="flex items-center gap-2 bg-[#ffffff] border border-[#e2e8f0] px-2.5 py-1 rounded-lg text-xs cursor-pointer">
+                <div onclick="openClosePositionModal(${symOrders[0].id})" class="flex items-center gap-2 bg-[#ffffff] border border-[#252D3D] px-2.5 py-1 rounded-lg text-xs cursor-pointer">
                   <span class="px-1.5 py-0.5 rounded bg-bullBlue text-white font-mono font-bold text-[10px]">${symOrders[0].lots.toFixed(2)}</span>
                   <span data-order-pill-pl="${symOrders[0].id}" class="font-mono font-bold">${calculateOrderPL(symOrders[0])>=0?'+':''}${formatMoney(calculateOrderPL(symOrders[0]))} USD</span>
                   <span class="text-gray-400">✕</span>
@@ -1341,10 +1341,10 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
             </div>
 
             <!-- Timeframes & Buy/Sell Footer -->
-            <div class="p-3 bg-[#131722] border-t border-[#e2e8f0] space-y-2.5 shrink-0">
+            <div class="p-3 bg-[#131722] border-t border-[#252D3D] space-y-2.5 shrink-0">
               <div class="flex items-center gap-2 text-xs overflow-x-auto no-scrollbar whitespace-nowrap">
                 ${['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w', '1M'].map(tf => `
-                  <button onclick="state.timeframe='${tf}'; renderApp()" class="px-2.5 py-1 rounded-lg font-bold ${state.timeframe===tf ? 'bg-[#e2e8f0] text-white' : 'text-gray-400'}">${tf}</button>
+                  <button onclick="state.timeframe='${tf}'; renderApp()" class="px-2.5 py-1 rounded-lg font-bold ${state.timeframe===tf ? 'bg-[#252D3D] text-white' : 'text-gray-400'}">${tf}</button>
                 `).join('')}
               </div>
               <div class="grid grid-cols-2 gap-2 relative">
@@ -1367,13 +1367,13 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
         <div class="flex-1 overflow-y-auto px-4 pt-4 pb-6 space-y-4">
           <div class="flex items-center justify-between">
             <h1 class="text-2xl font-extrabold text-white">Trade</h1>
-            <button onclick="openSwitchAccountModal()" class="flex items-center gap-1.5 bg-[#ffffff] px-3 py-1 rounded-full border border-[#e2e8f0] text-xs">
+            <button onclick="openSwitchAccountModal()" class="flex items-center gap-1.5 bg-[#ffffff] px-3 py-1 rounded-full border border-[#252D3D] text-xs">
               <span class="text-bullGreen font-bold">${acc.type}</span>
               <span data-live-equity class="font-mono font-bold text-white">${formatMoney(m.equity)} USD</span>
             </button>
           </div>
 
-          <input value="${state.marketSearch||''}" oninput="filterMarketWatch(this.value)" placeholder="Search market instruments…" class="w-full rounded-xl border border-[#e2e8f0] bg-[#ffffff] px-3 py-2.5 text-sm text-white outline-none focus:border-bullBlue" />
+          <input value="${state.marketSearch||''}" oninput="filterMarketWatch(this.value)" placeholder="Search market instruments…" class="w-full rounded-xl border border-[#252D3D] bg-[#ffffff] px-3 py-2.5 text-sm text-white outline-none focus:border-bullBlue" />
           <div class="flex gap-2 overflow-x-auto no-scrollbar text-xs font-bold">
             ${['All','Forex','Metals','Indices','Commodities','Crypto'].map(t => `
               <button onclick="state.watchlistTab='${t}'; renderApp()" class="px-3 py-1.5 rounded-full shrink-0 ${state.watchlistTab===t ? 'bg-bullBlue text-white' : 'bg-[#ffffff] text-gray-400'}">${t}</button>
@@ -1382,7 +1382,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 
           <div class="space-y-2">
             ${Object.values(state.instruments).filter(item=>(state.watchlistTab==='All'||item.category===state.watchlistTab)&&(!state.marketSearch||((item.symbol+' '+item.name+' '+item.category).toLowerCase().includes(state.marketSearch)))).map(item => `
-              <div onclick="openSymbolChart('${item.symbol}')" class="bg-[#ffffff] border border-[#e2e8f0] hover:border-bullBlue rounded-2xl p-3.5 flex items-center justify-between cursor-pointer transition">
+              <div onclick="openSymbolChart('${item.symbol}')" class="bg-[#ffffff] border border-[#252D3D] hover:border-bullBlue rounded-2xl p-3.5 flex items-center justify-between cursor-pointer transition">
                 <div class="flex items-center gap-3">
                   <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-extrabold text-white" style="background:${item.iconBg}">${item.iconText}</div>
                   <div>
@@ -1419,7 +1419,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
         <div class="flex-1 overflow-y-auto px-4 pt-4 pb-6 space-y-5">
           <div class="flex items-center justify-between">
             <h1 class="text-2xl font-extrabold text-white">Insights</h1>
-            <div class="bg-[#ffffff] px-3 py-1 rounded-full border border-[#e2e8f0] text-xs">
+            <div class="bg-[#ffffff] px-3 py-1 rounded-full border border-[#252D3D] text-xs">
               <span class="text-bullGreen font-bold">${acc.type}</span>
               <span data-live-equity class="font-mono font-bold text-white ml-1">${formatMoney(m.equity)} USD</span>
             </div>
@@ -1431,7 +1431,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
             <h2 class="text-sm font-bold text-white mb-2.5">Trading signals</h2>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               ${signals.map(s => `
-                <div onclick="switchTab('trade')" class="bg-[#ffffff] border border-[#e2e8f0] rounded-2xl p-3.5 cursor-pointer hover:border-bullBlue transition">
+                <div onclick="switchTab('trade')" class="bg-[#ffffff] border border-[#252D3D] rounded-2xl p-3.5 cursor-pointer hover:border-bullBlue transition">
                   <div class="text-[10px] font-bold text-gray-400 uppercase">${s.pair} • 30 MIN</div>
                   <div class="font-bold text-xs text-white mt-1.5">${s.title}</div>
                   <div class="mt-2.5 inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${s.down ? 'bg-bullRed/15 text-bullRed' : 'bg-bullGreen/15 text-bullGreen'}">
@@ -1444,7 +1444,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 
           <div>
             <h2 class="text-sm font-bold text-white mb-2.5">Upcoming events</h2>
-            <div class="bg-[#ffffff] border border-[#e2e8f0] rounded-2xl divide-y divide-[#252D3D] text-xs">
+            <div class="bg-[#ffffff] border border-[#252D3D] rounded-2xl divide-y divide-[#252D3D] text-xs">
               <div class="p-3 flex justify-between items-center">
                 <div><div class="font-bold text-white">🇬🇧 UK Balance of Trade</div><div class="text-gray-400 text-[11px]">12:00 — In 10 minutes</div></div>
                 <span class="px-2 py-0.5 rounded bg-bullRed/20 text-bullRed font-bold text-[10px]">High Impact</span>
@@ -1460,7 +1460,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
             <h2 class="text-sm font-bold text-white mb-2.5">Top news</h2>
             <div class="space-y-2">
               ${news.map(n => `
-                <div class="bg-[#ffffff] border border-[#e2e8f0] rounded-2xl p-3.5">
+                <div class="bg-[#ffffff] border border-[#252D3D] rounded-2xl p-3.5">
                   <div class="font-bold text-xs text-white leading-snug">${n.title}</div>
                   <div class="flex items-center gap-2 mt-2 text-[11px] text-gray-400">
                     <span>${n.time}</span>
@@ -1485,15 +1485,15 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
       return `
         <div class="flex-1 overflow-y-auto px-4 pt-4 pb-6 space-y-4">
           <h1 class="text-2xl font-extrabold text-white">Performance</h1>
-          <div class="text-[11px] text-gray-400 bg-[#ffffff] p-3 rounded-2xl border border-[#e2e8f0]">
+          <div class="text-[11px] text-gray-400 bg-[#ffffff] p-3 rounded-2xl border border-[#252D3D]">
             ⓘ All times on this page use UTC (GMT+0) and may differ from your local time
           </div>
 
           <div class="flex gap-2">
-            <button onclick="openSwitchAccountModal()" class="px-3 py-1.5 rounded-full bg-[#ffffff] border border-[#e2e8f0] text-xs font-bold text-white">
+            <button onclick="openSwitchAccountModal()" class="px-3 py-1.5 rounded-full bg-[#ffffff] border border-[#252D3D] text-xs font-bold text-white">
               ${acc.nickname} (#${acc.id}) ▾
             </button>
-            <span class="px-3 py-1.5 rounded-full bg-[#ffffff] border border-[#e2e8f0] text-xs font-bold text-gray-300">Last 7 days</span>
+            <span class="px-3 py-1.5 rounded-full bg-[#ffffff] border border-[#252D3D] text-xs font-bold text-gray-300">Last 7 days</span>
           </div>
 
           ${closed.length === 0 ? `
@@ -1505,15 +1505,15 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
             </div>
           ` : `
             <div class="grid grid-cols-3 gap-2">
-              <div class="bg-[#ffffff] border border-[#e2e8f0] rounded-2xl p-3">
+              <div class="bg-[#ffffff] border border-[#252D3D] rounded-2xl p-3">
                 <div class="text-[11px] text-gray-400">Net Profit</div>
                 <div class="font-mono font-bold text-sm mt-1 ${totalPL>=0?'text-bullGreen':'text-bullRed'}">${totalPL>=0?'+':''}${formatMoney(totalPL)}</div>
               </div>
-              <div class="bg-[#ffffff] border border-[#e2e8f0] rounded-2xl p-3">
+              <div class="bg-[#ffffff] border border-[#252D3D] rounded-2xl p-3">
                 <div class="text-[11px] text-gray-400">Closed Orders</div>
                 <div class="font-mono font-bold text-sm text-white mt-1">${closed.length}</div>
               </div>
-              <div class="bg-[#ffffff] border border-[#e2e8f0] rounded-2xl p-3">
+              <div class="bg-[#ffffff] border border-[#252D3D] rounded-2xl p-3">
                 <div class="text-[11px] text-gray-400">Win Rate</div>
                 <div class="font-mono font-bold text-sm text-bullBlue mt-1">${winRate}%</div>
               </div>
@@ -1522,7 +1522,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
             <div class="space-y-2">
               <div class="text-xs font-bold text-gray-400">Trade History</div>
               ${closed.map(o => `
-                <div class="bg-[#ffffff] border border-[#e2e8f0] rounded-2xl p-3.5 flex items-center justify-between">
+                <div class="bg-[#ffffff] border border-[#252D3D] rounded-2xl p-3.5 flex items-center justify-between">
                   <div>
                     <div class="font-bold text-sm text-white">${o.symbol}</div>
                     <div class="text-xs text-gray-400">${o.side} ${o.lots.toFixed(2)} lot • ${o.openPrice} → ${o.closePrice}</div>
@@ -1552,26 +1552,26 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
       const timeframes = ['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w', '1M'];
 
       return `
-        <div class="w-full h-full min-h-0 bg-[#f8fafc] flex flex-col overflow-hidden select-none">
+        <div class="w-full h-full min-h-0 bg-[#131722] flex flex-col overflow-hidden select-none">
           <!-- 1. Top Web Terminal Header Bar (Logo, Account Dropdown, Deposit, Navigation) -->
-          <div class="h-11 bg-[#131722] border-b border-[#e2e8f0] px-3 flex items-center justify-between shrink-0">
+          <div class="h-11 bg-[#131722] border-b border-[#252D3D] px-3 flex items-center justify-between shrink-0">
             <div class="flex items-center gap-4">
               <div class="flex items-center gap-2">
                 <span class="text-bullBlue font-extrabold text-base tracking-tight">bigbulls</span>
                 <span class="text-[10px] px-1.5 py-0.5 rounded bg-bullBlue/15 text-bullBlue font-bold">WEB TERMINAL</span>
               </div>
-              <button type="button" onclick="goToClientArea()" class="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-[#e2e8f0] bg-[#ffffff] hover:bg-[#e2e8f0] px-2.5 py-1.5 text-[11px] font-bold text-white whitespace-nowrap" aria-label="Return to Client Area">← Client Area</button>
+              <button type="button" onclick="goToClientArea()" class="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-[#252D3D] bg-[#ffffff] hover:bg-[#252D3D] px-2.5 py-1.5 text-[11px] font-bold text-white whitespace-nowrap" aria-label="Return to Client Area">← Client Area</button>
               <div class="hidden md:flex items-center gap-1 text-xs">
-                <button onclick="switchTab('trade')" class="px-2.5 py-1 rounded-lg font-bold ${state.activeTab==='trade' ? 'bg-[#e2e8f0] text-white' : 'text-gray-400 hover:text-white'}">Terminal</button>
-                <button onclick="switchTab('accounts')" class="px-2.5 py-1 rounded-lg font-bold ${state.activeTab==='accounts' ? 'bg-[#e2e8f0] text-white' : 'text-gray-400 hover:text-white'}">Accounts</button>
-                <button onclick="switchTab('insights')" class="px-2.5 py-1 rounded-lg font-bold ${state.activeTab==='insights' ? 'bg-[#e2e8f0] text-white' : 'text-gray-400 hover:text-white'}">Insights</button>
-                <button onclick="switchTab('performance')" class="px-2.5 py-1 rounded-lg font-bold ${state.activeTab==='performance' ? 'bg-[#e2e8f0] text-white' : 'text-gray-400 hover:text-white'}">Performance</button>
+                <button onclick="switchTab('trade')" class="px-2.5 py-1 rounded-lg font-bold ${state.activeTab==='trade' ? 'bg-[#252D3D] text-white' : 'text-gray-400 hover:text-white'}">Terminal</button>
+                <button onclick="switchTab('accounts')" class="px-2.5 py-1 rounded-lg font-bold ${state.activeTab==='accounts' ? 'bg-[#252D3D] text-white' : 'text-gray-400 hover:text-white'}">Accounts</button>
+                <button onclick="switchTab('insights')" class="px-2.5 py-1 rounded-lg font-bold ${state.activeTab==='insights' ? 'bg-[#252D3D] text-white' : 'text-gray-400 hover:text-white'}">Insights</button>
+                <button onclick="switchTab('performance')" class="px-2.5 py-1 rounded-lg font-bold ${state.activeTab==='performance' ? 'bg-[#252D3D] text-white' : 'text-gray-400 hover:text-white'}">Performance</button>
               </div>
             </div>
 
             <div class="flex items-center gap-2.5">
               <!-- Account Selector Pill (Exact Reference Style) -->
-              <button onclick="openSwitchAccountModal()" class="flex items-center gap-2 bg-[#ffffff] hover:bg-[#f1f5f9] border border-[#e2e8f0] px-3 py-1 rounded-lg text-xs transition">
+              <button onclick="openSwitchAccountModal()" class="flex items-center gap-2 bg-[#ffffff] hover:bg-[#f1f5f9] border border-[#252D3D] px-3 py-1 rounded-lg text-xs transition">
                 <span class="px-1.5 py-0.2 rounded ${acc.type==='Demo' ? 'bg-bullGreen/20 text-bullGreen' : 'bg-bullBlue/20 text-bullBlue'} font-bold text-[10px]">${acc.type}</span>
                 <span class="font-mono text-gray-300">#${acc.id}</span>
                 <span data-live-equity class="font-mono font-bold text-white">${formatMoney(m.equity)} USD</span>
@@ -1579,10 +1579,10 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
               </button>
 
               ${window.renderAiAutoTradeSwitch('desktop')}
-              <button onclick="openDepositModal()" class="bg-[#e2e8f0] hover:bg-bullBlue text-white font-bold text-xs px-3.5 py-1.5 rounded-lg border border-[#323B4E] transition">
+              <button onclick="openDepositModal()" class="bg-[#252D3D] hover:bg-bullBlue text-white font-bold text-xs px-3.5 py-1.5 rounded-lg border border-[#323B4E] transition">
                 Deposit
               </button>
-              <button onclick="openAccountSettingsModal('Settings')" class="w-8 h-8 rounded-lg bg-[#ffffff] hover:bg-[#e2e8f0] text-gray-300 flex items-center justify-center text-xs">
+              <button onclick="openAccountSettingsModal('Settings')" class="w-8 h-8 rounded-lg bg-[#ffffff] hover:bg-[#252D3D] text-gray-300 flex items-center justify-center text-xs">
                 ⚙️
               </button>
             </div>
@@ -1594,7 +1594,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
             </div>
           ` : `
             <!-- 2. Symbol Tabs Strip (BTC | USOIL | USTEC | XAU/USD | +) -->
-            <div class="h-9 bg-[#131722] border-b border-[#e2e8f0] px-2 flex items-center gap-1 shrink-0 overflow-x-auto no-scrollbar">
+            <div class="h-9 bg-[#131722] border-b border-[#252D3D] px-2 flex items-center gap-1 shrink-0 overflow-x-auto no-scrollbar">
               ${topTabs.map(sym => {
                 const item = state.instruments[sym];
                 const isSelected = state.selectedSymbol === sym;
@@ -1605,11 +1605,11 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
                   </button>
                 `;
               }).join('')}
-              <button onclick="openOrderTicketModal('Buy', 'Market')" title="New Order" class="w-7 h-7 rounded-lg hover:bg-[#e2e8f0] text-gray-400 hover:text-white flex items-center justify-center text-sm font-bold ml-1">+</button>
+              <button onclick="openOrderTicketModal('Buy', 'Market')" title="New Order" class="w-7 h-7 rounded-lg hover:bg-[#252D3D] text-gray-400 hover:text-white flex items-center justify-center text-sm font-bold ml-1">+</button>
             </div>
 
             <!-- 3. Chart Action & Quick Order Toolbar -->
-            <div class="h-10 bg-[#f8fafc] border-b border-[#1E2430] px-3 flex items-center justify-between shrink-0">
+            <div class="h-10 bg-[#131722] border-b border-[#1E2430] px-3 flex items-center justify-between shrink-0">
               <div class="flex items-center gap-3 text-xs">
                 <span class="font-bold text-white flex items-center gap-1.5">
                   <span class="w-4 h-4 rounded-full inline-flex items-center justify-center text-[8px] text-white" style="background:${inst.iconBg}">${inst.iconText}</span>
@@ -1662,7 +1662,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
                     ${symOpenOrders.slice(0, 3).map(o => {
                       const pl = calculateOrderPL(o);
                       return `
-                        <div class="flex items-center bg-[#131722]/95 border border-[#e2e8f0] rounded-md overflow-hidden shadow-xl text-[11px] font-mono">
+                        <div class="flex items-center bg-[#131722]/95 border border-[#252D3D] rounded-md overflow-hidden shadow-xl text-[11px] font-mono">
                           <span class="px-2 py-1 font-bold ${o.side==='Buy' ? 'bg-bullBlue text-white' : 'bg-bullRed text-white'}">${o.side === 'Buy' ? '+' : '-'}${o.lots.toFixed(2)}</span>
                           <span data-order-pill-pl="${o.id}" class="px-2.5 py-1 font-bold ${pl >= 0 ? 'text-bullGreen' : 'text-bullRed'}">${pl >= 0 ? '+' : ''}${formatMoney(pl)} USD</span>
                           <button onclick="openClosePositionModal(${o.id})" class="px-2 py-1 text-gray-400 hover:bg-bullRed hover:text-white transition">✕</button>
@@ -1682,7 +1682,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
                 `).join('')}
               </div>
               <div class="flex items-center gap-3">
-                <div class="flex items-center gap-1 bg-[#f8fafc] px-1.5 py-0.5 rounded border border-[#e2e8f0]">
+                <div class="flex items-center gap-1 bg-[#131722] px-1.5 py-0.5 rounded border border-[#252D3D]">
                   <span class="text-[10px] text-gray-500 mr-1">Chart Size:</span>
                   <button onclick="setDesktopChartPreset('compact')" title="Smaller Chart" class="px-1.5 rounded text-[10px] font-bold transition ${state.bottomPanelHeight >= 290 ? 'bg-bullBlue text-white' : 'text-gray-400 hover:text-white'}">Small</button>
                   <button onclick="setDesktopChartPreset('default')" title="Balanced Chart" class="px-1.5 rounded text-[10px] font-bold transition ${state.bottomPanelHeight > 110 && state.bottomPanelHeight < 290 ? 'bg-bullBlue text-white' : 'text-gray-400 hover:text-white'}">Medium</button>
@@ -1693,7 +1693,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
             </div>
 
             <!-- Draggable Resize Handle (Drag up/down to make Chart smaller or larger) -->
-            <div onmousedown="startDesktopChartResize(event)" ontouchstart="startDesktopChartResize(event)" title="Drag up or down to resize chart" class="h-2 bg-[#ffffff] hover:bg-bullBlue/60 border-t border-[#e2e8f0] cursor-ns-resize flex items-center justify-center transition shrink-0 group">
+            <div onmousedown="startDesktopChartResize(event)" ontouchstart="startDesktopChartResize(event)" title="Drag up or down to resize chart" class="h-2 bg-[#ffffff] hover:bg-bullBlue/60 border-t border-[#252D3D] cursor-ns-resize flex items-center justify-center transition shrink-0 group">
               <div class="w-10 h-0.5 rounded-full bg-gray-500 group-hover:bg-white"></div>
             </div>
 
@@ -1703,13 +1703,13 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
               <div class="h-8 px-3 border-b border-[#1E2430] flex items-center justify-between text-xs shrink-0">
                 <div class="flex items-center gap-5">
                   <button onclick="state.ordersSubTab='open'; renderApp()" class="h-8 flex items-center gap-1.5 font-bold border-b-2 transition ${state.ordersSubTab==='open' ? 'border-bullBlue text-white' : 'border-transparent text-gray-400 hover:text-white'}">
-                    Open <span class="px-1.5 py-0.2 rounded-full bg-[#e2e8f0] text-[10px]">${accOpenOrders.length}</span>
+                    Open <span class="px-1.5 py-0.2 rounded-full bg-[#252D3D] text-[10px]">${accOpenOrders.length}</span>
                   </button>
                   <button onclick="state.ordersSubTab='pending'; renderApp()" class="h-8 flex items-center gap-1.5 font-bold border-b-2 transition ${state.ordersSubTab==='pending' ? 'border-bullBlue text-white' : 'border-transparent text-gray-400 hover:text-white'}">
-                    Pending <span class="px-1.5 py-0.2 rounded-full bg-[#e2e8f0] text-[10px]">${accPendingOrders.length}</span>
+                    Pending <span class="px-1.5 py-0.2 rounded-full bg-[#252D3D] text-[10px]">${accPendingOrders.length}</span>
                   </button>
                   <button onclick="state.ordersSubTab='closed'; renderApp()" class="h-8 flex items-center gap-1.5 font-bold border-b-2 transition ${state.ordersSubTab==='closed' ? 'border-bullBlue text-white' : 'border-transparent text-gray-400 hover:text-white'}">
-                    Closed <span class="px-1.5 py-0.2 rounded-full bg-[#e2e8f0] text-[10px]">${accClosedOrders.length}</span>
+                    Closed <span class="px-1.5 py-0.2 rounded-full bg-[#252D3D] text-[10px]">${accClosedOrders.length}</span>
                   </button>
                 </div>
                 <button onclick="openOrderTicketModal('Buy', 'Market')" class="text-[11px] font-bold text-bullBlue hover:underline">+ Place Order</button>
@@ -1793,7 +1793,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
               </div>
 
               <!-- 7. Bottom Status Bar: Close All Button + Equity / Free Margin / Balance / Margin -->
-              <div class="h-8 bg-[#f8fafc] border-t border-[#e2e8f0] px-3 flex items-center justify-between text-[11px] shrink-0">
+              <div class="h-8 bg-[#131722] border-t border-[#252D3D] px-3 flex items-center justify-between text-[11px] shrink-0">
                 <div class="flex items-center gap-4 text-gray-400 font-mono overflow-x-auto no-scrollbar">
                   <span>Equity: <strong data-metric-equity class="text-white">${formatMoney(m.equity)} USD</strong></span>
                   <span>Free Margin: <strong data-metric-freemargin class="text-white">${formatMoney(m.freeMargin)} USD</strong></span>
@@ -1806,7 +1806,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 
                 <div class="flex items-center gap-3 shrink-0">
                   ${accOpenOrders.length > 0 ? `
-                    <button onclick="closeAllOpenOrders()" class="px-2.5 py-0.5 rounded bg-[#e2e8f0] hover:bg-bullRed text-white font-bold text-[11px] transition">
+                    <button onclick="closeAllOpenOrders()" class="px-2.5 py-0.5 rounded bg-[#252D3D] hover:bg-bullRed text-white font-bold text-[11px] transition">
                       Close all ▾
                     </button>
                   ` : ''}
@@ -1869,7 +1869,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
           <div class="relative z-50 shrink-0 flex items-center justify-between gap-3 bg-[#131722] border-b border-[#252B36] px-3 py-2.5 shadow-lg">
             <div class="min-w-0"><div class="text-sm font-extrabold tracking-tight text-white">BigbullsGlobal <span class="text-bullBlue">TERMINAL</span></div><div class="text-[10px] text-gray-500">Trading workspace</div></div>
             ${window.renderAiAutoTradeSwitch('mobile')}
-            <button type="button" onclick="switchTab('profile')" class="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-[#e2e8f0] bg-[#1A1F29] active:bg-[#252B36] border-[#252B36] px-3 py-2 text-xs font-bold text-white" aria-label="Open Profile">Profile</button>
+            <button type="button" onclick="switchTab('profile')" class="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-[#252D3D] bg-[#1A1F29] active:bg-[#252B36] border-[#252B36] px-3 py-2 text-xs font-bold text-white" aria-label="Open Profile">Profile</button>
           </div>
           <main class="flex-1 min-h-0 overflow-y-auto overscroll-contain relative z-0">
             ${mainBody}
@@ -2503,12 +2503,12 @@ window.goToClientArea=function(){
 window.openModifyPendingModal=function(id){
  const o=state.pendingOrders.find(x=>String(x.backendOrderId||x.id)===String(id));if(!o)return;
  openModal(`
-  <div class="p-4 border-b border-[#e2e8f0] flex items-center justify-between"><h3 class="font-bold text-sm text-white">Modify Pending Order</h3><button onclick="closeModal()" class="w-7 h-7 rounded-full bg-[#e2e8f0] text-gray-300">✕</button></div>
+  <div class="p-4 border-b border-[#252D3D] flex items-center justify-between"><h3 class="font-bold text-sm text-white">Modify Pending Order</h3><button onclick="closeModal()" class="w-7 h-7 rounded-full bg-[#252D3D] text-gray-300">✕</button></div>
   <div class="p-4 space-y-3 text-xs">
    <div class="text-gray-400">${o.symbol} · ${o.side} ${o.pendingType} · ${o.lots.toFixed(2)} lots</div>
-   <label class="block text-gray-400">Entry / Target Price<input id="bb-modify-target" type="number" step="any" value="${o.targetPrice}" class="mt-1 w-full rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-3 text-white"></label>
-   <label class="block text-gray-400">Stop Loss<input id="bb-modify-sl" type="number" step="any" value="${o.sl||''}" placeholder="Optional" class="mt-1 w-full rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-3 text-white"></label>
-   <label class="block text-gray-400">Take Profit<input id="bb-modify-tp" type="number" step="any" value="${o.tp||''}" placeholder="Optional" class="mt-1 w-full rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-3 text-white"></label>
+   <label class="block text-gray-400">Entry / Target Price<input id="bb-modify-target" type="number" step="any" value="${o.targetPrice}" class="mt-1 w-full rounded-lg border border-[#252D3D] bg-[#131722] p-3 text-white"></label>
+   <label class="block text-gray-400">Stop Loss<input id="bb-modify-sl" type="number" step="any" value="${o.sl||''}" placeholder="Optional" class="mt-1 w-full rounded-lg border border-[#252D3D] bg-[#131722] p-3 text-white"></label>
+   <label class="block text-gray-400">Take Profit<input id="bb-modify-tp" type="number" step="any" value="${o.tp||''}" placeholder="Optional" class="mt-1 w-full rounded-lg border border-[#252D3D] bg-[#131722] p-3 text-white"></label>
    <button onclick="savePendingModification('${o.backendOrderId||o.id}')" class="w-full py-3 rounded-xl bg-bullBlue text-white font-bold">Save Changes</button>
   </div>`);
 };
