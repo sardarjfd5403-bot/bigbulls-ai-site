@@ -33,7 +33,10 @@ jobs:
       - name: Install Capacitor dependencies
         working-directory: android-app
         run: npm install
-      - name: Bundle web app and native biometric plugin\n        working-directory: android-app\n        run: npm run build:web\n      - name: Generate BigBull app icon and splash assets
+      - name: Bundle web app and native biometric plugin
+        working-directory: android-app
+        run: npm run build:web
+      - name: Generate BigBull app icon and splash assets
         working-directory: android-app
         run: npm run assets
       - name: Generate Android project
