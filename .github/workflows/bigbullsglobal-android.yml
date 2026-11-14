@@ -26,6 +26,9 @@ jobs:
           java-version: "21"
       - name: Install dependencies
         run: npm install
+      - name: Bundle web app and native biometric plugin
+        working-directory: android-app
+        run: npm run build:web
       - name: Generate BB icon and splash
         run: |
           npm run assets
@@ -34,6 +37,7 @@ jobs:
         run: |
           if [ ! -d android ]; then npx cap add android; fi
           npx cap sync android
+          node patch-native-android.mjs
       - name: Enable Android hardware acceleration
         run: |
           python3 - <<'PY'
