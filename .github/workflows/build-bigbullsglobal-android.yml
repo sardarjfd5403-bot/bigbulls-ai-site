@@ -31,6 +31,9 @@ jobs:
       - name: Generate Android project
         working-directory: android-app
         run: npx cap add android
+      - name: Apply BigbullsGlobal launcher branding
+        working-directory: android-app
+        run: node scripts/apply-android-branding.mjs
       - name: Sync Android project
         working-directory: android-app
         run: npx cap sync android
