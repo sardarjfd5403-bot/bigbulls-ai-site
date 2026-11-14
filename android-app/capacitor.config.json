@@ -1,0 +1,20 @@
+{
+  "appId": "com.bigbullsglobal.market",
+  "appName": "BIGBULLS Global Market",
+  "webDir": "www",
+  "server": {
+    "hostname": "bigbullsglobalmarket.is-an.ai",
+    "androidScheme": "https"
+  },
+  "android": { "allowMixedContent": false },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 800,
+      "launchAutoHide": true,
+      "backgroundColor": "#FFFFFFFF",
+      "showSpinner": false,
+      "splashFullScreen": true,
+      "splashImmersive": false
+    }
+  }
+}

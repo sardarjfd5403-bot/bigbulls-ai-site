@@ -1,0 +1,11 @@
+import fs from "node:fs";
+import path from "node:path";
+import sharp from "sharp";
+const root=process.cwd(),resources=path.join(root,"resources"),web=path.join(root,"www");
+fs.mkdirSync(resources,{recursive:true});
+if(!fs.existsSync(path.join(web,"index.html"))) throw new Error("Missing Android portal index.html.");
+const icon=fs.readFileSync(path.join(root,"bigbullsglobal.svg"));
+const splash=Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="2732" height="2732" viewBox="0 0 2732 2732"><rect width="2732" height="2732" fill="#ffffff"/><circle cx="1366" cy="1366" r="520" fill="#f1f7ff"/><text x="1366" y="1530" text-anchor="middle" font-family="Arial,sans-serif" font-size="690" font-weight="900" letter-spacing="-55" fill="#0b3d91">BB</text><path d="M1030 1740h672" stroke="#38a3ff" stroke-width="28" stroke-linecap="round"/></svg>');
+await sharp(icon).resize(1024,1024).png().toFile(path.join(resources,"icon.png"));
+await sharp(splash).png().toFile(path.join(resources,"splash.png"));
+console.log("Generated white-and-blue BB launcher icon and minimal white splash.");
