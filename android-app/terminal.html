@@ -554,6 +554,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
     // ==========================================
     function switchTab(tab) {
       state.activeTab = tab;
+      bbClientMenuOpen = tab === 'profile';
       if (tab === 'profile') {
         try {
           client().auth.getUser().then(({data,error}) => {
