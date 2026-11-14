@@ -4,7 +4,7 @@ import sharp from "sharp";
 
 const root=process.cwd();
 const out=path.join(root,"resources");
-fs.mkdirSync(out,{recursive:true});
+fs.mkdirSync(out,{recursive:true});\nconst webDir=path.join(root,"www");\nfs.mkdirSync(webDir,{recursive:true});\nif(!fs.existsSync(path.join(webDir,"index.html"))) fs.writeFileSync(path.join(webDir,"index.html"),"<!doctype html><html><head><meta charset=\\"utf-8\\"></head><body></body></html>\\n");
 const iconSvg=fs.readFileSync(path.join(root,"bigbullsglobal.svg"));
 const splashSvg=Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="2732" height="2732" viewBox="0 0 2732 2732">
 <defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#f2f8ff"/></linearGradient></defs>
