@@ -4,6 +4,10 @@ const root=path.join(process.cwd(),"android");
 const manifest=path.join(root,"app/src/main/AndroidManifest.xml");
 if(!fs.existsSync(manifest)) throw new Error("Generated AndroidManifest.xml is missing.");
 let xml=fs.readFileSync(manifest,"utf8");
+if(!xml.includes("android.permission.USE_BIOMETRIC")) {
+  xml=xml.replace(/<application\\b/, '<uses-permission android:name="android.permission.USE_BIOMETRIC" />\\n<application');
+}
+
 if(/<application\b[^>]*android:hardwareAccelerated=/.test(xml)) {
   xml=xml.replace(/(<application\b[^>]*?)android:hardwareAccelerated="[^"]*"/,'$1android:hardwareAccelerated="true"');
 } else {
