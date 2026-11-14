@@ -25,7 +25,11 @@
   }
   window.bbOpenAuth=function(mode){
     const target=mode==="signup"?"signup":"login";
-    show("../index.html?from=bigbullsglobal-android&auth="+target);
+    frame.addEventListener("load",function(){
+      try{if(frame.contentWindow&&typeof frame.contentWindow.openAuthModal==="function")frame.contentWindow.openAuthModal(target);}
+      catch(error){console.warn("Could not open the website auth modal:",error);}
+    },{once:true});
+    show("../index.html?from=bigbullsglobal-android");
   };
   function start(){
     if(!window.supabase||!window.supabase.createClient){
