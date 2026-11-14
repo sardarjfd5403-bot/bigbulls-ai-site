@@ -8,7 +8,7 @@ This is a separate Android app project. It does not edit or replace the existing
 - Unauthenticated users see the existing website landing page and its existing login/signup UI.
 - After a Supabase session is available, the app opens the Android-only terminal copy.
 - The Android terminal preserves the existing four terminal tabs and adds Profile as tab five.
-- Profile embeds the existing website client portal, so wallet, KYC, accounts, deposit, withdrawal, transfers and admin workflows continue to use the existing Supabase backend and authorization rules.
+- Profile is a native Android-only client workspace styled to match the dark trading terminal. It no longer embeds the website landing page. Account Centre opens the app's existing Accounts tab; profile, KYC, security and wallet links use the existing client portal routes and Supabase session.
 - The Android app copy is isolated under `android-app/`; the root website and root `terminal.html` are not modified.
 
 ## Shared session
