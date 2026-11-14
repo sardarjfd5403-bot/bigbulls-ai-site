@@ -1931,7 +1931,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
     function openClientPortal(section) {
       const routes = {profile:'profile',verification:'verification',settings:'settings',accounts:'accounts',wallet:'wallet',support:'support'};
       const target = routes[section] || 'profile';
-      window.location.href = '../dashboard.html?app_portal=' + encodeURIComponent(target);
+      window.location.href = './client-portal.html?view=' + encodeURIComponent(target==='wallet'?'finance':target==='verification'?'profile':target==='settings'?'profile':target==='support'?'ibprogram':target);
     }
 
     // Initial render & resize handler
