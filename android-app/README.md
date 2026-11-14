@@ -1,30 +1,10 @@
 # BigbullsGlobal Android App
 
-This is a separate Android app project. It does not edit or replace the existing website frontend.
+Standalone Android app project. Existing website files remain untouched.
 
-## Product behavior
-- App name: BigbullsGlobal
-- White/blue brand mark.
-- Unauthenticated users see the existing website landing page and its existing login/signup UI.
-- After a Supabase session is available, the app opens the Android-only terminal copy.
-- The Android terminal preserves the existing four terminal tabs and adds Profile as tab five.
-- Profile embeds the existing website client portal, so wallet, KYC, accounts, deposit, withdrawal, transfers and admin workflows continue to use the existing Supabase backend and authorization rules.
-- The Android app copy is isolated under `android-app/`; the root website and root `terminal.html` are not modified.
+## Build
+The GitHub Actions workflow `.github/workflows/build-bigbullsglobal-android.yml` builds a debug APK on pushes to `feature/bigbullsglobal-android-app` and uploads it as `BigbullsGlobal-test-apk`.
 
-## Shared session
-The Capacitor app is configured to load from the same website origin under `/android-app/`. The login page, Android terminal and embedded Client Portal therefore share the website origin and the existing Supabase auth storage key. No service-role key is included.
+Run locally: `npm install && npx cap add android && npx cap sync android && cd android && ./gradlew assembleDebug`.
 
-## Build a debug APK
-From this directory:
-```bash
-npm install
-npx cap add android
-npx cap sync android
-cd android
-./gradlew assembleDebug
-```
-Artifact: `android/app/build/outputs/apk/debug/app-debug.apk`.
-
-The app currently uses the deployed HTTPS site as its Capacitor server URL. Deploying the new `android-app/` directory is required before the APK can load the new app shell. This does not require changing the root website.
-
-A signed Play Store AAB requires a release keystore and signing secrets. Do not publish an unsigned build.
+A debug APK is for testing and is not a Play Store release. A signed release requires a private keystore.
