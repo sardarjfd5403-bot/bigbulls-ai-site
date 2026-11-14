@@ -20,7 +20,7 @@
     welcome.style.display="flex";
   }
   function route(session){
-    if(session&&session.user)show("./terminal.html");
+    if(session&&session.user){window.bbCloseAuth?.();show("./terminal.html");}
     else showWelcome();
   }
   window.bbOpenAuth=function(mode){
