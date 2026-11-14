@@ -1,6 +1,9 @@
 name: Build BigbullsGlobal Android APK
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feature/bigbullsglobal-android-app
 jobs:
   build:
     runs-on: ubuntu-latest
