@@ -554,6 +554,17 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
     // ==========================================
     function switchTab(tab) {
       state.activeTab = tab;
+      if (tab === 'profile') {
+        try {
+          client().auth.getUser().then(({data,error}) => {
+            if (!error && data?.user && state.activeTab === 'profile') {
+              window.__bbProfileEmail = data.user.email || '';
+              window.__bbProfileName = data.user.user_metadata?.full_name || data.user.user_metadata?.name || '';
+              renderApp();
+            }
+          }).catch(err => console.warn('Profile identity refresh:', err));
+        } catch (err) { console.warn('Profile identity unavailable:', err); }
+      }
       if (tab === 'trade' && state.viewportMode === 'mobile') {
         state.tradeSubView = 'list';
       }
@@ -1853,15 +1864,15 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 
       stage.innerHTML = `
         <div class="mobile-shell">
-          <div class="shrink-0 flex items-center justify-between gap-3 bg-[#131722] border-b border-[#e2e8f0] px-3 py-2.5">
+          <div class="shrink-0 flex items-center justify-between gap-3 bg-[#131722] border-b border-[#252B36] px-3 py-2.5">
             <div class="min-w-0"><div class="text-sm font-extrabold tracking-tight text-white">BigbullsGlobal <span class="text-bullBlue">TERMINAL</span></div><div class="text-[10px] text-gray-500">Trading workspace</div></div>
             ${window.renderAiAutoTradeSwitch('mobile')}
-            <button type="button" onclick="switchTab('profile')" class="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-[#e2e8f0] bg-[#ffffff] active:bg-[#e2e8f0] px-3 py-2 text-xs font-bold text-white" aria-label="Open Profile">Profile</button>
+            <button type="button" onclick="switchTab('profile')" class="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-[#e2e8f0] bg-[#1A1F29] active:bg-[#252B36] border-[#252B36] px-3 py-2 text-xs font-bold text-white" aria-label="Open Profile">Profile</button>
           </div>
           ${mainBody}
 
           <!-- Bottom 5-Tab Navigation Bar -->
-          <nav class="bg-[#131722] border-t border-[#e2e8f0] px-2 py-2 grid grid-cols-5 shrink-0 z-20">
+          <nav class="bg-[#131722] border-t border-[#252B36] px-2 py-2 grid grid-cols-5 shrink-0 z-20">
             ${tabs.map(t => {
               const active = state.activeTab === t.id;
               return `
@@ -1882,7 +1893,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
       const safe = value => String(value == null ? '' : value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
       const email = window.__bbProfileEmail || window.__bbParentAuthSession?.user?.email || 'Loading secure profile…';
       const meta = window.__bbParentAuthSession?.user?.user_metadata || {};
-      const fullName = meta.full_name || meta.name || (email.includes('@') ? email.split('@')[0] : 'BIGBULLS Client');
+      const fullName = window.__bbProfileName || meta.full_name || meta.name || (email.includes('@') ? email.split('@')[0] : 'BIGBULLS Client');
       const initials = String(fullName).trim().split(/\\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase() || 'BB';
       const tile = (icon,title,desc,action,accent='blue') => `
         <button type="button" onclick="${action}" class="w-full text-left rounded-2xl border border-[#252B36] bg-[#131722] hover:bg-[#1A1F29] active:scale-[.99] transition p-4 flex items-center gap-3">
@@ -1909,7 +1920,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
           </div>
           <div class="space-y-2">
             <p class="px-1 text-[10px] font-bold tracking-[.16em] text-slate-500 uppercase">Client portal</p>
-            ${tile('▦','Account centre','Real and demo accounts, account status',"openClientPortal('accounts')")}
+            ${tile('▦','Account centre','Real and demo accounts, account status',"switchTab('accounts')")}
             ${tile('◈','Wallet & payments','Deposits, withdrawals and transaction history',"openClientPortal('wallet')",'sky')}
             ${tile('↗','Partner & support','IB partner tools and client support',"openClientPortal('support')",'violet')}
           </div>
