@@ -1,6 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-<rect width="512" height="512" rx="112" fill="#ffffff"/>
-<path d="M122 108h145c86 0 132 39 132 103 0 39-20 68-55 84 45 15 70 46 70 91 0 72-55 118-148 118H122V108zm91 76v80h50c30 0 47-15 47-41 0-25-17-39-49-39h-48zm0 154v87h58c34 0 52-15 52-44 0-28-19-43-54-43h-56z" fill="#0b3d91" transform="translate(0 -32)"/>
-<path d="M300 108h68c77 0 119 36 119 98 0 37-19 65-52 80 42 14 66 43 66 85 0 68-51 111-137 111h-64v-77h61c32 0 48-14 48-39 0-24-17-38-50-38h-59v-72h54c27 0 42-13 42-36 0-22-15-35-43-35h-53z" fill="#38a3ff" opacity=".95" transform="translate(-24 -18) scale(.72)"/>
-<path d="M84 88l26-25 26 25M84 424l26 25 26-25" fill="none" stroke="#38a3ff" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#ffffff"/><rect x="24" y="24" width="464" height="464" rx="96" fill="none" stroke="#dbeafe" stroke-width="12"/><text x="256" y="326" text-anchor="middle" font-family="Arial,sans-serif" font-size="230" font-weight="900" letter-spacing="-20" fill="#0757c8">BB</text><path d="M108 390H404" stroke="#38a3ff" stroke-width="18" stroke-linecap="round"/></svg>
