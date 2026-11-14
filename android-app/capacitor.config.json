@@ -3,7 +3,7 @@
   "appName": "BigbullsGlobal",
   "webDir": "www",
   "server": {
-    "url": "https://bigbullsglobalmarket.is-an.ai/android-app/",
+    "url": "https://bigbullsglobalmarket.is-an.ai/",
     "cleartext": false,
     "androidScheme": "https"
   },
