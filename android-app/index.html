@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0066FF">
+  <title>BigbullsGlobal</title>
+  <link rel="icon" href="./bigbullsglobal.svg" type="image/svg+xml">
+  <style>
+    *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#fff;font-family:Inter,Arial,sans-serif}
+    #surface{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff}
+    #boot{position:fixed;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:#fff;color:#172235}
+    .mark{width:76px;height:76px;border-radius:22px;background:#0066FF;color:#fff;display:grid;place-items:center;font-size:48px;font-weight:900;box-shadow:0 12px 28px #0066ff35}
+    .brand{font-size:24px;font-weight:850;color:#0066FF;letter-spacing:-.8px}
+    .sub{font-size:10px;letter-spacing:2px;color:#64748b}
+    .spinner{width:24px;height:24px;border:3px solid #dbeafe;border-top-color:#0066FF;border-radius:50%;animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div id="boot"><div class="mark">B</div><div class="brand">BigbullsGlobal</div><div class="sub">GLOBAL TRADING PLATFORM</div><div class="spinner"></div></div>
+  <iframe id="surface" title="BigbullsGlobal" allow="clipboard-read; clipboard-write; fullscreen"></iframe>
+  <script src="./app.js"></script>
+</body>
+</html>
