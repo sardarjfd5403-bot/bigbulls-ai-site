@@ -1969,10 +1969,26 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
         </section>`;
     }
 
+    function bbCloseEmbeddedClientView() {
+      state.activeTab = 'profile';
+      bbClientMenuOpen = false;
+      renderApp();
+    }
     function openClientPortal(section) {
       const routes = {profile:'profile',verification:'profile',settings:'profile',accounts:'accounts',wallet:'finance',support:'ibprogram',history:'history',benefits:'benefits'};
       const target = routes[section] || 'profile';
-      window.location.href = './client-portal.html?view=' + encodeURIComponent(target);
+      const main = document.querySelector('#appStage .mobile-shell main');
+      if (!main) return;
+      bbClientMenuOpen = false;
+      main.innerHTML = `
+        <section class="h-full min-h-0 flex flex-col overflow-hidden bg-[#0E1117]">
+          <div class="shrink-0 flex items-center gap-3 px-3 py-2.5 border-b border-[#252B36] bg-[#131722]">
+            <button type="button" onclick="bbCloseEmbeddedClientView()" class="shrink-0 rounded-lg px-3 py-2 text-xs font-bold text-white bg-[#202938] border border-[#34445d]">← Back</button>
+            <div class="min-w-0"><div class="text-[10px] uppercase tracking-wider text-blue-400 font-bold">BIGBULLS Client Area</div><div class="text-sm text-white font-bold capitalize">${target==='finance'?'Wallet & Payments':target==='ibprogram'?'IB Partner':target==='history'?'Transaction History':target}</div></div>
+          </div>
+          <iframe title="BIGBULLS client service" src="./client-portal.html?view=${encodeURIComponent(target)}&embed=1" class="bb-client-embed flex-1 min-h-0 w-full border-0 bg-[#0E1117]" style="animation:bbClientPageIn .24s ease-out"></iframe>
+        </section>
+        <style>@keyframes bbClientPageIn{from{transform:translateX(24px);opacity:.65}to{transform:translateX(0);opacity:1}}</style>`;
     }
 
     // Initial render & resize handler
