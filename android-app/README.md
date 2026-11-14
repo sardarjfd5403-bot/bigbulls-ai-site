@@ -31,3 +31,6 @@ Artifact: `android/app/build/outputs/apk/debug/app-debug.apk`.
 The app currently uses the deployed HTTPS site as its Capacitor server URL. Deploying the new `android-app/` directory is required before the APK can load the new app shell. This does not require changing the root website.
 
 A signed Play Store AAB requires a release keystore and signing secrets. Do not publish an unsigned build.
+
+
+Build validation: this commit triggers the Android debug APK workflow so the generated test artifact can be checked.
