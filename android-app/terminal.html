@@ -176,7 +176,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 
   <!-- GLOBAL MODAL / BOTTOM SHEET BACKDROP -->
   <div id="modalBackdrop" class="fixed inset-0 bg-black/75 backdrop-blur-[2px] z-[80] hidden items-end sm:items-center justify-center p-0 sm:p-4" onclick="closeModalOnBackdrop(event)">
-    <div id="modalContent" class="w-full max-w-[430px] bg-white border-t sm:border border-[#e2e8f0] rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl sheet-animate max-h-[90vh] flex flex-col">
+    <div id="modalContent" class="w-full max-w-[430px] bg-white border-t sm:border border-[#252D3D] rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl sheet-animate max-h-[90vh] flex flex-col">
       <!-- Dynamic Modal Inner Content -->
     </div>
   </div>
@@ -968,12 +968,16 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
       renderApp();
     }
 
-    function openClosePositionModal(orderId) {
+    function openClosePositionModal(orderId, mode = null) {
       const order = state.openOrders.find(o => String(o.id) === String(orderId) || String(o.backendTradeId) === String(orderId));
       if (!order) return;
+      const positionAccount = state.accounts.find(a => String(a.id) === String(order.accountId)) || getActiveAccount();
+      const positionMode = String(mode || positionAccount?.type || 'Demo').toLowerCase();
       const pl = calculateOrderPL(order);
       const inst = state.instruments[order.symbol];
-      const closePrice = order.side === 'Buy' ? inst.bid : inst.ask;
+      if (!inst) { showToast('Position unavailable', 'Market instrument data is not loaded yet.', 'error'); return; }
+      const rawClosePrice = order.side === 'Buy' ? Number(inst.bid) : Number(inst.ask);
+      const closePrice = Number.isFinite(rawClosePrice) && rawClosePrice > 0 ? rawClosePrice : Number(order.openPrice || 0);
 
       openModal(`
         <div class="p-4 border-b border-[#e2e8f0] flex items-center justify-between">
@@ -981,11 +985,11 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
           <button onclick="closeModal()" class="w-7 h-7 rounded-full bg-[#e2e8f0] text-gray-300 flex items-center justify-center text-xs">✕</button>
         </div>
         <div class="p-4 space-y-3 text-xs">
-          <div class="flex justify-between"><span class="text-gray-400">Lots</span><span class="font-mono font-bold text-white">${order.lots.toFixed(2)}</span></div>
-          <div class="flex justify-between"><span class="text-gray-400">Closing price</span><span class="font-mono font-bold text-white">${closePrice.toFixed(inst.digits)}</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Lots</span><span class="font-mono font-bold text-white">${Number(order.lots||0).toFixed(2)}</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Closing price</span><span class="font-mono font-bold text-white">${closePrice.toFixed(Number(inst.digits)||2)}</span></div>
           <div class="flex justify-between"><span class="text-gray-400">Profit / Loss</span><span class="font-mono font-bold ${pl>=0?'text-bullGreen':'text-bullRed'}">${pl>=0?'+':''}${formatMoney(pl)} USD</span></div>
-          ${String(getActiveAccount()?.type||'').toLowerCase()==='real'&&Number(order.lots)>=0.02 ? `<button onclick="openPartialCloseModal('${order.backendTradeId||order.id}')" class="w-full py-2.5 rounded-xl bg-[#e2e8f0] text-white font-bold text-xs mt-2">Partial close</button>` : ''}
-          ${String(getActiveAccount()?.type||'').toLowerCase()==='real' ? `<button onclick="openModifyPositionModal('${order.backendTradeId||order.id}')" class="w-full py-2.5 rounded-xl bg-[#e2e8f0] text-white font-bold text-xs mt-2">Modify SL / TP</button>` : ''}
+          ${positionMode==='real'&&Number(order.lots)>=0.02 ? `<button onclick="openPartialCloseModal('${order.backendTradeId||order.id}')" class="w-full py-2.5 rounded-xl bg-[#e2e8f0] text-white font-bold text-xs mt-2">Partial close</button>` : ''}
+          ${positionMode==='real' ? `<button onclick="openModifyPositionModal('${order.backendTradeId||order.id}')" class="w-full py-2.5 rounded-xl bg-[#e2e8f0] text-white font-bold text-xs mt-2">Modify SL / TP</button>` : ''}
           <button onclick="executeCloseOrder('${order.backendTradeId || order.id}', false)" class="w-full py-3 rounded-xl bg-bullBlue hover:bg-bullYellowHover text-white font-bold text-sm mt-2">Confirm</button>
           <button onclick="closeModal()" class="w-full py-2.5 rounded-xl bg-[#e2e8f0] text-gray-300 font-bold text-xs">Cancel</button>
         </div>
@@ -1156,7 +1160,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
           <div class="flex items-center justify-between">
             <h1 class="text-2xl font-extrabold text-white tracking-tight">Accounts</h1>
             <div class="flex items-center gap-2">
-              <button onclick="showToast('No new notifications', 'All systems operational', 'info')" class="w-9 h-9 rounded-full bg-[#ffffff] flex items-center justify-center text-gray-300 text-sm">🔔</button>
+              <button onclick="showToast('No new notifications', 'All systems operational', 'info')" class="w-9 h-9 rounded-full bg-[#161B26] flex items-center justify-center text-gray-300 text-sm">🔔</button>
               <button onclick="openSwitchAccountModal()" class="w-9 h-9 rounded-full bg-[#ffffff] flex items-center justify-center text-white font-bold">⋮</button>
             </div>
           </div>
@@ -1421,6 +1425,8 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
             </div>
           </div>
 
+          <button onclick="switchTab('performance')" class="w-full flex items-center justify-between rounded-xl border border-[#252D3D] bg-[#161B26] px-3.5 py-3 text-sm font-bold text-white"><span>Performance &amp; trade history</span><span class="text-bullBlue">View →</span></button>
+
           <div>
             <h2 class="text-sm font-bold text-white mb-2.5">Trading signals</h2>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -1438,7 +1444,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 
           <div>
             <h2 class="text-sm font-bold text-white mb-2.5">Upcoming events</h2>
-            <div class="bg-[#ffffff] border border-[#e2e8f0] rounded-2xl divide-y divide-[#e2e8f0] text-xs">
+            <div class="bg-[#ffffff] border border-[#e2e8f0] rounded-2xl divide-y divide-[#252D3D] text-xs">
               <div class="p-3 flex justify-between items-center">
                 <div><div class="font-bold text-white">🇬🇧 UK Balance of Trade</div><div class="text-gray-400 text-[11px]">12:00 — In 10 minutes</div></div>
                 <span class="px-2 py-0.5 rounded bg-bullRed/20 text-bullRed font-bold text-[10px]">High Impact</span>
@@ -1827,7 +1833,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
         return;
       }
 
-      // Android app copy: preserve the four terminal tabs and add Profile as tab five.
+      // Native app uses four tabs: Accounts, Trade, Insights, Profile. Performance is nested under Insights.
       let mainBody = '';
       if (state.activeTab === 'accounts') mainBody = renderAccountsTab();
       else if (state.activeTab === 'trade') mainBody = renderTradeTab();
@@ -1852,11 +1858,6 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
           svg: `<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="3.6" y1="9" x2="20.4" y2="9"/><line x1="3.6" y1="15" x2="20.4" y2="15"/><path d="M11.5 3a17 17 0 0 0 0 18"/><path d="M12.5 3a17 17 0 0 1 0 18"/></svg>`
         },
         {
-          id: 'performance',
-          label: 'Performance',
-          svg: `<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`
-        },
-        {
           id: 'profile',
           label: 'Profile',
           svg: `<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>`
@@ -1874,8 +1875,8 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
             ${mainBody}
           </main>
 
-          <!-- Fixed, always-visible Bottom 5-Tab Navigation Bar -->
-          <nav class="relative z-50 bg-[#131722] border-t border-[#252B36] px-2 pt-2 pb-[max(8px,env(safe-area-inset-bottom))] grid grid-cols-5 shrink-0 shadow-[0_-8px_24px_rgba(0,0,0,.25)]">
+          <!-- Fixed, always-visible Bottom 4-Tab Navigation Bar -->
+          <nav class="relative z-50 bg-[#131722] border-t border-[#252B36] px-2 pt-2 pb-[max(8px,env(safe-area-inset-bottom))] grid grid-cols-4 shrink-0 shadow-[0_-8px_24px_rgba(0,0,0,.25)]">
             ${tabs.map(t => {
               const active = state.activeTab === t.id;
               return `
