@@ -1,0 +1,2702 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0E1117" />
+  <title>BigbullsGlobal — Trading Terminal</title>
+  <script async src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <script>
+    window.tailwind = window.tailwind || {};
+    window.tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            bgDark: '#0E1117',
+            surface: '#131722',
+            surfaceHover: '#1A1F29',
+            surfaceLight: '#252B36',
+            borderDark: '#252B36',
+            bullYellow: '#2979FF',
+            bullYellowHover: '#1D63DC',
+            bullGreen: '#00C076',
+            bullRed: '#FF4D4D',
+            bullBlue: '#2979FF',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      background-color: #0E1117;
+      color: #172235;
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 9999px; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Mobile Frame Shadow on Desktop */
+    .mobile-shell {
+      width: 100%;
+      max-width: none;
+      height: 100dvh;
+      max-height: none;
+      background-color: #f8fafc;
+      border: 0;
+      border-radius: 0;
+      overflow: hidden;
+      box-shadow: none;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    @media (max-width: 767px) {
+      .mobile-shell {
+        max-width: 100%;
+        height: 100dvh;
+        max-height: none;
+        border-radius: 0;
+        border: none;
+      }
+    }
+
+    /* Range slider styling */
+    input[type=range] {
+      -webkit-appearance: none;
+      background: transparent;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 18px;
+      width: 18px;
+      border-radius: 50%;
+      background: #2979FF;
+      cursor: pointer;
+      margin-top: -7px;
+      box-shadow: 0 0 0 3px rgba(41, 121, 255, 0.3);
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 4px;
+      cursor: pointer;
+      background: #e2e8f0;
+      border-radius: 2px;
+    }
+
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(0.85); }
+    }
+    .live-dot { animation: pulseDot 1.6s infinite ease-in-out; }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0.5; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .sheet-animate { animation: slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1); }
+    #liveChartCanvas{touch-action:none;user-select:none;-webkit-user-select:none;display:block;width:100%;height:100%;}
+  html, body { width:100%; min-width:0; height:100%; min-height:100%; margin:0!important; padding:0!important; background:#0E1117!important; }
+    #appStage { width:100vw!important; height:100dvh!important; min-height:100dvh!important; margin:0!important; padding:0!important; background:#0E1117!important; }
+    .mobile-shell { width:100%; max-width:none; height:100dvh; min-height:100dvh; max-height:none; margin:0; border:0; border-radius:0; box-shadow:none; background:#0E1117; }
+  html.bb-auth-pending #appStage{visibility:hidden}
+html.bb-auth-pending #bb-auth-boot{display:flex}
+#bb-auth-boot{display:none;position:fixed;inset:0;z-index:9999;background:#0E1117;color:#f3f4f6;align-items:center;justify-content:center;flex-direction:column;gap:12px;font:600 14px Inter,sans-serif}
+#bb-auth-boot .bb-auth-spinner{width:28px;height:28px;border:3px solid #dbeafe;border-top-color:#2979ff;border-radius:50%;animation:bb-auth-spin .8s linear infinite}
+@keyframes bb-auth-spin{to{transform:rotate(360deg)}}
+</style>
+  <script async src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+  <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="../terminal-theme.css?v=20261113-persistent-holding-fix">
+<script id="bb-cache-cleanup">
+(function(){
+  try {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs){
+        return Promise.all(regs.map(function(reg){return reg.unregister();}));
+      }).catch(function(err){console.warn('[BIGBULLS cache cleanup] Service Worker:',err);});
+    }
+    if ('caches' in window) {
+      caches.keys().then(function(keys){
+        return Promise.all(keys.map(function(key){return caches.delete(key);}));
+      }).catch(function(err){console.warn('[BIGBULLS cache cleanup] Cache Storage:',err);});
+    }
+  } catch(err) { console.warn('[BIGBULLS cache cleanup] unavailable:',err); }
+})();
+</script>
+<script id="bb-terminal-runtime-diagnostics">
+(function(){
+  function show(kind,message,source,line,column,stack){
+    try{
+      var box=document.getElementById('bb-terminal-runtime-error');
+      if(!box){
+        box=document.createElement('section');box.id='bb-terminal-runtime-error';
+        box.style.cssText='position:fixed;z-index:2147483647;inset:12px;padding:18px;overflow:auto;background:#fff;color:#7f1d1d;border:2px solid #dc2626;border-radius:14px;box-shadow:0 12px 40px #0005;font:13px/1.5 ui-monospace,monospace;white-space:pre-wrap';
+        var title=document.createElement('h2');title.textContent='BIGBULLS TERMINAL — JAVASCRIPT ERROR';title.style.cssText='font:800 16px sans-serif;margin:0 0 12px';box.appendChild(title);
+        var details=document.createElement('pre');details.id='bb-terminal-runtime-error-details';details.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;margin:0';box.appendChild(details);
+        (document.body||document.documentElement).appendChild(box);
+      }
+      var details=document.getElementById('bb-terminal-runtime-error-details');
+      var text='Type: '+kind+'\nMessage: '+String(message||'Unknown error')+'\nSource: '+String(source||'(not supplied)')+'\nLine: '+String(line||'?')+'  Column: '+String(column||'?');
+      if(stack)text+='\n\nStack:\n'+String(stack);
+      details.textContent+=(details.textContent?'\n\n--- NEXT ERROR ---\n\n':'')+text;
+    }catch(_){}
+  }
+  window.addEventListener('error',function(e){show('window.error',e.message,e.filename,e.lineno,e.colno,e.error&&e.error.stack);},true);
+  window.addEventListener('unhandledrejection',function(e){var r=e.reason;show('unhandledrejection',r&&r.message||r,'',0,0,r&&r.stack);});
+})();
+</script>
+</head>
+<body class="h-screen min-h-screen flex flex-col overflow-hidden">
+  <div id="bb-auth-boot" role="status" aria-live="polite"><span class="bb-auth-spinner"></span><span>BIGBULLS · Securing your session…</span></div>
+
+  <!-- MAIN VIEWPORT STAGE -->
+  <main id="appStage" class="flex-1 flex items-stretch justify-stretch w-full min-h-0 p-0 overflow-hidden">
+    <!-- Rendered dynamically by JS for either Mobile Shell or Full Desktop Terminal -->
+  </main>
+
+  <!-- TOAST NOTIFICATION BANNER -->
+  <div id="toastContainer" class="fixed top-14 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 w-[90%] max-w-[390px] pointer-events-none"></div>
+
+  <!-- GLOBAL MODAL / BOTTOM SHEET BACKDROP -->
+  <div id="modalBackdrop" class="fixed inset-0 bg-black/75 backdrop-blur-[2px] z-[80] hidden items-end sm:items-center justify-center p-0 sm:p-4" onclick="closeModalOnBackdrop(event)">
+    <div id="modalContent" class="w-full max-w-[430px] bg-white border-t sm:border border-[#e2e8f0] rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl sheet-animate max-h-[90vh] flex flex-col">
+      <!-- Dynamic Modal Inner Content -->
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. APPLICATION STATE & MOCK LIVE MARKET DATA
+    // ==========================================
+    const state = {
+      viewportMode: 'mobile', // automatically follows viewport width
+      activeTab: 'accounts',  // 'accounts' | 'trade' | 'insights' | 'performance' | 'profile'
+      tradeSubView: 'list',   // 'list' | 'chart' (in mobile)
+      selectedSymbol: 'XAU/USD',
+      timeframe: '5m',
+      oneClickTrade: true,
+      ordersSubTab: 'open',   // 'open' | 'pending' | 'closed'
+      watchlistTab: 'All',
+      marketSearch: '',
+      perfAccountFilter: 'all_demo', // 'all_real' | 'all_demo' | accountId
+      perfPeriodFilter: 'Last 7 days',
+      showAccountMenu: false,
+      showChartAccountMenu: false,
+      bottomPanelHeight: 185, // Desktop resizable bottom orders panel height in px
+
+      // Accounts State
+      activeAccountId: '474909030',
+      accounts: [
+        {
+          id: '474909030',
+          nickname: 'BigBull_Pro.',
+          type: 'Demo',
+          platform: 'BigBulls Paper',
+          accountClass: 'Standard',
+          balance: 5000.00,
+          leverage: '1:2000',
+          server: 'BigBulls-Demo',
+          archived: false
+        },
+        {
+          id: '16339655',
+          nickname: 'BigBull_Real',
+          type: 'Real',
+          platform: 'BigBulls Native',
+          accountClass: 'Standard',
+          balance: 0.00,
+          leverage: '1:2000',
+          server: 'BigBulls-Real',
+          archived: false
+        },
+        {
+          id: '17000707114',
+          nickname: 'Standard',
+          type: 'Real',
+          platform: 'BigBulls Paper',
+          accountClass: 'Standard',
+          balance: 488.58,
+          leverage: '1:2000',
+          server: 'BigBulls-Real',
+          archived: false
+        },
+        {
+          id: '11840467',
+          nickname: 'Standard',
+          type: 'Real',
+          platform: 'BigBulls Native',
+          accountClass: 'Standard',
+          balance: 0.00,
+          leverage: '1:1000',
+          server: 'BigBulls-MT4Real1',
+          archived: true
+        }
+      ],
+
+      // Market Instruments
+      instruments: {
+        'XAU/USD': {
+          symbol: 'XAU/USD',
+          name: 'Gold vs US Dollar',
+          category: 'Metals',
+          bid: 3969.490,
+          ask: 3969.730,
+          spread: 0.24,
+          change: -0.25,
+          digits: 3,
+          contractSize: 100,
+          iconBg: '#F59E0B',
+          iconText: 'Au',
+          candles: []
+        },
+        'USOIL': {
+          symbol: 'USOIL',
+          name: 'Crude Oil WTI',
+          category: 'Metals',
+          bid: 84.620,
+          ask: 84.650,
+          spread: 0.03,
+          change: 0.17,
+          digits: 3,
+          contractSize: 1000,
+          iconBg: '#10B981',
+          iconText: 'OIL',
+          candles: []
+        },
+        'BTC': {
+          symbol: 'BTC',
+          name: 'Bitcoin vs US Dollar',
+          category: 'Crypto',
+          bid: 73482.43,
+          ask: 73508.90,
+          spread: 26.47,
+          change: -0.57,
+          digits: 2,
+          contractSize: 1,
+          iconBg: '#F7931A',
+          iconText: '₿',
+          candles: []
+        },
+        'USTEC': {
+          symbol: 'USTEC',
+          name: 'US Tech 100 Index',
+          category: 'Indices',
+          bid: 28118.04,
+          ask: 28120.54,
+          spread: 2.50,
+          change: -0.04,
+          digits: 2,
+          contractSize: 1,
+          iconBg: '#3B82F6',
+          iconText: '100',
+          candles: []
+        },
+        'DXY': {
+          symbol: 'DXY',
+          name: 'US Dollar Index',
+          category: 'Majors',
+          bid: 103.007,
+          ask: 103.022,
+          spread: 0.015,
+          change: 0.13,
+          digits: 3,
+          contractSize: 1000,
+          iconBg: '#10B981',
+          iconText: '$',
+          candles: []
+        },
+        'EUR/USD': {
+          symbol: 'EUR/USD',
+          name: 'Euro vs US Dollar',
+          category: 'Majors',
+          bid: 1.10767,
+          ask: 1.10775,
+          spread: 0.00008,
+          change: 0.15,
+          digits: 5,
+          contractSize: 100000,
+          iconBg: '#2563EB',
+          iconText: '€',
+          candles: []
+        },
+        'GBP/USD': {
+          symbol: 'GBP/USD',
+          name: 'Great Britain Pound vs US Dollar',
+          category: 'Majors',
+          bid: 1.32549,
+          ask: 1.32559,
+          spread: 0.00010,
+          change: 0.16,
+          digits: 5,
+          contractSize: 100000,
+          iconBg: '#8B5CF6',
+          iconText: '£',
+          candles: []
+        }
+      },
+
+      // Orders State
+      openOrders: [],
+      pendingOrders: [],
+      closedOrders: [],
+
+      // Order Ticket Form State
+      orderTicket: {
+        mode: 'Market', // 'Market' | 'Pending'
+        side: 'Buy',    // 'Buy' | 'Sell'
+        lots: 0.01,
+        pendingType: 'Limit', // 'Limit' | 'Stop'
+        targetPrice: 3969.261,
+        sl: '',
+        tp: '',
+        showSlTp: false,
+        riskBased: false
+      }
+    };
+
+    // Historical candles are loaded from the live market-data service; never synthesize candles in the client.
+    function initCandles() {
+      Object.values(state.instruments).forEach(inst => { inst.candles = []; });
+    }
+    Object.values(state.instruments).forEach(inst=>{inst.candles=[];inst.bid=0;inst.ask=0;});
+
+    // ==========================================
+    // 2. HELPERS & CALCULATIONS
+    // ==========================================
+    function getActiveAccount() {
+      return state.accounts.find(a => a.id === state.activeAccountId) || state.accounts[0];
+    }
+
+    function formatMoney(num) {
+      return Number(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function calculateOrderPL(order) {
+      // Mark Demo and Real positions against the latest live bid/ask on every market tick.
+      // Backend unrealized P/L remains the fallback until a usable live quote is available.
+      const inst = state.instruments[order.symbol];
+      if (!inst) return Number(order.floatingPL||0);
+      const currentPrice = order.side === 'Buy' ? inst.bid : inst.ask;
+      if(!(currentPrice>0))return Number(order.floatingPL||0);
+      const diff = order.side === 'Buy' ? (currentPrice - order.openPrice) : (order.openPrice - currentPrice);
+      let pl = diff * order.lots * Number(inst.contractSize||1);
+      if(['USD/JPY','USD/CAD','USD/CHF'].includes(order.symbol))pl/=currentPrice;
+      else if(order.symbol.endsWith('JPY')){const fx=state.instruments['USD/JPY'];const rate=fx?(Number(fx.bid)+Number(fx.ask))/2:0;if(rate>0)pl/=rate;else return Number(order.floatingPL||0);}
+      else if(order.symbol==='EUR/GBP'){const fx=state.instruments['GBP/USD'];const rate=fx?(Number(fx.bid)+Number(fx.ask))/2:0;if(rate>0)pl*=rate;else return Number(order.floatingPL||0);}
+      return Number(pl.toFixed(2));
+    }
+
+    function getAccountMetrics() {
+      const acc = getActiveAccount();
+      const accountOpenOrders = state.openOrders.filter(o => o.accountId === acc.id);
+      if(String(acc?.type||'').toLowerCase()==='demo'&&window.__bbPaperMetrics){
+        const pm=window.__bbPaperMetrics,balance=Number(pm.balance||0);
+        const floatingPL=accountOpenOrders.reduce((sum,o)=>sum+calculateOrderPL(o),0);
+        const usedMargin=Number(pm.margin||0),equity=balance+floatingPL;
+        const freeMargin=Math.max(0,equity-usedMargin),marginLevel=usedMargin>0?equity/usedMargin*100:0;
+        return {balance,equity,floatingPL,usedMargin,freeMargin,marginLevel,
+          openCount:accountOpenOrders.length,pendingCount:state.pendingOrders.filter(o=>o.accountId===acc.id).length};
+      }
+      if(String(acc?.type||'').toLowerCase()==='real'&&window.__bbBbookMetrics){
+        const bm=window.__bbBbookMetrics,balance=Number(bm.balance||0),creditBonus=Number(bm.credit_bonus||0);
+        const floatingPL=accountOpenOrders.reduce((sum,o)=>sum+calculateOrderPL(o),0);
+        const usedMargin=Number(bm.margin||0),equity=Number.isFinite(Number(bm.equity))?Number(bm.equity):balance+creditBonus+floatingPL;
+        const freeMargin=Math.max(0,equity-usedMargin),marginLevel=usedMargin>0?equity/usedMargin*100:0;
+        return {balance,creditBonus,equity,floatingPL,usedMargin,freeMargin,marginLevel,
+          openCount:accountOpenOrders.length,pendingCount:state.pendingOrders.filter(o=>o.accountId===acc.id).length};
+      }
+      let floatingPL = 0;
+      let usedMargin = 0;
+
+      accountOpenOrders.forEach(o => {
+        floatingPL += calculateOrderPL(o);
+        const inst = state.instruments[o.symbol];
+        const lev = parseInt(acc.leverage.split(':')[1]) || 2000;
+        usedMargin += (o.lots * inst.contractSize * o.openPrice) / lev;
+      });
+
+      const equity = acc.balance + floatingPL;
+      const freeMargin = Math.max(0, equity - usedMargin);
+      const marginLevel = usedMargin > 0 ? (equity / usedMargin) * 100 : 0;
+
+      return {
+        balance: acc.balance,
+        equity,
+        floatingPL,
+        usedMargin,
+        freeMargin,
+        marginLevel,
+        openCount: accountOpenOrders.length,
+        pendingCount: state.pendingOrders.filter(o => o.accountId === acc.id).length
+      };
+    }
+
+    function showToast(title, subtitle = '', type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const el = document.createElement('div');
+      const iconColor = type === 'success' ? 'text-bullGreen' : type === 'error' ? 'text-bullRed' : 'text-bullYellow';
+      const iconSvg = type === 'success'
+        ? `<svg class="w-5 h-5 ${iconColor} shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`
+        : type === 'error'
+        ? `<svg class="w-5 h-5 ${iconColor} shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`
+        : `<svg class="w-5 h-5 ${iconColor} shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
+
+      el.className = 'bg-[#1F2532] border border-[#323B4E] rounded-2xl p-3.5 shadow-2xl flex items-start gap-3 pointer-events-auto transition-all duration-300';
+      el.innerHTML = `
+        ${iconSvg}
+        <div class="flex-1 min-w-0">
+          <div class="text-xs font-bold text-white">${title}</div>
+          ${subtitle ? `<div class="text-[11px] text-gray-300 mt-0.5 truncate">${subtitle}</div>` : ''}
+        </div>
+      `;
+      container.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(-10px)';
+        setTimeout(() => el.remove(), 300);
+      }, 3200);
+    }
+
+    // Live quotes and candles are supplied only by the authenticated market-data / BiQuote feeds.
+    function updateLiveDOMElements() {
+      const metrics = getAccountMetrics();
+      const acc = getActiveAccount();
+
+      // Update live equity/balance displays
+      document.querySelectorAll('[data-live-equity]').forEach(el => {
+        el.textContent = `${formatMoney(metrics.equity)} USD`;
+      });
+      document.querySelectorAll('[data-live-balance]').forEach(el => {
+        el.textContent = `${formatMoney(metrics.balance)} USD`;
+      });
+      document.querySelectorAll('[data-live-credit]').forEach(el => {
+        el.textContent = `+${formatMoney(metrics.creditBonus||0)} USD`;
+      });
+      document.querySelectorAll('[data-live-pl]').forEach(el => {
+        const sign = metrics.floatingPL >= 0 ? '+' : '';
+        el.textContent = `${sign}${formatMoney(metrics.floatingPL)} USD`;
+        el.className = metrics.floatingPL >= 0 ? 'text-bullGreen font-mono font-semibold' : 'text-bullRed font-mono font-semibold';
+      });
+
+      // Update individual instrument prices
+      Object.values(state.instruments).forEach(inst => {
+        document.querySelectorAll(`[data-bid="${inst.symbol}"]`).forEach(el => {
+          el.textContent = inst.bid.toFixed(inst.digits);
+        });
+        document.querySelectorAll(`[data-ask="${inst.symbol}"]`).forEach(el => {
+          el.textContent = inst.ask.toFixed(inst.digits);
+        });
+      });
+
+      // Update Desktop Bottom Account Metrics Bar (Equity, Free Margin, Balance, Margin)
+      document.querySelectorAll('[data-metric-equity]').forEach(el => {
+        el.textContent = `${formatMoney(metrics.equity)} USD`;
+      });
+      document.querySelectorAll('[data-metric-freemargin]').forEach(el => {
+        el.textContent = `${formatMoney(metrics.freeMargin)} USD`;
+      });
+      document.querySelectorAll('[data-metric-balance]').forEach(el => {
+        el.textContent = `${formatMoney(metrics.balance)} USD`;
+      });
+      document.querySelectorAll('[data-metric-margin]').forEach(el => {
+        el.textContent = `${formatMoney(metrics.usedMargin)} USD`;
+      });
+      document.querySelectorAll('[data-metric-margin-level]').forEach(el => {
+        el.textContent = metrics.usedMargin>0 ? Number(metrics.marginLevel||0).toFixed(1)+'%' : '—';
+      });
+      document.querySelectorAll('[data-margin-level-bar]').forEach(el => {
+        const level=Number(metrics.marginLevel||0),active=metrics.usedMargin>0;
+        el.style.width=active?Math.max(0,Math.min(100,level/500*100))+'%':'0%';
+        el.style.backgroundColor=level<=100?'#ef4444':level<=200?'#eab308':'#16a34a';
+      });
+
+      // Update individual open trade P/L rows
+      state.openOrders.forEach(o => {
+        const pl = calculateOrderPL(o);
+        const inst = state.instruments[o.symbol];
+        const curr = o.side === 'Buy' ? inst.bid : inst.ask;
+        document.querySelectorAll(`[data-order-pl="${o.id}"]`).forEach(el => {
+          el.textContent = `${pl >= 0 ? '+' : ''}${formatMoney(pl)} USD`;
+          el.className = pl >= 0 ? 'text-bullGreen font-mono font-bold text-sm' : 'text-bullRed font-mono font-bold text-sm';
+        });
+        document.querySelectorAll(`[data-order-pill-pl="${o.id}"]`).forEach(el => {
+          el.textContent = `${pl >= 0 ? '+' : ''}${formatMoney(pl)} USD`;
+          el.className = pl >= 0 ? 'text-bullGreen font-mono font-semibold text-xs' : 'text-bullRed font-mono font-semibold text-xs';
+        });
+        document.querySelectorAll(`[data-order-curr="${o.id}"]`).forEach(el => {
+          el.textContent = curr.toFixed(inst.digits);
+        });
+      });
+
+      // Redraw canvas chart if visible
+      drawChartCanvas();
+    }
+
+    // ==========================================
+    // 4. NAVIGATION, MODALS & TRADING ACTIONS
+    // ==========================================
+    function switchTab(tab) {
+      state.activeTab = tab;
+      if (tab === 'trade' && state.viewportMode === 'mobile') {
+        state.tradeSubView = 'list';
+      }
+      renderApp();
+    }
+
+    function openSymbolChart(sym) {
+      state.selectedSymbol = sym;
+      state.activeTab = 'trade';
+      state.tradeSubView = 'chart';
+      const inst = state.instruments[sym];
+      if (inst) state.orderTicket.targetPrice = inst.ask;
+      renderApp();
+    }
+
+    function openModal(html) {
+      const backdrop = document.getElementById('modalBackdrop');
+      const content = document.getElementById('modalContent');
+      content.innerHTML = html;
+      backdrop.classList.remove('hidden');
+      backdrop.classList.add('flex');
+    }
+
+    function closeModal() {
+      const backdrop = document.getElementById('modalBackdrop');
+      backdrop.classList.add('hidden');
+      backdrop.classList.remove('flex');
+    }
+
+    function closeModalOnBackdrop(e) {
+      if (e.target.id === 'modalBackdrop') closeModal();
+    }
+
+    function openSwitchAccountModal() {
+      const activeAcc = getActiveAccount();
+      const safe = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      const renderList = type => {
+        const list = state.accounts.filter(a => a.type === type && !a.archived && a.id !== '__no_account__');
+        if (!list.length) return '<div class="text-xs text-gray-500 rounded-xl border border-dashed border-[#e2e8f0] p-3">No '+type+' accounts found.</div>';
+        return list.map(a => {
+          const approved = a.status === 'approved' && !!a.backendId;
+          const selected = a.id === activeAcc?.id;
+          return `<button type="button" ${approved ? 'onclick="switchTradingAccount(\''+safe(a.backendId)+'\')"' : 'disabled'} class="w-full text-left p-3.5 rounded-2xl border ${selected ? 'border-bullBlue bg-bullBlue/10' : 'border-[#e2e8f0] bg-[#131722]'} ${approved ? 'hover:bg-[#1E2430] cursor-pointer' : 'opacity-60 cursor-not-allowed'} transition flex items-center justify-between gap-3 mb-2">
+            <span class="min-w-0"><span class="flex items-center gap-2 flex-wrap"><b class="font-bold text-sm text-white">${safe(a.nickname)}</b><small class="text-[10px] px-1.5 py-0.5 rounded bg-[#e2e8f0] text-gray-300">${safe(a.platform)}</small><small class="text-[10px] px-1.5 py-0.5 rounded bg-[#e2e8f0] text-gray-300">${safe(a.accountClass)}</small><small class="text-[10px] px-1.5 py-0.5 rounded ${approved ? 'text-emerald-400' : 'text-amber-300'}">${safe(String(a.status||'pending').toUpperCase())}</small></span><span class="block text-xs font-mono text-gray-400 mt-1"># ${safe(a.accountNumber||a.id)}</span></span>
+            <span class="text-right whitespace-nowrap"><b class="block font-mono text-sm text-white">${formatMoney(a.balance)} ${safe(a.currency||'USD')}</b><small class="block text-[10px] text-gray-400">Equity ${formatMoney(a.equity??a.balance)} ${safe(a.currency||'USD')}</small></span>
+          </button>`;
+        }).join('');
+      };
+      openModal(`
+        <div class="p-4 border-b border-[#e2e8f0] flex items-center justify-between"><h3 class="font-bold text-base text-white">Switch Account</h3><button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#e2e8f0] text-gray-300 flex items-center justify-center">✕</button></div>
+        <div class="p-4 overflow-y-auto space-y-4">
+          <section><div class="text-xs font-bold uppercase tracking-wider text-bullBlue mb-2">Demo Accounts</div>${renderList('Demo')}</section>
+          <section><div class="text-xs font-bold uppercase tracking-wider text-bullGreen mb-2">Real Accounts</div>${renderList('Real')}</section>
+          <button onclick="openNewAccountModal()" class="w-full py-3 rounded-xl bg-bullBlue hover:bg-bullYellowHover text-white font-bold text-sm transition">Manage / create accounts in Client Area</button>
+        </div>`);
+    }
+
+    function openNewAccountModal() {
+      openModal(`
+        <div class="p-4 border-b border-[#e2e8f0] flex items-center justify-between"><h3 class="font-bold text-base text-white">Manage Trading Accounts</h3><button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#e2e8f0] text-gray-300 flex items-center justify-center">✕</button></div>
+        <div class="p-4 space-y-3"><p class="text-sm text-gray-300">Account creation, approval and funding are managed centrally in your BIGBULLS Client Area. The terminal will only use accounts provisioned by that workflow.</p><button onclick="closeModal()" class="w-full py-3 rounded-xl bg-bullBlue text-white font-bold text-sm">Close</button></div>`);
+    }
+
+    function createNewAccount() {
+      const type = document.getElementById('newAccType').value;
+      const platform = document.getElementById('newAccPlatform').value;
+      const nickname = document.getElementById('newAccName').value || 'BigBull_Pro';
+      const newId = String(Math.floor(100000000 + Math.random() * 900000000));
+      state.accounts.unshift({
+        id: newId,
+        nickname,
+        type,
+        platform,
+        accountClass: 'Standard',
+        balance: type === 'Demo' ? 10000.00 : 0.00,
+        leverage: '1:2000',
+        server: `BigBulls-${platform}${type}1`,
+        archived: false
+      });
+      state.activeAccountId = newId;
+      closeModal();
+      renderApp();
+      showToast('Account Created', `${type} ${platform} #${newId} is ready`, 'success');
+    }
+
+    function openDepositModal() {
+      const acc = getActiveAccount();
+      openModal(`
+        <div class="p-4 border-b border-[#e2e8f0] flex items-center justify-between">
+          <h3 class="font-bold text-base text-white">Deposit — ${acc.type}</h3>
+          <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#e2e8f0] text-gray-300 flex items-center justify-center">✕</button>
+        </div>
+        <div class="p-4 space-y-4">
+          <div class="bg-[#131722] p-3 rounded-xl border border-[#e2e8f0] flex justify-between text-xs">
+            <span class="text-gray-400">Target Account</span>
+            <span class="font-mono font-bold text-white">${acc.nickname} (#${acc.id})</span>
+          </div>
+          <div>
+            <label class="text-xs text-gray-400 block mb-1.5">Enter deposit amount (USD)</label>
+            <input id="depositAmountInput" type="number" value="5000" min="1" class="w-full bg-[#f8fafc] border border-[#e2e8f0] focus:border-bullBlue rounded-xl px-3.5 py-3 text-xl font-mono font-bold text-white outline-none" />
+            <div class="flex gap-2 mt-2">
+              ${[500, 1000, 5000, 10000].map(amt => `
+                <button onclick="document.getElementById('depositAmountInput').value=${amt}" class="flex-1 py-1.5 rounded-lg bg-[#e2e8f0] hover:bg-bullBlue text-xs font-mono font-semibold text-white transition">+${amt}</button>
+              `).join('')}
+            </div>
+          </div>
+          <button onclick="submitDeposit()" class="w-full py-3.5 rounded-xl bg-bullBlue hover:bg-bullYellowHover text-white font-bold text-sm transition">
+            Continue
+          </button>
+        </div>
+      `);
+    }
+
+    function submitDeposit() {
+      const val = parseFloat(document.getElementById('depositAmountInput').value);
+      if (!val || val <= 0) return;
+      const acc = getActiveAccount();
+      acc.balance = Number((acc.balance + val).toFixed(2));
+      openModal(`
+        <div class="p-5 text-center space-y-4">
+          <div class="w-12 h-12 rounded-full bg-bullGreen/20 text-bullGreen flex items-center justify-center mx-auto text-2xl font-bold">✓</div>
+          <div>
+            <h3 class="font-bold text-lg text-white">Deposit is in Your Account!</h3>
+            <p class="text-xs text-gray-400 mt-1">Your deposit is accepted. You can start trading now.</p>
+          </div>
+          <div class="bg-[#131722] rounded-2xl p-3.5 border border-[#e2e8f0] space-y-2 text-xs">
+            <div class="flex justify-between">
+              <span class="text-gray-400">Status</span>
+              <span class="text-bullGreen font-bold">● Accepted</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-400">Transaction amount</span>
+              <span class="font-mono font-bold text-white">${formatMoney(val)} USD</span>
+            </div>
+          </div>
+          <button onclick="closeModal(); renderApp()" class="w-full py-3 rounded-xl bg-bullBlue text-white font-bold text-sm">Done</button>
+        </div>
+      `);
+    }
+
+    function openWithdrawModal() {
+      const acc = getActiveAccount();
+      openModal(`
+        <div class="p-4 border-b border-[#e2e8f0] flex items-center justify-between">
+          <h3 class="font-bold text-base text-white">Withdraw Funds</h3>
+          <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#e2e8f0] text-gray-300 flex items-center justify-center">✕</button>
+        </div>
+        <div class="p-4 space-y-4">
+          <div class="text-xs text-gray-400">Available balance: <span class="font-mono font-bold text-white">${formatMoney(acc.balance)} USD</span></div>
+          <input id="withdrawAmountInput" type="number" value="100" min="1" max="${acc.balance}" class="w-full bg-[#f8fafc] border border-[#e2e8f0] rounded-xl px-3.5 py-3 text-xl font-mono font-bold text-white outline-none" />
+          <button onclick="submitWithdraw()" class="w-full py-3.5 rounded-xl bg-bullBlue hover:bg-bullYellowHover text-white font-bold text-sm">Confirm Withdrawal</button>
+        </div>
+      `);
+    }
+
+    function submitWithdraw() {
+      const val = parseFloat(document.getElementById('withdrawAmountInput').value);
+      const acc = getActiveAccount();
+      if (!val || val <= 0 || val > acc.balance) {
+        showToast('Invalid Amount', 'Insufficient balance for withdrawal', 'error');
+        return;
+      }
+      acc.balance = Number((acc.balance - val).toFixed(2));
+      closeModal();
+      renderApp();
+      showToast('Withdrawal Processed', `${formatMoney(val)} USD deducted from #${acc.id}`, 'success');
+    }
+
+    function openAccountSettingsModal(tab = 'Settings') {
+      const acc = getActiveAccount();
+      const m = getAccountMetrics();
+      openModal(`
+        <div class="p-4 border-b border-[#e2e8f0] flex items-center justify-between">
+          <h3 class="font-bold text-base text-white">${acc.nickname}</h3>
+          <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#e2e8f0] text-gray-300 flex items-center justify-center">✕</button>
+        </div>
+        <div class="grid grid-cols-2 border-b border-[#e2e8f0] text-xs font-bold">
+          <button onclick="openAccountSettingsModal('Funds')" class="py-2.5 border-b-2 ${tab==='Funds'?'border-bullBlue text-white':'border-transparent text-gray-400'}">Funds</button>
+          <button onclick="openAccountSettingsModal('Settings')" class="py-2.5 border-b-2 ${tab==='Settings'?'border-bullBlue text-white':'border-transparent text-gray-400'}">Settings</button>
+        </div>
+        <div class="p-4 overflow-y-auto space-y-3 text-xs">
+          ${tab === 'Funds' ? `
+            <div class="bg-[#131722] rounded-2xl p-3.5 border border-[#e2e8f0] space-y-2.5">
+              <div class="flex justify-between"><span class="text-gray-400">Balance</span><span class="font-mono font-bold text-white">${formatMoney(m.balance)} USD</span></div>
+              ${m.creditBonus>0?`<div class="flex justify-between"><span class="text-gray-400">VIP Credit Bonus</span><span class="font-mono font-bold text-amber-300">+${formatMoney(m.creditBonus)} USD</span></div>`:""}
+              <div class="flex justify-between"><span class="text-gray-400">Equity</span><span class="font-mono font-bold text-white">${formatMoney(m.equity)} USD</span></div>
+              <div class="flex justify-between"><span class="text-gray-400">Floating P/L</span><span class="font-mono font-bold ${m.floatingPL>=0?'text-bullGreen':'text-bullRed'}">${m.floatingPL>=0?'+':''}${formatMoney(m.floatingPL)} USD</span></div>
+              <div class="flex justify-between"><span class="text-gray-400">Margin</span><span class="font-mono font-bold text-white">${formatMoney(m.usedMargin)} USD</span></div>
+              <div class="flex justify-between"><span class="text-gray-400">Free margin</span><span class="font-mono font-bold text-white">${formatMoney(m.freeMargin)} USD</span></div>
+              <div class="flex justify-between"><span class="text-gray-400">Leverage</span><span class="font-mono font-bold text-white">${acc.leverage}</span></div>
+            </div>
+          ` : `
+            <div class="bg-[#131722] rounded-2xl p-3.5 border border-[#e2e8f0] space-y-2.5">
+              <div class="flex justify-between"><span class="text-gray-400">Type</span><span class="font-bold text-white">${acc.platform} · ${acc.accountClass} · ${acc.type}</span></div>
+              <div class="flex justify-between"><span class="text-gray-400">Number</span><span class="font-mono font-bold text-white">#${acc.id}</span></div>
+              <div class="flex justify-between"><span class="text-gray-400">Max leverage</span><span class="font-mono font-bold text-white">${acc.leverage}</span></div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-400">Server</span>
+                <button onclick="copyText('${acc.server}')" class="font-mono font-bold text-bullBlue hover:underline">${acc.server} 📋</button>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-gray-400">Login</span>
+                <button onclick="copyText('${acc.id}')" class="font-mono font-bold text-bullBlue hover:underline">${acc.id} 📋</button>
+              </div>
+            </div>
+          `}
+        </div>
+      `);
+    }
+
+    function openChartPreferencesModal() {
+      openModal(`
+        <div class="p-4 border-b border-[#e2e8f0] flex items-center justify-between">
+          <h3 class="font-bold text-base text-white">Chart Preferences</h3>
+          <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-[#e2e8f0] text-gray-300 flex items-center justify-center">✕</button>
+        </div>
+        <div class="p-4 space-y-3 text-xs">
+          <div class="bg-[#131722] p-3.5 rounded-2xl border border-[#e2e8f0] flex items-center justify-between">
+            <div>
+              <div class="font-bold text-white">One-Click Trading</div>
+              <div class="text-gray-400 mt-0.5">Execute market orders immediately without confirmation</div>
+            </div>
+            <input type="checkbox" ${state.oneClickTrade ? 'checked' : ''} onchange="state.oneClickTrade=this.checked; renderApp()" class="w-5 h-5 accent-bullBlue" />
+          </div>
+          <div class="bg-[#131722] p-3.5 rounded-2xl border border-[#e2e8f0] flex justify-between">
+            <span class="text-gray-400">Chart Provider</span>
+            <span class="font-bold text-white">BigBulls TradingView Engine</span>
+          </div>
+        </div>
+      `);
+    }
+
+    function copyText(txt) {
+      const el = document.createElement('textarea');
+      el.value = txt;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      showToast('Copied to Clipboard', txt, 'success');
+    }
+
+    // Symbol classifier used by the order ticket; prefer instrument metadata over name heuristics.
+    function bbIsCryptoSymbol(symbol) {
+      const key = String(symbol || '').trim().toUpperCase().replace(/\s+/g, '');
+      if (!key) return false;
+      const instrument = state && state.instruments ? state.instruments[symbol] : null;
+      if (instrument && instrument.category) return String(instrument.category).toLowerCase() === 'crypto';
+      const cryptoSymbols = new Set(['BTC','BTCUSD','BTC/USD','BTCUSDT','ETH','ETHUSD','ETH/USD','ETHUSDT','SOL','SOLUSD','SOL/USD','SOLUSDT','XRP','XRPUSD','XRP/USD','XRPUSDT','BNB','BNBUSD','BNB/USD','BNBUSDT']);
+      return cryptoSymbols.has(key);
+    }
+    window.bbIsCryptoSymbol = bbIsCryptoSymbol;
+
+    function bbUpdateTicketMargin(){
+      const inst=state.instruments[state.selectedSymbol],acc=getActiveAccount(),m=state.orderTicket;
+      const lev=Math.max(1,parseInt(String(acc?.leverage||'1:100').split(':')[1],10)||100);
+      const price=m.mode==='Market'?(m.side==='Buy'?Number(inst?.ask):Number(inst?.bid)):Number(m.targetPrice);
+      const valid=Number.isFinite(price)&&price>0;
+      const required=valid?(Number(m.lots||0)*Number(inst?.contractSize||1)*price)/lev:0;
+      document.querySelectorAll('[data-ticket-required-margin]').forEach(el=>{el.textContent=valid?formatMoney(required)+' USD':'Waiting for live quote';});
+      const free=getAccountMetrics().freeMargin;
+      document.querySelectorAll('[data-ticket-free-margin]').forEach(el=>{el.textContent=formatMoney(free)+' USD';});
+      return required;
+    }
+    window.bbUpdateTicketMargin=bbUpdateTicketMargin;
+
+    function openOrderTicketModal(side = 'Buy', mode = 'Market') {
+      const inst = state.instruments[state.selectedSymbol];
+      state.orderTicket.side = side;
+      state.orderTicket.mode = mode;
+      if(mode==='Pending')state.orderTicket.pendingType=side+' Limit';
+      state.orderTicket.targetPrice = side === 'Buy' ? inst.ask : inst.bid;
+
+      const renderTicketHTML = () => {
+        const m = state.orderTicket;
+        const acc = getActiveAccount();
+        const lev = parseInt(acc.leverage.split(':')[1]) || 2000;
+        const execPrice = m.mode === 'Market' ? (m.side === 'Buy' ? inst.ask : inst.bid) : parseFloat(m.targetPrice || inst.ask);
+        const marginReq = ((m.lots * inst.contractSize * execPrice) / lev).toFixed(2);
+
+        return `
+          <div class="p-4 border-b border-[#e2e8f0] flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white" style="background:${inst.iconBg}">${inst.iconText}</span>
+              <h3 class="font-bold text-sm text-white">${inst.symbol} Order</h3>
+            </div>
+            <button onclick="closeModal()" class="w-7 h-7 rounded-full bg-[#e2e8f0] text-gray-300 flex items-center justify-center text-xs">✕</button>
+          </div>
+          <div class="grid grid-cols-2 border-b border-[#e2e8f0] text-xs font-bold">
+            <button onclick="state.orderTicket.mode='Market'; openModal(renderTicketInner())" class="py-2.5 border-b-2 ${m.mode==='Market'?'border-bullBlue text-white':'border-transparent text-gray-400'}">Market</button>
+            <button onclick="state.orderTicket.mode='Pending'; state.orderTicket.pendingType=state.orderTicket.side+' Limit'; openModal(renderTicketInner())" class="py-2.5 border-b-2 ${m.mode==='Pending'?'border-bullBlue text-white':'border-transparent text-gray-400'}">Pending</button>
+          </div>
+          <div class="p-4 space-y-3.5 text-xs">
+            <div class="grid grid-cols-2 gap-2">
+              <button onclick="state.orderTicket.side='Sell'; openModal(renderTicketInner())" class="py-2.5 rounded-xl font-bold border ${m.side==='Sell' ? 'bg-bullRed border-bullRed text-white' : 'bg-[#131722] border-[#e2e8f0] text-gray-400'}">
+                Sell <span class="font-mono block text-sm">${inst.bid.toFixed(inst.digits)}</span>
+              </button>
+              <button onclick="state.orderTicket.side='Buy'; openModal(renderTicketInner())" class="py-2.5 rounded-xl font-bold border ${m.side==='Buy' ? 'bg-bullBlue border-bullBlue text-white' : 'bg-[#131722] border-[#e2e8f0] text-gray-400'}">
+                Buy <span class="font-mono block text-sm">${inst.ask.toFixed(inst.digits)}</span>
+              </button>
+            </div>
+
+            ${m.mode === 'Pending' ? `
+              <div>
+                <label class="text-gray-400 block mb-1">Pending order type</label>
+                <select id="ticketPendingType" onchange="const v=this.value;state.orderTicket.side=v.startsWith('Buy')?'Buy':'Sell';state.orderTicket.pendingType=v;openModal(renderTicketInner())" class="w-full bg-[#f8fafc] border border-[#e2e8f0] rounded-xl px-3 py-2 text-white"><option ${m.pendingType==='Buy Limit'?'selected':''}>Buy Limit</option><option ${m.pendingType==='Sell Limit'?'selected':''}>Sell Limit</option><option ${m.pendingType==='Buy Stop'?'selected':''}>Buy Stop</option><option ${m.pendingType==='Sell Stop'?'selected':''}>Sell Stop</option></select>
+              </div>
+              <div>
+                <label class="text-gray-400 block mb-1">Order Price (${m.pendingType})</label>
+                <input id="ticketTargetPrice" type="number" step="any" value="${m.targetPrice}" oninput="state.orderTicket.targetPrice=parseFloat(this.value);bbUpdateTicketMargin()" class="w-full bg-[#f8fafc] border border-[#e2e8f0] rounded-xl px-3 py-2 font-mono font-bold text-white" />
+              </div>
+            ` : ''}
+
+            <div>
+              <div class="flex justify-between text-gray-400 mb-1">
+                <span>Volume, lots</span>
+                <span class="font-mono text-white font-bold">${m.lots.toFixed(2)}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="state.orderTicket.lots=Math.max(0.01, Number((state.orderTicket.lots-0.01).toFixed(2))); openModal(renderTicketInner())" class="w-10 h-10 rounded-xl bg-[#e2e8f0] text-white font-bold text-base">−</button>
+                <input type="number" step="0.01" min="0.01" value="${m.lots}" oninput="state.orderTicket.lots=Math.max(0.01, parseFloat(this.value)||0.01);bbUpdateTicketMargin()" class="flex-1 bg-[#f8fafc] border border-[#e2e8f0] rounded-xl h-10 text-center font-mono font-bold text-sm text-white" />
+                <button onclick="state.orderTicket.lots=Number((state.orderTicket.lots+0.01).toFixed(2)); openModal(renderTicketInner())" class="w-10 h-10 rounded-xl bg-[#e2e8f0] text-white font-bold text-base">+</button>
+              </div>
+              <div class="flex gap-1.5 mt-2">
+                ${[0.01, 0.05, 0.10, 0.50, 1.00].map(l => `
+                  <button onclick="state.orderTicket.lots=${l}; openModal(renderTicketInner())" class="flex-1 py-1 rounded-lg bg-[#131722] border border-[#e2e8f0] hover:border-bullBlue font-mono text-[11px] text-gray-300">${l.toFixed(2)}</button>
+                `).join('')}
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-gray-400 block mb-1">Stop Loss (SL)</label>
+                <input id="ticketSL" type="number" step="any" placeholder="Not set" value="${m.sl}" oninput="state.orderTicket.sl=this.value" class="w-full bg-[#f8fafc] border border-[#e2e8f0] rounded-xl px-3 py-2 font-mono text-white" />
+              </div>
+              <div>
+                <label class="text-gray-400 block mb-1">Take Profit (TP)</label>
+                <input id="ticketTP" type="number" step="any" placeholder="Not set" value="${m.tp}" oninput="state.orderTicket.tp=this.value" class="w-full bg-[#f8fafc] border border-[#e2e8f0] rounded-xl px-3 py-2 font-mono text-white" />
+              </div>
+            </div>
+
+            <div class="flex justify-between text-[11px] text-gray-400 pt-1">
+              <span>Required margin: <strong data-ticket-required-margin class="text-white font-mono">${marginReq} USD</strong></span>
+              <span>Free margin: <strong data-ticket-free-margin class="text-white font-mono">${formatMoney(getAccountMetrics().freeMargin)} USD</strong></span>
+            </div>
+            <div class="flex justify-between text-[10px] text-gray-500"><span>Contract size: ${Number(inst.contractSize||1).toLocaleString()} units</span><span>Leverage: ${acc.leverage}</span></div><div class="text-[10px] text-gray-500">Trading hours: ${bbIsCryptoSymbol(inst.symbol)?'24/7':'Mon–Fri 00:00–23:59 UTC; holidays excluded'}</div>
+
+            <button onclick="submitOrderExecution()" class="w-full py-3.5 rounded-xl font-bold text-sm text-white transition shadow-lg ${m.side==='Buy' ? 'bg-bullBlue hover:bg-bullYellowHover' : 'bg-bullRed hover:bg-red-600'}">
+              Confirm ${m.side} ${m.lots.toFixed(2)} lots
+            </button>
+          </div>
+        `;
+      };
+      window.renderTicketInner = renderTicketHTML;
+      openModal(renderTicketHTML());
+    }
+
+    function submitOrderExecution() {
+      const acc = getActiveAccount();
+      const m = state.orderTicket;
+      const inst = state.instruments[state.selectedSymbol];
+      const execPrice = m.mode === 'Market' ? (m.side === 'Buy' ? inst.ask : inst.bid) : parseFloat(m.targetPrice);
+      const lev = parseInt(acc.leverage.split(':')[1]) || 2000;
+      const marginReq = (m.lots * inst.contractSize * execPrice) / lev;
+
+      if (marginReq > getAccountMetrics().freeMargin) {
+        showToast('Order is not placed', 'Request rejected — Insufficient free margin', 'error');
+        return;
+      }
+
+      const orderId = Math.floor(2752610000 + Math.random() * 89999);
+      if (m.mode === 'Market') {
+        state.openOrders.unshift({
+          id: orderId,
+          accountId: acc.id,
+          symbol: inst.symbol,
+          side: m.side,
+          lots: m.lots,
+          openPrice: execPrice,
+          sl: m.sl || '',
+          tp: m.tp || '',          openTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        });
+        showToast('Order opened', `${inst.symbol} ${m.side} ${m.lots.toFixed(2)} lot at ${execPrice.toFixed(inst.digits)}`, 'success');
+      } else {
+        state.pendingOrders.unshift({
+          id: orderId,
+          accountId: acc.id,
+          symbol: inst.symbol,
+          side: m.side,
+          pendingType: m.pendingType,
+          lots: m.lots,
+          targetPrice: execPrice,
+          sl: m.sl || '',
+          tp: m.tp || ''
+        });
+        showToast('Pending order placed', `${inst.symbol} ${m.side} Limit ${m.lots.toFixed(2)} lot at ${execPrice.toFixed(inst.digits)}`, 'info');
+      }
+
+      closeModal();
+      renderApp();
+    }
+
+    function openClosePositionModal(orderId) {
+      const order = state.openOrders.find(o => String(o.id) === String(orderId) || String(o.backendTradeId) === String(orderId));
+      if (!order) return;
+      const pl = calculateOrderPL(order);
+      const inst = state.instruments[order.symbol];
+      const closePrice = order.side === 'Buy' ? inst.bid : inst.ask;
+
+      openModal(`
+        <div class="p-4 border-b border-[#e2e8f0] flex items-center justify-between">
+          <h3 class="font-bold text-sm text-white">Close position #${order.id} ?</h3>
+          <button onclick="closeModal()" class="w-7 h-7 rounded-full bg-[#e2e8f0] text-gray-300 flex items-center justify-center text-xs">✕</button>
+        </div>
+        <div class="p-4 space-y-3 text-xs">
+          <div class="flex justify-between"><span class="text-gray-400">Lots</span><span class="font-mono font-bold text-white">${order.lots.toFixed(2)}</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Closing price</span><span class="font-mono font-bold text-white">${closePrice.toFixed(inst.digits)}</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Profit / Loss</span><span class="font-mono font-bold ${pl>=0?'text-bullGreen':'text-bullRed'}">${pl>=0?'+':''}${formatMoney(pl)} USD</span></div>
+          ${mode(getActiveAccount())==='real'&&Number(order.lots)>=0.02 ? `<button onclick="openPartialCloseModal('${order.backendTradeId||order.id}')" class="w-full py-2.5 rounded-xl bg-[#e2e8f0] text-white font-bold text-xs mt-2">Partial close</button>` : ''}
+          ${mode(getActiveAccount())==='real' ? `<button onclick="openModifyPositionModal('${order.backendTradeId||order.id}')" class="w-full py-2.5 rounded-xl bg-[#e2e8f0] text-white font-bold text-xs mt-2">Modify SL / TP</button>` : ''}
+          <button onclick="executeCloseOrder('${order.backendTradeId || order.id}', false)" class="w-full py-3 rounded-xl bg-bullBlue hover:bg-bullYellowHover text-white font-bold text-sm mt-2">Confirm</button>
+          <button onclick="closeModal()" class="w-full py-2.5 rounded-xl bg-[#e2e8f0] text-gray-300 font-bold text-xs">Cancel</button>
+        </div>
+      `);
+    }
+
+    function executeCloseOrder(orderId, silent = false, reason = 'Closed manually') {
+      const idx = state.openOrders.findIndex(o => o.id === orderId);
+      if (idx === -1) return;
+      const order = state.openOrders[idx];
+      const acc = state.accounts.find(a => a.id === order.accountId) || getActiveAccount();
+      const inst = state.instruments[order.symbol];
+      const closePrice = order.side === 'Buy' ? inst.bid : inst.ask;
+      const realizedPL = calculateOrderPL(order);
+
+      acc.balance = Number((acc.balance + realizedPL).toFixed(2));
+      state.openOrders.splice(idx, 1);
+      state.closedOrders.unshift({
+        ...order,
+        closePrice: closePrice.toFixed(inst.digits),
+        realizedPL,
+        closeTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+
+      if (!silent) closeModal();
+      renderApp();
+      showToast(
+        `${reason} (#${order.id})`,
+        `${order.symbol} ${order.side} ${order.lots.toFixed(2)} lot • ${realizedPL >= 0 ? '+' : ''}${formatMoney(realizedPL)} USD`,
+        realizedPL >= 0 ? 'success' : 'info'
+      );
+    }
+
+    function closeAllOpenOrders() {
+      const acc = getActiveAccount();
+      const ids = state.openOrders.filter(o => o.accountId === acc.id).map(o => o.id);
+      ids.forEach(id => executeCloseOrder(id, true, 'Closed all'));
+    }
+
+    function cancelPendingOrder(id) {
+      const idx = state.pendingOrders.findIndex(o => o.id === id);
+      if (idx > -1) {
+        state.pendingOrders.splice(idx, 1);
+        renderApp();
+        showToast('Pending Order Cancelled', `Order #${id} removed`, 'info');
+      }
+    }
+
+    // ==========================================
+    // 5. LIVE CANDLESTICK CHART CANVAS RENDERER
+    // ==========================================
+
+    // Local chart-renderer scheduler: this scope owns drawChartCanvas and gesture handlers.
+    let chartPaintFramePending=false;
+    function queueChartPaint(){
+      if(chartPaintFramePending)return;
+      chartPaintFramePending=true;
+      const paint=()=>{
+        chartPaintFramePending=false;
+        try{drawChartCanvas();}
+        catch(error){console.error('[BIGBULLS chart] Canvas repaint failed:',error);}
+      };
+      if(typeof window.requestAnimationFrame==='function')window.requestAnimationFrame(paint);
+      else window.setTimeout(paint,16);
+    }
+    window.queueChartPaint = queueChartPaint;
+    let chartView={count:90,offset:0,priceShift:0};
+    const chartPointers=new Map();
+    let chartGesture=null;
+    function bindChartGestures(canvas){
+      if(canvas.dataset.gesturesBound==='1')return;
+      canvas.dataset.gesturesBound='1';
+      canvas.style.touchAction='none';
+      canvas.addEventListener('pointerdown',e=>{
+        canvas.setPointerCapture?.(e.pointerId);
+        chartPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+        if(chartPointers.size===1)chartGesture={mode:'pan',x:e.clientX,y:e.clientY,offset:chartView.offset,shift:chartView.priceShift};
+        else if(chartPointers.size===2){
+          const p=[...chartPointers.values()],dx=p[0].x-p[1].x,dy=p[0].y-p[1].y;
+          chartGesture={mode:'pinch',distance:Math.hypot(dx,dy),count:chartView.count,midY:(p[0].y+p[1].y)/2};
+        }
+      });
+      canvas.addEventListener('pointermove',e=>{
+        if(!chartPointers.has(e.pointerId))return;
+        chartPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+        const rect=canvas.getBoundingClientRect();
+        if(chartPointers.size>=2&&chartGesture?.mode==='pinch'){
+          const p=[...chartPointers.values()],dx=p[0].x-p[1].x,dy=p[0].y-p[1].y,d=Math.max(1,Math.hypot(dx,dy));
+          chartView.count=Math.max(18,Math.min(500,Math.round(chartGesture.count*chartGesture.distance/d)));
+          chartView.offset=Math.min(Math.max(0,state.instruments[state.selectedSymbol].candles.length-chartView.count),chartView.offset);
+          queueChartPaint();
+        }else if(chartPointers.size===1&&chartGesture?.mode==='pan'){
+          const barsPerPx=chartView.count/Math.max(100,rect.width-70);
+          const dx=e.clientX-chartGesture.x,dy=e.clientY-chartGesture.y;
+          chartView.offset=Math.max(0,Math.min(Math.max(0,state.instruments[state.selectedSymbol].candles.length-chartView.count),Math.round(chartGesture.offset+dx*barsPerPx)));
+          chartView.priceShift=chartGesture.shift+dy/Math.max(1,rect.height);
+          queueChartPaint();
+        }
+      });
+      const finish=e=>{chartPointers.delete(e.pointerId);if(chartPointers.size===0)chartGesture=null;else if(chartPointers.size===1){const p=[...chartPointers.values()][0];chartGesture={mode:'pan',x:p.x,y:p.y,offset:chartView.offset,shift:chartView.priceShift};}};
+      canvas.addEventListener('pointerup',finish);canvas.addEventListener('pointercancel',finish);canvas.addEventListener('lostpointercapture',finish);
+      canvas.addEventListener('wheel',e=>{
+        e.preventDefault();const factor=e.deltaY>0?1.18:0.85;
+        chartView.count=Math.max(18,Math.min(500,Math.round(chartView.count*factor)));
+        chartView.offset=Math.min(Math.max(0,state.instruments[state.selectedSymbol].candles.length-chartView.count),chartView.offset);
+        queueChartPaint();
+      },{passive:false});
+      canvas.addEventListener('dblclick',()=>{chartView={count:90,offset:0,priceShift:0};queueChartPaint();});
+    }
+    function drawChartCanvas() {
+      const canvas=document.getElementById('liveChartCanvas');if(!canvas)return;
+      const rect=canvas.parentElement.getBoundingClientRect();if(rect.width<=0||rect.height<=0)return;
+      bindChartGestures(canvas);
+      const dpr=window.devicePixelRatio||1;canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);
+      const ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);
+      const w=rect.width,h=rect.height,chartW=Math.max(40,w-72),inst=state.instruments[state.selectedSymbol];
+      ctx.fillStyle='#0E1117';ctx.fillRect(0,0,w,h);
+      ctx.strokeStyle='#191F2C';ctx.lineWidth=1;
+      for(let i=1;i<7;i++){const y=h*i/7;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(chartW,y);ctx.stroke();}
+      for(let i=1;i<9;i++){const x=chartW*i/9;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}
+      const all=inst?.candles||[];if(!all.length)return;
+      const count=Math.max(18,Math.min(all.length,chartView.count));
+      const end=Math.max(1,all.length-Math.max(0,chartView.offset)),start=Math.max(0,end-count),candles=all.slice(start,end);
+      const open=state.openOrders.filter(o=>o.accountId===getActiveAccount()?.id&&o.symbol===state.selectedSymbol);
+      const pending=state.pendingOrders.filter(o=>o.accountId===getActiveAccount()?.id&&o.symbol===state.selectedSymbol);
+      const levels=[];
+      open.forEach(o=>{levels.push({price:o.openPrice,color:'#60A5FA',dash:[],label:(o.side==='Buy'?'BUY':'SELL')+' '+o.lots.toFixed(2)+' @ '+Number(o.openPrice).toFixed(inst.digits)});if(Number(o.sl)>0)levels.push({price:Number(o.sl),color:'#FF4D4D',dash:[6,4],label:'SL '+Number(o.sl).toFixed(inst.digits)});if(Number(o.tp)>0)levels.push({price:Number(o.tp),color:'#00C076',dash:[6,4],label:'TP '+Number(o.tp).toFixed(inst.digits)});});
+      pending.forEach(o=>{levels.push({price:o.targetPrice,color:'#F59E0B',dash:[3,3],label:'PENDING '+o.pendingType+' @ '+Number(o.targetPrice).toFixed(inst.digits)});if(Number(o.sl)>0)levels.push({price:Number(o.sl),color:'#FF4D4D',dash:[6,4],label:'SL '+Number(o.sl).toFixed(inst.digits)});if(Number(o.tp)>0)levels.push({price:Number(o.tp),color:'#00C076',dash:[6,4],label:'TP '+Number(o.tp).toFixed(inst.digits)});});
+      let minP=Math.min(...candles.map(c=>Number(c.low))),maxP=Math.max(...candles.map(c=>Number(c.high)));
+      levels.forEach(v=>{minP=Math.min(minP,v.price);maxP=Math.max(maxP,v.price);});
+      if(inst.bid>0){minP=Math.min(minP,inst.bid);maxP=Math.max(maxP,inst.bid);}
+      let range=Math.max(maxP-minP,Math.abs(maxP)*0.00001,0.00001),pad=range*.08;
+      minP-=pad;maxP+=pad;const baseMin=minP,baseMax=maxP;
+      minP-=range*chartView.priceShift;maxP-=range*chartView.priceShift;
+      const priceToY=p=>h-((p-minP)/(maxP-minP))*h;
+      const stepX=chartW/candles.length,bodyW=Math.max(1.5,Math.min(12,stepX*.68));
+      candles.forEach((c,i)=>{
+        const x=i*stepX+stepX/2,bull=c.close>=c.open,color=bull?'#2979FF':'#FF4D4D';
+        ctx.strokeStyle=color;ctx.lineWidth=Math.max(1,Math.min(1.5,stepX*.16));ctx.beginPath();ctx.moveTo(x,priceToY(c.high));ctx.lineTo(x,priceToY(c.low));ctx.stroke();
+        const y1=priceToY(c.open),y2=priceToY(c.close),top=Math.min(y1,y2),bh=Math.max(1,Math.abs(y2-y1));
+        ctx.fillStyle=color;ctx.fillRect(x-bodyW/2,top,bodyW,bh);
+      });
+      function drawLevel(level){
+        const y=priceToY(level.price);if(y<0||y>h)return;
+        ctx.save();ctx.setLineDash(level.dash);ctx.strokeStyle=level.color;ctx.lineWidth=1.25;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(chartW,y);ctx.stroke();ctx.setLineDash([]);
+        ctx.font='10px JetBrains Mono,monospace';const label=level.label.slice(0,34);ctx.fillStyle=level.color;ctx.fillText(label,5,Math.max(11,Math.min(h-4,y-4)));ctx.restore();
+      }
+      levels.forEach(drawLevel);
+      if(inst.bid>0){const y=priceToY(inst.bid);ctx.save();ctx.setLineDash([3,3]);ctx.strokeStyle='#F87171';ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(chartW,y);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#F87171';ctx.fillRect(chartW,y-9,70,18);ctx.fillStyle='#fff';ctx.font='bold 10px JetBrains Mono,monospace';ctx.fillText(inst.bid.toFixed(inst.digits),chartW+3,y+3);ctx.restore();}
+      ctx.fillStyle='#8B95A7';ctx.font='10px JetBrains Mono,monospace';
+      for(let i=0;i<=6;i++){const p=maxP-(maxP-minP)*i/6;ctx.fillText(p.toFixed(inst.digits),chartW+3,h*i/6+3);}
+    }
+
+    // ==========================================
+    // 6. MOBILE TABS: ACCOUNTS, TRADE, INSIGHTS, PERFORMANCE
+    // ==========================================
+    function renderAccountsTab() {
+      const acc = getActiveAccount();
+      const m = getAccountMetrics();
+      const accOpenOrders = state.openOrders.filter(o => o.accountId === acc.id);
+      const accPendingOrders = state.pendingOrders.filter(o => o.accountId === acc.id);
+      const accClosedOrders = state.closedOrders.filter(o => o.accountId === acc.id);
+      const quickPairs = ['XAU/USD', 'BTC', 'USTEC'];
+
+      return `
+        <div class="flex-1 overflow-y-auto px-4 pt-4 pb-6 space-y-4">
+          <!-- Header -->
+          <div class="flex items-center justify-between">
+            <h1 class="text-2xl font-extrabold text-white tracking-tight">Accounts</h1>
+            <div class="flex items-center gap-2">
+              <button onclick="showToast('No new notifications', 'All systems operational', 'info')" class="w-9 h-9 rounded-full bg-[#ffffff] flex items-center justify-center text-gray-300 text-sm">🔔</button>
+              <button onclick="openSwitchAccountModal()" class="w-9 h-9 rounded-full bg-[#ffffff] flex items-center justify-center text-white font-bold">⋮</button>
+            </div>
+          </div>
+
+          ${(acc.type==='Real' && acc.backendId ? `
+          <section class="rounded-2xl border border-blue-500/40 bg-[#101827] p-4 space-y-3">
+            <div class="flex items-center justify-between gap-3"><div><div class="text-sm font-extrabold text-white">BIGBULLS AI Auto-Trade</div><div class="text-[11px] text-slate-400 mt-1">This account only · Manual trading remains available</div></div>${window.renderAiAutoTradeSwitch('account-card')}</div>
+            <div class="grid grid-cols-2 gap-2 text-xs"><div class="rounded-xl bg-slate-900 p-2.5"><div class="text-slate-400">Trade risk limit</div><b class="text-white">Up to 3%* equity</b></div><div class="rounded-xl bg-slate-900 p-2.5"><div class="text-slate-400">Reward target</div><b class="text-white">2%–3% equity</b></div></div>
+            <div class="flex items-center justify-between gap-2"><label class="text-xs text-slate-300">Reward target</label><select id="bb-ai-reward-target" class="rounded-lg bg-slate-900 border border-slate-700 text-white text-xs p-2"><option value="2">2%</option><option value="2.5" selected>2.5%</option><option value="3">3%</option></select></div>
+            <p class="text-[10px] leading-relaxed text-slate-400">AI automation applies only to this selected account. Manual market orders, pending orders, SL/TP changes and closing positions stay available. *Platform risk limits may be stricter.</p>
+          </section>` : `<section class="rounded-2xl border border-slate-700 bg-[#101827] p-3 text-xs text-slate-300">AI Auto-Trade is available on eligible approved Real accounts. Manual trading is always available.</section>`)}
+          <!-- Active Account Summary Card -->
+          <div class="bg-[#ffffff] border border-[#e2e8f0] rounded-3xl p-4 space-y-4">
+            <div class="flex items-center justify-between">
+              <div onclick="openSwitchAccountModal()" class="cursor-pointer">
+                <div class="text-xs font-bold text-white flex items-center gap-1.5">
+                  <span>${acc.nickname}</span>
+                  <span class="font-mono text-gray-400"># ${acc.id}</span>
+                  <span class="text-gray-400">▾</span>
+                </div>
+                <div class="flex items-center gap-1.5 mt-1.5">
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-md ${acc.type==='Demo' ? 'bg-bullGreen/15 text-bullGreen' : 'bg-bullBlue/15 text-bullBlue'}">${acc.type}</span>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#e2e8f0] text-gray-300">${acc.platform}</span>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#e2e8f0] text-gray-300">${acc.accountClass}</span>
+                </div>
+              </div>
+              <button onclick="openAccountSettingsModal('Settings')" class="w-9 h-9 rounded-full bg-[#e2e8f0] hover:bg-bullBlue text-gray-300 hover:text-white flex items-center justify-center transition">⚙️</button>
+            </div>
+
+            <div data-live-equity class="text-3xl font-extrabold font-mono text-white tracking-tight">
+              ${formatMoney(m.equity)} USD
+            </div>
+            <div class="flex items-center gap-3 text-[11px] text-gray-400 mt-1"><span>Cash balance: <b data-live-balance class="text-white">${formatMoney(m.balance)} USD</b></span><span>Credit bonus: <b data-live-credit class="text-amber-300">+${formatMoney(m.creditBonus||0)} USD</b></span></div>
+
+            <!-- Primary Circular Action Buttons: Trade | Deposit | Withdraw -->
+            <div class="grid grid-cols-3 gap-2 pt-1">
+              <button onclick="switchTab('trade')" class="flex flex-col items-center gap-1.5 group">
+                <div class="w-12 h-12 rounded-full bg-bullBlue group-hover:bg-bullYellowHover text-white flex items-center justify-center text-lg font-bold shadow-lg shadow-bullBlue/25 transition">📊</div>
+                <span class="text-xs font-semibold text-white">Trade</span>
+              </button>
+              <button onclick="openDepositModal()" class="flex flex-col items-center gap-1.5 group">
+                <div class="w-12 h-12 rounded-full bg-[#e2e8f0] group-hover:bg-bullBlue text-white flex items-center justify-center text-lg font-bold transition">↓</div>
+                <span class="text-xs font-semibold text-gray-300">Deposit</span>
+              </button>
+              <button onclick="openWithdrawModal()" class="flex flex-col items-center gap-1.5 group">
+                <div class="w-12 h-12 rounded-full bg-[#e2e8f0] group-hover:bg-bullBlue text-white flex items-center justify-center text-lg font-bold transition">↗</div>
+                <span class="text-xs font-semibold text-gray-300">Withdraw</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Orders Sub-Tabs: Open | Pending | Closed -->
+          <div>
+            <div class="flex items-center justify-between border-b border-[#e2e8f0] pb-2">
+              <div class="flex items-center gap-5 text-xs font-bold">
+                <button onclick="state.ordersSubTab='open'; renderApp()" class="pb-1.5 border-b-2 ${state.ordersSubTab==='open' ? 'border-bullBlue text-white' : 'border-transparent text-gray-400'}">
+                  Open ${accOpenOrders.length > 0 ? `<span class="ml-1 px-1.5 py-0.5 rounded-full bg-[#e2e8f0] text-[10px]">${accOpenOrders.length}</span>` : ''}
+                </button>
+                <button onclick="state.ordersSubTab='pending'; renderApp()" class="pb-1.5 border-b-2 ${state.ordersSubTab==='pending' ? 'border-bullBlue text-white' : 'border-transparent text-gray-400'}">
+                  Pending ${accPendingOrders.length > 0 ? `<span class="ml-1 px-1.5 py-0.5 rounded-full bg-[#e2e8f0] text-[10px]">${accPendingOrders.length}</span>` : ''}
+                </button>
+                <button onclick="state.ordersSubTab='closed'; renderApp()" class="pb-1.5 border-b-2 ${state.ordersSubTab==='closed' ? 'border-bullBlue text-white' : 'border-transparent text-gray-400'}">
+                  Closed
+                </button>
+              </div>
+              <span class="text-gray-400 text-xs">⇅</span>
+            </div>
+
+            <!-- Orders List or Empty State -->
+            <div class="mt-3 space-y-2.5">
+              ${state.ordersSubTab === 'open' ? (
+                accOpenOrders.length > 0 ? `
+                  <div class="flex justify-between text-xs px-1">
+                    <span class="text-gray-400">Total P/L</span>
+                    <span data-live-pl class="font-mono font-bold ${m.floatingPL>=0?'text-bullGreen':'text-bullRed'}">${m.floatingPL>=0?'+':''}${formatMoney(m.floatingPL)} USD</span>
+                  </div>
+                  ${accOpenOrders.map(o => {
+                    const pl = calculateOrderPL(o);
+                    const inst = state.instruments[o.symbol];
+                    return `
+                      <div onclick="openClosePositionModal(${o.id})" class="bg-[#ffffff] border border-[#e2e8f0] rounded-2xl p-3.5 flex items-center justify-between cursor-pointer hover:border-bullBlue transition">
+                        <div>
+                          <div class="font-bold text-sm text-white">${o.symbol}</div>
+                          <div class="text-xs font-semibold ${o.side==='Buy'?'text-bullBlue':'text-bullRed'} mt-0.5">${o.side} ${o.lots.toFixed(2)} lot at ${o.openPrice.toFixed(inst.digits)}</div>
+                        </div>
+                        <div class="text-right">
+                          <div data-order-pl="${o.id}" class="font-mono font-bold text-sm ${pl>=0?'text-bullGreen':'text-bullRed'}">${pl>=0?'+':''}${formatMoney(pl)} USD</div>
+                          <div data-order-curr="${o.id}" class="text-xs font-mono text-gray-400 mt-0.5">${(o.side==='Buy'?inst.bid:inst.ask).toFixed(inst.digits)}</div>
+                          <div class="flex gap-1.5 mt-2 justify-end"><button onclick="event.stopPropagation();openModifyPositionModal('${o.backendTradeId||o.id}')" class="px-2 py-1 rounded-lg border border-slate-300 text-[10px] font-bold">Modify</button><button onclick="event.stopPropagation();executeCloseOrder('${o.backendTradeId||o.id}',false,'Closed manually')" class="px-2 py-1 rounded-lg bg-rose-600 text-white text-[10px] font-bold">Close</button></div>
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                ` : `
+                  <div class="text-xs text-gray-400 py-2">No open orders. Find your next trade:</div>
+                  <div class="grid grid-cols-3 gap-2">
+                    ${quickPairs.map(sym => {
+                      const item = state.instruments[sym];
+                      return `
+                        <div onclick="openSymbolChart('${sym}')" class="bg-[#ffffff] border border-[#e2e8f0] hover:border-bullBlue rounded-2xl p-3 text-center cursor-pointer transition">
+                          <div class="text-xs font-bold text-white">${sym}</div>
+                          <div class="w-8 h-8 rounded-full mx-auto my-2 flex items-center justify-center text-xs font-extrabold text-white" style="background:${item.iconBg}">${item.iconText}</div>
+                          <div data-bid="${sym}" class="font-mono font-bold text-xs text-white">${item.bid.toFixed(item.digits)}</div>
+                          <div class="mt-1 inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${item.change>=0?'bg-bullGreen/15 text-bullGreen':'bg-bullRed/15 text-bullRed'}">${item.change>=0?'↑':'↓'} ${Math.abs(item.change)}%</div>
+                        </div>
+                      `;
+                    }).join('')}
+                  </div>
+                `
+              ) : state.ordersSubTab === 'pending' ? (
+                accPendingOrders.length > 0 ? accPendingOrders.map(o => `
+                  <div class="bg-[#ffffff] border border-[#e2e8f0] rounded-2xl p-3.5 flex items-center justify-between">
+                    <div>
+                      <div class="font-bold text-sm text-white">${o.symbol}</div>
+                      <div class="text-xs text-bullBlue">${o.side} ${o.pendingType} ${o.lots.toFixed(2)} lot @ ${o.targetPrice}</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <button onclick="openModifyPendingModal('${o.backendOrderId || o.id}')" class="px-3 py-1 rounded-lg bg-bullBlue/20 text-bullBlue text-xs font-bold">Modify</button>
+                      <button onclick="cancelPendingOrder('${o.backendOrderId || o.id}')" class="px-3 py-1 rounded-lg bg-bullRed/20 text-bullRed text-xs font-bold">Cancel</button>
+                    </div>
+                  </div>
+                `).join('') : `<div class="text-xs text-gray-400 py-4 text-center">No pending orders.</div>`
+              ) : (
+                accClosedOrders.length > 0 ? accClosedOrders.map(o => `
+                  <div class="bg-[#ffffff] border border-[#e2e8f0] rounded-2xl p-3.5 flex items-center justify-between">
+                    <div>
+                      <div class="font-bold text-sm text-white">${o.symbol}</div>
+                      <div class="text-xs text-gray-400">${o.side} ${o.lots.toFixed(2)} lot • Entry ${Number(o.openPrice).toFixed((state.instruments[o.symbol]||{}).digits||2)} → Close ${Number(o.closePrice).toFixed((state.instruments[o.symbol]||{}).digits||2)} • ${o.closeTime||''}</div>
+                    </div>
+                    <div class="font-mono font-bold text-sm ${o.realizedPL>=0?'text-bullGreen':'text-bullRed'}">${o.realizedPL>=0?'+':''}${formatMoney(o.realizedPL)} USD</div>
+                  </div>
+                `).join('') : `<div class="text-xs text-gray-400 py-4 text-center">No closed positions yet.</div>`
+              )}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderTradeTab() {
+      const acc = getActiveAccount();
+      const m = getAccountMetrics();
+      const inst = state.instruments[state.selectedSymbol];
+
+      if (state.tradeSubView === 'chart') {
+        const symOrders = state.openOrders.filter(o => o.accountId === acc.id && o.symbol === inst.symbol);
+        return `
+          <div class="flex-1 flex flex-col overflow-hidden bg-[#f8fafc]">
+            <!-- Top Chart Bar -->
+            <div class="px-3 py-2.5 border-b border-[#e2e8f0] flex items-center justify-between shrink-0">
+              <button onclick="state.tradeSubView='list'; renderApp()" class="w-8 h-8 rounded-full bg-[#ffffff] text-white flex items-center justify-center font-bold">←</button>
+              <button onclick="openSwitchAccountModal()" class="flex items-center gap-1.5 bg-[#ffffff] px-3 py-1 rounded-full border border-[#e2e8f0] text-xs">
+                <span class="text-bullGreen font-bold">${acc.type}</span>
+                <span data-live-equity class="font-mono font-bold text-white">${formatMoney(m.equity)} USD</span>
+                <span class="text-gray-400">⋮</span>
+              </button>
+              <button onclick="openChartPreferencesModal()" class="w-8 h-8 rounded-full bg-[#ffffff] text-gray-300 flex items-center justify-center text-xs">⚙️</button>
+            </div>
+
+            <!-- Symbol Header & Open Trade Pill -->
+            <div class="px-3 py-2 flex items-center justify-between shrink-0">
+              <div onclick="state.tradeSubView='list'; renderApp()" class="flex items-center gap-2 cursor-pointer">
+                <span class="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white" style="background:${inst.iconBg}">${inst.iconText}</span>
+                <span class="font-bold text-sm text-white">${inst.symbol} ▾</span>
+              </div>
+              ${symOrders.length > 0 ? `
+                <div onclick="openClosePositionModal(${symOrders[0].id})" class="flex items-center gap-2 bg-[#ffffff] border border-[#e2e8f0] px-2.5 py-1 rounded-lg text-xs cursor-pointer">
+                  <span class="px-1.5 py-0.5 rounded bg-bullBlue text-white font-mono font-bold text-[10px]">${symOrders[0].lots.toFixed(2)}</span>
+                  <span data-order-pill-pl="${symOrders[0].id}" class="font-mono font-bold">${calculateOrderPL(symOrders[0])>=0?'+':''}${formatMoney(calculateOrderPL(symOrders[0]))} USD</span>
+                  <span class="text-gray-400">✕</span>
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Live Canvas -->
+            <div class="flex-1 relative">
+              <canvas id="liveChartCanvas" class="w-full h-full block"></canvas>
+            </div>
+
+            <!-- Timeframes & Buy/Sell Footer -->
+            <div class="p-3 bg-[#131722] border-t border-[#e2e8f0] space-y-2.5 shrink-0">
+              <div class="flex items-center gap-2 text-xs overflow-x-auto no-scrollbar whitespace-nowrap">
+                ${['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w', '1M'].map(tf => `
+                  <button onclick="state.timeframe='${tf}'; renderApp()" class="px-2.5 py-1 rounded-lg font-bold ${state.timeframe===tf ? 'bg-[#e2e8f0] text-white' : 'text-gray-400'}">${tf}</button>
+                `).join('')}
+              </div>
+              <div class="grid grid-cols-2 gap-2 relative">
+                <button onclick="openOrderTicketModal('Sell', 'Market')" class="py-2.5 rounded-xl bg-bullRed hover:bg-red-600 text-white text-center shadow">
+                  <div class="text-[11px] font-semibold opacity-90">Sell</div>
+                  <div data-bid="${inst.symbol}" class="font-mono font-bold text-sm">${inst.bid.toFixed(inst.digits)}</div>
+                </button>
+                <button onclick="openOrderTicketModal('Buy', 'Market')" class="py-2.5 rounded-xl bg-bullBlue hover:bg-blue-600 text-white text-center shadow">
+                  <div class="text-[11px] font-semibold opacity-90">Buy</div>
+                  <div data-ask="${inst.symbol}" class="font-mono font-bold text-sm">${inst.ask.toFixed(inst.digits)}</div>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Watchlist View
+      return `
+        <div class="flex-1 overflow-y-auto px-4 pt-4 pb-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h1 class="text-2xl font-extrabold text-white">Trade</h1>
+            <button onclick="openSwitchAccountModal()" class="flex items-center gap-1.5 bg-[#ffffff] px-3 py-1 rounded-full border border-[#e2e8f0] text-xs">
+              <span class="text-bullGreen font-bold">${acc.type}</span>
+              <span data-live-equity class="font-mono font-bold text-white">${formatMoney(m.equity)} USD</span>
+            </button>
+          </div>
+
+          <input value="${state.marketSearch||''}" oninput="filterMarketWatch(this.value)" placeholder="Search market instruments…" class="w-full rounded-xl border border-[#e2e8f0] bg-[#ffffff] px-3 py-2.5 text-sm text-white outline-none focus:border-bullBlue" />
+          <div class="flex gap-2 overflow-x-auto no-scrollbar text-xs font-bold">
+            ${['All','Forex','Metals','Indices','Commodities','Crypto'].map(t => `
+              <button onclick="state.watchlistTab='${t}'; renderApp()" class="px-3 py-1.5 rounded-full shrink-0 ${state.watchlistTab===t ? 'bg-bullBlue text-white' : 'bg-[#ffffff] text-gray-400'}">${t}</button>
+            `).join('')}
+          </div>
+
+          <div class="space-y-2">
+            ${Object.values(state.instruments).filter(item=>(state.watchlistTab==='All'||item.category===state.watchlistTab)&&(!state.marketSearch||((item.symbol+' '+item.name+' '+item.category).toLowerCase().includes(state.marketSearch)))).map(item => `
+              <div onclick="openSymbolChart('${item.symbol}')" class="bg-[#ffffff] border border-[#e2e8f0] hover:border-bullBlue rounded-2xl p-3.5 flex items-center justify-between cursor-pointer transition">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-extrabold text-white" style="background:${item.iconBg}">${item.iconText}</div>
+                  <div>
+                    <div class="font-bold text-sm text-white flex items-center gap-2"><span>${item.symbol}</span><span data-market-status="${item.symbol}" class="inline-block w-2 h-2 rounded-full" title="Market status" style="background:#9ca3af"></span></div>
+                    <div class="text-[11px] text-gray-400">${item.name}</div><div class="text-[10px] text-gray-500">${item.category} · Contract ${item.contractSize||1} · Tick ${item.tickSize||"—"} / ${item.tickValue||"—"}</div>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div data-bid="${item.symbol}" class="font-mono font-bold text-sm text-white">${item.bid.toFixed(item.digits)}</div>
+                  <div class="text-[11px] font-bold ${item.change>=0?'text-bullGreen':'text-bullRed'}">${item.change>=0?'↑':'↓'} ${Math.abs(item.change)}%</div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderInsightsTab() {
+      const acc = getActiveAccount();
+      const m = getAccountMetrics();
+      const signals = [
+        { pair: 'DXY', title: 'DXY: key resistance at 103.10', dir: 'Intraday', down: true },
+        { pair: 'UKOIL', title: 'UKOIL: under pressure', dir: 'Intraday', down: true },
+        { pair: 'AUD/NZD', title: 'AUD/NZD: Watch 1.2343', dir: 'Intraday', down: false }
+      ];
+      const news = [
+        { title: 'WTI declines below $85.00 on hopes for Ukraine peace talks', tag: 'USOIL +0.17%', time: 'Today, 11:15' },
+        { title: 'Bitcoin Price Forecast: BTC under pressure as MSCI reviews index', tag: 'BTC -0.62%', time: 'Today, 11:05' },
+        { title: "BoJ's Asada warns rate hikes could push down underlying inflation", tag: 'USD/JPY', time: 'Today, 10:59' }
+      ];
+
+      return `
+        <div class="flex-1 overflow-y-auto px-4 pt-4 pb-6 space-y-5">
+          <div class="flex items-center justify-between">
+            <h1 class="text-2xl font-extrabold text-white">Insights</h1>
+            <div class="bg-[#ffffff] px-3 py-1 rounded-full border border-[#e2e8f0] text-xs">
+              <span class="text-bullGreen font-bold">${acc.type}</span>
+              <span data-live-equity class="font-mono font-bold text-white ml-1">${formatMoney(m.equity)} USD</span>
+            </div>
+          </div>
+
+          <div>
+            <h2 class="text-sm font-bold text-white mb-2.5">Trading signals</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              ${signals.map(s => `
+                <div onclick="switchTab('trade')" class="bg-[#ffffff] border border-[#e2e8f0] rounded-2xl p-3.5 cursor-pointer hover:border-bullBlue transition">
+                  <div class="text-[10px] font-bold text-gray-400 uppercase">${s.pair} • 30 MIN</div>
+                  <div class="font-bold text-xs text-white mt-1.5">${s.title}</div>
+                  <div class="mt-2.5 inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${s.down ? 'bg-bullRed/15 text-bullRed' : 'bg-bullGreen/15 text-bullGreen'}">
+                    ${s.down ? '↓' : '↑'} ${s.dir}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <div>
+            <h2 class="text-sm font-bold text-white mb-2.5">Upcoming events</h2>
+            <div class="bg-[#ffffff] border border-[#e2e8f0] rounded-2xl divide-y divide-[#e2e8f0] text-xs">
+              <div class="p-3 flex justify-between items-center">
+                <div><div class="font-bold text-white">🇬🇧 UK Balance of Trade</div><div class="text-gray-400 text-[11px]">12:00 — In 10 minutes</div></div>
+                <span class="px-2 py-0.5 rounded bg-bullRed/20 text-bullRed font-bold text-[10px]">High Impact</span>
+              </div>
+              <div class="p-3 flex justify-between items-center">
+                <div><div class="font-bold text-white">🇬🇧 UK GDP Growth Rate YoY</div><div class="text-gray-400 text-[11px]">12:00 — In 10 minutes</div></div>
+                <span class="px-2 py-0.5 rounded bg-bullRed/20 text-bullRed font-bold text-[10px]">High Impact</span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h2 class="text-sm font-bold text-white mb-2.5">Top news</h2>
+            <div class="space-y-2">
+              ${news.map(n => `
+                <div class="bg-[#ffffff] border border-[#e2e8f0] rounded-2xl p-3.5">
+                  <div class="font-bold text-xs text-white leading-snug">${n.title}</div>
+                  <div class="flex items-center gap-2 mt-2 text-[11px] text-gray-400">
+                    <span>${n.time}</span>
+                    <span>•</span>
+                    <span class="text-bullBlue font-semibold">${n.tag}</span>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderPerformanceTab() {
+      const acc = getActiveAccount();
+      const closed = state.closedOrders.filter(o => o.accountId === acc.id);
+      const totalPL = closed.reduce((sum, o) => sum + o.realizedPL, 0);
+      const wins = closed.filter(o => o.realizedPL > 0).length;
+      const winRate = closed.length > 0 ? Math.round((wins / closed.length) * 100) : 0;
+
+      return `
+        <div class="flex-1 overflow-y-auto px-4 pt-4 pb-6 space-y-4">
+          <h1 class="text-2xl font-extrabold text-white">Performance</h1>
+          <div class="text-[11px] text-gray-400 bg-[#ffffff] p-3 rounded-2xl border border-[#e2e8f0]">
+            ⓘ All times on this page use UTC (GMT+0) and may differ from your local time
+          </div>
+
+          <div class="flex gap-2">
+            <button onclick="openSwitchAccountModal()" class="px-3 py-1.5 rounded-full bg-[#ffffff] border border-[#e2e8f0] text-xs font-bold text-white">
+              ${acc.nickname} (#${acc.id}) ▾
+            </button>
+            <span class="px-3 py-1.5 rounded-full bg-[#ffffff] border border-[#e2e8f0] text-xs font-bold text-gray-300">Last 7 days</span>
+          </div>
+
+          ${closed.length === 0 ? `
+            <div class="py-12 text-center space-y-3">
+              <div class="text-3xl">⚠️</div>
+              <div class="font-bold text-base text-white">No trading activity found</div>
+              <div class="text-xs text-gray-400">Close a trade in the terminal to view your profit/loss analytics.</div>
+              <button onclick="switchTab('trade')" class="px-6 py-2.5 rounded-xl bg-bullBlue text-white font-bold text-xs">Trade</button>
+            </div>
+          ` : `
+            <div class="grid grid-cols-3 gap-2">
+              <div class="bg-[#ffffff] border border-[#e2e8f0] rounded-2xl p-3">
+                <div class="text-[11px] text-gray-400">Net Profit</div>
+                <div class="font-mono font-bold text-sm mt-1 ${totalPL>=0?'text-bullGreen':'text-bullRed'}">${totalPL>=0?'+':''}${formatMoney(totalPL)}</div>
+              </div>
+              <div class="bg-[#ffffff] border border-[#e2e8f0] rounded-2xl p-3">
+                <div class="text-[11px] text-gray-400">Closed Orders</div>
+                <div class="font-mono font-bold text-sm text-white mt-1">${closed.length}</div>
+              </div>
+              <div class="bg-[#ffffff] border border-[#e2e8f0] rounded-2xl p-3">
+                <div class="text-[11px] text-gray-400">Win Rate</div>
+                <div class="font-mono font-bold text-sm text-bullBlue mt-1">${winRate}%</div>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <div class="text-xs font-bold text-gray-400">Trade History</div>
+              ${closed.map(o => `
+                <div class="bg-[#ffffff] border border-[#e2e8f0] rounded-2xl p-3.5 flex items-center justify-between">
+                  <div>
+                    <div class="font-bold text-sm text-white">${o.symbol}</div>
+                    <div class="text-xs text-gray-400">${o.side} ${o.lots.toFixed(2)} lot • ${o.openPrice} → ${o.closePrice}</div>
+                  </div>
+                  <div class="font-mono font-bold text-sm ${o.realizedPL>=0?'text-bullGreen':'text-bullRed'}">${o.realizedPL>=0?'+':''}${formatMoney(o.realizedPL)} USD</div>
+                </div>
+              `).join('')}
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    // ==========================================
+    // 9. DESKTOP TERMINAL WORKSPACE RENDERER (EXACT EXNESS WEB TERMINAL LAYOUT)
+    // ==========================================
+    function renderDesktopWorkspace() {
+      const acc = getActiveAccount();
+      const m = getAccountMetrics();
+      const inst = state.instruments[state.selectedSymbol];
+      const symOpenOrders = state.openOrders.filter(o => o.accountId === acc.id && o.symbol === state.selectedSymbol);
+      const accOpenOrders = state.openOrders.filter(o => o.accountId === acc.id);
+      const accPendingOrders = state.pendingOrders.filter(o => o.accountId === acc.id);
+      const accClosedOrders = state.closedOrders.filter(o => o.accountId === acc.id);
+
+      const topTabs = ['BTC', 'USOIL', 'USTEC', 'XAU/USD'];
+      const timeframes = ['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w', '1M'];
+
+      return `
+        <div class="w-full h-full min-h-0 bg-[#f8fafc] flex flex-col overflow-hidden select-none">
+          <!-- 1. Top Web Terminal Header Bar (Logo, Account Dropdown, Deposit, Navigation) -->
+          <div class="h-11 bg-[#131722] border-b border-[#e2e8f0] px-3 flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-4">
+              <div class="flex items-center gap-2">
+                <span class="text-bullBlue font-extrabold text-base tracking-tight">bigbulls</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-bullBlue/15 text-bullBlue font-bold">WEB TERMINAL</span>
+              </div>
+              <button type="button" onclick="goToClientArea()" class="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-[#e2e8f0] bg-[#ffffff] hover:bg-[#e2e8f0] px-2.5 py-1.5 text-[11px] font-bold text-white whitespace-nowrap" aria-label="Return to Client Area">← Client Area</button>
+              <div class="hidden md:flex items-center gap-1 text-xs">
+                <button onclick="switchTab('trade')" class="px-2.5 py-1 rounded-lg font-bold ${state.activeTab==='trade' ? 'bg-[#e2e8f0] text-white' : 'text-gray-400 hover:text-white'}">Terminal</button>
+                <button onclick="switchTab('accounts')" class="px-2.5 py-1 rounded-lg font-bold ${state.activeTab==='accounts' ? 'bg-[#e2e8f0] text-white' : 'text-gray-400 hover:text-white'}">Accounts</button>
+                <button onclick="switchTab('insights')" class="px-2.5 py-1 rounded-lg font-bold ${state.activeTab==='insights' ? 'bg-[#e2e8f0] text-white' : 'text-gray-400 hover:text-white'}">Insights</button>
+                <button onclick="switchTab('performance')" class="px-2.5 py-1 rounded-lg font-bold ${state.activeTab==='performance' ? 'bg-[#e2e8f0] text-white' : 'text-gray-400 hover:text-white'}">Performance</button>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2.5">
+              <!-- Account Selector Pill (Exact Reference Style) -->
+              <button onclick="openSwitchAccountModal()" class="flex items-center gap-2 bg-[#ffffff] hover:bg-[#f1f5f9] border border-[#e2e8f0] px-3 py-1 rounded-lg text-xs transition">
+                <span class="px-1.5 py-0.2 rounded ${acc.type==='Demo' ? 'bg-bullGreen/20 text-bullGreen' : 'bg-bullBlue/20 text-bullBlue'} font-bold text-[10px]">${acc.type}</span>
+                <span class="font-mono text-gray-300">#${acc.id}</span>
+                <span data-live-equity class="font-mono font-bold text-white">${formatMoney(m.equity)} USD</span>
+                <span class="text-gray-400 text-[10px]">▾</span>
+              </button>
+
+              ${window.renderAiAutoTradeSwitch('desktop')}
+              <button onclick="openDepositModal()" class="bg-[#e2e8f0] hover:bg-bullBlue text-white font-bold text-xs px-3.5 py-1.5 rounded-lg border border-[#323B4E] transition">
+                Deposit
+              </button>
+              <button onclick="openAccountSettingsModal('Settings')" class="w-8 h-8 rounded-lg bg-[#ffffff] hover:bg-[#e2e8f0] text-gray-300 flex items-center justify-center text-xs">
+                ⚙️
+              </button>
+            </div>
+          </div>
+
+          ${state.activeTab !== 'trade' ? `
+            <div class="flex-1 overflow-hidden flex flex-col max-w-5xl w-full mx-auto">
+              ${state.activeTab === 'accounts' ? renderAccountsTab() : state.activeTab === 'insights' ? renderInsightsTab() : renderPerformanceTab()}
+            </div>
+          ` : `
+            <!-- 2. Symbol Tabs Strip (BTC | USOIL | USTEC | XAU/USD | +) -->
+            <div class="h-9 bg-[#131722] border-b border-[#e2e8f0] px-2 flex items-center gap-1 shrink-0 overflow-x-auto no-scrollbar">
+              ${topTabs.map(sym => {
+                const item = state.instruments[sym];
+                const isSelected = state.selectedSymbol === sym;
+                return `
+                  <button onclick="openSymbolChart('${sym}')" class="flex items-center gap-2 px-3 py-1.5 rounded-t-lg text-xs font-bold border-b-2 transition ${isSelected ? 'bg-[#ffffff] border-bullBlue text-white' : 'text-gray-400 border-transparent hover:text-gray-200 hover:bg-[#ffffff]/50'}">
+                    <span class="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-extrabold text-white" style="background:${item.iconBg}">${item.iconText}</span>
+                    <span>${sym}</span>
+                  </button>
+                `;
+              }).join('')}
+              <button onclick="openOrderTicketModal('Buy', 'Market')" title="New Order" class="w-7 h-7 rounded-lg hover:bg-[#e2e8f0] text-gray-400 hover:text-white flex items-center justify-center text-sm font-bold ml-1">+</button>
+            </div>
+
+            <!-- 3. Chart Action & Quick Order Toolbar -->
+            <div class="h-10 bg-[#f8fafc] border-b border-[#1E2430] px-3 flex items-center justify-between shrink-0">
+              <div class="flex items-center gap-3 text-xs">
+                <span class="font-bold text-white flex items-center gap-1.5">
+                  <span class="w-4 h-4 rounded-full inline-flex items-center justify-center text-[8px] text-white" style="background:${inst.iconBg}">${inst.iconText}</span>
+                  ${inst.name} · ${state.timeframe}
+                </span>
+                <span class="hidden lg:inline font-mono text-[11px] text-gray-400">
+                  O <span class="text-bullBlue">${inst.candles[inst.candles.length-1]?.open.toFixed(inst.digits)}</span>
+                  H <span class="text-bullBlue">${inst.candles[inst.candles.length-1]?.high.toFixed(inst.digits)}</span>
+                  L <span class="text-bullRed">${inst.candles[inst.candles.length-1]?.low.toFixed(inst.digits)}</span>
+                  C <span class="text-white">${inst.bid.toFixed(inst.digits)}</span>
+                </span>
+              </div>
+
+              <!-- Inline Floating P/L + Sell / Spread / Buy Execution Buttons (Exact Reference Top-Right) -->
+              <div class="flex items-center gap-2">
+                <span data-live-pl class="font-mono text-xs font-bold mr-2 ${m.floatingPL >= 0 ? 'text-bullGreen' : 'text-bullRed'}">
+                  ${m.floatingPL >= 0 ? '+' : ''}${formatMoney(m.floatingPL)} USD
+                </span>
+                <button onclick="openOrderTicketModal('Sell', 'Market')" class="bg-bullRed hover:bg-red-600 text-white font-mono font-bold text-xs px-3 py-1 rounded-md flex items-center gap-1.5 transition shadow">
+                  <span class="font-sans font-semibold text-[11px] opacity-90">Sell</span>
+                  <span data-bid="${inst.symbol}">${inst.bid.toFixed(inst.digits)}</span>
+                </button>
+                <span class="text-[10px] font-mono text-gray-400 px-1">${inst.spread}</span>
+                <button onclick="openOrderTicketModal('Buy', 'Market')" class="bg-bullBlue hover:bg-blue-600 text-white font-mono font-bold text-xs px-3 py-1 rounded-md flex items-center gap-1.5 transition shadow">
+                  <span class="font-sans font-semibold text-[11px] opacity-90">Buy</span>
+                  <span data-ask="${inst.symbol}">${inst.ask.toFixed(inst.digits)}</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 4. Main Chart Area with Left Drawing Tools Strip -->
+            <div class="flex-1 flex overflow-hidden relative">
+              <!-- Left Vertical Drawing Toolbar -->
+              <div class="w-10 bg-[#131722] border-r border-[#1E2430] flex flex-col items-center py-2.5 gap-3.5 text-gray-400 text-xs shrink-0">
+                <button onclick="showToast('Crosshair Tool', 'Active on chart', 'info')" class="hover:text-white">╋</button>
+                <button onclick="showToast('Trend Line', 'Click chart to draw trendline', 'info')" class="hover:text-white">╱</button>
+                <button onclick="showToast('Horizontal Line', 'Price level marker active', 'info')" class="hover:text-white">―</button>
+                <button onclick="showToast('Fibonacci Retracement', 'Fib levels ready', 'info')" class="hover:text-white">☰</button>
+                <button onclick="openOrderTicketModal('Buy', 'Pending')" title="Pending Order" class="hover:text-bullBlue font-bold">⏰</button>
+                <button onclick="openChartPreferencesModal()" title="Chart Settings" class="mt-auto hover:text-white">⚙️</button>
+              </div>
+
+              <!-- Live Candlestick Canvas -->
+              <div class="flex-1 relative">
+                <canvas id="liveChartCanvas" class="w-full h-full block"></canvas>
+
+                <!-- Floating Position Tag on Chart -->
+                ${symOpenOrders.length > 0 ? `
+                  <div class="absolute right-20 top-6 flex flex-col gap-1.5 z-10">
+                    ${symOpenOrders.slice(0, 3).map(o => {
+                      const pl = calculateOrderPL(o);
+                      return `
+                        <div class="flex items-center bg-[#131722]/95 border border-[#e2e8f0] rounded-md overflow-hidden shadow-xl text-[11px] font-mono">
+                          <span class="px-2 py-1 font-bold ${o.side==='Buy' ? 'bg-bullBlue text-white' : 'bg-bullRed text-white'}">${o.side === 'Buy' ? '+' : '-'}${o.lots.toFixed(2)}</span>
+                          <span data-order-pill-pl="${o.id}" class="px-2.5 py-1 font-bold ${pl >= 0 ? 'text-bullGreen' : 'text-bullRed'}">${pl >= 0 ? '+' : ''}${formatMoney(pl)} USD</span>
+                          <button onclick="openClosePositionModal(${o.id})" class="px-2 py-1 text-gray-400 hover:bg-bullRed hover:text-white transition">✕</button>
+                        </div>
+                      `;
+                    }).join('')}
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+
+            <!-- 5. Bottom Timeframe Selector Bar (5y 1y 6m 3m 1m 5d 1d) + Chart Size Controls -->
+            <div class="h-7 bg-[#131722] border-t border-[#1E2430] px-3 flex items-center justify-between text-[11px] shrink-0">
+              <div class="flex items-center gap-3">
+                ${timeframes.map(tf => `
+                  <button onclick="state.timeframe='${tf}'; renderApp()" class="font-semibold transition ${state.timeframe===tf ? 'text-bullBlue font-bold' : 'text-gray-400 hover:text-white'}">${tf}</button>
+                `).join('')}
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="flex items-center gap-1 bg-[#f8fafc] px-1.5 py-0.5 rounded border border-[#e2e8f0]">
+                  <span class="text-[10px] text-gray-500 mr-1">Chart Size:</span>
+                  <button onclick="setDesktopChartPreset('compact')" title="Smaller Chart" class="px-1.5 rounded text-[10px] font-bold transition ${state.bottomPanelHeight >= 290 ? 'bg-bullBlue text-white' : 'text-gray-400 hover:text-white'}">Small</button>
+                  <button onclick="setDesktopChartPreset('default')" title="Balanced Chart" class="px-1.5 rounded text-[10px] font-bold transition ${state.bottomPanelHeight > 110 && state.bottomPanelHeight < 290 ? 'bg-bullBlue text-white' : 'text-gray-400 hover:text-white'}">Medium</button>
+                  <button onclick="setDesktopChartPreset('expanded')" title="Larger Chart" class="px-1.5 rounded text-[10px] font-bold transition ${state.bottomPanelHeight <= 110 ? 'bg-bullBlue text-white' : 'text-gray-400 hover:text-white'}">Large</button>
+                </div>
+                <div class="font-mono text-gray-400 text-[10px]">UTC • auto</div>
+              </div>
+            </div>
+
+            <!-- Draggable Resize Handle (Drag up/down to make Chart smaller or larger) -->
+            <div onmousedown="startDesktopChartResize(event)" ontouchstart="startDesktopChartResize(event)" title="Drag up or down to resize chart" class="h-2 bg-[#ffffff] hover:bg-bullBlue/60 border-t border-[#e2e8f0] cursor-ns-resize flex items-center justify-center transition shrink-0 group">
+              <div class="w-10 h-0.5 rounded-full bg-gray-500 group-hover:bg-white"></div>
+            </div>
+
+            <!-- 6. Bottom Orders & Positions Panel (Resizable Height) -->
+            <div id="desktopBottomPanel" style="height: ${state.bottomPanelHeight}px;" class="bg-[#131722] flex flex-col shrink-0">
+              <!-- Sub-Tabs Header -->
+              <div class="h-8 px-3 border-b border-[#1E2430] flex items-center justify-between text-xs shrink-0">
+                <div class="flex items-center gap-5">
+                  <button onclick="state.ordersSubTab='open'; renderApp()" class="h-8 flex items-center gap-1.5 font-bold border-b-2 transition ${state.ordersSubTab==='open' ? 'border-bullBlue text-white' : 'border-transparent text-gray-400 hover:text-white'}">
+                    Open <span class="px-1.5 py-0.2 rounded-full bg-[#e2e8f0] text-[10px]">${accOpenOrders.length}</span>
+                  </button>
+                  <button onclick="state.ordersSubTab='pending'; renderApp()" class="h-8 flex items-center gap-1.5 font-bold border-b-2 transition ${state.ordersSubTab==='pending' ? 'border-bullBlue text-white' : 'border-transparent text-gray-400 hover:text-white'}">
+                    Pending <span class="px-1.5 py-0.2 rounded-full bg-[#e2e8f0] text-[10px]">${accPendingOrders.length}</span>
+                  </button>
+                  <button onclick="state.ordersSubTab='closed'; renderApp()" class="h-8 flex items-center gap-1.5 font-bold border-b-2 transition ${state.ordersSubTab==='closed' ? 'border-bullBlue text-white' : 'border-transparent text-gray-400 hover:text-white'}">
+                    Closed <span class="px-1.5 py-0.2 rounded-full bg-[#e2e8f0] text-[10px]">${accClosedOrders.length}</span>
+                  </button>
+                </div>
+                <button onclick="openOrderTicketModal('Buy', 'Market')" class="text-[11px] font-bold text-bullBlue hover:underline">+ Place Order</button>
+              </div>
+
+              <!-- Orders Table Body -->
+              <div class="flex-1 overflow-y-auto px-3 py-1">
+                ${state.ordersSubTab === 'open' ? (
+                  accOpenOrders.length > 0 ? `
+                    <table class="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr class="text-[10px] text-gray-500 border-b border-[#1E2430]">
+                          <th class="py-1 font-medium">Symbol</th>
+                          <th class="py-1 font-medium">Type</th>
+                          <th class="py-1 font-medium">Volume, lot</th>
+                          <th class="py-1 font-medium">Open price</th>
+                          <th class="py-1 font-medium">Current price</th>
+                          <th class="py-1 font-medium">S/L · T/P</th>
+                          <th class="py-1 font-medium text-right">P/L, USD</th>
+                          <th class="py-1 w-8"></th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-[#1E2430]/60 font-mono text-[11px]">
+                        ${accOpenOrders.map(o => {
+                          const pl = calculateOrderPL(o);
+                          const item = state.instruments[o.symbol];
+                          const curr = o.side === 'Buy' ? item.bid : item.ask;
+                          return `
+                            <tr class="hover:bg-[#ffffff] transition">
+                              <td class="py-1.5 font-sans font-bold text-white flex items-center gap-1.5">
+                                <span class="w-4 h-4 rounded-full inline-flex items-center justify-center text-[8px] text-white" style="background:${item.iconBg}">${item.iconText}</span>
+                                ${o.symbol}
+                              </td>
+                              <td class="py-1.5 font-sans font-bold ${o.side==='Buy' ? 'text-bullBlue' : 'text-bullRed'}">● ${o.side}</td>
+                              <td class="py-1.5 text-white">${o.lots.toFixed(2)}</td>
+                              <td class="py-1.5 text-gray-300">${o.openPrice.toFixed(item.digits)}</td>
+                              <td data-order-curr="${o.id}" class="py-1.5 text-white">${curr.toFixed(item.digits)}</td>
+                              <td class="py-1.5 text-gray-400">${o.sl || '--'} / ${o.tp || '--'}</td>
+                              <td data-order-pl="${o.id}" class="py-1.5 text-right font-bold ${pl >= 0 ? 'text-bullGreen' : 'text-bullRed'}">${pl >= 0 ? '+' : ''}${formatMoney(pl)}</td>
+                              <td class="py-1.5 text-right">
+                                <div class="flex items-center gap-1"><button onclick="openModifyPositionModal('${o.backendTradeId||o.id}')" class="px-2 py-1 rounded bg-slate-100 text-slate-700 text-[10px] font-bold">Edit</button><button onclick="executeCloseOrder('${o.backendTradeId||o.id}',false,'Closed manually')" class="px-2 py-1 rounded bg-rose-600 text-white text-[10px] font-bold">Close</button></div>
+                              </td>
+                            </tr>
+                          `;
+                        }).join('')}
+                      </tbody>
+                    </table>
+                  ` : `<div class="h-full flex items-center justify-center text-xs text-gray-500">No open positions. Use Sell / Buy above to open a trade.</div>`
+                ) : state.ordersSubTab === 'pending' ? (
+                  accPendingOrders.length > 0 ? `
+                    <table class="w-full text-left text-xs">
+                      <tbody class="divide-y divide-[#1E2430] font-mono text-[11px]">
+                        ${accPendingOrders.map(o => `
+                          <tr>
+                            <td class="py-1.5 font-sans font-bold text-white">${o.symbol}</td>
+                            <td class="py-1.5 font-sans text-bullBlue">${o.side} ${o.pendingType}</td>
+                            <td class="py-1.5 text-white">${o.lots.toFixed(2)} lot</td>
+                            <td class="py-1.5 text-gray-300">@ ${o.targetPrice}</td>
+                            <td class="py-1.5 text-right"><button onclick="cancelPendingOrder('${o.backendOrderId || o.id}')" class="text-bullRed hover:underline font-sans font-bold">Cancel</button></td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                  ` : `<div class="h-full flex items-center justify-center text-xs text-gray-500">No pending orders.</div>`
+                ) : (
+                  accClosedOrders.length > 0 ? `
+                    <table class="w-full text-left text-xs">
+                      <tbody class="divide-y divide-[#1E2430] font-mono text-[11px]">
+                        ${accClosedOrders.map(o => `
+                          <tr>
+                            <td class="py-1.5 font-sans font-bold text-white">${o.symbol}</td>
+                            <td class="py-1.5 font-sans ${o.side==='Buy'?'text-bullBlue':'text-bullRed'}">${o.side} ${o.lots.toFixed(2)}</td>
+                            <td class="py-1.5 text-gray-400">${o.openPrice} → ${o.closePrice}</td>
+                            <td class="py-1.5 text-right font-bold ${o.realizedPL>=0?'text-bullGreen':'text-bullRed'}">${o.realizedPL>=0?'+':''}${formatMoney(o.realizedPL)} USD</td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                  ` : `<div class="h-full flex items-center justify-center text-xs text-gray-500">No closed orders yet.</div>`
+                )}
+              </div>
+
+              <!-- 7. Bottom Status Bar: Close All Button + Equity / Free Margin / Balance / Margin -->
+              <div class="h-8 bg-[#f8fafc] border-t border-[#e2e8f0] px-3 flex items-center justify-between text-[11px] shrink-0">
+                <div class="flex items-center gap-4 text-gray-400 font-mono overflow-x-auto no-scrollbar">
+                  <span>Equity: <strong data-metric-equity class="text-white">${formatMoney(m.equity)} USD</strong></span>
+                  <span>Free Margin: <strong data-metric-freemargin class="text-white">${formatMoney(m.freeMargin)} USD</strong></span>
+                  <span>Balance: <strong data-metric-balance class="text-white">${formatMoney(m.balance)} USD</strong></span>
+                  <span>Credit: <strong data-live-credit class="text-amber-300">+${formatMoney(m.creditBonus||0)} USD</strong></span>
+                  <span>Margin: <strong data-metric-margin class="text-white">${formatMoney(m.usedMargin)} USD</strong></span>
+                  <span>Margin Level: <strong data-metric-margin-level class="text-white">—</strong></span>
+                  <span class="w-14 h-1.5 rounded-full bg-[#303847] overflow-hidden inline-flex"><span data-margin-level-bar class="h-full rounded-full" style="width:0%;background:#16a34a"></span></span>
+                </div>
+
+                <div class="flex items-center gap-3 shrink-0">
+                  ${accOpenOrders.length > 0 ? `
+                    <button onclick="closeAllOpenOrders()" class="px-2.5 py-0.5 rounded bg-[#e2e8f0] hover:bg-bullRed text-white font-bold text-[11px] transition">
+                      Close all ▾
+                    </button>
+                  ` : ''}
+                  <span class="font-mono text-gray-400">Total P/L, USD <strong data-live-pl class="${m.floatingPL>=0?'text-bullGreen':'text-bullRed'}">${m.floatingPL>=0?'+':''}${formatMoney(m.floatingPL)}</strong></span>
+                </div>
+              </div>
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    // ==========================================
+    // 10. MAIN RENDER LOOP (MOBILE 4-TAB SHELL OR DESKTOP)
+    // ==========================================
+    function renderApp() {
+      const stage = document.getElementById('appStage');
+      // Preserve all application state; only switch the presentation at the 768px breakpoint.
+      state.viewportMode = 'mobile';
+
+      if (state.viewportMode === 'desktop') {
+        stage.innerHTML = renderDesktopWorkspace();
+        setTimeout(drawChartCanvas, 20);
+        return;
+      }
+
+      // Android app copy: preserve the four terminal tabs and add Profile as tab five.
+      let mainBody = '';
+      if (state.activeTab === 'accounts') mainBody = renderAccountsTab();
+      else if (state.activeTab === 'trade') mainBody = renderTradeTab();
+      else if (state.activeTab === 'insights') mainBody = renderInsightsTab();
+      else if (state.activeTab === 'performance') mainBody = renderPerformanceTab();
+      else if (state.activeTab === 'profile') mainBody = renderProfileTab();
+
+      const tabs = [
+        {
+          id: 'accounts',
+          label: 'Accounts',
+          svg: `<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>`
+        },
+        {
+          id: 'trade',
+          label: 'Trade',
+          svg: `<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="6" y1="4" x2="6" y2="20"/><rect x="4" y="8" width="4" height="7" rx="1" fill="currentColor"/><line x1="18" y1="4" x2="18" y2="20"/><rect x="16" y="10" width="4" height="6" rx="1"/></svg>`
+        },
+        {
+          id: 'insights',
+          label: 'Insights',
+          svg: `<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="3.6" y1="9" x2="20.4" y2="9"/><line x1="3.6" y1="15" x2="20.4" y2="15"/><path d="M11.5 3a17 17 0 0 0 0 18"/><path d="M12.5 3a17 17 0 0 1 0 18"/></svg>`
+        },
+        {
+          id: 'performance',
+          label: 'Performance',
+          svg: `<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`
+        },
+        {
+          id: 'profile',
+          label: 'Profile',
+          svg: `<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>`
+        }
+      ];
+
+      stage.innerHTML = `
+        <div class="mobile-shell">
+          <div class="shrink-0 flex items-center justify-between gap-3 bg-[#131722] border-b border-[#e2e8f0] px-3 py-2.5">
+            <div class="min-w-0"><div class="text-sm font-extrabold tracking-tight text-white">BigbullsGlobal <span class="text-bullBlue">TERMINAL</span></div><div class="text-[10px] text-gray-500">Trading workspace</div></div>
+            ${window.renderAiAutoTradeSwitch('mobile')}
+            <button type="button" onclick="switchTab('profile')" class="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-[#e2e8f0] bg-[#ffffff] active:bg-[#e2e8f0] px-3 py-2 text-xs font-bold text-white" aria-label="Open Profile">Profile</button>
+          </div>
+          ${mainBody}
+
+          <!-- Bottom 5-Tab Navigation Bar -->
+          <nav class="bg-[#131722] border-t border-[#e2e8f0] px-2 py-2 grid grid-cols-5 shrink-0 z-20">
+            ${tabs.map(t => {
+              const active = state.activeTab === t.id;
+              return `
+                <button onclick="switchTab('${t.id}')" class="flex flex-col items-center justify-center gap-1 py-1 rounded-xl transition ${active ? 'text-white' : 'text-gray-500 hover:text-gray-300'}">
+                  <div class="${active ? 'text-bullYellow' : ''}">${t.svg}</div>
+                  <span class="text-[11px] font-semibold">${t.label}</span>
+                </button>
+              `;
+            }).join('')}
+          </nav>
+        </div>
+      `;
+
+      setTimeout(drawChartCanvas, 20);
+    }
+
+    function renderProfileTab() {
+      return `
+        <section class="flex-1 min-h-0 overflow-hidden bg-white" aria-label="BIGBULLS Client Portal">
+          <iframe
+            title="BIGBULLS Client Portal"
+            src="../index.html?android-profile=1"
+            class="w-full h-full border-0 bg-white"
+            style="width:100%;height:100%;border:0;background:#fff"
+            allow="clipboard-read; clipboard-write"
+            loading="eager"
+          ></iframe>
+        </section>
+      `;
+    }
+
+    // Initial render & resize handler
+    function setDesktopChartPreset(preset) {
+      if (preset === 'compact') state.bottomPanelHeight = 320;
+      else if (preset === 'expanded') state.bottomPanelHeight = 82;
+      else state.bottomPanelHeight = 185;
+      renderApp();
+    }
+
+    function startDesktopChartResize(e) {
+      e.preventDefault();
+      const startY = e.touches ? e.touches[0].clientY : e.clientY;
+      const startHeight = state.bottomPanelHeight;
+      const maxH = Math.max(260, window.innerHeight - 230);
+
+      const onMove = (moveEvent) => {
+        const currentY = moveEvent.touches ? moveEvent.touches[0].clientY : moveEvent.clientY;
+        const deltaY = startY - currentY;
+        const nextHeight = Math.min(maxH, Math.max(76, startHeight + deltaY));
+        state.bottomPanelHeight = nextHeight;
+        const panel = document.getElementById('desktopBottomPanel');
+        if (panel) panel.style.height = `${nextHeight}px`;
+        drawChartCanvas();
+      };
+
+      const onEnd = () => {
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onEnd);
+        window.removeEventListener('touchmove', onMove);
+        window.removeEventListener('touchend', onEnd);
+        renderApp();
+      };
+
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onEnd);
+      window.addEventListener('touchmove', onMove, { passive: false });
+      window.addEventListener('touchend', onEnd);
+    }
+
+    let lastResponsiveMode = 'mobile';
+    function syncResponsiveLayout() {
+      const nextMode = 'mobile';
+      if (nextMode !== lastResponsiveMode) {
+        lastResponsiveMode = nextMode;
+        state.viewportMode = nextMode;
+        renderApp();
+      } else {
+        drawChartCanvas();
+      }
+    }
+    window.addEventListener('resize', syncResponsiveLayout, { passive: true });
+    window.addEventListener('orientationchange', syncResponsiveLayout, { passive: true });
+
+    window.onload = function() {};
+  </script>
+
+<script>
+(function(){
+'use strict';
+let session=null,ready=false,busy=false,refreshEpoch=0,candleEpoch=0,lastAccount='',lastMarket='',launchAccountConsumed=false;
+document.documentElement.classList.add('bb-auth-pending');
+// Do not expose the old hard-coded sample accounts while auth/account hydration is pending.
+state.accounts=[];state.activeAccountId='';
+const BB_URL='https://ztiiyulusburxjkpcfxu.supabase.co',BB_KEY='sb_publishable_5hDwqvbcUHeSJdXFHf9ugw_VPYGN4J_';
+const MARKET={
+ 'XAU/USD':'XAU/USD','XAG/USD':'XAG/USD','XPT/USD':'XPT/USD','XPD/USD':'XPD/USD',
+ 'EUR/USD':'EUR/USD','GBP/USD':'GBP/USD','USD/JPY':'USD/JPY','USD/CAD':'USD/CAD','AUD/USD':'AUD/USD','NZD/USD':'NZD/USD','USD/CHF':'USD/CHF','EUR/GBP':'EUR/GBP','EUR/JPY':'EUR/JPY','GBP/JPY':'GBP/JPY',
+ 'US30':'US30','USTEC':'USTEC','DXY':'DXY','SPX500':'US500','GER40':'DE30','UK100':'UK100','JPN225':'JP225',
+ 'USOIL':'USOIL','UKOIL':'UKOIL','NATGAS':'NATGASUSDT',
+ 'BTC':'BTCUSDT','ETH/USD':'ETHUSDT','SOL/USD':'SOLUSDT','XRP/USD':'XRPUSDT','BNB/USD':'BNBUSDT'
+};
+const PAPER={
+ 'XAU/USD':'XAUUSD','XAG/USD':'XAGUSD','XPT/USD':'XPTUSD','XPD/USD':'XPDUSD',
+ 'EUR/USD':'EURUSD','GBP/USD':'GBPUSD','USD/JPY':'USDJPY','USD/CAD':'USDCAD','AUD/USD':'AUDUSD','NZD/USD':'NZDUSD','USD/CHF':'USDCHF','EUR/GBP':'EURGBP','EUR/JPY':'EURJPY','GBP/JPY':'GBPJPY',
+ 'US30':'US30','USTEC':'USTEC','SPX500':'US500','GER40':'DE30','UK100':'UK100','JPN225':'JP225',
+ 'USOIL':'USOIL','UKOIL':'UKOIL','NATGAS':'NATGASUSDT',
+ 'BTC':'BTCUSDT','ETH/USD':'ETHUSDT','SOL/USD':'SOLUSDT','XRP/USD':'XRPUSDT','BNB/USD':'BNBUSDT'
+
+};
+const EXTRA_INSTRUMENTS=[
+ ['USD/CAD','US Dollar vs Canadian Dollar','Forex',5,1,'CAD'],
+ ['AUD/USD','Australian Dollar vs US Dollar','Forex',5,1,'AUD'],
+ ['NZD/USD','New Zealand Dollar vs US Dollar','Forex',5,1,'NZD'],
+ ['USD/CHF','US Dollar vs Swiss Franc','Forex',5,1,'CHF'],
+ ['EUR/GBP','Euro vs British Pound','Forex',5,1,'EUR'],
+ ['EUR/JPY','Euro vs Japanese Yen','Forex',5,1,'EUR'],
+ ['GBP/JPY','British Pound vs Japanese Yen','Forex',5,1,'GBP'],
+ ['XAG/USD','Silver vs US Dollar','Metals',3,5000,'Ag'],
+ ['XPT/USD','Platinum vs US Dollar','Metals',2,1,'Pt'],
+ ['XPD/USD','Palladium vs US Dollar','Metals',5,1,'Pd'],
+ ['US30','Dow Jones 30 Index','Indices',2,1,'30'],
+ ['SPX500','S&P 500 Index','Indices',2,1,'500'],
+ ['GER40','Germany 40 Index','Indices',2,1,'40'],
+ ['UK100','UK 100 Index','Indices',2,1,'100'],
+ ['JPN225','Japan 225 Index','Indices',2,1,'225'],
+ ['UKOIL','Brent Crude Oil','Commodities',2,1,'BR'],
+ ['NATGAS','Natural Gas','Commodities',3,1,'NG'],
+ ['ETH/USD','Ethereum vs US Dollar','Crypto',2,1,'ETH'],
+ ['SOL/USD','Solana vs US Dollar','Crypto',2,1,'SOL'],
+ ['XRP/USD','XRP vs US Dollar','Crypto',4,1,'XRP'],
+ ['BNB/USD','BNB vs US Dollar','Crypto',2,1,'BNB']
+];
+for(const [symbol,name,category,digits,contractSize,iconText] of EXTRA_INSTRUMENTS){
+ state.instruments[symbol]={symbol,name,category,bid:0,ask:0,spread:0,change:0,digits,contractSize,iconBg:category==='Crypto'?'#F59E0B':category==='Metals'?'#D97706':category==='Indices'?'#2563EB':category==='Commodities'?'#10B981':'#64748B',iconText,candles:[],tradeEnabled:true};
+}
+state.instruments['USOIL'].category='Commodities';
+state.instruments['DXY'].category='Forex';
+const candleCache=new Map();
+const TF_SECONDS={'1m':60,'5m':300,'15m':900,'30m':1800,'1h':3600,'4h':14400,'1d':86400,'1w':604800,'1M':2592000};
+let chartPaintQueued=false;
+function queueChartPaint(){if(chartPaintQueued)return;chartPaintQueued=true;const paint=()=>{chartPaintQueued=false;try{drawChartCanvas();updateLiveDOMElements();}catch(e){console.error('[BIGBULLS chart] repaint failed:',e);}};if(typeof requestAnimationFrame==='function')requestAnimationFrame(paint);else setTimeout(paint,16);}
+window.queueChartPaint=queueChartPaint;
+function updateCandleFromTick(symbol,bid,stamp=Date.now()){
+ const inst=state.instruments[symbol];if(!inst||!(bid>0))return;
+ const raw=Number(stamp),parsed=Number.isFinite(raw)?raw:(Date.parse(stamp)/1000),epoch=Number.isFinite(parsed)?(parsed>1e12?parsed/1000:parsed):Date.now()/1000;
+ let bucket;const tf=state.timeframe;
+ if(tf==='1w'){const d=new Date(epoch*1000);bucket=Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()-((d.getUTCDay()+6)%7))/1000;}
+ else if(tf==='1M'){const d=new Date(epoch*1000);bucket=Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),1)/1000;}
+ else {const sec=TF_SECONDS[tf]||300;bucket=Math.floor(epoch/sec)*sec;}
+ let rows=inst.candles||[],last=rows[rows.length-1];
+ if(!last||Number(last.time)<bucket*1000){last={time:bucket*1000,open:bid,high:bid,low:bid,close:bid};rows.push(last);if(rows.length>5000)rows.shift();inst.candles=rows;}
+ else if(Number(last.time)===bucket*1000){last.close=bid;last.high=Math.max(Number(last.high),bid);last.low=Math.min(Number(last.low),bid);}
+ if(symbol===state.selectedSymbol)queueChartPaint();
+}
+let localTickTimer=null;
+function stopLocalSimulation(){if(localTickTimer){clearInterval(localTickTimer);localTickTimer=null;}document.getElementById('bb-local-sim-banner')?.remove();updateLiveDOMElements();}
+function startLocalSimulation(){
+ if(localTickTimer){clearInterval(localTickTimer);localTickTimer=null;}
+ const hasLiveQuote=Object.values(state.instruments).some(inst=>Number(inst.bid)>0&&Number(inst.ask)>=Number(inst.bid));
+ if(hasLiveQuote){document.getElementById('bb-local-sim-banner')?.remove();return;}
+ Object.values(state.instruments).forEach(inst=>{inst.bid=0;inst.ask=0;inst.candles=[];});
+ let banner=document.getElementById('bb-local-sim-banner');
+ if(!banner){
+  banner=document.createElement('div');banner.id='bb-local-sim-banner';
+  banner.textContent='WAITING FOR LIVE MARKET DATA · NO SIMULATED PRICES · TRADING LOCKED';
+  banner.style.cssText='position:fixed;z-index:10020;top:8px;left:50%;transform:translateX(-50%);max-width:94vw;padding:8px 12px;border:1px solid #f59e0b;border-radius:10px;background:#211a10;color:#fcd34d;font:700 10px Inter,sans-serif;letter-spacing:.04em;text-align:center;box-shadow:0 4px 18px #0008';
+  document.body.appendChild(banner);
+ }
+ updateLiveDOMElements();
+}
+
+const notify=(t,s='',type='info')=>{if(typeof showToast==='function')showToast(t,s,type);};
+function client(){
+ // Reuse the authenticated parent Client Area client and its in-memory session snapshot.
+ // Access tokens are never placed in URLs, browser history, or persistent storage by this bridge.
+ try{
+  if(window.parent!==window){
+   const parentClient=window.parent.__bbSupabaseClient;
+   if(parentClient?.auth&&parentClient?.functions){
+    window.__bbSupabaseClient=parentClient;
+    window.__bbParentAuthSession=window.parent.__bbTerminalAuthSession||window.parent.__bbAuthSession||null;
+    return parentClient;
+   }
+  }
+ }catch(e){console.warn('Parent BIGBULLS session bridge unavailable:',e);}
+ if(window.__bbSupabaseClient?.auth&&window.__bbSupabaseClient?.functions)return window.__bbSupabaseClient;
+ if(window.bigbullsSupabase?.auth&&window.bigbullsSupabase?.functions)return window.bigbullsSupabase;
+ if(window.supabase?.createClient){window.__bbSupabaseClient=window.supabase.createClient(BB_URL,BB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});return window.__bbSupabaseClient;}
+ throw new Error('Supabase client library is unavailable.');
+}
+async function call(fn,body){
+ // Cached account snapshots are for instant display only. Never submit account mutations until a live account list is confirmed.
+ if(window.__bbTerminalCacheOnly&&((fn==='trading-gateway'&&!['accounts'].includes(body?.action))||(fn==='bbook-engine'&&!['quote','status'].includes(body?.action))||(fn==='paper-execution'&&!['status'].includes(body?.action))))throw new Error('Trading is activating after secure account verification.');
+ const r=await client().functions.invoke(fn,{body});
+ if(r.error){
+  let payload=r.data||{};const context=r.error?.context;
+  if(context){try{payload=typeof context.clone==='function'?await context.clone().json():typeof context.json==='function'?await context.json():payload;}catch(_){}}
+  const error=new Error(payload?.error||payload?.message||r.error.message||fn+' request failed.');
+  error.code=payload?.code||r.error?.code||null;error.details=payload?.details||null;throw error;
+ }
+ if(r.data?.error){const error=new Error(r.data.error);error.code=r.data.code||null;throw error;}
+ return r.data||{};
+}
+const mode=a=>String(a?.type||'Demo').toLowerCase()==='real'?'real':'demo';
+function mapSymbol(s){
+ const raw=String(s||'').toUpperCase().trim(),key=raw.replace(/[^A-Z0-9]/g,'');
+ const aliases={XAUUSD:'XAU/USD',XAGUSD:'XAG/USD',XPTUSD:'XPT/USD',XPDUSD:'XPD/USD',EURUSD:'EUR/USD',GBPUSD:'GBP/USD',USDJPY:'USD/JPY',USDCAD:'USD/CAD',AUDUSD:'AUD/USD',NZDUSD:'NZD/USD',USDCHF:'USD/CHF',EURGBP:'EUR/GBP',EURJPY:'EUR/JPY',GBPJPY:'GBP/JPY',BTCUSDT:'BTC',BTCUSD:'BTC',ETHUSDT:'ETH/USD',ETHUSD:'ETH/USD',SOLUSDT:'SOL/USD',SOLUSD:'SOL/USD',XRPUSDT:'XRP/USD',XRPUSD:'XRP/USD',BNBUSDT:'BNB/USD',BNBUSD:'BNB/USD',WTIUSD:'USOIL',USOIL:'USOIL',WTI:'USOIL',UKOIL:'UKOIL',BRENT:'UKOIL',NATGAS:'NATGAS',NATGASUSDT:'NATGAS',NGAS:'NATGAS',NDX:'USTEC',NAS100:'USTEC',USTEC:'USTEC',DJI:'US30',US30:'US30',SP500:'SPX500',US500:'SPX500',SPX500:'SPX500',DE40:'GER40',DE30:'GER40',GER40:'GER40',FTSE100:'UK100',UK100:'UK100',JP225:'JPN225',JPN225:'JPN225'};
+ return aliases[key]||(state.instruments[raw]?raw:null);
+}
+
+async function loadBiQuoteCatalog(){
+ try{
+  const response=await fetch('https://biquote.io/api/symbols?quotedWithinDays=7',{headers:{Accept:'application/json'},signal:AbortSignal.timeout(9000)});
+  if(!response.ok)throw new Error('BiQuote symbol catalogue returned '+response.status);
+  const payload=await response.json(),rows=Array.isArray(payload)?payload:(payload.symbols||payload.items||[]);
+  const extra=[];
+  for(const row of rows){
+   const provider=String(row.name||row.symbol||'').toUpperCase().trim();if(!provider||row.hasData===false)continue;
+   const known=mapSymbol(provider),ui=known||provider,type=String(row.type||'').toLowerCase();
+   if(type==='stock')continue;
+   const isMetal=/^(XAU|XAG|XPT|XPD)/.test(provider);
+   const category=type==='forex'?'Forex':type==='crypto'?'Crypto':type==='index'?'Indices':isMetal?'Metals':'Commodities';
+   if(!state.instruments[ui]){
+    state.instruments[ui]={symbol:ui,providerSymbol:provider,name:row.description||row.name||provider,category,bid:0,ask:0,spread:0,change:0,digits:Number(row.digits)||2,contractSize:Number(row.contractSize)||1,tickSize:Number(row.tickSize)||null,tickValue:Number(row.tickValue)||null,currency:row.currency||'USD',iconBg:'#475569',iconText:provider.slice(0,3),candles:[],tradeEnabled:!!PAPER[ui]};
+    extra.push(provider);
+   }else{
+    const inst=state.instruments[ui];inst.providerSymbol=provider;inst.name=row.description||inst.name;inst.category=category;
+    inst.digits=Number(row.digits)||inst.digits;inst.contractSize=Number(row.contractSize)||inst.contractSize;
+    inst.tickSize=Number(row.tickSize)||inst.tickSize||null;inst.tickValue=Number(row.tickValue)||inst.tickValue||null;inst.currency=row.currency||inst.currency||'USD';
+    inst.tradeEnabled=!!PAPER[ui];
+   }
+   if(!BIQUOTE_STREAM_SYMBOLS.includes(provider))extra.push(provider);
+   MARKET[ui]=provider;
+  }
+  if(extra.length)BIQUOTE_STREAM_SYMBOLS=[...new Set([...BIQUOTE_STREAM_SYMBOLS,...extra])];
+  console.info('BiQuote symbol catalogue loaded:',rows.length,'symbols; extra stream subscriptions:',extra.length);
+ }catch(e){console.warn('BiQuote catalogue unavailable; configured instruments remain active:',e.message);}
+}
+function filterMarketWatch(value){
+ state.marketSearch=String(value||'').toLowerCase();
+ document.querySelectorAll('[data-market-row]').forEach(row=>{
+  const text=(row.dataset.marketSearch||'').toLowerCase(),cat=row.dataset.marketCategory||'';
+  const matchesText=!state.marketSearch||text.includes(state.marketSearch);
+  const matchesCategory=state.watchlistTab==='All'||cat===state.watchlistTab;
+  row.style.display=matchesText&&matchesCategory?'':'none';
+ });
+}
+function applyQuote(s,p){const i=state.instruments[s];if(!i||!(Number(p)>0))return;i.bid=Number(p);i.ask=Number((i.bid+Number(i.spread||0)).toFixed(i.digits));}
+function applyBookQuote(s,q){const i=state.instruments[s];if(!i||!q)return;const bid=Number(q.bid),ask=Number(q.ask);if(bid>0&&ask>=bid){i.bid=bid;i.ask=ask;updateCandleFromTick(s,(bid+ask)/2,q.time||q.updated_at||Date.now());}}
+let bbookRealtimeChannel=null;
+async function startBbookRealtime(c){
+ if(bbookRealtimeChannel){c.removeChannel(bbookRealtimeChannel);bbookRealtimeChannel=null;}
+ if(!session?.user)return;
+ // Bind the current authenticated JWT to Realtime before opening the channel.
+ // The SDK refreshes the session itself; no token is exposed in a URL or log.
+ if(session.access_token&&c.realtime?.setAuth){
+  try{await Promise.race([c.realtime.setAuth(session.access_token),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Realtime auth timed out after 1.5 seconds')),1500))]);}
+  catch(e){console.warn('Realtime auth handshake deferred; REST fallback remains active:',e.message);}
+ }
+ bbookRealtimeChannel=c.channel('bb-bbook-terminal-'+session.user.id)
+  .on('postgres_changes',{event:'*',schema:'public',table:'bb_bbook_quotes'},payload=>{
+   const row=payload.new||{};applyBookQuote(mapSymbol(row.symbol),row);updateLiveDOMElements();
+  })
+  .on('postgres_changes',{event:'*',schema:'public',table:'bb_bbook_positions',filter:'user_id=eq.'+session.user.id},()=>{if(mode(getActiveAccount())==='real')refresh(true);})
+  .on('postgres_changes',{event:'*',schema:'public',table:'bb_bbook_pending_orders',filter:'user_id=eq.'+session.user.id},()=>{if(mode(getActiveAccount())==='real')refresh(true);})
+  .on('postgres_changes',{event:'*',schema:'public',table:'bb_paper_execution_trades',filter:'user_id=eq.'+session.user.id},()=>{if(mode(getActiveAccount())!=='real')refresh(true);})
+  .on('postgres_changes',{event:'*',schema:'public',table:'bb_paper_execution_accounts',filter:'user_id=eq.'+session.user.id},async()=>{try{const current=getActiveAccount()?.backendId||null;await accounts(current);await refresh(true);renderApp();}catch(e){console.warn('Demo balance realtime sync:',e.message);}})
+  .on('postgres_changes',{event:'*',schema:'public',table:'trading_accounts',filter:'user_id=eq.'+session.user.id},async()=>{
+   try{const current=getActiveAccount()?.backendId||null;await accounts(current);renderApp();await refresh(true);}
+   catch(e){notify('Account sync failed',e.message||'Client Area account updates could not be loaded.','error');}
+  })
+  .subscribe((status,error)=>{
+   if(status==='SUBSCRIBED')console.info('BIGBULLS Realtime channel connected.');
+   else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'||status==='CLOSED')console.warn('BIGBULLS Realtime channel unavailable:',status,error?.message||'REST polling fallback active.');
+  });
+}
+let biQuoteConnection=null,biQuoteStartPromise=null;
+let BIQUOTE_STREAM_SYMBOLS=['EURUSD','GBPUSD','USDJPY','USDCAD','AUDUSD','NZDUSD','USDCHF','EURGBP','EURJPY','GBPJPY','XAUUSD','XAGUSD','XPTUSD','XPDUSD','BTCUSD','ETHUSD','SOLUSD','XRPUSD','BNBUSD','US30','USTEC','SPX500','GER40','UK100','JPN225','USOIL','UKOIL','NATGAS'];
+async function subscribeBiQuoteSymbols(connection){
+ const symbols=[...new Set(BIQUOTE_STREAM_SYMBOLS)];
+ for(let i=0;i<symbols.length;i+=100)await connection.invoke('Subscribe',symbols.slice(i,i+100));
+}
+function handleBiQuoteTick(tick){
+ if(Array.isArray(tick))tick=tick[0];if(!tick||!tick.symbol)return;
+ const ui=mapSymbol(tick.symbol),inst=state.instruments[ui];if(!inst)return;
+ const mid=Number(tick.mid||((Number(tick.bid)+Number(tick.ask))/2));if(!(mid>0))return;
+ const active=getActiveAccount(),real=mode(active)==='real'&&!!PAPER[ui];
+ let bid=Number(tick.bid),ask=Number(tick.ask);
+ if(real&&Number.isFinite(inst.brokerSpreadBps)){
+  const half=inst.brokerSpreadBps/20000;bid=mid*(1-half);ask=mid*(1+half);
+ }
+ if(bid>0&&ask>=bid){inst.bid=bid;inst.ask=ask;updateCandleFromTick(ui,mid,tick.timestamp||Date.now());}
+ updateLiveDOMElements();
+}
+async function startBiQuoteRealtime(){
+ if(biQuoteConnection&&window.signalR?.HubConnectionState?.Connected===biQuoteConnection.state)return biQuoteConnection;
+ if(biQuoteStartPromise)return biQuoteStartPromise;
+ biQuoteStartPromise=(async()=>{
+  if(!window.signalR?.HubConnectionBuilder){console.warn('BiQuote SignalR client did not load; REST snapshot fallback remains active.');return null;}
+  const connection=new window.signalR.HubConnectionBuilder().withUrl('https://biquote.io/hubs/tick').withAutomaticReconnect([0,2000,5000,10000,30000]).build();
+  connection.on('ReceiveTick',handleBiQuoteTick);
+  connection.onreconnected(async()=>{try{await subscribeBiQuoteSymbols(connection);}catch(e){console.warn('BiQuote resubscribe failed:',e.message);}});
+  connection.onclose(e=>{console.warn('BiQuote SignalR closed:',e?.message||'connection closed');biQuoteConnection=null;if(session?.user)setTimeout(()=>startBiQuoteRealtime().catch(()=>{}),5000);});
+  try{await Promise.race([connection.start(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('BiQuote connection timed out after 1.5 seconds.')),1500))]);await subscribeBiQuoteSymbols(connection);biQuoteConnection=connection;console.info('BiQuote SignalR connected; subscribed:',BIQUOTE_STREAM_SYMBOLS);return connection;}
+  catch(e){console.warn('BiQuote SignalR connection failed:',e.message);try{await connection.stop();}catch(_){}return null;}
+ })();
+ try{return await biQuoteStartPromise;}finally{biQuoteStartPromise=null;}
+}
+// Last server-confirmed account snapshot: display hydration only; execution still requires a live authenticated backend session.
+function bbPrimeCachedAccounts(userId){
+ if(!userId)return false;
+ try{
+  const raw=localStorage.getItem('bb:terminal:accounts:v1:'+userId);if(!raw)return false;
+  const saved=JSON.parse(raw),rows=Array.isArray(saved?.accounts)?saved.accounts:[];
+  if(!saved?.savedAt||Date.now()-Number(saved.savedAt)>7*24*60*60*1000)return false;
+  const approved=rows.filter(a=>a&&a.backendId&&a.status==='approved'&&!a.archived);
+  if(!approved.length)return false;
+  state.accounts=approved;
+  let selected=null;
+  try{const id=localStorage.getItem('bb:terminal:active-account:'+userId)||sessionStorage.getItem('bb:terminal:selected-account:'+userId+':demo')||sessionStorage.getItem('bb:terminal:selected-account:'+userId+':real');selected=approved.find(a=>a.backendId===String(id)||a.id===String(id));}catch(_){}
+  if(!selected)selected=approved.find(a=>mode(a)==='demo')||approved[0];
+  state.activeAccountId=selected.id;lastAccount=selected.id;
+  window.__bbTerminalCacheOnly=true;
+  return true;
+ }catch(e){console.warn('BIGBULLS cached account hydration unavailable:',e);return false;}
+}
+async function accounts(preferredBackendId=null){
+ const d=await call('trading-gateway',{action:'accounts'});
+ const rows=(d.accounts||[]).filter(a=>['demo','real'].includes(String(a.account_mode||'').toLowerCase())&&!a.archived_at&&!a.deleted_at).map(a=>({
+  id:String(a.account_number||a.id),accountNumber:a.account_number,backendId:String(a.id),nickname:a.display_name||a.account_type||String(a.account_mode).toUpperCase(),
+  type:String(a.account_mode).toLowerCase()==='real'?'Real':'Demo',platform:a.platform||(a.account_mode==='real'?'BigBulls B-Book':'BigBulls Paper'),
+  accountClass:a.account_type||'Standard',balance:Number(a.account_mode==='demo'?(a.virtual_balance??a.balance):(a.balance||0)),creditBonus:Number(a.credit_bonus||0),equity:Number(a.equity??a.balance??0),floatingPL:Number(a.floating_pnl||0),leverage:a.requested_leverage||'1:100',
+  server:a.server_name||'BigBulls',archived:false,status:String(a.status||'pending').toLowerCase(),currency:a.currency||'USD'
+ }));
+ if(rows.length){state.accounts=rows;try{localStorage.setItem('bb:terminal:accounts:v1:'+session.user.id,JSON.stringify({savedAt:Date.now(),accounts:rows}));window.__bbTerminalCacheOnly=false;}catch(_){}}else if(!state.accounts.some(a=>a.backendId)){state.accounts=[{id:'474909030',accountNumber:'474909030',backendId:null,nickname:'BigBulls Demo',type:'Demo',platform:'BIGBULLS',accountClass:'Standard',balance:0,leverage:'1:100',server:'BIGBULLS',archived:false,status:'unavailable',currency:'USD'}];}
+ let preferred='demo',selected=null;
+ try{const sm=sessionStorage.getItem('bb:terminal:active-mode:'+session.user.id)||localStorage.getItem('bb:terminal:active-mode:'+session.user.id);if(sm==='demo'||sm==='real')preferred=sm;}catch(_){}
+ const findByBackend=id=>state.accounts.find(a=>a.backendId===String(id)&&a.status==='approved');
+ let launch=null;
+ if(!launchAccountConsumed){
+  try{launch=new URLSearchParams(location.search).get('account_id')||sessionStorage.getItem('bb:terminal:launch-account:'+session.user.id)||localStorage.getItem('bb:terminal:launch-account:'+session.user.id)||localStorage.getItem('bb:terminal:active-account:'+session.user.id)||null;}catch(_){}
+  if(launch){
+   selected=findByBackend(launch)||null;
+   if(!selected)throw new Error("The selected account is not available or not approved for terminal access. Return to My Accounts and open the account again.");
+   launchAccountConsumed=true;
+   try{
+    sessionStorage.removeItem('bb:terminal:launch-account:'+session.user.id);localStorage.removeItem('bb:terminal:launch-account:'+session.user.id);
+    const cleanUrl=new URL(location.href);cleanUrl.searchParams.delete('account_id');
+    history.replaceState(history.state,'',cleanUrl.pathname+(cleanUrl.search?cleanUrl.search:'')+cleanUrl.hash);
+   }catch(_){}
+  }
+ }
+ if(!selected&&preferredBackendId)selected=findByBackend(preferredBackendId)||null;
+ try{const sid=sessionStorage.getItem('bb:terminal:selected-account:'+session.user.id+':'+preferred);if(!selected&&sid)selected=findByBackend(sid)||null;}catch(_){}
+ if(!selected)selected=state.accounts.find(a=>mode(a)===preferred&&a.status==='approved')||state.accounts.find(a=>a.status==='approved')||state.accounts[0];
+ state.activeAccountId=selected.id;lastAccount=selected.id;
+ try{sessionStorage.setItem('bb:terminal:active-mode:'+session.user.id,mode(selected));if(selected.backendId)sessionStorage.setItem('bb:terminal:selected-account:'+session.user.id+':'+mode(selected),selected.backendId);}catch(_){}
+}
+async function quotes(){
+ const quoteSymbols=[...new Set([...Object.values(MARKET).slice(0,27),MARKET[state.selectedSymbol]].filter(Boolean))];
+ const d=await call('market-data',{action:'quotes',symbols:quoteSymbols});
+ if((d.quotes||[]).some(q=>Number(q.bid)>0||Number(q.close)>0))stopLocalSimulation();
+ (d.quotes||[]).forEach(q=>{
+  const ui=mapSymbol(q.symbol),inst=state.instruments[ui];if(!inst||q.error)return;
+  inst.brokerSpreadBps=Number(q.broker_spread_bps);
+  const a=getActiveAccount(),real=mode(a)==='real'&&Number.isFinite(inst.brokerSpreadBps);
+  applyBookQuote(ui,real?{bid:q.broker_bid,ask:q.broker_ask,time:q.datetime}:{bid:q.bid,ask:q.ask,time:q.datetime});
+ });
+ const a=getActiveAccount(),symbol=PAPER[state.selectedSymbol];
+ if(a&&mode(a)==='real'&&symbol){try{const b=await call('bbook-engine',{action:'quote',symbol});applyBookQuote(state.selectedSymbol,b.quote);}catch(e){console.warn('B-Book dealing quote:',e.message);}}
+ updateLiveDOMElements();
+}
+async function candles(){
+ const s=state.selectedSymbol,tf=state.timeframe,p=MARKET[s],i=state.instruments[s],request=++candleEpoch;
+ if(!p||!i){notify('Market data unavailable',s+' is not enabled by BiQuote.','error');return;}
+ const cacheKey=s+'|'+tf,cached=candleCache.get(cacheKey);
+ if(cached?.length){i.candles=cached.map(c=>({...c}));drawChartCanvas();}else drawChartCanvas();
+ const d=await call('market-data',{action:'candles',symbol:p,timeframe:tf,outputsize:1000});
+ if(d.candles?.length)stopLocalSimulation();
+ if(request!==candleEpoch||s!==state.selectedSymbol||tf!==state.timeframe)return;
+ const rows=(d.candles||[]).map(c=>({time:Number(c.time),open:Number(c.open),high:Number(c.high),low:Number(c.low),close:Number(c.close)})).filter(c=>Number.isFinite(c.time)&&[c.open,c.high,c.low,c.close].every(Number.isFinite));
+ if(!rows.length)throw new Error('BiQuote returned no candles for '+s+' ('+tf+').');
+ i.candles=rows;candleCache.set(cacheKey,rows.map(c=>({...c})));if(!i.bid)applyQuote(s,d.price||rows[rows.length-1].close);drawChartCanvas();updateLiveDOMElements();
+}
+function mapTrade(t,n,accountId){const s=mapSymbol(t.symbol);if(!s)return null;const open=String(t.status).toUpperCase()==='OPEN',tm=v=>v?new Date(v).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}):'';return{id:n+1,backendTradeId:t.id,accountId,symbol:s,side:String(t.side).toUpperCase()==='BUY'?'Buy':'Sell',lots:Number(t.quantity),openPrice:Number(t.entry_price),sl:t.stop_loss==null?'':String(t.stop_loss),tp:t.take_profit==null?'':String(t.take_profit),openTime:tm(t.opened_at),closeTime:t.closed_at?new Date(t.closed_at).toLocaleString():'',closePrice:t.exit_price==null?Number(t.mark_price||t.entry_price):Number(t.exit_price),realizedPL:Number(t.realized_pnl||0),floatingPL:Number(t.floating_pnl??t.unrealized_pnl??0),status:open?'open':'closed'};}
+async function refresh(silent=true){
+ const epoch=++refreshEpoch;busy=true;
+ try{
+  const a=getActiveAccount(),m=mode(a);
+  if(!a||!a.backendId||a.status!=='approved')throw new Error('Select an approved account created in the BIGBULLS Client Area before trading.');
+  window.__bbBbookMetrics=null;window.__bbBbookExecution=null;
+  let rows=[],balance=null,metrics=null,execution=null;
+  if(m==='real'){
+   const d=await call('bbook-engine',{action:'status',account_id:a.backendId});metrics=d.metrics||{};execution=d.execution||{};
+   balance=Number(metrics.balance??a.balance);
+   rows=(d.positions||[]).map((t,n)=>mapTrade(t,n,a.id)).filter(Boolean);
+   Object.entries(d.quotes||{}).forEach(([symbol,q])=>applyBookQuote(mapSymbol(symbol),q));
+  }else{
+   const d=await call('paper-execution',{action:'status',account_mode:m,account_id:a.backendId}),ledger=d.ledger||{};
+   balance=Number(ledger.virtual_balance??ledger.starting_balance??a.balance);
+   rows=(d.trades||[]).map((t,n)=>mapTrade(t,n,a.id)).filter(Boolean);
+   const floating=(d.trades||[]).filter(t=>t.status==='OPEN').reduce((sum,t)=>sum+Number(t.unrealized_pnl||0),0);
+   window.__bbPaperMetrics={balance,equity:balance+floating,floating_pnl:floating,margin:0,free_margin:balance+floating,margin_level_pct:0};
+   a.equity=balance+floating;a.floatingPL=floating;
+   Object.entries(d.prices||{}).forEach(([symbol,p])=>applyQuote(mapSymbol(symbol),p));
+  }
+  let pendingRows=[];
+  if(m==='real'){
+   const pr=await client().from('bb_bbook_pending_orders').select('*').eq('account_id',a.backendId).eq('user_id',session.user.id).eq('status','PENDING').order('created_at',{ascending:false});
+   if(pr.error)throw pr.error;
+   pendingRows=(pr.data||[]).map((p,n)=>({id:String(p.id),backendOrderId:p.id,accountId:a.id,symbol:mapSymbol(p.symbol)||state.selectedSymbol,
+    side:String(p.side).toUpperCase()==='BUY'?'Buy':'Sell',lots:Number(p.quantity),pendingType:({BUY_LIMIT:'Buy Limit',SELL_LIMIT:'Sell Limit',BUY_STOP:'Buy Stop',SELL_STOP:'Sell Stop'})[p.order_type]||p.order_type,
+    targetPrice:Number(p.target_price),sl:p.stop_loss==null?'':String(p.stop_loss),tp:p.take_profit==null?'':String(p.take_profit),status:p.status,openTime:p.created_at}));
+  }
+  if(epoch!==refreshEpoch||getActiveAccount()?.backendId!==a.backendId)return false;
+  a.balance=balance;
+  window.__bbBbookMetrics=metrics;window.__bbBbookExecution=execution;
+  state.openOrders=rows.filter(t=>t.status==='open');state.closedOrders=rows.filter(t=>t.status==='closed');state.pendingOrders=pendingRows;
+  updateLiveDOMElements();renderApp();return true;
+ }catch(e){if(epoch===refreshEpoch){updateLiveDOMElements();if(!silent)notify('Trading connection error',e.message||'Trading ledger could not be refreshed. Existing confirmed orders are retained until the next successful ledger sync.','error');}console.error('BIGBULLS terminal backend:',e);return false;}finally{if(epoch===refreshEpoch)busy=false;}
+}
+async function place(){
+ const a=getActiveAccount(),m=state.orderTicket,s=state.selectedSymbol;if(!a)return;
+ if(!a.backendId||a.status!=='approved'){notify('Account approval required','Only approved Client Area trading accounts can place orders.','error');return;}
+ if(!session){notify('Login required','Sign in to your client account before trading.','error');return;}
+ const symbol=PAPER[s],quantity=Number(m.lots),sl=m.sl===''||m.sl==null?null:Number(m.sl),tp=m.tp===''||m.tp==null?null:Number(m.tp);
+ const liveQuote=state.instruments[s];if(!liveQuote||!(Number(liveQuote.bid)>0)||!(Number(liveQuote.ask)>=Number(liveQuote.bid))){notify('Live feed unavailable','Trading is locked until the market-data provider reconnects.','error');return;}
+ if(!symbol){notify('Instrument unavailable','This instrument is not enabled by the connected execution service.','error');return;}
+ if(!(quantity>0)||!Number.isFinite(quantity)){notify('Invalid lot size','Enter a valid lot size.','error');return;}
+ if(sl!==null&&(!(sl>0)||!Number.isFinite(sl))){notify('Invalid Stop Loss','Enter a valid Stop Loss or leave it empty.','error');return;}
+ if(tp!==null&&(!(tp>0)||!Number.isFinite(tp))){notify('Invalid Take Profit','Enter a valid Take Profit or leave it empty.','error');return;}
+ try{
+  const real=mode(a)==='real';
+  if(!real&&m.mode!=='Market')throw new Error('Pending orders are currently enabled for Real B-Book accounts only.');
+  const b={action:m.mode==='Market'?'open':'pending',account_mode:mode(a),symbol,side:m.side.toUpperCase(),quantity,stop_loss:sl,take_profit:tp};
+  if(a.backendId)b.account_id=a.backendId;
+  if(m.mode!=='Market'){
+    const map={ 'Limit':m.side.toUpperCase()+'_LIMIT','Stop':m.side.toUpperCase()+'_STOP','Buy Limit':'BUY_LIMIT','Sell Limit':'SELL_LIMIT','Buy Stop':'BUY_STOP','Sell Stop':'SELL_STOP' };
+    b.order_type=map[m.pendingType]||String(m.pendingType||'').toUpperCase().replaceAll(' ','_');
+    b.target_price=Number(m.targetPrice);
+    if(!(b.target_price>0)||!Number.isFinite(b.target_price))throw new Error('Enter a valid pending-order target price.');
+  }
+  const d=await call(real?'bbook-engine':'paper-execution',b);closeModal();
+  const confirmed=d.position||d.trade;
+  if(m.mode==='Market'&&confirmed){const optimistic=mapTrade({...confirmed,status:confirmed.status||'OPEN'},state.openOrders.length,a.id);if(optimistic){optimistic.status='open';state.openOrders.unshift(optimistic);updateLiveDOMElements();renderApp();}}
+  notify(m.mode==='Market'?(real?'B-Book position accepted':'Paper position opened'):'B-Book pending order saved',
+   s+' '+m.side+' '+quantity.toFixed(2)+' lots · '+String(confirmed?.id||d.order?.id||'').slice(0,8),'success');
+  playTerminalSound(m.mode==='Market'?'placed':'pending');
+  const optimisticId=confirmed?.id==null?null:String(confirmed.id);
+  const synced=await refresh(true);
+  if(m.mode==='Market'&&confirmed){
+   const existing=state.openOrders.some(o=>String(o.backendTradeId||o.id)===optimisticId);
+   if(!existing){
+    const retained=mapTrade({...confirmed,status:confirmed.status||'OPEN'},state.openOrders.length,a.id);
+    if(retained){retained.status='open';state.openOrders=[retained,...state.openOrders];}
+   }
+   updateLiveDOMElements();renderApp();
+  }
+  if(!synced)notify('Order accepted; sync retrying','The execution service confirmed the order. It remains visible while the ledger reconnects.','info');
+ }catch(e){const msg=/insufficient/i.test(e.message)?'Insufficient Funds':e.message;playTerminalSound('error');notify('Order not placed',msg,'error');}
+}
+const closingPositions=new Set();
+window.openModifyPositionModal=function(positionId){
+ const order=state.openOrders.find(x=>String(x.backendTradeId||x.id)===String(positionId));
+ if(!order){notify('Modify failed','Open position not found. Refresh the ledger and try again.','error');return;}
+ const html=`<div class="p-4 border-b border-slate-200 flex items-center justify-between"><strong class="text-sm">Modify ${order.symbol} · ${order.side}</strong><button onclick="closeModal()" class="rounded-lg px-3 py-1 bg-slate-100">✕</button></div><form class="p-4 space-y-3" onsubmit="event.preventDefault();window.bbSubmitPositionModify('${String(order.backendTradeId||order.id)}')"><label class="block text-xs">Stop Loss<input id="bbModifySL" type="number" step="any" value="${order.sl==null?'':String(order.sl)}" placeholder="Not set" class="mt-1 w-full rounded-xl border border-slate-200 p-3" /></label><label class="block text-xs">Take Profit<input id="bbModifyTP" type="number" step="any" value="${order.tp==null?'':String(order.tp)}" placeholder="Not set" class="mt-1 w-full rounded-xl border border-slate-200 p-3" /></label><p class="text-[11px] text-slate-500">Changes are validated and saved by the authenticated execution service.</p><button type="submit" class="w-full rounded-xl bg-blue-600 text-white font-bold p-3">Save SL / TP</button></form>`;
+ openModal(html);
+};
+window.bbSubmitPositionModify=async function(positionId){
+ const order=state.openOrders.find(x=>String(x.backendTradeId||x.id)===String(positionId));if(!order)return;
+ const a=getActiveAccount(),real=mode(a)==='real';
+ const slText=document.getElementById('bbModifySL')?.value??'',tpText=document.getElementById('bbModifyTP')?.value??'';
+ const sl=slText.trim()===''?null:Number(slText),tp=tpText.trim()===''?null:Number(tpText);
+ if((sl!==null&&(!(sl>0)||!Number.isFinite(sl)))||(tp!==null&&(!(tp>0)||!Number.isFinite(tp)))){notify('Invalid protection level','SL and TP must be positive prices or left blank.','error');return;}
+ try{if(real){await call('bbook-engine',{action:'modify_position',account_id:a.backendId,position_id:order.backendTradeId,stop_loss:sl,take_profit:tp});}else{if(sl===null)throw new Error('Demo positions require a Stop Loss; keep the current SL or enter a new one.');await call('paper-execution',{action:'modify',account_mode:'demo',account_id:a.backendId,trade_id:order.backendTradeId,stop_loss:sl,take_profit:tp});}order.sl=sl==null?'':String(sl);order.tp=tp==null?'':String(tp);closeModal();updateLiveDOMElements();renderApp();notify('Protection updated',order.symbol+' SL / TP saved.','success');void refresh(true).then(ok=>{if(!ok)notify('Protection saved; sync retrying','The execution service confirmed the SL / TP update.','info');});}catch(e){notify('Modify failed',e.message||'SL / TP could not be updated.','error');}
+};
+async function closePosition(id,silent=false,reason='Closed manually'){
+ const o=state.openOrders.find(x=>String(x.id)===String(id)||String(x.backendTradeId)===String(id));
+ if(!o){notify('Close failed','This position is no longer open. Refreshing the account ledger.','error');await refresh(true);return false;}
+ const a=getActiveAccount(),real=mode(a)==='real';
+ if(!a?.backendId||a.status!=='approved'){notify('Close failed','Select an approved trading account.','error');return false;}
+ const tradeId=String(o.backendTradeId||'');if(real&&!tradeId){notify('Close failed','The position is missing its backend ledger ID.','error');return false;}
+ const lock=tradeId||String(o.id);if(closingPositions.has(lock))return false;closingPositions.add(lock);
+ try{
+  const payload={action:'close',account_mode:mode(a),reason};
+  if(real){payload.position_id=tradeId;payload.account_id=a.backendId;}else{payload.trade_id=tradeId;if(a.backendId)payload.account_id=a.backendId;}
+  const result=await call(real?'bbook-engine':'paper-execution',payload);
+  if(real&&(!result.success||String(result.position?.status||'').toUpperCase()!=='CLOSED'))throw new Error(result.error||'B-Book engine did not confirm the position close.');
+  if(!silent)closeModal();
+  const positionResult=result.position||result;
+  const realized=Number(positionResult.realized_pnl??result.realized_pnl??o.realizedPL??0);
+  const quoteExit=o.side==='Buy'?result.quote?.bid:result.quote?.ask;
+  const exit=Number(positionResult.exit_price??quoteExit??o.closePrice??o.openPrice);
+  const closed={...o,closePrice:exit,closeTime:new Date().toLocaleString(),realizedPL:realized,status:'closed'};
+  state.openOrders=state.openOrders.filter(x=>String(x.backendTradeId||x.id)!==lock);
+  state.closedOrders=[closed,...state.closedOrders.filter(x=>String(x.backendTradeId||x.id)!==lock)];
+  if(real&&Number.isFinite(Number(result.account_balance)))a.balance=Number(result.account_balance);
+  updateLiveDOMElements();renderApp();
+  notify('Position closed',o.symbol+' '+o.side+' '+o.lots.toFixed(2)+' lots · '+(realized>=0?'+':'')+formatMoney(realized)+' USD','success');
+  void refresh(true).then(ok=>{if(!ok){state.openOrders=state.openOrders.filter(x=>String(x.backendTradeId||x.id)!==lock);state.closedOrders=[closed,...state.closedOrders.filter(x=>String(x.backendTradeId||x.id)!==lock)];updateLiveDOMElements();renderApp();notify('Closed order saved; history sync retrying','The B-Book confirmed settlement. The local history record is retained while the ledger reconnects.','info');}});
+  return true;
+ }catch(e){notify('Close failed',e.message||'The position could not be closed.','error');return false;}
+ finally{closingPositions.delete(lock);}
+}
+function bbUpdateMarketSessionUI(){
+ const now=new Date(),day=now.getUTCDay(),minutes=now.getUTCHours()*60+now.getUTCMinutes();
+ const forexOpen=(day===0&&minutes>=22*60)||(day>=1&&day<=4)||(day===5&&minutes<22*60);
+ document.querySelectorAll('[data-market-status]').forEach(dot=>{
+  const symbol=dot.getAttribute('data-market-status')||'';
+  const instrument=state?.instruments?.[symbol]||{};
+  const category=String(instrument.category||'').toLowerCase();
+  const isCrypto=category==='crypto';
+  const isForex=category==='forex';
+  const isWeekend=day===0||day===6;
+  const isOpen=isCrypto?true:(isForex?forexOpen:!isWeekend);
+  dot.style.background=isOpen?'#22c55e':'#9ca3af';
+  dot.title=isOpen?'Market open':'Market closed';
+  dot.setAttribute('aria-label',dot.title);
+ });
+}
+window.bbUpdateMarketSessionUI=bbUpdateMarketSessionUI;
+const originalRender=window.renderApp;
+if(typeof originalRender==='function')window.renderApp=function(){originalRender();if(typeof bbUpdateMarketSessionUI==='function')bbUpdateMarketSessionUI();if(!ready)return;const a=getActiveAccount(),ak=a?.id||'',mk=state.selectedSymbol+':'+state.timeframe;if(ak&&ak!==lastAccount){lastAccount=ak;try{sessionStorage.setItem('bb:terminal:active-mode:'+session.user.id,mode(a));if(a.backendId)sessionStorage.setItem('bb:terminal:selected-account:'+session.user.id+':'+mode(a),a.backendId);}catch(_){}refresh(true);}if(mk!==lastMarket){lastMarket=mk;candles().catch(e=>console.warn('Market candles:',e.message));}};
+window.submitOrderExecution=place;window.executeCloseOrder=closePosition;
+setInterval(()=>{if(typeof bbUpdateMarketSessionUI==='function')bbUpdateMarketSessionUI();},1000);
+window.closeAllOpenOrders=async()=>{const a=getActiveAccount(),real=mode(a)==='real',rows=[...state.openOrders];for(const o of rows){const b={action:'close',account_mode:mode(a),reason:'Closed all positions'};if(real){b.position_id=o.backendTradeId;b.account_id=a.backendId;}else{b.trade_id=o.backendTradeId;if(a.backendId)b.account_id=a.backendId;}try{await call(real?'bbook-engine':'paper-execution',b);}catch(e){notify('Close failed',e.message||'A position could not be closed.','error');}}await refresh(true);};
+window.goToClientArea=function(){
+ try{
+  if(window.parent&&window.parent!==window){
+   const parentDoc=window.parent.document;
+   const dashboard=parentDoc.querySelector('#app-shell [data-page="dashboard"]');
+   if(dashboard){dashboard.click();return;}
+   const home=parentDoc.querySelector('#app-shell .terminal-brand[data-page="dashboard"]');
+   if(home){home.click();return;}
+  }
+ }catch(e){console.warn('Client Area navigation:',e);}
+ if(document.referrer){try{const ref=new URL(document.referrer);if(ref.origin===location.origin){location.href=ref.href;return;}}catch(_){}}
+ notify('Client Area unavailable','Please reopen the terminal from your signed-in BIGBULLS Client Area.','error');
+};
+window.openModifyPendingModal=function(id){
+ const o=state.pendingOrders.find(x=>String(x.backendOrderId||x.id)===String(id));if(!o)return;
+ openModal(`
+  <div class="p-4 border-b border-[#e2e8f0] flex items-center justify-between"><h3 class="font-bold text-sm text-white">Modify Pending Order</h3><button onclick="closeModal()" class="w-7 h-7 rounded-full bg-[#e2e8f0] text-gray-300">✕</button></div>
+  <div class="p-4 space-y-3 text-xs">
+   <div class="text-gray-400">${o.symbol} · ${o.side} ${o.pendingType} · ${o.lots.toFixed(2)} lots</div>
+   <label class="block text-gray-400">Entry / Target Price<input id="bb-modify-target" type="number" step="any" value="${o.targetPrice}" class="mt-1 w-full rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-3 text-white"></label>
+   <label class="block text-gray-400">Stop Loss<input id="bb-modify-sl" type="number" step="any" value="${o.sl||''}" placeholder="Optional" class="mt-1 w-full rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-3 text-white"></label>
+   <label class="block text-gray-400">Take Profit<input id="bb-modify-tp" type="number" step="any" value="${o.tp||''}" placeholder="Optional" class="mt-1 w-full rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-3 text-white"></label>
+   <button onclick="savePendingModification('${o.backendOrderId||o.id}')" class="w-full py-3 rounded-xl bg-bullBlue text-white font-bold">Save Changes</button>
+  </div>`);
+};
+window.savePendingModification=async function(id){
+ const o=state.pendingOrders.find(x=>String(x.backendOrderId||x.id)===String(id));if(!o)return;
+ const target=Number(document.getElementById('bb-modify-target')?.value),slRaw=document.getElementById('bb-modify-sl')?.value||'',tpRaw=document.getElementById('bb-modify-tp')?.value||'';
+ const sl=slRaw===''?null:Number(slRaw),tp=tpRaw===''?null:Number(tpRaw);
+ if(!(target>0)||!Number.isFinite(target)||(sl!==null&&(!(sl>0)||!Number.isFinite(sl)))||(tp!==null&&(!(tp>0)||!Number.isFinite(tp)))){notify('Invalid pending order','Enter valid positive prices.','error');return;}
+ try{
+  const {data,error}=await client().rpc('bb_bbook_modify_pending_order',{p_order_id:String(id),p_target_price:target,p_stop_loss:sl,p_take_profit:tp});
+  if(error)throw error;if(data?.success!==true)throw new Error('Pending order modification was not confirmed.');
+  closeModal();await refresh(true);notify('Pending order updated',o.symbol+' · '+target,'success');
+ }catch(e){notify('Modify failed',e.message||'Pending order could not be modified.','error');}
+};
+window.cancelPendingOrder=async function(id){
+ const a=getActiveAccount(),o=state.pendingOrders.find(x=>String(x.id)===String(id));
+ if(!o)return;
+ if(mode(a)!=='real'||!o.backendOrderId){notify('Cancel failed','This pending order is not linked to the B-Book ledger.','error');return;}
+ try{await call('bbook-engine',{action:'cancel_pending',account_id:a.backendId,order_id:o.backendOrderId});await refresh(true);notify('Pending order cancelled',o.symbol+' '+o.pendingType,'success');}
+ catch(e){notify('Cancel failed',e.message||'Pending order could not be cancelled.','error');}
+};
+window.submitDeposit=()=>notify('Funding managed in Client Area','No terminal balance was changed. Open the Client Area to submit a deposit.','info');
+window.submitWithdraw=()=>notify('Withdrawals managed in Client Area','No terminal balance was changed. Open the Client Area to submit a withdrawal.','info');
+window.createNewAccount=()=>{closeModal();notify('Account creation managed in Client Area','Create and manage accounts from the Client Area.','info');};
+window.switchTradingAccount=async function(backendId){
+ if(!ready||!session?.user){notify('Terminal not ready','Please wait for the account connection to finish.','error');return;}
+ const next=state.accounts.find(a=>a.backendId===String(backendId));
+ if(!next||next.status!=='approved'){notify('Account unavailable','This account must be approved in the Client Area before terminal access.','error');return;}
+ try{
+  const result=await call('trading-gateway',{action:'select_account',account_id:next.backendId});
+  if(String(result.account?.id)!==next.backendId)throw new Error('The backend did not confirm the selected account.');
+  state.activeAccountId=next.id;lastAccount=next.id;
+  window.bbAiAutoTradeEnabled=false;window.bbAiAutoTradeAccountId=null;
+  window.__bbBbookMetrics=null;window.__bbBbookExecution=null;window.__bbPaperMetrics=null;
+  state.openOrders=[];state.closedOrders=[];state.pendingOrders=[];
+  try{sessionStorage.setItem('bb:terminal:active-mode:'+session.user.id,mode(next));sessionStorage.setItem('bb:terminal:selected-account:'+session.user.id+':'+mode(next),next.backendId);}catch(_){}
+  closeModal();renderApp();updateLiveDOMElements();
+  const loaded=await refresh(false);
+  if(!loaded)return;
+  await window.bbLoadAiAutoTradeSetting();
+  notify('Account switched',next.nickname+' · #'+(next.accountNumber||next.id),'success');
+ }catch(e){notify('Account switch failed',e.message||'The selected account could not be loaded.','error');}
+};
+// BIGBULLS terminal audio cues — lightweight Web Audio API, no external audio files.
+let bbSoundEnabled=true;
+try{bbSoundEnabled=localStorage.getItem('bb-terminal-sound')!=='off';}catch(_){}
+function playTerminalSound(kind){
+ if(!bbSoundEnabled)return;
+ const AudioCtx=window.AudioContext||window.webkitAudioContext;if(!AudioCtx)return;
+ try{
+  const ctx=window.__bbAudioContext||(window.__bbAudioContext=new AudioCtx());
+  const tones=kind==='placed'?[[880,.09],[1174,.12]]:kind==='closed'?[[660,.08],[440,.15]]:kind==='pending'?[[784,.07],[988,.07],[1318,.12]]:kind==='error'?[[220,.18]]:[[660,.08]];
+  const startAt=ctx.currentTime+.015;
+  tones.forEach((tone,i)=>{const osc=ctx.createOscillator(),gain=ctx.createGain(),at=startAt+i*.105;osc.type='sine';osc.frequency.setValueAtTime(tone[0],at);gain.gain.setValueAtTime(.0001,at);gain.gain.exponentialRampToValueAtTime(.055,at+.012);gain.gain.exponentialRampToValueAtTime(.0001,at+tone[1]);osc.connect(gain);gain.connect(ctx.destination);osc.start(at);osc.stop(at+tone[1]+.02);});
+ }catch(e){console.debug('Terminal audio unavailable:',e);}
+}
+function mountTerminalSoundToggle(){
+ if(document.getElementById('bbTerminalSoundToggle'))return;
+ const btn=document.createElement('button');btn.id='bbTerminalSoundToggle';btn.type='button';
+ btn.title='Toggle terminal sound';btn.setAttribute('aria-label','Toggle terminal sound');
+ btn.style.cssText='position:fixed;right:14px;bottom:14px;z-index:75;width:40px;height:40px;border:1px solid #2563eb;border-radius:12px;background:#2563eb;color:#ffffff;box-shadow:0 6px 20px #0008;font-size:17px;display:flex;align-items:center;justify-content:center;cursor:pointer';
+ const paint=()=>{btn.textContent=bbSoundEnabled?'🔊':'🔇';btn.setAttribute('aria-pressed',String(bbSoundEnabled));btn.title=bbSoundEnabled?'Mute terminal sounds':'Unmute terminal sounds';};
+ btn.addEventListener('click',()=>{bbSoundEnabled=!bbSoundEnabled;try{localStorage.setItem('bb-terminal-sound',bbSoundEnabled?'on':'off');}catch(_){}paint();if(bbSoundEnabled){try{const C=window.AudioContext||window.webkitAudioContext;if(C){window.__bbAudioContext=window.__bbAudioContext||new C();window.__bbAudioContext.resume?.();}}catch(_){}playTerminalSound('placed');}});
+ paint();document.body.appendChild(btn);
+}
+mountTerminalSoundToggle();
+// Detect a server-side pending-order transition after ledger refresh.
+const bbRefreshWithPendingCue=refresh;
+refresh=async function(silent=true){
+ const previous=[...state.pendingOrders];
+ const ok=await bbRefreshWithPendingCue(silent);
+ if(ok){
+  const pendingIds=new Set(state.pendingOrders.map(p=>String(p.backendOrderId||p.id)));
+  const activated=previous.some(p=>!pendingIds.has(String(p.backendOrderId||p.id))&&state.openOrders.some(o=>o.accountId===p.accountId&&o.symbol===p.symbol&&o.side===p.side));
+  if(activated)playTerminalSound('pending');
+ }
+ return ok;
+};
+let startupPromise=null,backgroundLoopsStarted=false;
+const BB_BOOT_TIMEOUT_MS=1500;
+// Keep the terminal UI responsive even when the parent session snapshot is late. The parent portal primes this snapshot before iframe creation.
+function bbWithBootTimeout(promise,label,remaining){
+ return Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label+' timed out during the 1.5-second startup window.')),Math.max(0,remaining)))]);
+}
+function bbShowBootError(error){
+ document.documentElement.classList.remove('bb-auth-pending');
+ console.warn('BIGBULLS terminal startup continues in cached/read-only mode:',error?.message||error);
+ const uid=(window.__bbTerminalAuthSession||window.__bbParentAuthSession)?.user?.id||session?.user?.id;
+ if(bbPrimeCachedAccounts(uid)){try{renderApp();}catch(e){console.error('Cached terminal render:',e);}}
+}
+let bbReconnectBusy=false,bbReconnectTimer=null,bbReconnectAttempt=0;
+async function bbAttemptSessionReconnect(source='background'){
+ if(bbReconnectBusy)return false;
+ bbReconnectBusy=true;
+ const button=document.getElementById('bb-session-retry');
+ if(button){button.disabled=true;button.textContent='Reconnecting…';}
+ try{
+  const c=client();
+  let result=await c.auth.getSession();
+  if(result.error)throw result.error;
+  let restored=result.data?.session||null;
+  if(!restored?.access_token){
+   const refreshed=await c.auth.refreshSession();
+   if(refreshed.error)throw refreshed.error;
+   restored=refreshed.data?.session||null;
+  }
+  if(!restored?.access_token||!restored.user?.id)throw new Error('No valid signed-in Supabase session is available yet.');
+  session=restored;
+  window.__bbTerminalAuthSession=restored;
+  if(c.realtime?.setAuth){try{await c.realtime.setAuth(restored.access_token);}catch(realtimeError){console.warn('Realtime JWT bind deferred; authenticated REST recovery continues:',realtimeError.message);}}
+  await accounts();
+  const active=getActiveAccount();
+  if(!active?.backendId||active.status!=='approved')throw new Error('Signed-in session restored, but no approved trading account is available.');
+  ready=true;
+  stopLocalSimulation();
+  renderApp();
+  const loaded=await refresh(true);
+  if(!loaded)throw new Error('Account ledger did not return a verified balance and positions yet.');
+  document.getElementById('bb-session-reconnect-fallback')?.remove();
+  if(bbReconnectTimer){clearTimeout(bbReconnectTimer);bbReconnectTimer=null;}
+  bbReconnectAttempt=0;
+  await startBbookRealtime(c).catch(e=>console.warn('Realtime reconnect deferred; REST refresh remains active:',e));
+  startBiQuoteRealtime().catch(e=>console.warn('BiQuote reconnect:',e));
+  bbStartBackgroundLoops(c);
+  console.info('BIGBULLS secure terminal session restored via',source);
+  return true;
+ }catch(e){
+  console.warn('BIGBULLS session reconnect attempt failed:',e.message||e);
+  const banner=document.getElementById('bb-session-reconnect-fallback');
+  const label=banner?.querySelector('span');
+  if(label)label.textContent='Secure session is still reconnecting. Account data and trading remain locked until Supabase confirms your session. '+(e.message||'');
+  if(button){button.disabled=false;button.textContent='Retry session';}
+  return false;
+ }finally{bbReconnectBusy=false;}
+}
+function bbScheduleSessionReconnect(){
+ if(bbReconnectTimer)return;
+ const delay=Math.min(15000,2000*Math.pow(1.6,Math.min(bbReconnectAttempt++,5)));
+ bbReconnectTimer=setTimeout(async()=>{
+  bbReconnectTimer=null;
+  const ok=await bbAttemptSessionReconnect('automatic retry');
+  if(!ok)bbScheduleSessionReconnect();
+ },delay);
+}
+function bbShowBootFallback(error){
+ document.documentElement.classList.remove('bb-auth-pending');
+ const uid=(window.__bbTerminalAuthSession||window.__bbParentAuthSession)?.user?.id||session?.user?.id;
+ const cached=bbPrimeCachedAccounts(uid);
+ if(!cached&&!state.accounts.some(a=>a.backendId)){
+  state.accounts=[{id:'474909030',accountNumber:'474909030',backendId:null,nickname:'BigBulls Demo',type:'Demo',platform:'BIGBULLS',accountClass:'Standard',balance:0,equity:0,floatingPL:0,leverage:'1:100',server:'BIGBULLS',archived:false,status:'unavailable',currency:'USD'}];
+  state.activeAccountId='474909030';lastAccount='474909030';
+ }
+ ready=true;startLocalSimulation();
+ try{renderApp();}catch(renderError){console.error('Terminal fallback render:',renderError);}
+ console.info('BIGBULLS terminal rendered without a blocking connection notice.');
+ try{
+  const c=client();
+  if(!window.__bbTerminalFallbackAuthListener){
+   window.__bbTerminalFallbackAuthListener=true;
+   c.auth.onAuthStateChange(async(_event,s)=>{
+    if(!s?.user)return;
+    session=s;window.__bbTerminalAuthSession=s;
+    try{if(s.access_token&&c.realtime?.setAuth)await c.realtime.setAuth(s.access_token);await accounts();renderApp();await refresh(true);startBbookRealtime(c).catch(e=>console.warn('Realtime startup:',e));startBiQuoteRealtime().catch(e=>console.warn('BiQuote startup:',e));bbStartBackgroundLoops(c);}
+    catch(e){console.warn('Background account hydration:',e.message);}
+   });
+  }
+ }catch(listenerError){console.warn('Terminal auth listener unavailable:',listenerError);}
+ bbScheduleSessionReconnect();
+}
+function bbShowAccountFallback(){
+ document.getElementById('bb-account-hydration-fallback')?.remove();
+}
+window.bbAiAutoTradeEnabled=false;
+window.bbAiAutoTradeBusy=false;
+window.bbAiAutoTradeAccountId=null;
+window.renderAiAutoTradeSwitch=function(place){
+ const acc=getActiveAccount(),eligible=!!(acc?.backendId&&acc.type==='Real'&&acc.status==='approved');
+ const on=eligible&&window.bbAiAutoTradeAccountId===acc.backendId&&window.bbAiAutoTradeEnabled;
+ const disabled=!eligible||window.bbAiAutoTradeBusy;
+ const compact=place==='mobile';
+ return '<div class="flex items-center gap-2 '+(compact?'':'shrink-0')+'">'+
+  '<span class="text-[10px] font-extrabold whitespace-nowrap '+(on?'text-emerald-400':'text-slate-400')+'">'+(on?'AI ACTIVE':'AI OFF')+'</span>'+
+  '<button type="button" role="switch" aria-checked="'+(on?'true':'false')+'" aria-label="AI Auto-Trade '+(on?'ON':'OFF')+'" '+(disabled?'disabled':'')+
+  ' onclick="bbToggleAiAutoTrade(\''+(acc?.backendId||'')+'\')" class="relative inline-flex h-7 w-12 items-center rounded-full transition '+(on?'bg-emerald-500':'bg-slate-600')+(disabled?' opacity-50 cursor-not-allowed':'')+'">'+
+  '<span class="inline-block h-5 w-5 transform rounded-full bg-white shadow transition '+(on?'translate-x-6':'translate-x-1')+'"></span></button></div>';
+};
+window.bbLoadAiAutoTradeSetting=async function(){
+ try{
+  const acc=getActiveAccount();
+  window.bbAiAutoTradeAccountId=acc?.backendId||null;
+  if(!acc?.backendId||acc.type!=='Real'||acc.status!=='approved'){window.bbAiAutoTradeEnabled=false;window.bbAiAutoTradeAccountId=null;return;}
+  const {data,error}=await client().from('bb_ai_auto_trade_settings').select('enabled,reward_pct').eq('account_id',acc.backendId).maybeSingle();
+  if(error)throw error;
+  window.bbAiAutoTradeEnabled=!!data?.enabled;
+  const reward=document.getElementById('bb-ai-reward-target');if(reward&&data?.reward_pct)reward.value=String(data.reward_pct);
+  renderApp();
+ }catch(e){console.warn('AI Auto-Trading settings unavailable:',e.message||e);}
+};
+window.bbToggleAiAutoTrade=async function(accountId){
+ if(!accountId||window.bbAiAutoTradeBusy)return;
+ const acc=getActiveAccount();if(!acc?.backendId||acc.backendId!==accountId||acc.type!=='Real'||acc.status!=='approved'){showToast('AI Auto-Trade unavailable','Select an approved Real account.','error');return;}
+ window.bbAiAutoTradeBusy=true;renderApp();
+ try{
+  const reward=Number(document.getElementById('bb-ai-reward-target')?.value||2.5);
+  const desired=!(window.bbAiAutoTradeAccountId===accountId&&window.bbAiAutoTradeEnabled);
+  const result=await client().rpc('bb_ai_set_auto_trade',{p_account_id:accountId,p_enabled:desired,p_reward_pct:reward});
+  if(result.error)throw result.error;
+  window.bbAiAutoTradeAccountId=accountId;
+  window.bbAiAutoTradeEnabled=!!result.data?.enabled;
+  showToast(window.bbAiAutoTradeEnabled?'AI Auto-Trade enabled':'AI Auto-Trade stopped',window.bbAiAutoTradeEnabled?'This account is opted in. Manual trading is unaffected.':'AI execution is disabled for this account. Manual trading remains available.','success');
+ }catch(e){showToast('Could not update AI Auto-Trade',e.message||'Please retry.','error');}
+ finally{window.bbAiAutoTradeBusy=false;renderApp();}
+};
+function bbStartBackgroundLoops(c){
+ if(backgroundLoopsStarted)return;backgroundLoopsStarted=true;
+ const hydrateFromServer=async(source)=>{
+  if(document.hidden||!session?.user||!ready||busy)return;
+  const current=getActiveAccount()?.backendId||null;
+  if(!current)return;
+  try{await accounts(current);renderApp();await refresh(true);await window.bbLoadAiAutoTradeSetting();console.info('BIGBULLS ledger rehydrated from server after',source);}
+  catch(e){console.warn('Foreground ledger rehydration deferred:',e.message||e);}
+ };
+ window.addEventListener('focus',()=>{void hydrateFromServer('terminal focus');});
+ window.addEventListener('pageshow',()=>{void hydrateFromServer('pageshow');});
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)void hydrateFromServer('visibility restore');});
+ setInterval(()=>{if(!document.hidden&&(!biQuoteConnection||!window.signalR||biQuoteConnection.state!==window.signalR.HubConnectionState.Connected))quotes().catch(e=>console.warn('Quote refresh:',e));},15000);
+ setInterval(async()=>{if(document.hidden)return;try{const current=getActiveAccount()?.backendId||null;await accounts(current);renderApp();await refresh(true);await window.bbLoadAiAutoTradeSetting();}catch(e){console.warn('Account balance refresh:',e);}},10000);
+}
+async function start(){
+ if(startupPromise)return startupPromise;
+ // Paint a safe, non-trading terminal shell synchronously. Auth, RPC and account
+ // hydration must never be prerequisites for the chart/layout to become visible.
+ try{
+  if(!ready){
+   const bootUid=(window.__bbTerminalAuthSession||window.__bbParentAuthSession)?.user?.id||session?.user?.id;
+   if(!bbPrimeCachedAccounts(bootUid)){state.accounts=[{id:'474909030',accountNumber:'474909030',backendId:null,nickname:'BigBulls Demo',type:'Demo',platform:'BIGBULLS',accountClass:'Standard',balance:0,creditBonus:0,equity:0,floatingPL:0,leverage:'1:100',server:'BIGBULLS',archived:false,status:'unavailable',currency:'USD'}];state.activeAccountId='474909030';lastAccount='474909030';}
+   ready=true;
+   document.documentElement.classList.remove('bb-auth-pending');
+   renderApp();
+   startLocalSimulation();
+  }
+ }catch(paintError){console.error('Immediate terminal shell render:',paintError);}
+ startupPromise=(async()=>{
+  const deadline=Date.now()+BB_BOOT_TIMEOUT_MS;
+  try{
+   const c=client();
+   // Parent portal has already authenticated before it can launch this iframe.
+   // Use that session immediately; direct terminal URL visits still hydrate Supabase normally.
+   const bridgedSession=window.__bbTerminalAuthSession||window.__bbParentAuthSession||null;
+   // Always ask the shared Supabase SDK for its current session first so expired tokens refresh;
+   // the parent snapshot is only a fallback, never the authority over SDK storage.
+   const auth=await bbWithBootTimeout(c.auth.getSession(),'Session hydration',Math.max(250,deadline-Date.now()));
+   if(auth.error)throw auth.error;
+   session=auth.data?.session||bridgedSession||null;
+   if(!session?.user){bbShowBootFallback(new Error('Secure session is not ready. Terminal remains open in safe mode; sign in to enable account access and trading.'));return;}
+   // Paint the authenticated terminal shell immediately; account lookup is background-only.
+   if(!bbPrimeCachedAccounts(session.user.id)){state.accounts=[{id:'474909030',accountNumber:'474909030',backendId:null,nickname:'BigBulls Demo',type:'Demo',platform:'BIGBULLS',accountClass:'Standard',balance:0,creditBonus:0,equity:0,floatingPL:0,leverage:'1:100',server:'BIGBULLS',archived:false,status:'unavailable',currency:'USD'}];state.activeAccountId='474909030';lastAccount='474909030';}
+   Object.values(state.instruments).forEach(i=>{i.candles=[];i.bid=0;i.ask=0;});
+   // Preserve the last confirmed UI snapshot until the authenticated server ledger rehydrates it.
+   ready=true;document.documentElement.classList.remove('bb-auth-pending');
+   lastMarket=state.selectedSymbol+':'+state.timeframe;renderApp();
+   startBbookRealtime(c).catch(e=>console.warn('BIGBULLS Realtime startup fallback:',e));startBiQuoteRealtime().catch(e=>console.warn('BiQuote startup:',e));
+   Promise.resolve().then(()=>{if(typeof loadBiQuoteCatalog==='function')return loadBiQuoteCatalog();}).catch(e=>console.warn('Instrument catalog:',e));
+   Promise.resolve().then(()=>{if(typeof bbLoadMarketHolidays==='function')return bbLoadMarketHolidays();}).catch(e=>console.warn('Market holiday calendar:',e));
+   Promise.resolve().then(()=>quotes()).catch(e=>console.warn('Initial quotes:',e));
+   Promise.resolve().then(()=>candles()).catch(e=>notify('Market feed unavailable',e.message||'Provider candles could not be loaded.','error'));
+   Promise.resolve().then(async()=>{
+    try{await bbWithBootTimeout(accounts(),'Trading account hydration',BB_BOOT_TIMEOUT_MS);renderApp();await refresh(true);document.getElementById('bb-account-hydration-fallback')?.remove();notify('Accounts connected','Your approved trading accounts are ready.','success');}
+    catch(e){console.warn('Account hydration remains pending; cached account remains visible:',e);}
+   });
+   bbStartBackgroundLoops(c);
+   c.auth.onAuthStateChange((_event,s)=>{
+    session=s||null;window.__bbTerminalAuthSession=session;if(!session?.user){bbShowBootFallback(new Error('Session is reconnecting. Terminal remains open in safe mode; trading is locked until sign-in is restored.'));return;}
+    Promise.resolve().then(async()=>{if(session?.access_token&&c.realtime?.setAuth)await c.realtime.setAuth(session.access_token);await accounts();ready=true;renderApp();await refresh(true);}).catch(e=>{console.error('Account refresh failed:',e);notify('Account refresh failed',e.message||'Could not reload trading accounts.','error');});
+   });
+  }catch(e){bbShowBootFallback(e);}
+ })().finally(()=>{startupPromise=null;});
+ return startupPromise;
+}
+window.__bbTerminalRetryStartup=start;
+// Fail safe: never leave the client staring at an endless session spinner if startup code stalls.
+window.setTimeout(()=>{if(document.documentElement.classList.contains('bb-auth-pending'))bbShowBootFallback(new Error('Secure session is still reconnecting. Terminal layout remains available; trading stays locked until account verification completes.'));},BB_BOOT_TIMEOUT_MS);
+// Retry the authenticated handshake after page load in case the Supabase SDK arrived late.
+window.addEventListener('load',()=>{if(!session)start().catch(e=>console.warn('Post-load terminal retry:',e));},{once:true});
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
+</script>
+
+</body>
+</html>
