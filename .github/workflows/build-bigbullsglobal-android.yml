@@ -6,6 +6,7 @@ on:
       - main
   push:
     branches:
+      - main
       - feature/bigbullsglobal-android-app
 jobs:
   build:
