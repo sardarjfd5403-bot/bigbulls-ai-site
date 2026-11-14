@@ -9,7 +9,7 @@
   "android": { "allowMixedContent": false },
   "plugins": {
     "SplashScreen": {
-      "launchShowDuration": 0,
+      "launchShowDuration": 800,
       "launchAutoHide": true,
       "backgroundColor": "#FFFFFFFF",
       "showSpinner": false,
