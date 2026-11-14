@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#0E1117" />
   <title>BigBull Terminal — Pro Trading Platform</title>
-  <script async src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
@@ -123,7 +123,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 </style>
   <script async src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
   <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="stylesheet" href="terminal-theme.css?v=20261113-persistent-holding-fix">
+  <link rel="stylesheet" href="terminal-theme.css?v=20261114-terminal-glitch-close-fix">
 <script id="bb-cache-cleanup">
 (function(){
   try {
@@ -972,8 +972,8 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
           <div class="flex justify-between"><span class="text-gray-400">Lots</span><span class="font-mono font-bold text-white">${order.lots.toFixed(2)}</span></div>
           <div class="flex justify-between"><span class="text-gray-400">Closing price</span><span class="font-mono font-bold text-white">${closePrice.toFixed(inst.digits)}</span></div>
           <div class="flex justify-between"><span class="text-gray-400">Profit / Loss</span><span class="font-mono font-bold ${pl>=0?'text-bullGreen':'text-bullRed'}">${pl>=0?'+':''}${formatMoney(pl)} USD</span></div>
-          ${mode(getActiveAccount())==='real'&&Number(order.lots)>=0.02 ? `<button onclick="openPartialCloseModal('${order.backendTradeId||order.id}')" class="w-full py-2.5 rounded-xl bg-[#e2e8f0] text-white font-bold text-xs mt-2">Partial close</button>` : ''}
-          ${mode(getActiveAccount())==='real' ? `<button onclick="openModifyPositionModal('${order.backendTradeId||order.id}')" class="w-full py-2.5 rounded-xl bg-[#e2e8f0] text-white font-bold text-xs mt-2">Modify SL / TP</button>` : ''}
+          ${String(getActiveAccount()?.type||'').toLowerCase()==='real'&&Number(order.lots)>=0.02 ? `<button onclick="openPartialCloseModal('${order.backendTradeId||order.id}')" class="w-full py-2.5 rounded-xl bg-[#e2e8f0] text-white font-bold text-xs mt-2">Partial close</button>` : ''}
+          ${String(getActiveAccount()?.type||'').toLowerCase()==='real' ? `<button onclick="openModifyPositionModal('${order.backendTradeId||order.id}')" class="w-full py-2.5 rounded-xl bg-[#e2e8f0] text-white font-bold text-xs mt-2">Modify SL / TP</button>` : ''}
           <button onclick="executeCloseOrder('${order.backendTradeId || order.id}', false)" class="w-full py-3 rounded-xl bg-bullBlue hover:bg-bullYellowHover text-white font-bold text-sm mt-2">Confirm</button>
           <button onclick="closeModal()" class="w-full py-2.5 rounded-xl bg-[#e2e8f0] text-gray-300 font-bold text-xs">Cancel</button>
         </div>
@@ -2006,7 +2006,7 @@ function startLocalSimulation(){
  if(!banner){
   banner=document.createElement('div');banner.id='bb-local-sim-banner';
   banner.textContent='WAITING FOR LIVE MARKET DATA · NO SIMULATED PRICES · TRADING LOCKED';
-  banner.style.cssText='position:fixed;z-index:10020;top:8px;left:50%;transform:translateX(-50%);max-width:94vw;padding:8px 12px;border:1px solid #f59e0b;border-radius:10px;background:#211a10;color:#fcd34d;font:700 10px Inter,sans-serif;letter-spacing:.04em;text-align:center;box-shadow:0 4px 18px #0008';
+  banner.style.cssText='position:fixed;z-index:60;top:calc(env(safe-area-inset-top, 0px) + 58px);left:50%;transform:translateX(-50%);width:max-content;max-width:min(94vw,560px);padding:7px 11px;border:1px solid #f59e0b;border-radius:10px;background:#211a10;color:#fcd34d;font:700 10px/1.35 Inter,sans-serif;letter-spacing:.03em;text-align:center;white-space:normal;overflow-wrap:anywhere;box-shadow:0 4px 18px #0008;pointer-events:none';
   document.body.appendChild(banner);
  }
  updateLiveDOMElements();
