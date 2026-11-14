@@ -1879,18 +1879,48 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
     }
 
     function renderProfileTab() {
+      const safe = value => String(value == null ? '' : value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      const email = window.__bbProfileEmail || window.__bbParentAuthSession?.user?.email || 'Loading secure profile…';
+      const meta = window.__bbParentAuthSession?.user?.user_metadata || {};
+      const fullName = meta.full_name || meta.name || (email.includes('@') ? email.split('@')[0] : 'BIGBULLS Client');
+      const initials = String(fullName).trim().split(/\\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase() || 'BB';
+      const tile = (icon,title,desc,action,accent='blue') => `
+        <button type="button" onclick="${action}" class="w-full text-left rounded-2xl border border-[#252B36] bg-[#131722] hover:bg-[#1A1F29] active:scale-[.99] transition p-4 flex items-center gap-3">
+          <span class="w-11 h-11 rounded-xl flex items-center justify-center text-lg ${accent==='sky'?'bg-sky-500/10 text-sky-300':accent==='violet'?'bg-violet-500/10 text-violet-300':'bg-blue-500/10 text-blue-300'}">${icon}</span>
+          <span class="min-w-0 flex-1"><b class="block text-sm text-white">${title}</b><small class="block text-[11px] text-slate-400 mt-1">${desc}</small></span>
+          <span class="text-slate-500 text-lg">›</span>
+        </button>`;
       return `
-        <section class="flex-1 min-h-0 overflow-hidden bg-white" aria-label="BIGBULLS Client Portal">
-          <iframe
-            title="BIGBULLS Client Portal"
-            src="../index.html?android-profile=1"
-            class="w-full h-full border-0 bg-white"
-            style="width:100%;height:100%;border:0;background:#fff"
-            allow="clipboard-read; clipboard-write"
-            loading="eager"
-          ></iframe>
-        </section>
-      `;
+        <section class="flex-1 min-h-0 overflow-y-auto bg-[#0E1117] text-white px-4 pt-5 pb-6 space-y-5" aria-label="BIGBULLS Profile and Client Portal">
+          <header class="flex items-center justify-between gap-3"><div><p class="text-[10px] font-bold tracking-[.18em] text-blue-400 uppercase">Client workspace</p><h1 class="text-2xl font-extrabold tracking-tight mt-1">Profile</h1><p class="text-xs text-slate-400 mt-1">Your identity, accounts and client services</p></div><span class="rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 px-3 py-1.5 text-[10px] font-bold">● SECURE</span></header>
+          <div class="rounded-2xl border border-[#263449] bg-gradient-to-br from-[#14243d] to-[#131722] p-4 flex items-center gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-blue-500/15 border border-blue-400/30 flex items-center justify-center text-lg font-extrabold text-blue-200">${safe(initials)}</div>
+            <div class="min-w-0 flex-1"><b class="block text-base text-white truncate">${safe(fullName)}</b><span class="block text-xs text-slate-400 truncate mt-1">${safe(email)}</span><span class="inline-flex mt-2 text-[10px] text-sky-300 font-semibold">BIGBULLS CLIENT IDENTITY</span></div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="rounded-2xl border border-[#252B36] bg-[#131722] p-4"><span class="text-[10px] uppercase tracking-wider text-slate-500">Account centre</span><b class="block text-xl mt-2 text-white">Manage</b><small class="text-[10px] text-slate-400">Trading accounts & access</small></div>
+            <div class="rounded-2xl border border-[#252B36] bg-[#131722] p-4"><span class="text-[10px] uppercase tracking-wider text-slate-500">Client portal</span><b class="block text-xl mt-2 text-white">Connected</b><small class="text-[10px] text-slate-400">Wallet, KYC & services</small></div>
+          </div>
+          <div class="space-y-2">
+            <p class="px-1 text-[10px] font-bold tracking-[.16em] text-slate-500 uppercase">Personal profile</p>
+            ${tile('◉','Profile details','Personal information and contact details',"openClientPortal('profile')")}
+            ${tile('✓','KYC verification','Identity verification and document status',"openClientPortal('verification')",'sky')}
+            ${tile('⌘','Security & settings','Password, session and account security',"openClientPortal('settings')",'violet')}
+          </div>
+          <div class="space-y-2">
+            <p class="px-1 text-[10px] font-bold tracking-[.16em] text-slate-500 uppercase">Client portal</p>
+            ${tile('▦','Account centre','Real and demo accounts, account status',"openClientPortal('accounts')")}
+            ${tile('◈','Wallet & payments','Deposits, withdrawals and transaction history',"openClientPortal('wallet')",'sky')}
+            ${tile('↗','Partner & support','IB partner tools and client support',"openClientPortal('support')",'violet')}
+          </div>
+          <p class="text-[10px] leading-relaxed text-slate-500 text-center px-3">Your app profile uses the existing BIGBULLS client session. Account changes and financial requests remain protected by the current server-side approval workflows.</p>
+        </section>`;
+    }
+
+    function openClientPortal(section) {
+      const routes = {profile:'profile',verification:'verification',settings:'settings',accounts:'accounts',wallet:'wallet',support:'support'};
+      const target = routes[section] || 'profile';
+      window.location.href = '../dashboard.html?app_portal=' + encodeURIComponent(target);
     }
 
     // Initial render & resize handler
