@@ -2279,8 +2279,8 @@ async function place(){
  try{
   const real=mode(a)==='real';
   if(!real&&m.mode!=='Market')throw new Error('Pending orders are currently enabled for Real B-Book accounts only.');
-  const b={action:m.mode==='Market'?'open':'pending',account_mode:mode(a),symbol,side:m.side.toUpperCase(),quantity,stop_loss:sl,take_profit:tp,contract_size:Number(symbol.contractSize||liveQuote.contractSize||1)};
-  if(real&&m.mode==='Market'){b.mid=(Number(liveQuote.bid)+Number(liveQuote.ask))/2;b.bid=Number(liveQuote.bid);b.ask=Number(liveQuote.ask);b.contract_size=Number(symbol.contractSize||liveQuote.contractSize||1);b.spread_cost=Number(liveQuote.ask)-Number(liveQuote.bid);}
+  const b={action:m.mode==='Market'?'open':'pending',account_mode:mode(a),symbol,side:m.side.toUpperCase(),quantity,stop_loss:sl,take_profit:tp,contract_size:Number(liveQuote.contractSize||state.instruments[s]?.contractSize||1)};
+  if(real&&m.mode==='Market'){b.mid=(Number(liveQuote.bid)+Number(liveQuote.ask))/2;b.bid=Number(liveQuote.bid);b.ask=Number(liveQuote.ask);b.contract_size=Number(liveQuote.contractSize||state.instruments[s]?.contractSize||1);b.spread_cost=Number(liveQuote.ask)-Number(liveQuote.bid);}
   if(a.backendId)b.account_id=a.backendId;
   if(m.mode!=='Market'){
     const map={ 'Limit':m.side.toUpperCase()+'_LIMIT','Stop':m.side.toUpperCase()+'_STOP','Buy Limit':'BUY_LIMIT','Sell Limit':'SELL_LIMIT','Buy Stop':'BUY_STOP','Sell Stop':'SELL_STOP' };
