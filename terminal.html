@@ -2034,6 +2034,7 @@ function client(){
 async function call(fn,body){
  // REAL B-Book operations route directly to the authenticated Supabase Database RPC.
  if(fn==='bb-direct-bbook'){
+  if(window.__bbTerminalCacheOnly&&body?.action!=='status')throw new Error('Trading is activating after secure account verification.');
   const {data,error}=await client().rpc('bb_client_bbook_action',{p_action:body.action,p_payload:body});
   if(error)throw error;return data||{};
  }
