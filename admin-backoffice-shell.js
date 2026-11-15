@@ -118,11 +118,11 @@ function decorate(){
    if(bbookPane.dataset.refreshing==="1")return;
    bbookPane.dataset.refreshing="1";
    const client=bbookClient(),stats=bbookPane.querySelector("[data-bb-bbook-stats]");
-   if(!client?.functions){if(stats)stats.textContent="Secure Supabase client unavailable.";bbookPane.dataset.refreshing="0";return;}
+   if(!client?.rpc){if(stats)stats.textContent="Secure Supabase database client unavailable.";bbookPane.dataset.refreshing="0";return;}
    const refresh=bbookPane.querySelector("[data-bb-bbook-refresh]");if(refresh)refresh.disabled=true;
    try{
-     const result=await client.functions.invoke("bbook-engine",{body:{action:"admin_status"}});
-     if(result.error||result.data?.error)throw new Error(result.data?.error||result.error?.message||"B-Book service unavailable.");
+     const result=await client.rpc("bb_bbook_admin_status");
+     if(result.error||result.data?.error)throw new Error(result.data?.error||result.error?.message||"B-Book database status unavailable.");
      const d=result.data||{},pool=d.pool||{},m=d.metrics||{},cfg=d.settings||{};
      const capital=Number(pool.capital_balance||0),reserved=Number(pool.reserved_payout||0);
      const worker=d.worker||{};bbookPane.dataset.workerEnabled=String(worker.enabled===true);stats.innerHTML='<div><small>MASTER BOOK CAPITAL</small><b>'+bbookMoney(capital)+'</b></div><div><small>RESERVED PAYOUT</small><b>'+bbookMoney(reserved)+'</b></div><div><small>AVAILABLE BOOK CAPITAL</small><b>'+bbookMoney(capital-reserved)+'</b></div><div><small>OPEN POSITIONS</small><b>'+Number(m.open_positions||0)+'</b></div><div><small>GROSS EXPOSURE</small><b>'+bbookMoney(m.gross_exposure)+'</b></div><div><small>HOUSE FLOATING P/L</small><b>'+bbookMoney(m.house_net_pnl)+'</b></div><div><small>CLIENT PROFIT SETTLED</small><b>'+bbookMoney(pool.total_client_profit)+'</b></div><div><small>CLIENT LOSS SETTLED</small><b>'+bbookMoney(pool.total_client_loss)+'</b></div><div><small>SERVER RISK WORKER</small><b>'+(worker.enabled?'ACTIVE':'PAUSED')+'</b></div><div><small>POSITIONS PROCESSED</small><b>'+Number(worker.last_processed||0)+'</b></div><div><small>AUTO-CLOSES</small><b>'+Number(worker.last_closed||0)+'</b></div><div><small>MARGIN-CALL ACCOUNTS</small><b>'+(worker.margin_call_accounts||[]).length+'</b></div>';
@@ -148,7 +148,7 @@ function decorate(){
  bbookPane.querySelector("[data-bb-bbook-worker-toggle]").addEventListener("click",async()=>{
    const button=bbookPane.querySelector("[data-bb-bbook-worker-toggle]"),note=bbookPane.querySelector("[data-bb-bbook-worker-note]"),enabled=bbookPane.dataset.workerEnabled!=="true";
    button.disabled=true;if(note)note.textContent=enabled?"Enabling server-side risk monitoring…":"Pausing server-side risk monitoring…";
-   try{const result=await bbookClient().functions.invoke("bbook-engine",{body:{action:"admin_worker_toggle",enabled}});
+   try{const result=await bbookClient().rpc("bb_bbook_admin_control",{p_action:"worker_toggle",p_payload:{enabled}});
      if(result.error||result.data?.error)throw new Error(result.data?.error||result.error?.message||"Worker setting update failed.");
      await refreshBbook();
    }catch(err){if(note)note.textContent="Worker setting not changed: "+(err?.message||"Unknown error");}
@@ -157,7 +157,7 @@ function decorate(){
  bbookPane.querySelector("[data-bb-bbook-capital]").addEventListener("submit",async e=>{
    e.preventDefault();const form=e.currentTarget,button=form.querySelector('button[type="submit"]'),status=form.querySelector("[data-bb-bbook-capital-status]"),client=bbookClient();
    button.disabled=true;status.textContent="Submitting audited liquidity movement…";
-   try{const result=await client.functions.invoke("bbook-engine",{body:{action:"admin_adjust_liquidity",direction:form.elements.direction.value,amount:Number(form.elements.amount.value),note:form.elements.note.value}});
+   try{const result=await client.rpc("bb_bbook_admin_control",{p_action:"adjust_liquidity",p_payload:{direction:form.elements.direction.value,amount:Number(form.elements.amount.value),note:form.elements.note.value}});
      if(result.error||result.data?.error)throw new Error(result.data?.error||result.error?.message||"Capital adjustment failed.");
      status.textContent="Liquidity capital movement recorded successfully.";form.reset();await refreshBbook();
    }catch(err){status.textContent="Not completed: "+(err?.message||"Unknown error");}
@@ -166,7 +166,7 @@ function decorate(){
  bbookPane.querySelector("[data-bb-bbook-settings]").addEventListener("submit",async e=>{
    e.preventDefault();const form=e.currentTarget,button=form.querySelector('button[type="submit"]'),status=form.querySelector("[data-bb-bbook-settings-status]"),client=bbookClient();
    button.disabled=true;status.textContent="Saving dealing controls…";
-   try{const result=await client.functions.invoke("bbook-engine",{body:{action:"admin_update_settings",default_leverage:Number(form.elements.default_leverage.value),max_leverage:Number(form.elements.max_leverage.value),spread_bps:{FX:Number(form.elements.FX.value),XAUUSD:Number(form.elements.XAUUSD.value),CRYPTO:Number(form.elements.CRYPTO.value)},margin_call_level_pct:Number(form.elements.margin_call_level_pct.value),stop_out_level_pct:Number(form.elements.stop_out_level_pct.value)}});
+   try{const result=await client.rpc("bb_bbook_admin_control",{p_action:"update_settings",p_payload:{default_leverage:Number(form.elements.default_leverage.value),max_leverage:Number(form.elements.max_leverage.value),spread_bps:{FX:Number(form.elements.FX.value),XAUUSD:Number(form.elements.XAUUSD.value),CRYPTO:Number(form.elements.CRYPTO.value)},margin_call_level_pct:Number(form.elements.margin_call_level_pct.value),stop_out_level_pct:Number(form.elements.stop_out_level_pct.value)}});
      if(result.error||result.data?.error)throw new Error(result.data?.error||result.error?.message||"Settings update failed.");
      status.textContent="Dealing settings saved.";await refreshBbook();
    }catch(err){status.textContent="Not saved: "+(err?.message||"Unknown error");}
@@ -183,7 +183,7 @@ function decorate(){
  bbookPane.querySelector("[data-bb-bbook-enable]").addEventListener("click",async()=>{
    const button=bbookPane.querySelector("[data-bb-bbook-enable]"),status=bbookPane.querySelector("[data-bb-bbook-settings-status]");
    button.disabled=true;status.textContent="Checking regulatory, liquidity, settlement and reconciliation readiness…";
-   try{const result=await bbookClient().functions.invoke("bbook-engine",{body:{action:"admin_update_settings",enabled:true}});
+   try{const result=await bbookClient().rpc("bb_bbook_admin_control",{p_action:"update_settings",p_payload:{enabled:true}});
      if(result.error||result.data?.error)throw new Error(result.data?.error||result.error?.message||"B-Book enable was rejected.");
      status.textContent="REAL B-Book enabled.";await refreshBbook();
    }catch(err){status.textContent="REAL execution remains locked: "+(err?.message||"Readiness checks incomplete.");}
