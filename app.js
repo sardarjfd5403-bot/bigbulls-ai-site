@@ -2,7 +2,7 @@
 "use strict";
 const URL="https://ztiiyulusburxjkpcfxu.supabase.co";
 const KEY="sb_publishable_5hDwqvbcUHeSJdXFHf9ugw_VPYGN4J_";
-let sb=null,modal,body,shell,user=null,activePage="dashboard",licenseActive=false,financialChannel=null,calendarEvents=[],calendarRefreshTimer=null;
+let sb=null,modal,body,shell,user=null,activePage="dashboard",licenseActive=false,financialChannel=null,financialChannelUserId=null,adminAccessUserId=null,adminAccessPromise=null,calendarEvents=[],calendarRefreshTimer=null;
 const pages=["seo","course-forex","course-smc","course-ict","course-vsa","dashboard","terminal","accounts","wallet","market-analysis","signals","learning","services","portfolio","orders","license","echo-system","downloads","profile","settings","support","verification","partner","economic-calendar","trading-central","admin"];
 // Publish the auth entry point immediately; it must not depend on Supabase loading.
 window.openAuthModal=window.openAuthModal||function(kind,event){
@@ -169,7 +169,9 @@ function showAccountBalanceNotice(account){
 }
 function startFinancialRealtime(){
  if(!sb||!user)return;
- if(financialChannel){sb.removeChannel(financialChannel);financialChannel=null;}
+ // Keep one live channel per signed-in client; page navigation must not churn subscriptions.
+ if(financialChannel&&financialChannelUserId===user.id&&financialChannel.state!=="closed")return;
+ if(financialChannel){sb.removeChannel(financialChannel);financialChannel=null;financialChannelUserId=null;}
  const channel=sb.channel("bb-financial-"+user.id);
  if(isAdmin()){
   channel.on("postgres_changes",{event:"*",schema:"public",table:"wallet_transactions"},()=>{if(activePage==="admin")loadPageData();});
@@ -205,6 +207,7 @@ function startFinancialRealtime(){
   channel.on("postgres_changes",{event:"INSERT",schema:"public",table:"client_notifications",filter:"user_id=eq."+user.id},()=>{loadClientNotifications();});
  }
  financialChannel=channel.subscribe();
+ financialChannelUserId=user.id;
 }
 async function applyReferenceClientUI(attempt=0){
  const terminal=shell&&shell.querySelector(".terminal");
@@ -226,15 +229,21 @@ async function showApp(page){
   // The terminal must not wait for an administrator RPC before its iframe can paint.
   // Admin-only terminal controls independently verify permissions through trading-gateway.
   window.__bbAdminAccess=window.__bbAdminAccess===true;
+ }else if(adminAccessUserId!==user.id||!adminAccessPromise){
+  adminAccessUserId=user.id;
+  adminAccessPromise=(async()=>{
+   try{
+    const adminResult=await Promise.race([sb.rpc("is_bigbulls_admin"),new Promise((_,reject)=>window.setTimeout(()=>reject(new Error("Administrator check timed out; opening the client workspace without admin tools.")),2500))]);
+    const {data:adminFlag,error:adminError}=adminResult;
+    window.__bbAdminAccess=!adminError&&adminFlag===true;
+   }catch(error){
+    console.error("Administrator access check failed:",error);
+    window.__bbAdminAccess=false;
+   }
+  })();
+  await adminAccessPromise;
  }else{
-  try{
-   const adminResult=await Promise.race([sb.rpc("is_bigbulls_admin"),new Promise((_,reject)=>window.setTimeout(()=>reject(new Error("Administrator check timed out; opening the client workspace without admin tools.")),2500))]);
-   const {data:adminFlag,error:adminError}=adminResult;
-   window.__bbAdminAccess=!adminError&&adminFlag===true;
-  }catch(error){
-   console.error("Administrator access check failed:",error);
-   window.__bbAdminAccess=false;
-  }
+  await adminAccessPromise;
  }
  // AI analysis pages require an authenticated client with the latest KYC submission approved.
  let requested=pages.includes(page)?page:"accounts";
