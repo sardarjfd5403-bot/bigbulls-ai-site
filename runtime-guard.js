@@ -43,4 +43,20 @@ if(typeof original==="function"&&!original.__bbGuarded){
  };
  guarded.__bbGuarded=true;window.renderVipOffer=guarded;
 }
+
+function checkBlankClientWorkspace(){
+ try{
+  if(!document.body||!document.body.classList.contains("app-mode"))return;
+  const shell=document.getElementById("app-shell");
+  if(!shell||shell.hidden||!shell.children.length){
+   showFallback("Client workspace failed to render",new Error("The client workspace is empty. Reload the page to restore the public site."));
+  }
+ }catch(error){console.error("[BIGBULLS blank-screen check]",error);}
+}
+if(document.readyState==="loading"){
+ document.addEventListener("DOMContentLoaded",()=>window.setTimeout(checkBlankClientWorkspace,4500),{once:true});
+}else{
+ window.setTimeout(checkBlankClientWorkspace,4500);
+}
+
 })();
