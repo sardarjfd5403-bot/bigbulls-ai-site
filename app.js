@@ -14,7 +14,7 @@ function init(){
  document.addEventListener("click",e=>{clickHandler(e).catch(err=>{console.error("Portal click workflow failed:",err);message("This action could not be completed: "+(err?.message||"Please retry."),true);});},true);
  document.addEventListener("popstate",()=>{if(activePage==="terminal"){showApp("accounts");}},false);
  document.addEventListener("click",e=>{const el=e.target instanceof Element?e.target:null;const button=el?.closest('#signup-form button[type="submit"],#login-form button[type="submit"]');if(button?.form)button.form.dataset.explicitAuthSubmit="1";},true);
- document.addEventListener("keydown",e=>{if(e.key!=="Enter"||!(e.target instanceof HTMLInputElement))return;const form=e.target.form;if(form&&["signup-form","login-form"].includes(form.id))e.preventDefault();},true);
+ document.addEventListener("keydown",e=>{if(e.key!=="Enter"||!(e.target instanceof HTMLInputElement))return;const form=e.target.form;if(form&&["signup-form","login-form"].includes(form.id)){e.preventDefault();form.querySelector('button[type="submit"]')?.click();}},true);
  document.addEventListener("submit",e=>{submitHandler(e).catch(err=>{console.error("Portal form workflow failed:",err);const out=e.target?.querySelector?.("[data-page-message]");if(out)out.textContent="This request could not be completed: "+(err?.message||"Please retry.");else message("This request could not be completed: "+(err?.message||"Please retry."),true);});},true);
  document.addEventListener("change",e=>{kycFileChangeHandler(e).catch(err=>{console.error("Secure upload workflow failed:",err);message("Secure upload failed: "+(err?.message||"Please retry."),true);});},true);
  try{startAICarousel();}catch(err){console.warn("Optional AI carousel failed:",err);}
@@ -35,9 +35,7 @@ function connectSupabase(){
  if(!window.supabase||!window.supabase.createClient){
   console.error("Supabase client library is unavailable.");return;
  }
- sb=window.supabase.createClient(URL,KEY,{
-  auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
- });
+ try{if(!URL||!KEY)throw new Error("Supabase URL or publishable key is missing.");sb=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});}catch(error){sb=null;console.error("BIGBULLS Supabase initialization failed:",error);message("Secure account service could not initialize. Please reload the page or contact BIGBULLS support.",true);return;}
  window.__bbSupabaseClient=sb;
  document.addEventListener("keydown",e=>{
   if(e.key==="Escape"){
@@ -1303,7 +1301,9 @@ async function submitHandler(e){
   const {data:tx,error}=await sb.from("wallet_transactions").insert({user_id:user.id,account_id:ctx.accountId,kind:"withdrawal",asset:method.asset,network:method.network,destination_address:destination,amount_usd:amount,amount_crypto:amountCrypto,status:"pending"}).select("id,invoice_id").single();
   if(error){if(out)out.textContent="Withdrawal request failed: "+error.message;button.disabled=false;button.textContent="Submit withdrawal request";return;}
   const receiptTime=new Date().toLocaleString();
-  body.innerHTML='<div class="bb-withdrawal-receipt" style="font-family:Inter,Arial,sans-serif;color:#182230"><div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5eaf1;padding-bottom:14px"><div><div style="font-size:12px;letter-spacing:2px;color:#64748b;font-weight:800">BIGBULLS</div><div style="font-size:20px;font-weight:800;margin-top:4px">Withdrawal receipt</div></div><div style="background:#fff7e6;color:#9a6700;border-radius:20px;padding:7px 12px;font-size:12px;font-weight:800">PENDING</div></div><div style="text-align:center;padding:22px 8px"><div style="font-size:12px;color:#64748b">WITHDRAWAL AMOUNT</div><div style="font-size:32px;font-weight:800;margin:6px 0">
+  body.innerHTML='<div class="bb-withdrawal-receipt" style="font-family:Inter,Arial,sans-serif;color:#182230;background:#fff;border:1px solid #e5eaf1;border-radius:16px;padding:18px"><h3>BIGBULLS · Withdrawal receipt</h3><p><b>'+esc(account.currency||"USD")+' '+amount.toFixed(2)+'</b></p><p>'+esc(method.asset)+' · '+esc(method.network)+'</p><p>Crypto amount: '+amountCrypto.toLocaleString(undefined,{maximumFractionDigits:8})+' '+esc(method.asset)+'</p><p>Receipt: '+esc(tx.invoice_id||"Pending reference")+'</p><p>Destination: <span style="overflow-wrap:anywhere">'+esc(destination)+'</span></p><p>Requested: '+esc(receiptTime)+'</p><p><b>Pending Admin Approval</b></p><button class="portal-primary" type="button" data-close>Done</button></div>';
+  await loadClientTradingAccounts();
+  return;
  }
  if(f.id==="bb-main-wallet-withdrawal-form"){
   e.preventDefault();const d=new FormData(f),button=f.querySelector("button"),out=f.querySelector("[data-page-message]");
@@ -1319,7 +1319,8 @@ async function submitHandler(e){
    const {data:tx,error}=await sb.from("wallet_transactions").insert({user_id:user.id,account_id:null,kind:"withdrawal",asset:pair[0],network:pair[1],destination_address:destination,amount_usd:amount,amount_crypto:amountCrypto,status:"pending"}).select("id,invoice_id").single();
    if(error)throw error;
    const host=f.parentElement,receiptTime=new Date().toLocaleString();
-   host.innerHTML='<div class="bb-withdrawal-receipt" style="font-family:Inter,Arial,sans-serif;color:#182230;background:#fff;border:1px solid #e5eaf1;border-radius:16px;padding:18px"><div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e5eaf1;padding-bottom:14px"><div><div style="font-size:12px;letter-spacing:2px;color:#64748b;font-weight:800">BIGBULLS</div><h3 style="margin:4px 0 0">Withdrawal receipt</h3></div><span style="background:#fff7e6;color:#9a6700;border-radius:20px;padding:7px 12px;font-size:12px;font-weight:800">PENDING</span></div><div style="text-align:center;padding:20px 8px"><div style="font-size:12px;color:#64748b">WITHDRAWAL AMOUNT</div><div style="font-size:30px;font-weight:800;margin:6px 0">
+   host.innerHTML='<div class="bb-withdrawal-receipt" style="font-family:Inter,Arial,sans-serif;color:#182230;background:#fff;border:1px solid #e5eaf1;border-radius:16px;padding:18px"><h3>BIGBULLS · Withdrawal receipt</h3><p><b>$'+amount.toFixed(2)+'</b></p><p>'+esc(pair[0])+' · '+esc(pair[1])+'</p><p>Crypto amount: '+amountCrypto.toLocaleString(undefined,{maximumFractionDigits:8})+' '+esc(pair[0])+'</p><p>Receipt: '+esc(tx.invoice_id||"Pending reference")+'</p><p>Destination: <span style="overflow-wrap:anywhere">'+esc(destination)+'</span></p><p>Requested: '+esc(receiptTime)+'</p><p><b>Pending Admin Approval</b></p><button class="portal-primary" type="button" data-wallet-tab="history">Done · View wallet history</button></div>';
+   await loadPageData();
   }catch(err){if(out)out.textContent=err?.message||"Withdrawal request failed.";button.disabled=false;button.textContent="Submit Main Wallet withdrawal";}
   return;
  }
