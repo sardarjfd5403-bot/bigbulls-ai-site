@@ -4,6 +4,15 @@ const URL="https://ztiiyulusburxjkpcfxu.supabase.co";
 const KEY="sb_publishable_5hDwqvbcUHeSJdXFHf9ugw_VPYGN4J_";
 let sb=null,modal,body,shell,user=null,activePage="dashboard",licenseActive=false,financialChannel=null,calendarEvents=[],calendarRefreshTimer=null;
 const pages=["seo","course-forex","course-smc","course-ict","course-vsa","dashboard","terminal","accounts","wallet","market-analysis","signals","learning","services","portfolio","orders","license","echo-system","downloads","profile","settings","support","verification","partner","economic-calendar","trading-central","admin"];
+// Publish the auth entry point immediately; it must not depend on Supabase loading.
+window.openAuthModal=window.openAuthModal||function(kind,event){
+ if(event){event.preventDefault();event.stopPropagation();}
+ const modal=document.getElementById("portal-modal"),body=document.getElementById("portal-body");
+ if(!modal||!body){console.warn("BIGBULLS auth modal markup is unavailable.");return false;}
+ if(typeof window.__bbOpenAuthModalImpl==="function")return window.__bbOpenAuthModalImpl(kind,event);
+ body.innerHTML='<p class="eyebrow">CUSTOMER ACCOUNT</p><h2>'+(kind==="signup"?'Create your BIGBULLS profile':'Welcome back')+'</h2><p class="notice">Secure account service is connecting. Please wait a moment and try again.</p><button type="button" class="portal-secondary" data-close>Close</button>';
+ modal.classList.add("show");modal.setAttribute("aria-hidden","false");document.body.classList.add("portal-open");return false;
+};
 const clientPageKey=id=>"bb:client:last-page:"+String(id||"");
 function getSavedClientPage(id){try{const saved=sessionStorage.getItem(clientPageKey(id));return pages.includes(saved)?saved:null;}catch(_){return null;}}
 function saveClientPage(id,page){try{if(id&&pages.includes(page))sessionStorage.setItem(clientPageKey(id),page);}catch(_){}}
@@ -93,7 +102,7 @@ function openModal(kind){
  '<h3>Included AI intelligence functions</h3><ul><li>Multi-timeframe chart and candle-structure analysis</li><li>Forex, Gold, Crypto and supported Indices research</li><li>SMC, VSA, liquidity, price action and trend confluence</li><li>Economic calendar and news-event sentiment monitoring</li><li>Volatility, spread and market-condition filters</li><li>AI-assisted entry, stop-loss and take-profit planning</li><li>Position sizing, exposure limits and risk controls</li><li>Trade monitoring, journal, analytics and performance reports</li><li>Automation controls, broker connectivity and emergency stop when integrations are enabled</li></ul><p class="fine">Order approval and license/download activation follow payment verification. Features requiring live data or broker connectivity become operational as those integrations are deployed.</p><button class="portal-secondary" type="button" data-close>Close</button>';
  showModal();return;
 }
- if(!sb){body.innerHTML="<h2>Account service unavailable</h2><p>Please refresh and try again.</p>";showModal();return;}
+ if(!sb){if(kind==="signup")signupForm();else loginForm();const note=document.createElement("p");note.className="notice";note.textContent="Secure account service is still connecting. Please wait a moment before submitting.";body.prepend(note);showModal();return;}
  if(user){closeModal();showApp("dashboard");return;}
  if(kind==="signup")signupForm();else loginForm();showModal();
 }
@@ -124,7 +133,7 @@ async function kycFileChangeHandler(e){
  }catch(err){fail("Upload failed: "+(err?.message||"Storage error. Please choose the file again."));}
  finally{if(button){const pending=[...form.querySelectorAll('input[type="file"]')].some(el=>el.files?.[0]&&!el.dataset.uploadedPath);button.disabled=pending;}}
 }
-window.openAuthModal=function(kind,event){if(event){event.preventDefault();event.stopPropagation();}modal=modal||document.getElementById("portal-modal");body=body||document.getElementById("portal-body");shell=shell||document.getElementById("app-shell");if(!modal||!body){console.warn("Auth modal markup is unavailable.");return false;}openModal(kind==="signup"?"signup":"login");return false;};
+window.__bbOpenAuthModalImpl=function(kind,event){if(event){event.preventDefault();event.stopPropagation();}modal=modal||document.getElementById("portal-modal");body=body||document.getElementById("portal-body");shell=shell||document.getElementById("app-shell");if(!modal||!body){console.warn("Auth modal markup is unavailable.");return false;}openModal(kind==="signup"?"signup":"login");return false;};window.openAuthModal=window.__bbOpenAuthModalImpl;
 function showModal(){modal.classList.add("show");modal.setAttribute("aria-hidden","false");document.body.classList.add("portal-open");}
 function closeModal(){modal.classList.remove("show");modal.setAttribute("aria-hidden","true");document.body.classList.remove("portal-open");}
 function signupForm(){body.innerHTML='<p class="eyebrow">CUSTOMER ACCOUNT</p><h2>Create your BIGBULLS profile</h2><form id="signup-form"><label>Full name<input name="full_name" autocomplete="name" required></label><label>Email<input name="email" type="email" autocomplete="email" required></label><div class="form-two"><label>Country<input name="country" autocomplete="country-name" placeholder="Country" required></label><label>Phone number<input name="phone" type="tel" autocomplete="tel" placeholder="+ country code"></label></div><label>Account type<select name="account_type"><option>Individual</option><option>Corporate</option></select></label><label>Referral code (optional)<input name="referral_code"></label><label>Password<input name="password" type="password" minlength="8" autocomplete="new-password" required></label><label class="check-line"><input type="checkbox" name="terms" required> I agree to the Terms, Privacy Policy and risk disclosure.</label><button class="portal-primary" type="submit">Create account</button></form><div data-msg></div><button class="copy-wallet" data-auth-view="login">Already registered? Login</button>';const referral=new URLSearchParams(location.search).get("ref");const referralInput=body.querySelector('#signup-form [name="referral_code"]');if(referral&&referralInput)referralInput.value=referral.trim().toUpperCase();}
