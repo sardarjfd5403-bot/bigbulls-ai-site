@@ -8,7 +8,7 @@ on:
       - ".github/workflows/bigbullsglobal-android.yml"
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -60,6 +60,16 @@ jobs:
           PY
       - name: Build debug APK
         run: cd android && ./gradlew --no-daemon assembleDebug
+      - name: Publish latest public Android APK release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          APK_PATH="android-app/android/app/build/outputs/apk/debug/app-debug.apk"
+          cp "$APK_PATH" "android-app/android/app/build/outputs/apk/debug/BIGBULLS-Android.apk"
+          gh release create "android-build-${GITHUB_RUN_NUMBER}" "android-app/android/app/build/outputs/apk/debug/BIGBULLS-Android.apk" \
+            --title "BIGBULLS Android Build #${GITHUB_RUN_NUMBER}" \
+            --notes "Installable BIGBULLS Android APK. Built from commit ${GITHUB_SHA}. Security dependency audit executed in CI." \
+            --latest
       - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
