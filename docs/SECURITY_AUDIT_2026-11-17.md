@@ -37,8 +37,9 @@ No trading or financial workflow implementation was modified:
 ## Android-only changes on feature branch
 
 - Native manifest hardening sets `android:usesCleartextTraffic=false` and `android:allowBackup=false`, preserves biometric permission and hardware acceleration.
-- Capacitor 8.6.2, native biometric plugin 8.9.3, Capacitor assets 4.0.0, and sharp 0.35.5 were selected to replace vulnerable older package ranges. The biometric plugin major is matched to Capacitor 8.
-- B-Book validation passed on the dependency-upgrade commit. Final Android build/audit must pass before treating this branch APK as final.
+- Capacitor 8.6.2, native biometric plugin 8.9.3, Capacitor assets 4.0.0, and sharp 0.35.5 replace vulnerable older package ranges. The biometric plugin major is matched to Capacitor 8.
+- `npm audit` on the upgraded dependency tree reports 0 vulnerabilities.
+- Android debug APK build passed on commit `7678f186ee0c1fe04f3efe1c9bce9faa1c0c7e86` (Actions run 44014109294); B-Book validation passed on the same commit (run 44014115746). The artifact is a debug/test APK, not a production-signed release.
 - No terminal, execution, or client workflow source files were changed.
 
 ## Remaining owner actions — required before declaring the whole programme complete
