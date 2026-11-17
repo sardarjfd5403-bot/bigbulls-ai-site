@@ -26,7 +26,36 @@ async function withdrawal(e){e.preventDefault();const f=e.currentTarget,d=new Fo
 async function verifyOtp(e){e.preventDefault();await invoke("withdrawal-otp",{action:"verify",transaction_id:$("#otpTransaction").value,otp:$("#otpCode").value});say("Email verified; withdrawal pending Admin approval.");$("#otpPanel").hidden=true;await loadWalletHistory();}
 async function loadWalletHistory(){const r=await client().from("wallet_transactions").select("kind,asset,network,amount_usd,status,invoice_id,created_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(30);if(r.error)throw r.error;$("#walletHistory").innerHTML=(r.data||[]).map(x=>'<div class="history-row"><b>'+esc(x.kind)+' · '+esc(x.asset)+'/'+esc(x.network)+'</b><span>$'+Number(x.amount_usd||0).toFixed(2)+'</span><span>'+esc(x.status)+' · '+esc(x.invoice_id||"")+'</span></div>').join("")||"No wallet transactions yet.";}
 async function loadKyc(){const r=await client().from("kyc_submissions").select("status,rejection_reasons,created_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1).maybeSingle();if(r.error)throw r.error;$("#kycStatus").textContent=r.data?.status||"Not submitted";$("#kycReason").textContent=(r.data?.rejection_reasons||[]).join(", ");}
-async function submitKyc(e){e.preventDefault();const f=e.currentTarget,d=new FormData(f),front=d.get("document_front"),back=d.get("document_back"),type=d.get("document_type");if(!front?.size)throw Error("Front identity document required.");if(["CNIC","Driving License"].includes(type)&&!back?.size)throw Error("CNIC/Driving License front and back required.");const upload=async(file,label)=>{if(!file?.size)return null;if(file.size<100*1024||file.size>20*1024*1024)throw Error("KYC file must be 100 KB–20 MB.");const ext=file.name.split(".").pop().toLowerCase(),mime=({jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",pdf:"application/pdf"})[ext];if(!mime)throw Error("JPG, PNG, WEBP or PDF only.");const path=user.id+"/"+Date.now()+"-"+label+"-"+file.name.replace(/[^a-zA-Z0-9._-]/g,"_").slice(-100),r=await client().storage.from("kyc-documents").upload(path,file,{contentType:mime,cacheControl:"3600",upsert:false});if(r.error)throw r.error;return path;};const fp=await upload(front,"front"),bp=await upload(back,"back"),first=String(d.get("first_name")).trim(),last=String(d.get("last_name")).trim(),r=await client().from("kyc_submissions").insert({user_id:user.id,first_name:first,last_name:last,document_number:String(d.get("document_number")).trim(),legal_name:first+" "+last,date_of_birth:String(d.get("dob")),country:String(d.get("country")).trim(),residential_address:String(d.get("address")).trim(),document_type:type,document_front_path:fp,document_back_path:bp,status:"pending",rejection_reasons:[]}).select("id").single();if(r.error)throw r.error;say("KYC submitted for Admin review.");f.reset();await loadKyc();}
+async function submitKyc(e){
+ e.preventDefault();
+ const f=e.currentTarget,d=new FormData(f),front=d.get("document_front"),back=d.get("document_back"),type=String(d.get("document_type")||"");
+ const first=String(d.get("first_name")||"").trim(),last=String(d.get("last_name")||"").trim(),number=String(d.get("document_number")||"").trim(),dob=String(d.get("dob")||""),country=String(d.get("country")||"").trim(),address=String(d.get("address")||"").trim();
+ if(!user?.id)throw Error("Secure session expired. Sign in again and retry.");
+ if(!first||!last||!number||!dob||!country||!address)throw Error("Complete your first name, last name, date of birth, country, ID number and residential address.");
+ if(!["CNIC","Passport","Driving License"].includes(type))throw Error("Select a valid identity document type.");
+ if(!front?.size)throw Error("Front identity document required.");
+ if(["CNIC","Driving License"].includes(type)&&!back?.size)throw Error("CNIC / Driving License requires both front and back documents.");
+ const newlyUploaded=[];
+ const upload=async(file,label)=>{
+  if(!file?.size)return null;
+  if(file.size<100*1024||file.size>20*1024*1024)throw Error(label+" document must be 100 KB–20 MB.");
+  const ext=String(file.name||"").split(".").pop().toLowerCase(),byExt={jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",pdf:"application/pdf"},typed=String(file.type||"").toLowerCase(),mime=byExt[ext]||typed;
+  if(!["image/jpeg","image/png","image/webp","application/pdf"].includes(mime))throw Error("Use JPG, PNG, WEBP or PDF for "+label.toLowerCase()+" document.");
+  const path=user.id+"/"+Date.now()+"-"+label.toLowerCase()+"-"+String(file.name||"document").replace(/[^a-zA-Z0-9._-]/g,"_").slice(-100);
+  const r=await client().storage.from("kyc-documents").upload(path,file,{contentType:mime,cacheControl:"3600",upsert:false});
+  if(r.error)throw new Error(label+" document upload failed: "+r.error.message);
+  newlyUploaded.push(path);return path;
+ };
+ const button=f.querySelector('button[type="submit"]');if(button){button.disabled=true;button.textContent="Uploading & submitting…";}
+ try{
+  const fp=await upload(front,"Front"),bp=await upload(back,"Back");
+  const r=await client().from("kyc_submissions").insert({user_id:user.id,first_name:first,last_name:last,document_number:number,legal_name:first+" "+last,date_of_birth:dob,country,residential_address:address,document_type:type,document_front_path:fp,document_back_path:bp,status:"pending",rejection_reasons:[]}).select("id,status").single();
+  if(r.error)throw new Error("Documents uploaded, but KYC could not be saved: "+r.error.message);
+  if(!r.data?.id)throw Error("KYC submission could not be confirmed. Refresh your status before retrying.");
+  say("KYC submitted successfully and sent to Admin for review.");f.reset();await loadKyc();
+ }catch(error){if(newlyUploaded.length)await client().storage.from("kyc-documents").remove(newlyUploaded).catch(()=>{});throw error;}
+ finally{if(button){button.disabled=false;button.textContent="Submit KYC securely";}}
+}
 
 
 const pinKey=id=>"bb:app-pin:v2:"+String(id||"");
