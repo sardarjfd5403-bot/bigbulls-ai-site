@@ -64,9 +64,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          APK_PATH="android-app/android/app/build/outputs/apk/debug/app-debug.apk"
-          cp "$APK_PATH" "android-app/android/app/build/outputs/apk/debug/BIGBULLS-Android.apk"
-          gh release create "android-build-${GITHUB_RUN_NUMBER}" "android-app/android/app/build/outputs/apk/debug/BIGBULLS-Android.apk" \
+          APK_PATH="android/app/build/outputs/apk/debug/app-debug.apk"
+          cp "$APK_PATH" "android/app/build/outputs/apk/debug/BIGBULLS-Android.apk"
+          gh release create "android-build-${GITHUB_RUN_NUMBER}" "android/app/build/outputs/apk/debug/BIGBULLS-Android.apk" \
             --title "BIGBULLS Android Build #${GITHUB_RUN_NUMBER}" \
             --notes "Installable BIGBULLS Android APK. Built from commit ${GITHUB_SHA}. Security dependency audit executed in CI." \
             --latest
@@ -74,6 +74,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: BIGBULLS-Global-Market-Android-APK
-          path: android-app/android/app/build/outputs/apk/debug/app-debug.apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
