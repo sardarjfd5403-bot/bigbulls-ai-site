@@ -1,59 +1,51 @@
-# BIGBULLS Security Audit & Hardening Plan
+# BIGBULLS Security Audit & Hardening — 2026-11-17
 
-Audit date: 2026-11-17
-Scope: website, Android client source, Supabase/PostgreSQL
-Deployment status: **not deployed** — this branch is review-only.
+Scope: website, Android client source, Supabase/PostgreSQL.
+Production status: two permission-only database hardening changes are applied and verified. Website source and APK were not changed or rebuilt.
 
-## Protected scope (explicitly out of scope)
+## Explicitly protected workflows
 
-Do not modify:
-- trade execution, order placement, order fills, pending orders, SL/TP, position close;
+No changes were made to:
+- trade execution, order placement, fills, pending-order matching, SL/TP, position close;
 - demo/real paper-trading engine, Echo System, AI execution pipeline;
-- market data, Twelve Data, charts, quotes, or terminal UI;
-- existing login, KYC, deposit, withdrawal, transfer, account creation, or partner workflows.
+- market data, Twelve Data, charts, quotes, terminal UI;
+- login, KYC approval, deposits, withdrawals, transfers, account creation, partner workflows.
 
-Security changes must be additive or permission-only, separately reviewed, and regression-tested. Any change with a plausible effect on the protected workflows must be held back.
+## Production changes applied
 
-## Confirmed observations
+1. Migration `restrict_anonymous_trigger_and_ai_mode_rpc`:
+   - revoked direct RPC execution of trigger-only `apply_vip_bonus_after_deposit()` from PUBLIC/anon/authenticated; PostgreSQL trigger invocation remains valid;
+   - revoked only anon execution of `get_client_ai_trade_mode(uuid)` and `set_client_ai_trade_mode(uuid, boolean)`; authenticated grants and existing ownership checks remain.
+2. Migration `add_restrictive_deny_policies_to_internal_tables`:
+   - added restrictive deny-all policies for anon/authenticated on 12 internal public-schema tables;
+   - verified those roles have no direct table grants, and service_role retains BYPASSRLS. This adds defense-in-depth without changing server-side RPC/worker access.
 
-1. Supabase Security Advisor reported 3 SECURITY DEFINER functions executable by `anon`:
-   - `apply_vip_bonus_after_deposit()` — trigger function, not intended as browser RPC.
-   - `get_client_ai_trade_mode(uuid)` — requires `auth.uid()` and checks account ownership.
-   - `set_client_ai_trade_mode(uuid, boolean)` — requires `auth.uid()`, checks ownership, KYC and account state.
-2. Supabase Security Advisor reported 31 SECURITY DEFINER functions executable by `authenticated`. This is not proof of a vulnerability: many are intended RPCs and must be individually reviewed. Do not blanket-revoke them.
-3. 12 public-schema tables have RLS enabled and no policies. A separate privilege check found no direct `anon` or `authenticated` table grants on those tables. Keep them inaccessible unless a documented user-facing need is established.
-4. `pg_net` is installed in `public`; assess moving it only after checking every dependent function/trigger and scheduled task.
-5. Supabase Auth leaked-password protection is disabled; enable it in Auth password security settings after confirming the setting is available on the current plan.
-6. Recent `kyc-approved-email` Edge Function requests returned HTTP 503. Investigate provider/configuration/runtime logs separately; do not change KYC approval or deposit/withdrawal workflows as part of this security patch.
-7. Website and Android browser sources inspected use the Supabase publishable key, not a service-role key. Publishable keys are expected to be public and must remain protected by RLS and server-side authorization.
+## Verification
 
-## Proposed narrow permission hardening
+- VIP bonus trigger remains attached and enabled.
+- The three functions no longer allow anonymous execution; authenticated access remains only where intended.
+- Security Advisor no longer reports the 12 RLS-enabled/no-policy tables.
+- KYC documents and payment proofs are in private buckets with user-folder scoping and admin access. Product downloads are private/licence-gated. Public bucket is only `bb-growth-assets`.
+- Browser source uses a Supabase publishable key, not a service-role key.
+- Edge functions with JWT verification disabled were reviewed: admin endpoints perform explicit authenticated-user/admin checks; scheduled workers require configured secret headers; KYC email hook checks a per-job webhook token. Do not switch JWT verification on blindly because that would break internal scheduled hooks.
+- SECURITY DEFINER functions callable by authenticated users are individually guarded by admin checks or user/account ownership checks in reviewed client/admin functions. Advisor warnings remain because the linter cannot infer those checks; do not blanket-revoke them.
+- `pg_net` 0.20.4 is non-relocatable in this project and is used by server-side HTTP workers. It was deliberately not moved or recreated.
+- The 12 internal tables have no direct browser grants; restrictive policies now explicitly deny anon/authenticated access.
 
-Migration `20261117090000_restrict_anonymous_trigger_and_ai_mode_rpc.sql`:
-- removes direct RPC execution of the trigger-only VIP bonus function from PUBLIC/anon/authenticated; its database trigger invocation remains valid;
-- removes only the anon grant from the two AI preference RPCs; authenticated access and their existing ownership checks remain unchanged.
+## Remaining owner actions — required before declaring the whole programme complete
 
-No SQL has been run against production as part of this branch.
+1. **Admin MFA:** no verified TOTP factor is enrolled for the root admin. Enrol an authenticator factor first. Then add AAL2 enforcement to privileged admin authorization and test admin login. Do not enforce AAL2 before enrolment, or the administrator could be locked out.
+2. **Leaked-password protection:** enable in Supabase Dashboard → Authentication → Settings/Password Security (if available on the project plan), then test sign-in/password reset.
+3. **KYC approval email:** `kyc-approved-email` is returning 503. Its deployed source explicitly returns 503 when `RESEND_API_KEY` is missing. Add the Resend API key as an Edge Function secret in Supabase Dashboard (never commit or paste it in chat), then test one controlled KYC notification. Current outbox has 8 pending jobs; do not replay them all until provider configuration is verified.
+4. **Android:** current browser source contains no observed service-role key; native manifest still needs inspection from a fresh release APK. No APK rebuild has been done as part of these database-only changes.
 
-## Required verification before applying migration
+## Advisor results after production hardening
 
-1. Confirm trigger `apply_vip_bonus_after_deposit` remains attached to its existing table/event.
-2. Confirm trigger-based VIP bonus test still credits the same bonus ledger and account credit as before.
-3. Confirm signed-in client can read/update only their own AI preference.
-4. Confirm anonymous RPC calls to all three functions are denied.
-5. Confirm no changes to order/trade tables, execution functions, terminal sources, wallet processing, KYC, deposits, withdrawals, or transfers.
-6. Re-run Supabase Security Advisor and compare results.
-
-## Remaining hardening backlog
-
-- Review every SECURITY DEFINER RPC individually for caller authorization, fixed search_path, qualified object names, and least-privilege grants.
-- Keep the 12 no-policy internal tables inaccessible; document their intended service-only consumers.
-- Review Storage policies and confirm KYC documents/payment proofs are private and user-scoped; keep only intentionally public marketing assets public.
-- Enable leaked-password protection and require MFA for privileged administrators.
-- Add automated dependency and secret scanning to CI after confirming the private-repository plan supports the selected tools.
-- Investigate the KYC email 503 without weakening authentication or approval checks.
-- Verify Android WebView settings and native manifest from the generated APK, not only the wrapper HTML.
+- The 12 `rls_enabled_no_policy` INFO findings are cleared.
+- Remaining security warnings: non-relocatable `pg_net` installed in public, and 30 authenticated-executable SECURITY DEFINER RPCs. Those RPCs are retained because they are part of existing client/admin workflows and the reviewed definitions contain admin or ownership checks. Further per-function review and regression tests are required before changing their grants.
 
 ## Rollback
 
-If the migration causes an unexpected issue, restore the exact prior function ACLs from the database's pre-deployment ACL snapshot. Do not change function bodies or trading code as a rollback shortcut.
+- Drop the `deny_direct_api_role_access` policy from the 12 listed tables to reverse the second change.
+- Restore the prior function ACLs from the database's pre-change ACL snapshot to reverse the first change.
+- Do not modify function bodies or trading code as a rollback shortcut.
