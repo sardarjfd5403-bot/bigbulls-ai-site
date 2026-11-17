@@ -10,16 +10,21 @@ if (!xml.includes("android.permission.USE_BIOMETRIC")) {
   xml = xml.replace("<application", '<uses-permission android:name="android.permission.USE_BIOMETRIC" />\n<application');
 }
 
-function setApplicationAttribute(name, value) {
+const appMatch = xml.match(/<application\b[^>]*>/);
+if (!appMatch) throw new Error("Android application manifest element is missing.");
+let appTag = appMatch[0];
+
+function setAttribute(tag, name, value) {
   const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const re = new RegExp(`(<application\\b[^>]*?)\\s+${escaped}="[^"]*"`);
-  if (re.test(xml)) xml = xml.replace(re, `$1 ${name}="${value}"`);
-  else xml = xml.replace(/<application\b/, `<application ${name}="${value}"`);
+  const re = new RegExp(escaped + '="[^"]*"');
+  if (re.test(tag)) return tag.replace(re, name + '="' + value + '"');
+  return tag.replace(/>$/, ' ' + name + '="' + value + '">');
 }
 
-setApplicationAttribute("android:hardwareAccelerated", "true");
-setApplicationAttribute("android:usesCleartextTraffic", "false");
-setApplicationAttribute("android:allowBackup", "false");
+appTag = setAttribute(appTag, "android:hardwareAccelerated", "true");
+appTag = setAttribute(appTag, "android:usesCleartextTraffic", "false");
+appTag = setAttribute(appTag, "android:allowBackup", "false");
+xml = xml.replace(appMatch[0], appTag);
 
 xml = xml.replace(/<activity\b([^>]*)>/g, (tag, attrs) => {
   let next = attrs;
@@ -35,7 +40,7 @@ for (const [attribute, expected] of [
   ["android:allowBackup", "false"],
   ["android:hardwareAccelerated", "true"],
 ]) {
-  if (!new RegExp(attribute + '="' + expected + '"').test(xml)) {
+  if (!appTag.includes(attribute + '="' + expected + '"')) {
     throw new Error("Android manifest hardening check failed: " + attribute);
   }
 }
