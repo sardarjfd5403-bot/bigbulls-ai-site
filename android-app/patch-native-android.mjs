@@ -14,16 +14,14 @@ function setApplicationAttribute(name, value) {
   const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const re = new RegExp(`(<application\\b[^>]*?)\\s+${escaped}="[^"]*"`);
   if (re.test(xml)) xml = xml.replace(re, `$1 ${name}="${value}"`);
-  else xml = xml.replace(/<application\\b/, `<application ${name}="${value}"`);
+  else xml = xml.replace(/<application\b/, `<application ${name}="${value}"`);
 }
 
-// Keep the hosted app on HTTPS only and prevent Android cloud/device backup
-// from copying authenticated WebView/app data to another device.
 setApplicationAttribute("android:hardwareAccelerated", "true");
 setApplicationAttribute("android:usesCleartextTraffic", "false");
 setApplicationAttribute("android:allowBackup", "false");
 
-xml = xml.replace(/<activity\\b([^>]*)>/g, (tag, attrs) => {
+xml = xml.replace(/<activity\b([^>]*)>/g, (tag, attrs) => {
   let next = attrs;
   if (/android:hardwareAccelerated=/.test(next)) next = next.replace(/android:hardwareAccelerated="[^"]*"/, 'android:hardwareAccelerated="true"');
   else next += ' android:hardwareAccelerated="true"';
