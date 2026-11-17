@@ -26,6 +26,9 @@ jobs:
           java-version: "21"
       - name: Install dependencies
         run: npm install
+      - name: Apply non-breaking dependency security fixes
+        run: npm audit fix
+        continue-on-error: true
       - name: Report dependency vulnerabilities
         run: |
           npm audit --json > npm-audit.json || true
