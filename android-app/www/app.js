@@ -35,7 +35,7 @@ async function submitKyc(e){
  if(!["CNIC","Passport","Driving License"].includes(type))throw Error("Select a valid identity document type.");
  if(!front?.size)throw Error("Front identity document required.");
  if(["CNIC","Driving License"].includes(type)&&!back?.size)throw Error("CNIC / Driving License requires both front and back documents.");
- const newlyUploaded=[];
+ const newlyUploaded=[];let submissionSaved=false;
  const upload=async(file,label)=>{
   if(!file?.size)return null;
   if(file.size<100*1024||file.size>20*1024*1024)throw Error(label+" document must be 100 KB–20 MB.");
@@ -52,8 +52,9 @@ async function submitKyc(e){
   const r=await client().from("kyc_submissions").insert({user_id:user.id,first_name:first,last_name:last,document_number:number,legal_name:first+" "+last,date_of_birth:dob,country,residential_address:address,document_type:type,document_front_path:fp,document_back_path:bp,status:"pending",rejection_reasons:[]}).select("id,status").single();
   if(r.error)throw new Error("Documents uploaded, but KYC could not be saved: "+r.error.message);
   if(!r.data?.id)throw Error("KYC submission could not be confirmed. Refresh your status before retrying.");
+  submissionSaved=true;
   say("KYC submitted successfully and sent to Admin for review.");f.reset();await loadKyc();
- }catch(error){if(newlyUploaded.length)await client().storage.from("kyc-documents").remove(newlyUploaded).catch(()=>{});throw error;}
+ }catch(error){if(!submissionSaved&&newlyUploaded.length)await client().storage.from("kyc-documents").remove(newlyUploaded).catch(()=>{});throw error;}
  finally{if(button){button.disabled=false;button.textContent="Submit KYC securely";}}
 }
 
