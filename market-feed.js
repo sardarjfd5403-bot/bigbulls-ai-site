@@ -40,8 +40,8 @@ function attach(){
 }
 function init(){
  attach();
- observer=new MutationObserver(attach);
- observer.observe(document.body,{childList:true,subtree:true});
+ const root=document.getElementById("app-shell");
+ if(root){observer=new MutationObserver(attach);observer.observe(root,{childList:true,subtree:true});}
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);
 else init();
