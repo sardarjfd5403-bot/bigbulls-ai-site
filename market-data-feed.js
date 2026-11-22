@@ -30,6 +30,12 @@ function attach(){
  if(!api)return;
  if(!grid.dataset.feedAttached){grid.dataset.feedAttached="true";refresh();}
 }
-function init(){attach();observer=new MutationObserver(attach);observer.observe(document.body,{childList:true,subtree:true});if(timer)clearInterval(timer);timer=setInterval(()=>{if(document.getElementById("bb-fx-market-grid"))refresh();},60000);}
+function init(){
+ attach();
+ const root=document.getElementById("app-shell");
+ if(root){observer=new MutationObserver(attach);observer.observe(root,{childList:true,subtree:true});}
+ if(timer)clearInterval(timer);
+ timer=setInterval(()=>{if(document.getElementById("bb-fx-market-grid"))refresh();else{clearInterval(timer);timer=null;}},60000);
+}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
