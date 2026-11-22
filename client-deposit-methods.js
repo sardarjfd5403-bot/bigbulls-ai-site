@@ -42,7 +42,7 @@ function formMarkup(context){
   '<label>Deposit amount (USD)<input name="amount_usd" type="number" min="'+Number(context.min_amount_usd||1)+'" '+(context.max_amount_usd?'max="'+Number(context.max_amount_usd)+'"':'')+' step=".01" required></label>'+
   '<label>'+(crypto?'Amount sent in crypto':'Amount paid in payment currency')+'<input name="amount_crypto" type="number" min=".00000001" step="any" required></label>'+
   (crypto?'<label>Blockchain TXID<input name="tx_hash" minlength="11" required></label>':'<label>Transfer reference (optional)<input name="tx_hash"></label>')+
-  '<label>Payment proof '+(crypto?'(optional)':'(required)')+'<input name="proof" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf" '+(!crypto?'required':'')+'></label>'+
+  '<label>Payment proof '+(crypto?'(optional)':'(required)')+'<input name="proof" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf" '+((!crypto||context.account_id)?'required':'')+'></label>'+
   '<div class="bb-cdm-muted">Proof: JPG, PNG, WEBP or PDF · 100 KB–10 MB</div>'+
   '<button type="submit">Submit deposit request</button><p class="bb-cdm-status" role="status"></p></form></div>';
 }
@@ -90,7 +90,7 @@ document.addEventListener("submit",async e=>{
   if(!(amountUsd>0)||!(amountCrypto>0))throw new Error("Enter valid payment amounts.");
   if(amountUsd<Number(method.min_amount_usd||0)||(method.max_amount_usd!==null&&amountUsd>Number(method.max_amount_usd)))throw new Error("Amount is outside the admin-configured limits.");
   if(method.method_type==="crypto"&&txHash.length<11)throw new Error("Enter a valid blockchain TXID.");
-  if(method.method_type==="fiat"&&(!(proof instanceof File)||!proof.size))throw new Error("Attach your payment receipt.");
+  if((method.method_type==="fiat"||accountId)&&(!(proof instanceof File)||!proof.size))throw new Error("Attach your payment receipt.");
   const {data:{user},error:userError}=await db().auth.getUser();if(userError||!user)throw new Error("Please sign in again.");
   const ctx=window.bbFinancialContext,accountId=form.dataset.context==="account"?ctx?.accountId:null;
   if(form.dataset.context==="account"){
