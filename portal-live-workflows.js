@@ -55,9 +55,10 @@ $("#bb-paper-form").onsubmit=async e=>{e.preventDefault();const f=e.currentTarge
 $("#bb-paper-form [name=symbol]").onchange=e=>{const sym=e.target.value,map={EURUSD:"FX:EURUSD",GBPUSD:"FX:GBPUSD",USDJPY:"FX:USDJPY",XAUUSD:"OANDA:XAUUSD",BTCUSDT:"BINANCE:BTCUSDT",ETHUSDT:"BINANCE:ETHUSDT",BNBUSDT:"BINANCE:BNBUSDT",SOLUSDT:"BINANCE:SOLUSDT",XRPUSDT:"BINANCE:XRPUSDT",DOGEUSDT:"BINANCE:DOGEUSDT"};const btn=$("[data-term-symbol].active");if(btn){btn.dataset.termSymbol=map[sym];btn.click();}};
 paperRefresh();if(paperTimer)clearInterval(paperTimer);paperTimer=setInterval(paperRefresh,15000);}
 function marketCharts(){const host=$("#bb-fx-market-grid");if(!host||host.dataset.bbChartsReady)return;const section=host.closest(".client-panel");if(!section)return;host.dataset.bbChartsReady="1";const grid=document.createElement("div");grid.className="bb-tv-live-grid";const list=[["EURUSD","OANDA:EURUSD"],["GBPUSD","OANDA:GBPUSD"],["USDJPY","OANDA:USDJPY"],["XAUUSD","OANDA:XAUUSD"]];grid.innerHTML=list.map(x=>'<article class="bb-tv-live-card"><b>'+x[0]+' · TradingView</b><iframe loading="lazy" title="'+x[0]+' chart" src="https://www.tradingview.com/widgetembed/?symbol='+encodeURIComponent(x[1])+'&interval=15&theme=light&style=1&locale=en&toolbarbg=f1f3f6&saveimage=0&calendar=0&details=1&symboledit=1"></iframe></article>').join("");section.insertBefore(grid,host);const p=section.querySelector("p");if(p)p.textContent="Twelve Data quote cards use the connected Edge Function. Interactive TradingView charts provide market context; quotes are indicative, not executable broker prices.";}
-let liveChannel=null,liveUser="";
+let liveChannel=null,liveUser="",realtimeStarting=false;
 async function startRealtime(){
- const c=sb();if(!c)return;
+ const c=sb();if(!c||realtimeStarting)return;
+ realtimeStarting=true;
  try{
   const {data,error}=await c.auth.getUser();if(error||!data?.user)return;
   const u=data.user;if(liveUser===u.id)return;liveUser=u.id;
@@ -80,6 +81,7 @@ async function startRealtime(){
   }
   liveChannel=ch.subscribe();
  }catch(e){console.warn("BIGBULLS realtime subscriptions unavailable:",e);}
+ finally{realtimeStarting=false;}
 }
 let brainBusy=false,brainTimer=null;
 async function loadMarketBrain(){
@@ -128,7 +130,9 @@ function enhanceBrain(){
  loadMarketBrain();if(brainTimer)clearInterval(brainTimer);brainTimer=setInterval(()=>{if($("#bb-brain-signals"))loadMarketBrain();},15*60*1000);
 }
 function scan(){startRealtime();enhanceAdminMarketPublisher();if($("#bb-brain-signals"))enhanceBrain();if($("#wallet-content"))walletEnhance();if($("#bb-tv-chart"))terminalEnhance();if($("#bb-fx-market-grid"))marketCharts();}
-function start(){const app=$("#app-shell");if(!app)return;scan();new MutationObserver(scan).observe(app,{childList:true,subtree:true});}
+let scanQueued=false;
+function scheduleScan(){if(scanQueued)return;scanQueued=true;requestAnimationFrame(()=>{scanQueued=false;scan();});}
+function start(){const app=$("#app-shell");if(!app)return;scan();new MutationObserver(scheduleScan).observe(app,{childList:true,subtree:true});}
 window.addEventListener("click",e=>{const t=e.target instanceof Element?e.target:null,b=t?.closest("[data-wallet-tab]");if(!b||!["deposit","withdraw"].includes(b.dataset.walletTab))return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();$$("[data-wallet-tab]").forEach(x=>x.classList.toggle("active",x===b));walletPicker(b.dataset.walletTab);},true);
 window.addEventListener("click",e=>{const t=e.target instanceof Element?e.target:null;if(!t)return;const tab=t.closest("[data-term-bottom]");if(tab&&$("#bb-tv-chart")){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();$$("[data-term-bottom]").forEach(x=>x.classList.toggle("active",x===tab));paperBottom(tab.dataset.termBottom);return;}const close=t.closest("[data-bb-close]");if(close){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();close.disabled=true;paperCall({action:"close",account_mode:"demo",trade_id:close.dataset.bbClose,reason:"MANUAL CLOSE"}).then(paperRefresh).catch(err=>{alert(err.message);close.disabled=false;});}},true);
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start);else start();
