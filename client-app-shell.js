@@ -94,6 +94,6 @@ function cleanupModalState(){if(!$("#bb-account-tools"))document.body.classList.
 window.addEventListener("bb:account-sync",()=>{refreshAccountCache();ensureTopbar();renderMetrics();});
 window.addEventListener("bb:realtime",()=>{ensureTopbar();renderMetrics();});
 const observer=new MutationObserver(()=>{if(document.body.classList.contains("bb-v3-active"))init();});
-function boot(){observer.observe(document.body,{attributes:true,attributeFilter:["class"]});init();refreshAccountCache();setInterval(()=>{if(document.body.classList.contains("bb-v3-active")){ensureTopbar();renderMetrics();accountToolModal();cleanupModalState();}},1500);}
+function boot(){observer.observe(document.body,{attributes:true,attributeFilter:["class"]});init();refreshAccountCache();}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});else boot();
 })();
