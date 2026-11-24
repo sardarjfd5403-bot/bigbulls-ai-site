@@ -48,7 +48,7 @@ const json = (body:unknown,status=200) => new Response(JSON.stringify(body),{
 });
 async function biquote(path:string) {
   const u = new URL(path, BIQUOTE_BASE);
-  const r = await fetch(u,{headers:{Accept:"application/json"},signal:AbortSignal.timeout(7000)});
+  const r = await fetch(u,{headers:{Accept:"application/json"},signal:AbortSignal.timeout(5000)});
   const data = await r.json().catch(()=>({}));
   if (!r.ok) throw new Error(String(data.message||data.error||("BiQuote request failed ("+r.status+").")));
   return data;
@@ -69,25 +69,22 @@ async function getTick(providerSymbol:string, strict=false) {
     dayDiffPercent:data.dayDiffPercent??null,direction:data.direction??null
   };
 }
-async function getBrokerSpread(symbol:string) {
+async function getBrokerSpreads():Promise<Record<string,number>> {
   const url=Deno.env.get("SUPABASE_URL");
   const service=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||Deno.env.get("SUPABASE_SECRET_KEY");
-  if(!url||!service)return 2;
+  if(!url||!service)return {};
   try {
     const db=createClient(url,service,{auth:{persistSession:false,autoRefreshToken:false}});
     const {data}=await db.from("bb_bbook_settings").select("spread_bps").eq("singleton",true).maybeSingle();
-    const spreads=data?.spread_bps||{};
-    return Math.max(0,Math.min(100,Number(spreads[cacheCategory(symbol)]??2)));
-  } catch { return 2; }
+    return data?.spread_bps||{};
+  } catch { return {}; }
 }
-async function persistBbookQuote(symbol:string,price:number,provider:string) {
+const brokerSpread=(symbol:string,spreads:Record<string,number>)=>Math.max(0,Math.min(100,Number(spreads[cacheCategory(symbol)]??2)));
+async function persistBbookQuote(symbol:string,price:number,provider:string,bps:number) {
   const url=Deno.env.get("SUPABASE_URL");
   const service=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||Deno.env.get("SUPABASE_SECRET_KEY");
   if(!url||!service)return;
   const db=createClient(url,service,{auth:{persistSession:false,autoRefreshToken:false}});
-  const {data:settings}=await db.from("bb_bbook_settings").select("spread_bps").eq("singleton",true).maybeSingle();
-  const spreads=settings?.spread_bps||{};
-  const bps=Math.max(0,Math.min(100,Number(spreads[cacheCategory(symbol)]??2)));
   const half=bps/20000,now=new Date().toISOString();
   const {error}=await db.from("bb_bbook_quotes").upsert({
     symbol,mid:price,bid:price*(1-half),ask:price*(1+half),spread_bps:bps,
@@ -148,7 +145,7 @@ Deno.serve(async(req:Request)=>{
       const limit=daily?365:Math.min(1000,Math.max(50,requested));
       const cacheKey="c:"+providerSymbol+":"+timeframe+":"+limit;
       const cached=cache.get(cacheKey);
-      if(cached&&Date.now()-cached.at<(daily?120000:15000))return json(cached.payload);
+      if(cached&&Date.now()-cached.at<(daily?30000:1000))return json(cached.payload);
       const query=new URLSearchParams({interval:providerInterval,limit:String(limit)});
       const from=String(body.from||"");
       const to=String(body.to||"");
@@ -174,8 +171,8 @@ Deno.serve(async(req:Request)=>{
       try {
         const tick=await getTick(providerSymbol,true);
         const price=tick.mid;
-        await persistBbookQuote(symbol,price,"BiQuote");
-        const bps=await getBrokerSpread(symbol),half=bps/20000;
+        const spreads=await getBrokerSpreads(),bps=brokerSpread(symbol,spreads),half=bps/20000;
+        await persistBbookQuote(symbol,price,"BiQuote",bps);
         const payload={
           provider:"BiQuote",symbol,price,mid:price,bid:tick.bid,ask:tick.ask,
           broker_spread_bps:bps,broker_bid:price*(1-half),broker_ask:price*(1+half),
@@ -196,14 +193,15 @@ Deno.serve(async(req:Request)=>{
     }
     if(action==="quotes") {
       const cacheKey="quotes",cached=cache.get(cacheKey);
-      if(cached&&Date.now()-cached.at<3000)return json(cached.payload);
+      if(cached&&Date.now()-cached.at<1000)return json(cached.payload);
       const requested=Array.isArray(body.symbols)?body.symbols.slice(0,100).map((v:any)=>String(v)):["EUR/USD","GBP/USD","USD/JPY","XAU/USD","WTI/USD","NDX","BTCUSDT","XAG/USD","XPT/USD","XPD/USD","USDCAD","AUDUSD","NZDUSD","USDCHF","EURGBP","EURJPY","GBPJPY","US30","SPX500","GER40","UK100","JPN225","UKOIL","NATGAS","ETHUSDT","SOLUSDT","XRPUSDT","BNBUSDT"];
+      const spreads=await getBrokerSpreads();
       const quotes=await Promise.all(requested.map(async label=>{
         const key=normalize(label),provider=SYMBOLS[key]||SYMBOLS[label];
         if(!provider)return {symbol:label,error:"Unsupported symbol"};
         try {
           const tick=await getTick(provider,false);
-          const bps=await getBrokerSpread(key),half=bps/20000;
+          const bps=brokerSpread(key,spreads),half=bps/20000;
           return {
             symbol:label,provider:"BiQuote",provider_symbol:provider,
             close:tick.mid,price:tick.mid,mid:tick.mid,bid:tick.bid,ask:tick.ask,
@@ -212,7 +210,14 @@ Deno.serve(async(req:Request)=>{
             datetime:tick.timestamp,is_market_open:tick.marketState==="open",
             marketState:tick.marketState,stale:tick.stale,quoteAgeSeconds:tick.quoteAgeSeconds
           };
-        } catch(e) {return {symbol:label,error:e instanceof Error?e.message:"Quote unavailable",provider:"BiQuote"};}
+        } catch(e) {
+          const cached=await readFreshBbookQuote(key);
+          if(cached)return {symbol:label,provider:"Supabase Quote Cache Fallback",provider_symbol:provider,
+            close:cached.price,price:cached.price,mid:cached.price,bid:cached.price,ask:cached.price,
+            datetime:cached.fetched_at,is_market_open:true,stale:true,fallback:true,
+            quoteAgeSeconds:Math.round(cached.quote_age_ms/1000),error:null};
+          return {symbol:label,error:e instanceof Error?e.message:"Quote unavailable",provider:"BiQuote"};
+        }
       }));
       const payload={provider:"BiQuote",fetched_at:new Date().toISOString(),quotes,note:"Live reference market quotes; broker execution spread is calculated separately by BIGBULLS B-Book settings."};
       cache.set(cacheKey,{at:Date.now(),payload});return json(payload);
