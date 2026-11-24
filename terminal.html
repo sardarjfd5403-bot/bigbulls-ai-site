@@ -2645,8 +2645,8 @@ function bbStartBackgroundLoops(c){
  window.addEventListener('focus',()=>{void hydrateFromServer('terminal focus');});
  window.addEventListener('pageshow',()=>{void hydrateFromServer('pageshow');});
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)void hydrateFromServer('visibility restore');});
- setInterval(()=>{if(!document.hidden&&Date.now()-lastBiQuoteTickAt>5000)quotes().catch(e=>console.warn('Quote refresh:',e));},15000);
- setInterval(()=>{if(document.hidden)return;if(Date.now()-lastBiQuoteTickAt>4000)void refreshSelectedQuote();if(state.activeTab==='trade'&&(state.viewportMode==='desktop'||state.tradeSubView==='chart'))candles().catch(e=>console.warn('Chart refresh:',e.message));},5000);
+ setInterval(()=>{if(!document.hidden)quotes().catch(e=>console.warn('Quote refresh:',e));},15000);
+ setInterval(()=>{if(document.hidden)return;const activeQuote=state.instruments[state.selectedSymbol]?.quoteReceivedAt||0;if(!activeQuote||Date.now()-activeQuote>3500)void refreshSelectedQuote();if(state.activeTab==='trade'&&(state.viewportMode==='desktop'||state.tradeSubView==='chart'))candles().catch(e=>console.warn('Chart refresh:',e.message));},2500);
  setInterval(async()=>{if(document.hidden)return;try{const current=getActiveAccount()?.backendId||null;await accounts(current);renderApp();await refresh(true);await window.bbLoadAiAutoTradeSetting();}catch(e){console.warn('Account balance refresh:',e);}},10000);
 }
 async function start(){
