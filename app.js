@@ -1123,17 +1123,26 @@ async function showAccountTool(id,action){
  const showTool=(label,content)=>{body.innerHTML='<div class="bb-account-tool-modal"><span class="accounts-kicker">'+label+'</span><h2>'+heading+'</h2>'+content+'<button type="button" class="copy-wallet" data-account-info-back="'+esc(id)+'">Back to account details</button></div>';showModal();};
  if(action==="trades"){showTool("TRADING HISTORY",'<div class="empty-state">No B-Book REAL or BigBulls DEMO trading history is available yet.</div>');return;}
  if(action==="transactions"){
-  showTool("TRANSACTION HISTORY",'<p>Deposits, withdrawals and transfers for this account.</p><div id="bb-account-transactions">Loading…</div>');
-  const [wallets,from,to,ledger]=await Promise.all([
-   sb.from("wallet_transactions").select("id,kind,asset,network,amount_usd,status,tx_hash,invoice_id,rejection_reason,admin_note,destination_address,payout_reference,created_at,completed_at").eq("account_id",id).order("created_at",{ascending:false}),
-   sb.from("account_transfers").select("id,from_account,to_account,amount_usd,status,created_at").eq("from_account",id).order("created_at",{ascending:false}),
-   sb.from("account_transfers").select("id,from_account,to_account,amount_usd,status,created_at").eq("to_account",id).order("created_at",{ascending:false}),
-   sb.from("account_balance_ledger").select("id,entry_type,amount,balance_before,balance_after,note,created_at").eq("account_id",id).in("entry_type",["admin_credit","admin_debit"]).order("created_at",{ascending:false})
+  showTool("TRANSACTION HISTORY",'<p>Complete deposit, withdrawal and transfer history across all your BIGBULLS accounts.</p><div id="bb-account-transactions">Loading…</div>');
+  const [wallets,accountTransfers,fundTransfers,ledger]=await Promise.all([
+   sb.from("wallet_transactions").select("id,kind,asset,network,amount_usd,status,tx_hash,invoice_id,rejection_reason,admin_note,destination_address,payout_reference,created_at,completed_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(200),
+   sb.from("account_transfers").select("id,from_account,to_account,amount_usd,status,created_at,currency").eq("user_id",user.id).order("created_at",{ascending:false}).limit(200),
+   sb.from("client_fund_transfers").select("id,from_type,from_account_id,to_type,to_account_id,amount,currency,status,created_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(200),
+   sb.from("account_balance_ledger").select("id,account_id,entry_type,amount,balance_before,balance_after,note,created_at").eq("user_id",user.id).in("entry_type",["admin_credit","admin_debit"]).order("created_at",{ascending:false}).limit(200)
   ]);
   const list=document.getElementById("bb-account-transactions");if(!list)return;
-  if(wallets.error||from.error||to.error||ledger.error){list.textContent="History unavailable: "+(wallets.error||from.error||to.error||ledger.error).message;return;}
-  const items=[...(wallets.data||[]).map(x=>({date:x.created_at,label:x.kind.toUpperCase()+" · "+x.asset+"/"+x.network,amount:"$"+Number(x.amount_usd).toFixed(2),status:x.status,ref:x.invoice_id||x.tx_hash||x.destination_address||"",note:x.rejection_reason||x.admin_note||x.payout_reference||""})),...(from.data||[]).map(x=>({date:x.created_at,label:"TRANSFER OUT",amount:"$"+Number(x.amount_usd).toFixed(2),status:x.status,ref:"To "+x.to_account})),...(to.data||[]).map(x=>({date:x.created_at,label:"TRANSFER IN",amount:"$"+Number(x.amount_usd).toFixed(2),status:x.status,ref:"From "+x.from_account})),...(ledger.data||[]).map(x=>({date:x.created_at,label:x.entry_type==="admin_credit"?"ADMIN BALANCE CREDIT":"ADMIN BALANCE DEBIT",amount:(x.entry_type==="admin_debit"?"-":"+")+"$"+Number(x.amount).toFixed(2),status:"posted",ref:"Balance "+Number(x.balance_before).toFixed(2)+" → "+Number(x.balance_after).toFixed(2),note:x.note||""}))].sort((a,b)=>new Date(b.date)-new Date(a.date));
-  list.innerHTML=items.length?items.map(x=>'<div class="admin-row"><span><b>'+esc(x.label)+'</b><small>'+new Date(x.date).toLocaleString()+(x.ref?' · '+esc(x.ref):'')+(x.note?' · '+esc(x.note):'')+'</small></span><b>'+esc(x.amount)+'</b><em>'+esc(x.status)+'</em></div>').join(""):'<div class="empty-state">No transactions recorded for this account.</div>';
+  const failed=[wallets,accountTransfers,fundTransfers,ledger].find(x=>x.error);
+  if(failed){list.textContent="History unavailable: "+failed.error.message;return;}
+  const items=[
+   ...(wallets.data||[]).map(x=>({date:x.created_at,label:x.kind.toUpperCase()+" · "+x.asset+"/"+x.network,amount:"$"+Number(x.amount_usd).toFixed(2),status:x.status,ref:x.invoice_id||x.tx_hash||x.destination_address||"",note:x.rejection_reason||x.admin_note||x.payout_reference||""})),
+   ...(accountTransfers.data||[]).flatMap(x=>[
+    {date:x.created_at,label:"TRANSFER OUT",amount:"-$"+Number(x.amount_usd).toFixed(2),status:x.status,ref:"To account "+x.to_account},
+    {date:x.created_at,label:"TRANSFER IN",amount:"+$"+Number(x.amount_usd).toFixed(2),status:x.status,ref:"From account "+x.from_account}
+   ]),
+   ...(fundTransfers.data||[]).map(x=>({date:x.created_at,label:(x.from_type==="wallet"?"MAIN WALLET":"TRADING ACCOUNT")+" → "+(x.to_type==="wallet"?"MAIN WALLET":"TRADING ACCOUNT"),amount:"$"+Number(x.amount).toFixed(2)+" "+(x.currency||"USD"),status:x.status,ref:"Transfer "+x.id})),
+   ...(ledger.data||[]).map(x=>({date:x.created_at,label:x.entry_type==="admin_credit"?"ADMIN BALANCE CREDIT":"ADMIN BALANCE DEBIT",amount:(x.entry_type==="admin_debit"?"-":"+")+"$"+Number(x.amount).toFixed(2),status:"posted",ref:"Account "+x.account_id+" · Balance "+Number(x.balance_before).toFixed(2)+" → "+Number(x.balance_after).toFixed(2),note:x.note||""}))
+  ].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  list.innerHTML=items.length?items.map(x=>'<div class="admin-row"><span><b>'+esc(x.label)+'</b><small>'+new Date(x.date).toLocaleString()+(x.ref?' · '+esc(x.ref):'')+(x.note?' · '+esc(x.note):'')+'</small></span><b>'+esc(x.amount)+'</b><em>'+esc(x.status)+'</em></div>').join(""):'<div class="empty-state">No transactions recorded for this client yet.</div>';
   return;
  }
  if(action==="transfer"){
