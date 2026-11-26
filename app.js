@@ -180,6 +180,7 @@ function startFinancialRealtime(){
   channel.on("postgres_changes",{event:"*",schema:"public",table:"partner_applications"},()=>{if(activePage==="admin")loadPageData();});
   channel.on("postgres_changes",{event:"*",schema:"public",table:"partner_referrals"},()=>{if(activePage==="admin")loadPageData();});
   channel.on("postgres_changes",{event:"*",schema:"public",table:"partner_commission_ledger"},()=>{if(activePage==="admin")loadPageData();});
+  channel.on("postgres_changes",{event:"*",schema:"public",table:"partner_deposit_commissions"},()=>{if(activePage==="admin")loadPageData();});
   channel.on("postgres_changes",{event:"*",schema:"public",table:"partner_wallet_accounts"},()=>{if(activePage==="admin")loadPageData();});
   channel.on("postgres_changes",{event:"*",schema:"public",table:"partner_payout_requests"},()=>{if(activePage==="admin")loadPageData();});
   channel.on("postgres_changes",{event:"*",schema:"public",table:"partner_commission_rates"},()=>{if(activePage==="admin")loadPageData();});
@@ -198,6 +199,7 @@ function startFinancialRealtime(){
   channel.on("postgres_changes",{event:"*",schema:"public",table:"partner_applications",filter:"user_id=eq."+user.id},()=>{if(activePage==="partner")loadPageData();});
   channel.on("postgres_changes",{event:"*",schema:"public",table:"partner_referrals",filter:"partner_user_id=eq."+user.id},()=>{if(activePage==="partner")loadPageData();});
   channel.on("postgres_changes",{event:"*",schema:"public",table:"partner_commission_ledger",filter:"partner_user_id=eq."+user.id},()=>{if(activePage==="partner")loadPageData();});
+  channel.on("postgres_changes",{event:"*",schema:"public",table:"partner_deposit_commissions",filter:"partner_user_id=eq."+user.id},()=>{if(activePage==="partner")loadPageData();});
   channel.on("postgres_changes",{event:"*",schema:"public",table:"partner_wallet_accounts",filter:"partner_user_id=eq."+user.id},()=>{if(activePage==="partner")loadPageData();});
   channel.on("postgres_changes",{event:"*",schema:"public",table:"partner_payout_requests",filter:"partner_user_id=eq."+user.id},()=>{if(activePage==="partner")loadPageData();});
   channel.on("postgres_changes",{event:"*",schema:"public",table:"account_transfers",filter:"user_id=eq."+user.id},()=>{if(activePage==="accounts"){loadClientTradingAccounts();const tools=document.getElementById("bb-account-tools");if(tools?.dataset.accountTool==="transactions")showAccountTool(tools.dataset.accountId,"transactions");}});
@@ -517,7 +519,7 @@ function pageContent(p,name){
  if(p==="settings")return '<div class="settings-tabs"><button class="active" data-settings-tab="profile">Profile</button><button data-settings-tab="security">Security</button><button data-settings-tab="preferences">Preferences</button></div><div class="client-panel" id="settings-content"><h3>Manage profile</h3><form id="profile-form" class="client-form"><label>Full name<input name="full_name" value="'+esc(user.user_metadata?.full_name||"")+'" required></label><label>Email address<input value="'+esc(user.email||"")+'" disabled></label><button class="portal-primary">Save profile</button></form><div data-page-message></div></div>';
  if(p==="profile")return '<div class="client-panel"><h3>Personal information</h3><p>Identity status: <strong id="client-kyc-profile-status">Unverified</strong></p><form id="profile-form" class="client-form"><label>Full name<input name="full_name" value="'+esc(user.user_metadata?.full_name||"")+'" required></label><label>Email address<input value="'+esc(user.email||"")+'" disabled></label><button class="portal-primary">Save profile</button></form><div data-page-message></div></div>';
  if(p==="verification")return '<div class="page-intro"><span class="free-tag">IDENTITY VERIFICATION</span><h3>Complete your KYC profile</h3><p>Submit your details and identity documents through private KYC storage. Only you and authorized administrators can access the files.</p></div><div class="kyc-status-row"><span class="lock-label" id="kyc-current-status">STATUS: LOADING</span><span class="client-status">● PRIVATE DOCUMENT STORAGE</span></div><div class="client-panel"><form class="client-form" id="kyc-form" method="post" enctype="multipart/form-data" autocomplete="off" novalidate><div class="form-two"><label>First name<input name="first_name" autocomplete="given-name" placeholder="Enter your first name" required></label><label>Last name<input name="last_name" autocomplete="family-name" placeholder="Enter your last name" required></label></div><div class="form-two"><label>Date of birth<input type="date" name="dob" placeholder="Select your date of birth" aria-label="Select your date of birth" required><small>Select your date of birth</small></label><label>Country of residence<input name="country" value="'+esc(user.user_metadata?.country||"") +'" placeholder="Enter your country" required></label></div><label>CNIC / ID card number<input name="document_number" autocomplete="off" placeholder="e.g. 12345-1234567-1" required></label><label>Residential address<input name="address" placeholder="House, street, city and postal code" required></label><label>Document type<select name="document_type" required><option value="CNIC">CNIC / National ID</option><option value="Passport">Passport</option><option value="Driving License">Driving License</option></select></label><div class="form-two"><label>Document front (required)<input type="file" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf" name="document_front" required><small data-kyc-file-name="document_front">No file selected</small></label><label>Document back (CNIC / Driving License required)<input type="file" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf" name="document_back"><small data-kyc-file-name="document_back">No file selected</small></label></div><div class="notice">Accepted files: JPG, PNG, WEBP or PDF. Each document must be at least 100 KB and no larger than 20 MB. Upload only genuine documents belonging to you.</div><button class="portal-primary" type="submit">Submit KYC securely</button><div data-page-message role="status" aria-live="polite"></div></form><div id="kyc-history" class="wallet-history"></div></div>';
- if(p==="partner")return '<div class="partner-dashboard-hero"><div><span class="free-tag">BIGBULLS PARTNER WORKSPACE</span><h3>Grow your introducing business</h3><p>Share your referral link, track real B-Book volume and manage your IB commission wallet.</p></div><span class="client-status" id="partner-current-status">● LOADING STATUS</span></div><div class="partner-kpi-grid"><article class="client-panel"><small>AVAILABLE IB WALLET</small><b id="partner-wallet-balance">$0.00</b><span>USD available for transfer or payout</span></article><article class="client-panel"><small>TOTAL EARNED REWARDS</small><b id="partner-total-earned">$0.00</b><span>Lifetime earned commission</span></article><article class="client-panel"><small>ACTIVE REFERRED CLIENTS</small><b id="partner-active-clients">0</b><span id="partner-referred-count">0 total referrals</span></article><article class="client-panel"><small>TOTAL TRADED LOTS</small><b id="partner-total-lots">0.00</b><span>Real B-Book closed volume only</span></article></div><div class="client-panel"><h3>Partner application</h3><form class="client-form" id="partner-form"><label>Partner type<select name="partner_type"><option>IB</option><option>Educator</option><option>Content Creator</option><option>Other</option></select></label><label>Business / academy name<input name="business_name" maxlength="160"></label><label>Website or social profile<input name="website_or_social" type="url" placeholder="https://"></label><label>Approximate audience size<input name="audience_size" type="number" min="0"></label><label>Relevant experience<textarea name="experience" rows="3" maxlength="2000"></textarea></label><button class="portal-primary">Submit partner application</button><div data-page-message></div></form></div><div class="partner-dashboard-grid"><article class="client-panel"><span class="free-tag">01 / REFERRAL TOOLS</span><h3>Your BigBulls referral link</h3><div id="partner-referral-link" class="referral-preview">Available after partner approval.</div><div id="partner-referral-qr" class="partner-referral-qr"></div><div class="partner-action-row"><button type="button" data-partner-share>Share link</button><button type="button" data-partner-copy-code>Copy referral code</button></div><small id="partner-tier-rate">Commission tier and rate load after approval.</small></article><article class="client-panel"><span class="free-tag">02 / IB WALLET</span><h3>Move or withdraw commission</h3><form id="partner-transfer-form" class="client-form"><label>Transfer to Real trading account<select name="account_id" id="partner-transfer-account" required><option value="">Loading approved Real accounts…</option></select></label><label>Amount (USD)<input name="amount" type="number" min="0.01" step="0.01" required></label><button class="portal-primary">Instant transfer to account</button><div data-page-message></div></form><form id="partner-payout-form" class="client-form"><label>Payout method<select name="payout_method"><option value="crypto">Crypto</option><option value="bank">Bank transfer</option><option value="other">Other</option></select></label><label>Amount (USD)<input name="amount" type="number" min="0.01" step="0.01" required></label><label>Destination details<input name="destination" maxlength="500" required placeholder="Wallet address or bank payout details"></label><button class="portal-primary">Request withdrawal</button><div data-page-message></div></form><div id="partner-payout-history"></div></article><article class="client-panel"><span class="free-tag">03 / REFERRED CLIENTS</span><h3>Your client network</h3><div id="partner-referrals">Loading referrals…</div></article><article class="client-panel"><span class="free-tag">04 / COMMISSION HISTORY</span><h3>Trade rebate ledger</h3><div id="partner-commissions">Loading commission records…</div></article></div>'; if(p==="admin")return isAdmin()?'<section class="client-panel" id="bb-admin-users-panel"><h3>Administrator access</h3><p>Only existing registered accounts can be promoted. New administrators must sign out and sign in again after promotion. The primary owner cannot be removed.</p><form id="bb-admin-user-form" class="client-form"><label>Registered account email<input name="email" type="email" required maxlength="254" placeholder="user@example.com"></label><button class="portal-primary" type="submit">Grant admin access</button><div data-page-message></div></form><div id="bb-admin-user-list" class="notice">Loading administrator list…</div></section><section class="client-panel" id="bb-admin-market-publisher"><div class="admin-section-heading"><h3>AI Market Signals · Publishing Control</h3><span>ADMIN ONLY · KYC-GATED CLIENT FEED</span></div><p>Run the Market Brain scan, review its output and publish the latest research snapshot to the client Signals page. Published snapshots expire automatically.</p><button type="button" id="bb-admin-market-run" class="portal-primary">Run AI Market Brain & Publish to Client Signals</button><div id="bb-admin-market-status" class="notice">No new scan has been published from this control yet.</div></section><div class="admin-overview"><div><small>ADMIN WORKSPACE</small><h3>Operations control centre</h3><p>Manage customer requests and platform setup from one secure workspace.</p></div><span class="admin-secure">● ADMIN ROLE VERIFIED</span></div><div class="admin-metrics"><div><small>PAYMENT REVIEW</small><b>Manual verification</b><span>Blockchain checks required</span></div><div><small>PRODUCT ACCESS</small><b>License gated</b><span>Private download remains locked</span></div><div><small>MARKET DATA</small><b>Twelve Data + Binance</b><span>Edge feed responding · cached quotes</span></div><div><small>BROKER EXECUTION</small><b>Paper engine enabled</b><span>Demo simulation only · no broker routing</span></div></div><div class="admin-section-heading"><h3>Client & trading account control</h3><span>ADMIN ONLY · BALANCE LEDGER</span></div><div class="client-panel"><p>Only Admin can edit account balances. Every change is logged.</p><div id="admin-client-accounts">Loading client accounts…</div></div><div class="admin-section-heading"><h3>Payment wallet configuration</h3><span>ADMIN ONLY</span></div><div class="client-panel"><p>Set the receiving address and exact network. Clients will only see wallets marked active.</p><form id="admin-wallet-form" class="client-form"><div class="form-two"><label>Asset<select name="asset"><option>USDT</option><option>BTC</option><option>ETH</option><option>BNB</option><option>SOL</option><option>LTC</option></select></label><label>Network<input name="network" placeholder="TRC20 / ERC20 / BEP20 / Bitcoin" required></label></div><label>Wallet address<input name="address" required></label><label>Display label<input name="label" placeholder="Official deposit wallet"></label><button class="portal-primary">Save / update wallet</button></form><div data-page-message></div><div id="admin-wallet-list"></div></div><div class="admin-section-heading"><h3>Pending payment requests</h3><span>VERIFY TXID BEFORE APPROVAL</span></div><div class="client-panel"><button type="button" class="portal-primary" data-wallet-queue-refresh>Refresh deposit / withdrawal requests</button><div id="admin-transactions">Loading payment queue…</div></div><div class="admin-section-heading"><h3>Echo System order approvals</h3><span>VERIFY TRC20 TXID BEFORE LICENSE ISSUE</span></div><div class="client-panel"><div id="admin-product-orders">Loading product orders…</div></div><div class="admin-section-heading"><h3>Private Echo System package</h3><span>ADMIN UPLOAD · LICENSED DOWNLOADS ONLY</span></div><div class="client-panel"><form id="admin-package-form" class="client-form"><label>Upload the current Echo System ZIP package (maximum 100 MB)<input type="file" name="package" accept=".zip,application/zip,application/x-zip-compressed" required></label><button class="portal-primary" type="submit">Upload / replace private package</button><div data-page-message></div></form><p class="fine">After upload, active licensed customers receive a short-lived private download link.</p></div><div class="admin-section-heading"><h3>Portal account requests & internal transfers</h3><span>MANUAL REVIEW · NO BROKER LOGIN</span></div><div class="client-panel"><div id="admin-account-requests">Loading account queue…</div></div><div class="admin-section-heading"><h3>KYC verification centre</h3><span>PRIVATE DOCUMENT REVIEW</span></div><div class="client-panel"><button type="button" class="portal-primary" data-kyc-refresh>Refresh KYC submissions</button><div id="admin-kyc-queue">Loading KYC submissions…</div></div><div class="admin-section-heading"><h3>Partner application queue</h3><span>APPROVAL ISSUES REFERRAL CODE</span></div><div class="client-panel"><div id="admin-partner-queue">Loading partner applications…</div></div><div class="admin-section-heading"><h3>Customer Support Desk</h3><span>ADMIN REPLY · STATUS CONTROL</span></div><div class="client-panel"><button type="button" class="portal-primary" data-support-queue-refresh>Refresh support tickets</button><div id="admin-support-queue">Loading support tickets…</div></div><div class="admin-section-heading"><h3>Legacy manual commission statement records</h3><span>REVIEW ONLY · ADMIN</span></div><div class="client-panel"><p>Legacy statement entries are retained for reconciliation. Use the IB Control Desk wallet adjustment for manual wallet credits or debits; automatic B-Book rebates are credited by the trade-close hook.</p><form id="admin-commission-form" class="client-form"><label>Approved partner user ID<input name="partner_user_id" required placeholder="Partner user UUID"></label><label>Referred client user ID (optional)<input name="referred_user_id" placeholder="Referred client UUID"></label><div class="form-two"><label>Verified lots<input name="verified_lots" type="number" min="0" step="0.01" value="0" required></label><label>Commission (USD)<input name="commission_usd" type="number" min="0.01" step="0.01" required></label></div><label>Broker statement / source reference<input name="source_reference" maxlength="160" required></label><label>Admin note<textarea name="admin_note" rows="2" maxlength="1000"></textarea></label><button class="portal-primary" type="submit">Record commission</button><div data-page-message></div></form><div id="admin-commission-ledger">Loading commission ledger…</div><div class="admin-section-heading"><h3>IB & Partners Control Desk</h3><span>SUPER ADMIN · RATES · WALLET · PAYOUTS</span></div><div class="client-panel"><p>Configure per-lot rebates by tier, manage partner access, review IB payout requests and make audited wallet adjustments. Automatic commissions are credited only when a referred client closes a Real B-Book trade.</p><div id="admin-ib-rates">Loading IB commission tiers…</div><div id="admin-ib-partners">Loading partner performance…</div><form id="admin-ib-adjust-form" class="client-form"><h4>Manual IB wallet adjustment</h4><label>Partner user ID<input name="partner_user_id" required placeholder="Partner user UUID"></label><div class="form-two"><label>Direction<select name="direction"><option value="credit">Credit</option><option value="debit">Debit</option></select></label><label>Amount USD<input name="amount" type="number" min="0.01" step="0.01" required></label></div><label>Audit note<textarea name="note" rows="2" minlength="4" maxlength="500" required></textarea></label><button class="portal-primary">Apply audited adjustment</button><div data-page-message></div></form><h4>IB payout requests · Finance Desk</h4><div id="admin-ib-payouts">Loading IB payout requests…</div></div></div><div class="admin-section-heading"><h3>Legacy Demo Account Monitor</h3><span>ADMIN ONLY · SIMULATED ACCOUNT STATE</span></div><div class="client-panel"><p>Review each customer’s demo balance, open positions, floating P/L snapshot and closed trade history. Legacy demo records; new DEMO fills are managed by the BigBulls paper ledger.</p><div id="admin-demo-accounts">Loading demo accounts…</div></div><div class="admin-section-heading"><h3>Other platform controls</h3><span>BACKEND PHASE</span></div><div class="admin-control-grid"><article><b>Echo System licensing</b><p>Manual TXID review, license issuance and private ZIP delivery are connected. Admin must verify payment before approval.</p><span>MANUAL REVIEW ACTIVE</span></article><article><b>KYC review centre</b><p>Private document storage and Admin review/status updates are connected.</p><span>CONNECTED</span></article><article><b>IB / Partner operations</b><p>Referral attribution is active. Verified lot-based commissions and payouts still require broker-side data integration.</p><span>BROKER DATA REQUIRED</span></article><article><b>Website theme & content</b><p>Public site layout and brand theme are version-controlled in the GitHub repository.</p><span>GITHUB CONTROLLED</span></article></div>' : '<div class="notice error">Admin access restricted.</div>';
+ if(p==="partner")return '<div class="partner-dashboard-hero"><div><span class="free-tag">BIGBULLS PARTNER WORKSPACE</span><h3>Grow your introducing business</h3><p>Share your referral link, track real B-Book volume and manage your IB commission wallet.</p></div><span class="client-status" id="partner-current-status">● LOADING STATUS</span></div><div class="partner-kpi-grid"><article class="client-panel"><small>AVAILABLE IB WALLET</small><b id="partner-wallet-balance">$0.00</b><span>USD available for transfer or payout</span></article><article class="client-panel"><small>TOTAL EARNED REWARDS</small><b id="partner-total-earned">$0.00</b><span>Lifetime earned commission</span></article><article class="client-panel"><small>ACTIVE REFERRED CLIENTS</small><b id="partner-active-clients">0</b><span id="partner-referred-count">0 total referrals</span></article><article class="client-panel"><small>TOTAL TRADED LOTS</small><b id="partner-total-lots">0.00</b><span>Real B-Book closed volume only</span></article><article class="client-panel"><small>PENDING DEPOSIT COMMISSION</small><b id="partner-pending-deposit-commission">$0.00</b><span>Waiting for liquidity pool funding</span></article></div><div class="client-panel"><h3>Partner application</h3><form class="client-form" id="partner-form"><label>Partner type<select name="partner_type"><option>IB</option><option>Educator</option><option>Content Creator</option><option>Other</option></select></label><label>Business / academy name<input name="business_name" maxlength="160"></label><label>Website or social profile<input name="website_or_social" type="url" placeholder="https://"></label><label>Approximate audience size<input name="audience_size" type="number" min="0"></label><label>Relevant experience<textarea name="experience" rows="3" maxlength="2000"></textarea></label><button class="portal-primary">Submit partner application</button><div data-page-message></div></form></div><div class="partner-dashboard-grid"><article class="client-panel"><span class="free-tag">01 / REFERRAL TOOLS</span><h3>Your BigBulls referral link</h3><div id="partner-referral-link" class="referral-preview">Available after partner approval.</div><div id="partner-referral-qr" class="partner-referral-qr"></div><div class="partner-action-row"><button type="button" data-partner-share>Share link</button><button type="button" data-partner-copy-code>Copy referral code</button></div><small id="partner-tier-rate">Commission tier and rate load after approval.</small></article><article class="client-panel"><span class="free-tag">02 / IB WALLET</span><h3>Move or withdraw commission</h3><form id="partner-transfer-form" class="client-form"><label>Transfer to Real trading account<select name="account_id" id="partner-transfer-account" required><option value="">Loading approved Real accounts…</option></select></label><label>Amount (USD)<input name="amount" type="number" min="0.01" step="0.01" required></label><button class="portal-primary">Instant transfer to account</button><div data-page-message></div></form><form id="partner-payout-form" class="client-form"><label>Payout method<select name="payout_method"><option value="crypto">Crypto</option><option value="bank">Bank transfer</option><option value="other">Other</option></select></label><label>Amount (USD)<input name="amount" type="number" min="0.01" step="0.01" required></label><label>Destination details<input name="destination" maxlength="500" required placeholder="Wallet address or bank payout details"></label><button class="portal-primary">Request withdrawal</button><div data-page-message></div></form><div id="partner-payout-history"></div></article><article class="client-panel"><span class="free-tag">03 / REFERRED CLIENTS</span><h3>Your client network</h3><div id="partner-referrals">Loading referrals…</div></article><article class="client-panel"><span class="free-tag">04 / TRADING COMMISSION HISTORY</span><h3>Trade rebate ledger</h3><div id="partner-commissions">Loading commission records…</div></article><article class="client-panel"><span class="free-tag">05 / DEPOSIT REFERRAL COMMISSION</span><h3>10% deposit commission</h3><p class="fine">Earn 10% from every successful deposit made by a client who joined through your referral link. Client deposits are never reduced.</p><div id="partner-deposit-commissions">Loading deposit commission records…</div></article></div>'; if(p==="admin")return isAdmin()?'<section class="client-panel" id="bb-admin-users-panel"><h3>Administrator access</h3><p>Only existing registered accounts can be promoted. New administrators must sign out and sign in again after promotion. The primary owner cannot be removed.</p><form id="bb-admin-user-form" class="client-form"><label>Registered account email<input name="email" type="email" required maxlength="254" placeholder="user@example.com"></label><button class="portal-primary" type="submit">Grant admin access</button><div data-page-message></div></form><div id="bb-admin-user-list" class="notice">Loading administrator list…</div></section><section class="client-panel" id="bb-admin-market-publisher"><div class="admin-section-heading"><h3>AI Market Signals · Publishing Control</h3><span>ADMIN ONLY · KYC-GATED CLIENT FEED</span></div><p>Run the Market Brain scan, review its output and publish the latest research snapshot to the client Signals page. Published snapshots expire automatically.</p><button type="button" id="bb-admin-market-run" class="portal-primary">Run AI Market Brain & Publish to Client Signals</button><div id="bb-admin-market-status" class="notice">No new scan has been published from this control yet.</div></section><div class="admin-overview"><div><small>ADMIN WORKSPACE</small><h3>Operations control centre</h3><p>Manage customer requests and platform setup from one secure workspace.</p></div><span class="admin-secure">● ADMIN ROLE VERIFIED</span></div><div class="admin-metrics"><div><small>PAYMENT REVIEW</small><b>Manual verification</b><span>Blockchain checks required</span></div><div><small>PRODUCT ACCESS</small><b>License gated</b><span>Private download remains locked</span></div><div><small>MARKET DATA</small><b>Twelve Data + Binance</b><span>Edge feed responding · cached quotes</span></div><div><small>BROKER EXECUTION</small><b>Paper engine enabled</b><span>Demo simulation only · no broker routing</span></div></div><div class="admin-section-heading"><h3>Client & trading account control</h3><span>ADMIN ONLY · BALANCE LEDGER</span></div><div class="client-panel"><p>Only Admin can edit account balances. Every change is logged.</p><div id="admin-client-accounts">Loading client accounts…</div></div><div class="admin-section-heading"><h3>Payment wallet configuration</h3><span>ADMIN ONLY</span></div><div class="client-panel"><p>Set the receiving address and exact network. Clients will only see wallets marked active.</p><form id="admin-wallet-form" class="client-form"><div class="form-two"><label>Asset<select name="asset"><option>USDT</option><option>BTC</option><option>ETH</option><option>BNB</option><option>SOL</option><option>LTC</option></select></label><label>Network<input name="network" placeholder="TRC20 / ERC20 / BEP20 / Bitcoin" required></label></div><label>Wallet address<input name="address" required></label><label>Display label<input name="label" placeholder="Official deposit wallet"></label><button class="portal-primary">Save / update wallet</button></form><div data-page-message></div><div id="admin-wallet-list"></div></div><div class="admin-section-heading"><h3>Pending payment requests</h3><span>VERIFY TXID BEFORE APPROVAL</span></div><div class="client-panel"><button type="button" class="portal-primary" data-wallet-queue-refresh>Refresh deposit / withdrawal requests</button><div id="admin-transactions">Loading payment queue…</div></div><div class="admin-section-heading"><h3>Echo System order approvals</h3><span>VERIFY TRC20 TXID BEFORE LICENSE ISSUE</span></div><div class="client-panel"><div id="admin-product-orders">Loading product orders…</div></div><div class="admin-section-heading"><h3>Private Echo System package</h3><span>ADMIN UPLOAD · LICENSED DOWNLOADS ONLY</span></div><div class="client-panel"><form id="admin-package-form" class="client-form"><label>Upload the current Echo System ZIP package (maximum 100 MB)<input type="file" name="package" accept=".zip,application/zip,application/x-zip-compressed" required></label><button class="portal-primary" type="submit">Upload / replace private package</button><div data-page-message></div></form><p class="fine">After upload, active licensed customers receive a short-lived private download link.</p></div><div class="admin-section-heading"><h3>Portal account requests & internal transfers</h3><span>MANUAL REVIEW · NO BROKER LOGIN</span></div><div class="client-panel"><div id="admin-account-requests">Loading account queue…</div></div><div class="admin-section-heading"><h3>KYC verification centre</h3><span>PRIVATE DOCUMENT REVIEW</span></div><div class="client-panel"><button type="button" class="portal-primary" data-kyc-refresh>Refresh KYC submissions</button><div id="admin-kyc-queue">Loading KYC submissions…</div></div><div class="admin-section-heading"><h3>Partner application queue</h3><span>APPROVAL ISSUES REFERRAL CODE</span></div><div class="client-panel"><div id="admin-partner-queue">Loading partner applications…</div></div><div class="admin-section-heading"><h3>Customer Support Desk</h3><span>ADMIN REPLY · STATUS CONTROL</span></div><div class="client-panel"><button type="button" class="portal-primary" data-support-queue-refresh>Refresh support tickets</button><div id="admin-support-queue">Loading support tickets…</div></div><div class="admin-section-heading"><h3>Legacy manual commission statement records</h3><span>REVIEW ONLY · ADMIN</span></div><div class="client-panel"><p>Legacy statement entries are retained for reconciliation. Use the IB Control Desk wallet adjustment for manual wallet credits or debits; automatic B-Book rebates are credited by the trade-close hook.</p><form id="admin-commission-form" class="client-form"><label>Approved partner user ID<input name="partner_user_id" required placeholder="Partner user UUID"></label><label>Referred client user ID (optional)<input name="referred_user_id" placeholder="Referred client UUID"></label><div class="form-two"><label>Verified lots<input name="verified_lots" type="number" min="0" step="0.01" value="0" required></label><label>Commission (USD)<input name="commission_usd" type="number" min="0.01" step="0.01" required></label></div><label>Broker statement / source reference<input name="source_reference" maxlength="160" required></label><label>Admin note<textarea name="admin_note" rows="2" maxlength="1000"></textarea></label><button class="portal-primary" type="submit">Record commission</button><div data-page-message></div></form><div id="admin-commission-ledger">Loading commission ledger…</div><div class="admin-section-heading"><h3>IB & Partners Control Desk</h3><span>SUPER ADMIN · RATES · WALLET · PAYOUTS</span></div><div class="client-panel"><p>Configure per-lot rebates by tier, manage partner access, review IB payout requests and make audited wallet adjustments. Automatic commissions are credited only when a referred client closes a Real B-Book trade.</p><div id="admin-ib-rates">Loading IB commission tiers…</div><div id="admin-ib-partners">Loading partner performance…</div><form id="admin-ib-adjust-form" class="client-form"><h4>Manual IB wallet adjustment</h4><label>Partner user ID<input name="partner_user_id" required placeholder="Partner user UUID"></label><div class="form-two"><label>Direction<select name="direction"><option value="credit">Credit</option><option value="debit">Debit</option></select></label><label>Amount USD<input name="amount" type="number" min="0.01" step="0.01" required></label></div><label>Audit note<textarea name="note" rows="2" minlength="4" maxlength="500" required></textarea></label><button class="portal-primary">Apply audited adjustment</button><div data-page-message></div></form><h4>IB payout requests · Finance Desk</h4><div id="admin-ib-payouts">Loading IB payout requests…</div></div></div><div class="admin-section-heading"><h3>Legacy Demo Account Monitor</h3><span>ADMIN ONLY · SIMULATED ACCOUNT STATE</span></div><div class="client-panel"><p>Review each customer’s demo balance, open positions, floating P/L snapshot and closed trade history. Legacy demo records; new DEMO fills are managed by the BigBulls paper ledger.</p><div id="admin-demo-accounts">Loading demo accounts…</div></div><div class="admin-section-heading"><h3>Other platform controls</h3><span>BACKEND PHASE</span></div><div class="admin-control-grid"><article><b>Echo System licensing</b><p>Manual TXID review, license issuance and private ZIP delivery are connected. Admin must verify payment before approval.</p><span>MANUAL REVIEW ACTIVE</span></article><article><b>KYC review centre</b><p>Private document storage and Admin review/status updates are connected.</p><span>CONNECTED</span></article><article><b>IB / Partner operations</b><p>Referral attribution is active. Verified lot-based commissions and payouts still require broker-side data integration.</p><span>BROKER DATA REQUIRED</span></article><article><b>Website theme & content</b><p>Public site layout and brand theme are version-controlled in the GitHub repository.</p><span>GITHUB CONTROLLED</span></article></div>' : '<div class="notice error">Admin access restricted.</div>';
  if(p==="support")return '<div class="page-intro"><span class="free-tag">CLIENT CARE</span><h3>Customer Support</h3><p>Send a secure support ticket and follow replies from the BIGBULLS team.</p></div><div class="client-panel"><form id="support-ticket-form" class="client-form"><label>Subject<input name="subject" maxlength="160" required placeholder="How can we help?"></label><label>Category<select name="category"><option value="account">Account</option><option value="payments">Payments & wallet</option><option value="trading">Trading</option><option value="verification">KYC / verification</option><option value="technical">Technical issue</option><option value="other">Other</option></select></label><label>Message<textarea name="message" rows="5" minlength="10" maxlength="5000" required placeholder="Describe the issue and include any relevant reference number."></textarea></label><button class="portal-primary" type="submit">Submit support ticket</button><div data-page-message role="status" aria-live="polite"></div></form></div><section class="client-panel"><h3>Your support tickets</h3><div id="client-support-tickets">Loading your tickets…</div></section>';
  return '<div class="client-panel">Page not found.</div>';
 }
@@ -1026,9 +1028,10 @@ if(activePage==="admin"&&isAdmin()){
   }
  }
  if(activePage==="partner"){
-  const [{data:application,error:applicationError},{data:snapshot,error:snapshotError}]=await Promise.all([
+  const [{data:application,error:applicationError},{data:snapshot,error:snapshotError},{data:depositCommissions,error:depositCommissionError}]=await Promise.all([
    sb.from("partner_applications").select("*").eq("user_id",user.id).maybeSingle(),
-   sb.rpc("partner_dashboard_snapshot")
+   sb.rpc("partner_dashboard_snapshot"),
+   sb.from("partner_deposit_commissions").select("id,wallet_transaction_id,referred_user_id,deposit_amount_usd,commission_rate,commission_amount_usd,status,paid_at,created_at").eq("partner_user_id",user.id).order("created_at",{ascending:false}).limit(100)
   ]);
   const status=document.getElementById("partner-current-status"),link=document.getElementById("partner-referral-link"),form=document.getElementById("partner-form");
   const partner=snapshot?.partner||null,wallet=snapshot?.wallet||{},metrics=snapshot?.metrics||{};
@@ -1046,6 +1049,8 @@ if(activePage==="admin"&&isAdmin()){
   setText("partner-active-clients",String(metrics.active_clients||0));
   setText("partner-referred-count",String(metrics.total_referred||0)+" total referrals");
   setText("partner-total-lots",Number(metrics.total_lots||0).toFixed(2));
+  const pendingDepositTotal=(depositCommissions||[]).filter(x=>x.status==="pending_pool").reduce((n,x)=>n+Number(x.commission_amount_usd||0),0);
+  setText("partner-pending-deposit-commission","$"+pendingDepositTotal.toFixed(2));
   const rateBox=document.getElementById("partner-tier-rate");
   if(rateBox&&partner?.tier){
    const {data:rate}=await sb.from("partner_commission_rates").select("commission_per_lot,enabled").eq("tier",partner.tier).maybeSingle();
@@ -1054,7 +1059,1779 @@ if(activePage==="admin"&&isAdmin()){
   const refs=snapshot?.referrals||[],comm=snapshot?.commissions||[];
   const rb=document.getElementById("partner-referrals"),cb=document.getElementById("partner-commissions");
   if(rb)rb.innerHTML=snapshotError?'<div class="notice error">'+esc(snapshotError.message)+'</div>':refs.map(x=>'<div class="admin-row"><span><b>'+esc(x.masked_email||"Client")+'</b><small>Joined '+new Date(x.joined_at).toLocaleDateString()+' · '+(x.active?"Active Real client":"Not active")+'</small><small>'+Number(x.total_lots||0).toFixed(2)+' lots · $'+Number(x.commission_usd||0).toFixed(2)+' earned</small></span></div>').join("")||"No referred clients recorded yet.";
-  if(cb)cb.innerHTML=snapshotError?'<div class="notice error">'+esc(snapshotError.message)+'</div>':comm.map(x=>'<div class="admin-row"><span><b>$'+Number(x.commission_usd||0).toFixed(2)+' · '+esc(x.symbol||"B-Book trade")+'</b><small>'+esc(x.client_ref||"Client")+' · '+esc(x.masked_email||"")+'</small><small>'+esc(x.masked_account||"Account ••••")+' · '+Number(x.lots||0).toFixed(2)+' lots · '+esc(x.status||"credited")+'</small><small>'+new Date(x.created_at).toLocaleString()+'</small></span></div>').join("")||"No Real B-Book commission records yet.";
+  if(cb)cb.innerHTML=snapshotError?'<div class="notice error">'+esc(snapshotError.message)+'</div>':comm.map(x=>'<div class="admin-row"><span><b>
+  if(transferSelect){
+   const {data:realAccounts,error:realAccountsError}=await sb.from("trading_accounts").select("id,account_number,display_name,balance,currency").eq("user_id",user.id).eq("account_mode","real").eq("status","approved").is("archived_at",null).is("deleted_at",null).eq("currency","USD").order("created_at",{ascending:false});
+   transferSelect.innerHTML=realAccountsError?'<option value="">Accounts unavailable</option>':'<option value="">Select a Real USD account</option>'+(realAccounts||[]).map(x=>'<option value="'+esc(x.id)+'">'+esc(x.display_name||"Real account")+' · #'+esc(x.account_number||"—")+' · $'+Number(x.balance||0).toFixed(2)+'</option>').join("");
+  }
+  const payoutBox=document.getElementById("partner-payout-history");
+  if(payoutBox)payoutBox.innerHTML=(snapshot?.payouts||[]).map(x=>'<div class="admin-row"><span><b>$'+Number(x.amount||0).toFixed(2)+' · '+esc(x.status.toUpperCase())+'</b><small>'+esc(x.method)+' · '+new Date(x.created_at).toLocaleString()+(x.admin_note?' · '+esc(x.admin_note):"")+'</small></span></div>').join("")||"No payout requests yet.";
+  for(const id of ["partner-transfer-form","partner-payout-form"]){const el=document.getElementById(id);if(el)el.hidden=!approved;}
+ }if(activePage==="accounts"){ await loadClientTradingAccounts(); }
+ }
+async function loadClientTradingAccounts(){
+ const box=document.getElementById("my-trading-accounts");if(!box||!sb||!user)return;
+ box.textContent="Loading accounts…";
+ const {data,error}=await sb.from("trading_accounts").select("id,account_mode,account_number,account_type,currency,balance,credit_bonus,status,display_name,server_name,platform,requested_leverage,leverage_preference,swap_free,archived_at,deleted_at,created_at").eq("user_id",user.id).is("deleted_at",null).order("created_at",{ascending:false});
+ if(error){box.textContent="Trading accounts unavailable: "+error.message;return;}
+ const [{data:demoLedgers,error:demoLedgerError},{data:demoTrades,error:demoTradesError},{data:realPositions,error:realPositionsError}]=await Promise.all([
+  sb.from("bb_paper_execution_accounts").select("account_id,virtual_balance").eq("user_id",user.id).eq("account_mode","demo"),
+  sb.from("bb_paper_execution_trades").select("account_id,unrealized_pnl,status").eq("user_id",user.id).eq("account_mode","demo").eq("status","OPEN"),
+  sb.from("bb_bbook_positions").select("account_id,floating_pnl,margin_used,status").eq("user_id",user.id).eq("account_mode","real").eq("status","OPEN")
+ ]);
+ if(demoLedgerError||demoTradesError||realPositionsError){box.textContent="Account balance / equity ledger unavailable: "+(demoLedgerError||demoTradesError||realPositionsError).message;return;}
+ const demoBalanceByAccount=new Map((demoLedgers||[]).map(x=>[x.account_id,Number(x.virtual_balance||0)]));
+ const demoFloatingByAccount=new Map(),realFloatingByAccount=new Map(),realMarginByAccount=new Map();
+ for(const trade of demoTrades||[])demoFloatingByAccount.set(trade.account_id,(demoFloatingByAccount.get(trade.account_id)||0)+Number(trade.unrealized_pnl||0));
+ for(const position of realPositions||[]){realFloatingByAccount.set(position.account_id,(realFloatingByAccount.get(position.account_id)||0)+Number(position.floating_pnl||0));realMarginByAccount.set(position.account_id,(realMarginByAccount.get(position.account_id)||0)+Number(position.margin_used||0));}
+ window.bbClientAccounts=(data||[]).map(x=>{
+  const demo=x.account_mode==="demo",balance=demo?(demoBalanceByAccount.get(x.id)??Number(x.balance||0)):Number(x.balance||0);
+  const floating=(demo?demoFloatingByAccount:realFloatingByAccount).get(x.id)||0;
+  const creditBonus=demo?0:Number(x.credit_bonus||0),marginUsed=demo?null:(realMarginByAccount.get(x.id)||0);
+  return {...x,balance,credit_bonus:creditBonus,floating_pnl:floating,equity:balance+creditBonus+floating,margin_used:marginUsed,free_margin:marginUsed===null?null:balance+creditBonus+floating-marginUsed,margin_level:marginUsed>0?(balance+creditBonus+floating)/marginUsed*100:null};
+ });
+ const mode=window.bbAccountMode||"real";
+ const title=document.getElementById("bb-account-list-title");if(title)title.textContent=mode==="archived"?"Archived Accounts":"My "+(mode==="real"?"Real":"Demo")+" Accounts";
+ const rows=window.bbClientAccounts.filter(x=>mode==="archived"?!!x.archived_at:!x.archived_at&&x.account_mode===mode);
+ if(!rows.length){box.innerHTML='<div class="empty-state">No '+(mode==="archived"?"archived":mode)+" accounts found.</div>";return;}
+ box.innerHTML=rows.map(x=>'<div class="bb-account-card"><div class="bb-account-card-top"><div><small>'+esc(x.server_name||"BIGBULLS")+' · '+esc(String(x.account_mode||"real").toUpperCase())+'</small><h4>'+esc(x.display_name||x.account_type||"Trading account")+'</h4></div><div class="bb-account-card-head-actions"><span class="bb-account-number">#'+esc(x.account_number||"—")+'</span><button type="button" class="bb-account-info-btn" data-account-info="'+esc(x.id)+'" aria-label="View account details" title="Account information"><span aria-hidden="true">⚙</span></button></div></div><div class="bb-account-meta" hidden aria-hidden="true"></div>'+(x.archived_at?'':x.status==="approved"&&x.account_mode==="demo"?'<div class="bb-account-actions account-demo-actions"><button type="button" data-demo-balance="'+esc(x.id)+'">Set / Top-up Demo Balance</button><a class="button button-primary" href="/terminal.html?v=20261113-pro-terminal-complete&account_id='+encodeURIComponent(x.id)+'">Open in Terminal</a></div>':x.status==="approved"&&x.account_mode==="real"?'':x.status==="approved"?'<div class="notice">Demo account funding is managed separately with demo funds. Crypto deposits and cash withdrawals are available only on approved Real accounts.</div>':'<div class="notice">Awaiting Admin approval. Portal ID only; funding access is not available yet.</div>')+'<div class="bb-account-actions">'+(x.archived_at?'<button type="button" data-account-action="restore" data-account-id="'+esc(x.id)+'">Restore</button>':'<button type="button" data-account-action="rename" data-account-id="'+esc(x.id)+'">Rename</button><button type="button" data-account-action="archive" data-account-id="'+esc(x.id)+'">Archive</button>')+'<button class="danger" type="button" data-account-action="delete" data-account-id="'+esc(x.id)+'">Delete</button>'+(x.status==="approved"&&!x.archived_at?'<a class="button button-primary" href="/terminal.html?v=20261113-pro-terminal-complete&account_id='+encodeURIComponent(x.id)+'">Open in Terminal</a>':'')+'</div></div>').join("");
+ const tools=document.getElementById("bb-account-tools");if(tools){tools.hidden=true;tools.innerHTML="";}
+}
+function openAccountInfoModal(id){
+ const account=(window.bbClientAccounts||[]).find(x=>String(x.id)===String(id));
+ if(!account){message("Account information is unavailable. Refresh your account list and try again.",true);return;}
+ const status=account.archived_at?"ARCHIVED":account.status==="approved"?"ACTIVE":String(account.status||"PENDING").toUpperCase();
+ const rows=[
+  ["Account type",account.account_type||"—"],
+  ["Platform",account.platform||"—"],
+  ["Leverage applied",account.requested_leverage||"1:100"],
+  ["Leverage choice",account.leverage_preference||account.requested_leverage||"1:100"],
+  ["Swap-free",account.swap_free?"ON":"OFF"],
+  ["Currency",account.currency||"—"],
+  ["Balance",(account.currency||"USD")+" "+Number(account.balance||0).toFixed(2)],
+  ["Equity",(account.currency||"USD")+" "+Number(account.equity??account.balance??0).toFixed(2)],
+  ["Status",status]
+ ];
+ const canAct=account.status==="approved"&&!account.archived_at&&!account.deleted_at;
+ const isReal=String(account.account_mode||"").toLowerCase()==="real";
+ const actionButtons=canAct?'<div class="bb-account-modal-actions"><span class="accounts-kicker">ACCOUNT ACTIONS</span><div class="bb-account-action-grid">'+[
+  ["deposit","Deposit"],["withdraw","Withdraw"],["transfer","Transfer Funds"],["trades","Trading History"],["transactions","Transaction History"]
+ ].map(([action,label])=>'<button type="button" data-account-tool="'+action+'" data-account-id="'+esc(account.id)+'" '+(!isReal&&["deposit","withdraw","transfer"].includes(action)?'disabled title="Available for approved Real accounts only"':'')+'><span>'+label+'</span><span aria-hidden="true">›</span></button>').join("")+'</div>'+(!isReal?'<p class="bb-account-info-note">Deposit, withdrawal and transfers are available on approved Real accounts. Demo balances are managed separately.</p>':'')+'</div>':'<p class="bb-account-info-note">Actions become available after this account is approved.</p>';
+ body.innerHTML='<div class="bb-account-info-modal"><span class="accounts-kicker">ACCOUNT INFORMATION</span><h2>'+esc(account.display_name||account.account_type||"Trading account")+'</h2><p class="bb-account-info-number">'+esc(String(account.account_mode||"real").toUpperCase())+' ACCOUNT · #'+esc(account.account_number||"—")+'</p><div class="bb-account-info-grid">'+rows.map(([label,value])=>'<div class="bb-account-info-row"><small>'+esc(label)+'</small><b>'+esc(String(value))+'</b></div>').join("")+'</div>'+actionButtons+'<p class="bb-account-info-note">Details shown for this selected trading account only.</p></div>';
+ showModal();
+}
+async function showAccountTool(id,action){
+ const account=(window.bbClientAccounts||[]).find(x=>String(x.id)===String(id));const box=document.getElementById("bb-account-tools");if(!account||!box)return;
+ box.hidden=true;box.dataset.accountId=id;box.dataset.accountTool=action;
+ const heading=esc(account.display_name||account.account_type)+" · #"+esc(account.account_number);
+ const showTool=(label,content)=>{body.innerHTML='<div class="bb-account-tool-modal"><span class="accounts-kicker">'+label+'</span><h2>'+heading+'</h2>'+content+'<button type="button" class="copy-wallet" data-account-info-back="'+esc(id)+'">Back to account details</button></div>';showModal();};
+ if(action==="trades"){showTool("TRADING HISTORY",'<div class="empty-state">No B-Book REAL or BigBulls DEMO trading history is available yet.</div>');return;}
+ if(action==="transactions"){
+  showTool("TRANSACTION HISTORY",'<p>Complete deposit, withdrawal and transfer history across all your BIGBULLS accounts.</p><div id="bb-account-transactions">Loading…</div>');
+  const [wallets,accountTransfers,fundTransfers,ledger]=await Promise.all([
+   sb.from("wallet_transactions").select("id,kind,asset,network,amount_usd,status,tx_hash,invoice_id,rejection_reason,admin_note,destination_address,payout_reference,created_at,completed_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(200),
+   sb.from("account_transfers").select("id,from_account,to_account,amount_usd,status,created_at,currency").eq("user_id",user.id).order("created_at",{ascending:false}).limit(200),
+   sb.from("client_fund_transfers").select("id,from_type,from_account_id,to_type,to_account_id,amount,currency,status,created_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(200),
+   sb.from("account_balance_ledger").select("id,account_id,entry_type,amount,balance_before,balance_after,note,created_at").eq("user_id",user.id).in("entry_type",["admin_credit","admin_debit"]).order("created_at",{ascending:false}).limit(200)
+  ]);
+  const list=document.getElementById("bb-account-transactions");if(!list)return;
+  const failed=[wallets,accountTransfers,fundTransfers,ledger].find(x=>x.error);
+  if(failed){list.textContent="History unavailable: "+failed.error.message;return;}
+  const items=[
+   ...(wallets.data||[]).map(x=>({date:x.created_at,label:x.kind.toUpperCase()+" · "+x.asset+"/"+x.network,amount:"$"+Number(x.amount_usd).toFixed(2),status:x.status,ref:x.invoice_id||x.tx_hash||x.destination_address||"",note:x.rejection_reason||x.admin_note||x.payout_reference||""})),
+   ...(accountTransfers.data||[]).flatMap(x=>[
+    {date:x.created_at,label:"TRANSFER OUT",amount:"-$"+Number(x.amount_usd).toFixed(2),status:x.status,ref:"To account "+x.to_account},
+    {date:x.created_at,label:"TRANSFER IN",amount:"+$"+Number(x.amount_usd).toFixed(2),status:x.status,ref:"From account "+x.from_account}
+   ]),
+   ...(fundTransfers.data||[]).map(x=>({date:x.created_at,label:(x.from_type==="wallet"?"MAIN WALLET":"TRADING ACCOUNT")+" → "+(x.to_type==="wallet"?"MAIN WALLET":"TRADING ACCOUNT"),amount:"$"+Number(x.amount).toFixed(2)+" "+(x.currency||"USD"),status:x.status,ref:"Transfer "+x.id})),
+   ...(ledger.data||[]).map(x=>({date:x.created_at,label:x.entry_type==="admin_credit"?"ADMIN BALANCE CREDIT":"ADMIN BALANCE DEBIT",amount:(x.entry_type==="admin_debit"?"-":"+")+"$"+Number(x.amount).toFixed(2),status:"posted",ref:"Account "+x.account_id+" · Balance "+Number(x.balance_before).toFixed(2)+" → "+Number(x.balance_after).toFixed(2),note:x.note||""}))
+  ].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  list.innerHTML=items.length?items.map(x=>'<div class="admin-row"><span><b>'+esc(x.label)+'</b><small>'+new Date(x.date).toLocaleString()+(x.ref?' · '+esc(x.ref):'')+(x.note?' · '+esc(x.note):'')+'</small></span><b>'+esc(x.amount)+'</b><em>'+esc(x.status)+'</em></div>').join(""):'<div class="empty-state">No transactions recorded for this client yet.</div>';
+  return;
+ }
+ if(action==="transfer"){
+  if(account.account_mode!=="real"||account.currency!=="USD"){showTool("INTERNAL TRANSFER",'<div class="notice">Instant internal transfers are available for Real USD accounts. Demo balances remain in the separate paper-trading ledger.</div>');return;}
+  const choices=(window.bbClientAccounts||[]).filter(x=>String(x.id)!==String(id)&&!x.archived_at&&!x.deleted_at&&x.status==="approved"&&x.account_mode==="real"&&x.currency==="USD");
+  showTool("INSTANT INTERNAL TRANSFER",'<form class="client-form" id="account-transfer-form"><input type="hidden" name="from_account" value="'+esc(id)+'"><label>Destination account<select name="to_account" required>'+choices.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.display_name||x.account_type)+' · #'+esc(x.account_number)+' · USD</option>').join("")+'</select></label><label>Amount (USD)<input name="amount" type="number" min="0.01" step="0.01" required></label><button class="portal-primary" type="submit" '+(!choices.length?'disabled':'')+'>Confirm Instant Transfer</button><div data-page-message></div></form><div class="notice">Instant settlement between your own active Real USD accounts. Server checks ownership, KYC, available balance and reserved withdrawals.</div>');
+  if(!choices.length)body.querySelector("[data-page-message]").textContent="No other active Real USD account is available as a destination.";
+  return;
+ }
+ const {data:methods,error}=await sb.from("crypto_wallets").select("id,asset,network,label,address").eq("active",true).order("asset");
+ if(error){showTool("ACCOUNT FUNDING",'<p>Payment methods unavailable: '+esc(error.message)+'</p>');return;}
+ const list=methods||[];
+ if(action==="deposit"||action==="withdraw"){openAccountFinancialModal(id,action,list);return;}
+}
+
+async function openAccountFinancialModal(accountId,action,providedMethods){
+ const account=(window.bbClientAccounts||[]).find(x=>x.id===accountId);if(!account)return;
+ const methods=providedMethods||[];window.bbFinancialContext={accountId,action,methods};
+ if(action==="deposit"){
+  body.innerHTML='<p class="eyebrow">ACCOUNT DEPOSIT · #'+esc(account.account_number)+'</p><h2>Deposit funds</h2>'+(methods.length?'<form id="account-deposit-form" class="client-form" method="post" enctype="multipart/form-data" autocomplete="off" novalidate><label>Payment method / network<select name="wallet_id">'+methods.map(w=>'<option value="'+esc(w.id)+'">'+esc(w.asset)+' · '+esc(w.network)+'</option>').join("")+'</select></label><div id="bb-deposit-address"></div><label>Deposit amount (USD)<input name="amount_usd" type="number" min="1" step=".01" required></label><label>Amount sent in crypto<input name="amount_crypto" type="number" min="0.00000001" step="any" required></label><label>Blockchain TXID<input name="tx_hash" minlength="11" required></label><label>Payment screenshot / proof (required)<input name="proof" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf" required><small data-deposit-file-name>No file selected</small></label><p class="fine">Proof file: minimum 100 KB · maximum 10 MB · JPG, PNG, WEBP or PDF.</p><button class="portal-primary" type="submit">Submit deposit request</button><div data-page-message role="status" aria-live="polite"></div></form>':'<div class="empty-state">No deposit methods are enabled by Admin yet.</div>')+'<p class="fine">Funds are credited only after Admin verifies your payment.</p>';
+  const form=document.getElementById("account-deposit-form");if(form){const select=form.elements.wallet_id;const render=()=>{const w=methods.find(x=>x.id===select.value),slot=document.getElementById("bb-deposit-address");if(slot){slot.innerHTML=w?'<div class="wallet-address-card"><small>ADMIN DEPOSIT ADDRESS · '+esc(w.asset)+' / '+esc(w.network)+'</small><div class="deposit-qr" id="bb-account-deposit-qr" aria-label="QR code for the selected deposit address"></div><code>'+esc(w.address)+'</code><button type="button" data-copy-address="'+esc(w.address)+'">Copy address</button><p>'+esc(w.label||"Official deposit wallet")+'</p></div>':'';if(w)renderDepositQr(document.getElementById("bb-account-deposit-qr"),w.address);}};select.addEventListener("change",render);render();}
+  showModal();return;
+ }
+ body.innerHTML='<p class="eyebrow">SECURE WITHDRAWAL · #'+esc(account.account_number)+'</p><h2>Select withdrawal network</h2>'+(methods.length?'<div class="client-form"><label>Available method<select id="bb-withdraw-method">'+methods.map(w=>'<option value="'+esc(w.id)+'">'+esc(w.asset)+' · '+esc(w.network)+'</option>').join("")+'</select></label><button class="portal-primary" type="button" id="bb-withdraw-next">Continue</button></div>':'<div class="empty-state">No withdrawal methods are enabled by Admin.</div>')+'<p class="fine">You will enter your receiving address and amount in the next step.</p>';
+ const next=document.getElementById("bb-withdraw-next");if(next)next.addEventListener("click",()=>{const chosen=methods.find(w=>w.id===document.getElementById("bb-withdraw-method")?.value);if(!chosen)return;renderWithdrawalDetails(account,chosen);});
+ showModal();
+}
+function renderWithdrawalDetails(account,method){
+ body.innerHTML='<p class="eyebrow">WITHDRAWAL DETAILS · #'+esc(account.account_number)+'</p><h2>'+esc(method.asset)+' · '+esc(method.network)+'</h2><form id="account-withdrawal-form" class="client-form"><input type="hidden" name="asset" value="'+esc(method.asset)+'"><input type="hidden" name="network" value="'+esc(method.network)+'"><label>Amount (USD)<input name="amount_usd" type="number" min="1" step=".01" max="'+Number(account.balance||0).toFixed(2)+'" required></label><label>Amount in crypto<input name="amount_crypto" type="number" min="0.00000001" step="any" required></label><label>Your receiving wallet address / Binance ID<input name="destination_address" minlength="6" maxlength="180" placeholder="Paste your own address or Binance Pay ID" required></label><button class="portal-primary" type="submit">Submit withdrawal request</button><div data-page-message></div></form><div class="notice">Available account balance: '+esc(account.currency)+' '+Number(account.balance||0).toFixed(2)+'. Payout is sent manually by Admin after review.</div><button type="button" class="copy-wallet" data-financial-back>Back to methods</button>';
+}
+async function openAccountWizard(){
+ if(!sb||!user){message("Please sign in to create an account.",true);return;}
+ const [{data:kyc,error:kycError},{count,error:countError}]=await Promise.all([
+  sb.from("kyc_submissions").select("status").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1).maybeSingle(),
+  sb.from("trading_accounts").select("id",{count:"exact",head:true}).eq("user_id",user.id).eq("account_mode","real").is("deleted_at",null).is("archived_at",null)
+ ]);
+ if(kycError||countError){message("KYC / account eligibility could not be checked. Please retry.",true);return;}
+ const verified=isAdmin()||["approved","verified"].includes(String(kyc?.status||"").toLowerCase());
+ const realCount=Number(count||0),limitReached=realCount>=50;
+ const initial=window.bbAccountMode==="demo"?"demo":"real";
+ body.innerHTML=`<p class="eyebrow">ACCOUNT CENTRE · INSTANT SETUP</p><h2>Configure your trading account</h2><p class="muted">Your account is created instantly after the server validates eligibility.</p><form id="bb-account-wizard" class="client-form">
+ <label>Account environment<select name="account_mode"><option value="demo" ${initial==="demo"||!verified?"selected":""}>Demo · Practice (no KYC)</option><option value="real" ${initial==="real"&&verified&&!limitReached?"selected":""} ${!verified||limitReached?"disabled":""}>Real · Live account</option></select></label>
+ ${!verified?'<div class="notice">Real accounts require verified/approved KYC. Demo accounts remain available. <button type="button" class="copy-wallet" data-page="verification">Complete KYC</button></div>':""}
+ ${limitReached?'<div class="notice">You have reached the limit of 50 active Real accounts. Archive or delete an existing account to create another.</div>':""}
+ <label>Account type<select name="account_type"><option value="Standard">Standard</option><option value="Pro">Pro</option><option value="Raw Spread">Raw Spread</option><option value="Zero">Zero</option></select></label>
+ <label>Trading platform<select name="platform"><option value="BIGBULLS">BIGBULLS Native Terminal</option></select></label>
+ <label>Leverage request<select name="leverage"><option>1:100</option><option>1:200</option><option>1:500</option><option>1:1000</option><option>1:2000</option><option>Unlimited</option></select></label>
+ <label>Account currency<select name="currency"><option value="USD">USD</option></select></label>
+ <label>Swap-Free (Islamic Mode)<select name="swap_free"><option value="false">Off</option><option value="true">On</option></select></label>
+ <label>Account nickname (optional)<input name="display_name" maxlength="40" placeholder="e.g. Gold Scalping"></label>
+ <button class="portal-primary" type="submit" ${limitReached&&verified?'disabled':''}>Create account instantly</button><div data-page-message role="status" aria-live="polite"></div></form><button class="copy-wallet" type="button" data-close>Cancel</button>`;
+ showModal();
+}
+
+async function manageClientAccount(id,action){
+ let displayName=null;
+ if(action==="rename"){displayName=prompt("Enter a new display name (1–40 characters):");if(displayName===null)return;displayName=displayName.trim();if(!displayName||displayName.length>40){alert("Name must contain 1–40 characters.");return;}}
+ if(action==="delete"&&!confirm("Delete this account record from your active account view?"))return;
+ if(action==="archive"&&!confirm("Archive this account?"))return;
+ const {error}=await sb.rpc("manage_client_trading_account",{p_account_id:id,p_action:action,p_display_name:displayName});
+ if(error){alert("Account action failed: "+error.message);return;}
+ await loadClientTradingAccounts();
+}
+async function refreshMainWalletHeader(){
+ if(!sb||!user)return;const node=document.getElementById("header-wallet-balance");if(!node)return;
+ const {data,error}=await sb.rpc("ensure_client_wallet");
+ if(error){node.textContent="Unavailable";console.warn("Main wallet header balance failed:",error);return;}
+ node.textContent="$"+Number(data||0).toFixed(2);
+}
+async function loadWalletHistory(){
+ const box=document.getElementById('wallet-history-list');if(!box||!sb||!user)return;
+ box.textContent='Loading wallet history…';
+ const [wallet,transfers]=await Promise.all([
+  sb.from('wallet_transactions').select('id,kind,asset,network,amount_usd,status,tx_hash,created_at').eq('user_id',user.id).order('created_at',{ascending:false}).limit(50),
+  sb.from('client_fund_transfers').select('id,from_type,from_account_id,to_type,to_account_id,amount,status,created_at').eq('user_id',user.id).order('created_at',{ascending:false}).limit(50)
+ ]);
+ if(wallet.error||transfers.error){box.textContent='Wallet history unavailable: '+(wallet.error?.message||transfers.error?.message);return;}
+ const items=[...(wallet.data||[]).map(x=>({...x,kindLabel:x.kind+' · '+x.asset+' / '+x.network,amountValue:x.amount_usd,detail:x.tx_hash||''})),...(transfers.data||[]).map(x=>({...x,kindLabel:(x.from_type==='wallet'?'Main Wallet':'Trading account')+' → '+(x.to_type==='wallet'?'Main Wallet':'Trading account'),amountValue:x.amount,detail:'Reference '+x.id}))].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+ box.innerHTML='';if(!items.length){box.textContent='No wallet activity yet.';return;}
+ items.forEach(x=>{const row=document.createElement('div');row.className='admin-row';const info=document.createElement('span');const heading=document.createElement('b');heading.textContent=x.kindLabel;const detail=document.createElement('small');detail.textContent=new Date(x.created_at).toLocaleString()+(x.detail?' · '+x.detail:'');info.append(heading,detail);const amount=document.createElement('b');amount.textContent='$'+Number(x.amountValue||0).toFixed(2);const status=document.createElement('em');status.className='status-'+x.status;status.textContent=x.status;row.append(info,amount,status);box.append(row);});
+}
+function loadQrLibrary(url){return new Promise((resolve,reject)=>{const script=document.createElement("script");script.src=url;script.async=true;script.onload=()=>window.QRCode?resolve():reject(new Error("QR library unavailable"));script.onerror=()=>reject(new Error("QR library failed"));document.head.appendChild(script);});}
+async function renderDepositQr(node,address){if(!node)return;node.innerHTML="";node.setAttribute("aria-label","QR code for the selected deposit address");try{if(!window.QRCode){try{await loadQrLibrary("https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js");}catch(_){await loadQrLibrary("https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js");}}if(!node.isConnected)return;new window.QRCode(node,{text:address,width:192,height:192,colorDark:"#101827",colorLight:"#ffffff",correctLevel:window.QRCode.CorrectLevel.M});}catch(error){node.textContent="QR could not load. Use the Copy address button.";node.classList.add("qr-unavailable");console.error("Deposit QR generation failed:",error);}}
+function showSelectedWallet(wallets){const id=document.getElementById("deposit-asset")?.value,w=wallets.find(x=>String(x.id)===String(id)),box=document.getElementById("selected-wallet");if(!box||!w)return;box.innerHTML='<div class="wallet-address-card"><small>ADMIN CONTROLLED · '+esc(w.asset)+' / '+esc(w.network)+'</small><div class="deposit-qr" id="deposit-wallet-qr" aria-label="Deposit wallet QR code"></div><code>'+esc(w.address)+'</code><button type="button" data-copy-address="'+esc(w.address)+'">Copy address</button><p>'+esc(w.label||"Official deposit wallet")+'</p></div><form class="client-form" id="wallet-form"><input type="hidden" name="kind" value="deposit"><label>Amount (USD equivalent)<input name="amount_usd" type="number" min="1" step=".01" required></label><label>Amount in crypto<input name="amount_crypto" required></label><label>Blockchain TXID<input name="tx_hash" required></label><button class="portal-primary">Submit for verification</button></form><div data-page-message></div><div class="notice">Only send the selected asset on the exact network. Admin must verify the blockchain transaction before approval.</div>';renderDepositQr(document.getElementById("deposit-wallet-qr"),w.address);}
+async function submitHandler(e){
+ const f=e.target;if(!(f instanceof HTMLFormElement))return;
+ if(f.id==="signup-form"||f.id==="login-form"){
+  e.preventDefault();
+  if(f.dataset.explicitAuthSubmit!=="1")return;
+  delete f.dataset.explicitAuthSubmit;
+  const d=new FormData(f),b=f.querySelector("button");
+  if(!sb){message("Account service is unavailable. Refresh the page and try again.",true);return;}
+  b.disabled=true;b.textContent="Please wait…";
+  try{
+   if(f.id==="signup-form"){
+    const {data,error}=await sb.auth.signUp({
+     email:String(d.get("email")).trim(),
+     password:String(d.get("password")),
+     options:{emailRedirectTo:location.origin+location.pathname,data:{
+      full_name:String(d.get("full_name")).trim(),
+      country:String(d.get("country")||""),
+      phone:String(d.get("phone")||""),
+      account_type:String(d.get("account_type")||"Individual"),
+      referral_code:String(d.get("referral_code")||"")
+     }}
+    });
+    if(error)throw error;
+    if(data?.session&&data?.user){
+     user=data.user;
+     await showApp("dashboard");
+    }else{
+     message("Registration submitted. Check your email and verify your address, then log in.",false);
+     b.disabled=false;b.textContent="Create account";
+    }
+   }else{
+    const {data,error}=await sb.auth.signInWithPassword({
+     email:String(d.get("email")).trim(),
+     password:String(d.get("password"))
+    });
+    if(error)throw error;
+    user=data?.user||data?.session?.user||null;
+    if(!user)throw new Error("Login succeeded but no active session was returned. Please try again.");
+    await showApp("dashboard");
+   }
+  }catch(err){
+   console.error("Authentication / portal opening error:",err);
+   message(err?.message||"Authentication failed. Please try again.",true);
+   b.disabled=false;b.textContent=f.id==="signup-form"?"Create account":"Secure login";
+  }
+  return;
+ }
+
+ if(f.id==="bb-admin-user-form"){
+  e.preventDefault();if(!isAdmin()){message("Administrator permission required.",true);return;}
+  const d=new FormData(f),email=String(d.get("email")||"").trim(),button=f.querySelector("button"),out=f.querySelector("[data-page-message]");
+  button.disabled=true;button.textContent="Granting access…";
+  try{const {error}=await sb.rpc("admin_set_user_role",{p_email:email,p_make_admin:true});if(error)throw error;if(out)out.textContent="Administrator access granted. Ask this user to sign out and sign in again.";f.reset();await loadAdminUsers();}
+  catch(err){if(out)out.textContent=err.message||"Could not grant admin access.";}
+  finally{button.disabled=false;button.textContent="Grant admin access";}
+  return;
+ }
+ if(f.id==="echo-purchase-form"){e.preventDefault();if(!user||!sb){alert("Please log in before submitting your payment TXID.");return;}const d=new FormData(f),txid=String(d.get("txid")||"").trim(),button=f.querySelector("button[type=submit]"),out=f.querySelector("[data-page-message]");if(txid.length<11){if(out)out.textContent="Enter a valid blockchain TXID.";return;}button.disabled=true;button.textContent="Submitting order…";const {error}=await sb.from("product_orders").insert({user_id:user.id,product_code:"BIGBULLS_AI_ECHO",amount_usd:199,payment_method:"USDT_TRC20",payment_reference:txid,status:"pending"});button.disabled=false;button.textContent="Submit payment for verification";if(out)out.textContent=error?"Order submission failed: "+error.message:"Payment TXID submitted. Your order is pending admin blockchain verification.";if(!error)button.disabled=true;return;}
+ if(f.id==="account-deposit-form"){
+  e.preventDefault();e.stopPropagation();if(typeof e.stopImmediatePropagation==="function")e.stopImmediatePropagation();
+  const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button"),proof=d.get("proof"),ctx=window.bbFinancialContext,accountId=ctx?.accountId;
+  const amountUsd=Number(d.get("amount_usd")),amountCrypto=Number(d.get("amount_crypto")),txHash=String(d.get("tx_hash")||"").trim();
+  if(!accountId||!ctx||!user){if(out)out.textContent="Your secure account session expired. Refresh and sign in again.";return;}
+  const account=(window.bbClientAccounts||[]).find(x=>x.id===accountId);
+  if(!account||account.account_mode!=="real"||account.status!=="approved"||account.archived_at||account.deleted_at){if(out)out.textContent="Funding is available only for active, approved Real accounts.";return;}
+  if(!(amountUsd>0)||!(amountCrypto>0)||txHash.length<11){if(out)out.textContent="Enter a valid USD amount, crypto amount and blockchain TXID (at least 11 characters).";return;}
+  if(!(proof instanceof File)||!proof.size){if(out)out.textContent="Payment proof is required. Please attach your transfer screenshot or PDF.";return;}
+  const uploadedPath=f.elements.proof.dataset.uploadedPath;
+  if(!uploadedPath){if(out)out.textContent="Payment proof is not uploaded yet. Wait for the secure upload to finish or select it again.";return;}
+  if(button.disabled){if(out)out.textContent="Please wait for the proof upload to finish.";return;}
+  button.disabled=true;button.textContent="Submitting deposit request…";
+  try{
+   const walletId=String(d.get("wallet_id")),w=ctx.methods.find(x=>x.id===walletId);
+   if(!w)throw new Error("Select a valid active Admin payment method.");
+   const {data:tx,error}=await sb.from("wallet_transactions").insert({user_id:user.id,account_id:accountId,kind:"deposit",asset:w.asset,network:w.network,destination_address:w.address,amount_usd:amountUsd,amount_crypto:amountCrypto,tx_hash:txHash,proof_path:uploadedPath,status:"pending"}).select("id,invoice_id").single();
+   if(error)throw error;
+   body.innerHTML='<p class="eyebrow">DEPOSIT SUBMITTED</p><h2>Request received</h2><div class="notice">Invoice '+esc(tx.invoice_id)+' is pending Admin verification. Your Real account balance will update only after payment verification and approval.</div><button class="portal-primary" type="button" data-close>Close</button>';
+   await loadClientTradingAccounts();
+  }catch(err){
+   if(out){out.classList.add("error");out.textContent="Deposit request failed: "+(err?.message||"Please check the details and try again.");}
+   button.disabled=false;button.textContent="Submit deposit request";
+  }
+  return;
+ }
+ if(f.id==="account-withdrawal-form"){
+  e.preventDefault();
+  const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button"),ctx=window.bbFinancialContext,account=(window.bbClientAccounts||[]).find(x=>x.id===ctx?.accountId);
+  if(!ctx||!account||account.account_mode!=="real"||account.status!=="approved"||account.archived_at||account.deleted_at){if(out)out.textContent="Withdrawals are available only from an active, approved Real account.";return;}
+  const method=ctx.methods.find(w=>w.asset===String(d.get("asset"))&&w.network===String(d.get("network")));
+  if(!method){if(out)out.textContent="Withdrawal network is no longer active. Reopen the withdrawal form.";return;}
+  const amount=Number(d.get("amount_usd")),amountCrypto=Number(d.get("amount_crypto")),destination=String(d.get("destination_address")||"").trim();
+  if(!(amount>0)||!(amountCrypto>0)||destination.length<6){if(out)out.textContent="Enter a valid amount, crypto quantity and receiving address.";return;}
+  button.disabled=true;button.textContent="Checking available balance…";
+  try{
+   const {data:reservedRows,error:reserveError}=await sb.from("wallet_transactions").select("amount_usd").eq("account_id",ctx.accountId).eq("kind","withdrawal").in("status",["pending","otp_pending","processing"]);
+   if(reserveError)throw reserveError;
+   const reserved=(reservedRows||[]).reduce((sum,x)=>sum+Number(x.amount_usd||0),0),available=Math.max(0,Number(account.balance||0)-reserved);
+   if(amount>available)throw new Error("Amount exceeds available balance after pending withdrawal holds. Available: "+account.currency+" "+available.toFixed(2));
+   button.textContent="Submitting withdrawal request…";
+   const {data:tx,error}=await sb.from("wallet_transactions").insert({user_id:user.id,account_id:ctx.accountId,kind:"withdrawal",asset:method.asset,network:method.network,destination_address:destination,amount_usd:amount,amount_crypto:amountCrypto,status:"pending"}).select("id,invoice_id").single();
+   if(error)throw error;
+   const requestedAt=new Date().toLocaleString();
+   body.innerHTML='<div class="bb-withdrawal-receipt" style="font-family:Inter,Arial,sans-serif;color:#182230;background:#fff;border:1px solid #e5eaf1;border-radius:16px;padding:18px"><h3>BIGBULLS · Withdrawal receipt</h3><p><b>'+esc(account.currency||"USD")+' '+amount.toFixed(2)+'</b></p><p>'+esc(method.asset)+' · '+esc(method.network)+'</p><p>Crypto amount: '+amountCrypto.toLocaleString(undefined,{maximumFractionDigits:8})+' '+esc(method.asset)+'</p><p>Receipt: '+esc(tx.invoice_id||"Pending reference")+'</p><p>Destination: <span style="overflow-wrap:anywhere">'+esc(destination)+'</span></p><p>Requested: '+esc(requestedAt)+'</p><p><b>Pending Admin Approval</b></p><button class="portal-primary" type="button" data-close>Done</button></div>';
+   await loadClientTradingAccounts();
+  }catch(error){if(out)out.textContent=error?.message||"Withdrawal request failed.";button.disabled=false;button.textContent="Submit withdrawal request";}
+  return;
+ }
+ if(f.id==="bb-main-wallet-withdrawal-form"){
+  e.preventDefault();
+  const d=new FormData(f),button=f.querySelector("button"),out=f.querySelector("[data-page-message]");
+  const amount=Number(d.get("amount_usd")),amountCrypto=Number(d.get("amount_crypto")),destination=String(d.get("destination_address")||"").trim(),pair=String(d.get("asset_network")||"").split("|");
+  if(!(amount>0)||!(amountCrypto>0)||destination.length<10||pair.length!==2){if(out)out.textContent="Enter a valid amount, payout network and destination address.";return;}
+  button.disabled=true;button.textContent="Checking Main Wallet…";
+  try{
+   const [wallet,holds]=await Promise.all([sb.rpc("ensure_client_wallet"),sb.from("wallet_transactions").select("amount_usd").eq("user_id",user.id).is("account_id",null).eq("kind","withdrawal").in("status",["pending","otp_pending","processing"])]);
+   if(wallet.error||holds.error)throw wallet.error||holds.error;
+   const reserved=(holds.data||[]).reduce((n,x)=>n+Number(x.amount_usd||0),0),available=Math.max(0,Number(wallet.data||0)-reserved);
+   if(amount>available)throw new Error("Amount exceeds available Main Wallet balance after payout locks. Available: $"+available.toFixed(2));
+   button.textContent="Creating withdrawal request…";
+   const {data:tx,error}=await sb.from("wallet_transactions").insert({user_id:user.id,account_id:null,kind:"withdrawal",asset:pair[0],network:pair[1],destination_address:destination,amount_usd:amount,amount_crypto:amountCrypto,status:"pending"}).select("id,invoice_id").single();
+   if(error)throw error;
+   const requestedAt=new Date().toLocaleString(),host=f.parentElement;
+   host.innerHTML='<div class="bb-withdrawal-receipt" style="font-family:Inter,Arial,sans-serif;color:#182230;background:#fff;border:1px solid #e5eaf1;border-radius:16px;padding:18px"><h3>BIGBULLS · Withdrawal receipt</h3><p><b>$'+amount.toFixed(2)+'</b></p><p>'+esc(pair[0])+' · '+esc(pair[1])+'</p><p>Crypto amount: '+amountCrypto.toLocaleString(undefined,{maximumFractionDigits:8})+' '+esc(pair[0])+'</p><p>Receipt: '+esc(tx.invoice_id||"Pending reference")+'</p><p>Destination: <span style="overflow-wrap:anywhere">'+esc(destination)+'</span></p><p>Requested: '+esc(requestedAt)+'</p><p><b>Pending Admin Approval</b></p><button class="portal-primary" type="button" data-wallet-tab="history">Done · View wallet history</button></div>';
+   await loadPageData();
+  }catch(error){if(out)out.textContent=error?.message||"Withdrawal request failed.";button.disabled=false;button.textContent="Submit Main Wallet withdrawal";}
+  return;
+ }
+ if(f.id==="wallet-form"){e.preventDefault();const d=new FormData(f),kind=String(d.get("kind")||"deposit"),accountId=String(d.get("account_id")||"")||null,walletId=String(d.get("wallet_id")||document.getElementById("deposit-asset")?.value||"");const msg=f.querySelector("[data-page-message]")||f.parentElement.querySelector("[data-page-message]"),amountUsd=Number(d.get("amount_usd")),amountCrypto=Number(d.get("amount_crypto")),txHash=String(d.get("tx_hash")||"").trim();if(kind!=="deposit"||!walletId||!(amountUsd>0)||!(amountCrypto>0)||txHash.length<11){if(msg)msg.textContent="Enter valid USD and crypto amounts, select a payment network and provide a valid blockchain TXID.";return;}const {data:w,error:walletError}=await sb.from("crypto_wallets").select("asset,network,address").eq("id",walletId).eq("active",true).single();if(walletError||!w){if(msg)msg.textContent="The selected deposit method is unavailable.";return;}const {data:tx,error}=await sb.from("wallet_transactions").insert({user_id:user.id,account_id:accountId,kind:"deposit",asset:w.asset,network:w.network,destination_address:w.address,amount_usd:amountUsd,amount_crypto:amountCrypto,tx_hash:txHash,status:"pending"}).select("id,invoice_id").single();if(msg)msg.textContent=error?"Request failed: "+error.message:"Deposit request "+esc(tx?.invoice_id||"") +" submitted for Main Wallet verification.";if(!error){f.reset();await loadPageData();}return;}
+ if(f.id==="kyc-form"){
+   e.preventDefault();e.stopPropagation();if(typeof e.stopImmediatePropagation==="function")e.stopImmediatePropagation();
+   const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button"),front=d.get("document_front"),back=d.get("document_back"),allowed=["image/jpeg","image/png","image/webp","application/pdf"],minBytes=100*1024,maxBytes=20*1024*1024;
+   const mimeForFile=file=>{const ext=String(file?.name||"").split(".").pop().toLowerCase();const byExt={jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",pdf:"application/pdf"};const typed=String(file?.type||"").toLowerCase();if(allowed.includes(typed))return typed;if(typed==="image/jpg"||typed==="image/pjpeg")return "image/jpeg";return byExt[ext]||"";};
+   const showKycError=message=>{if(out){out.textContent=message;out.classList.add("error");}};
+   if(!button){showKycError("KYC submit control is unavailable. Please refresh once and retry.");return;}
+   if(!user?.id||!sb){showKycError("Your secure session has expired. Please sign in again and retry.");return;}
+   if(!(front instanceof File)||!front.size){showKycError("Please select the front of your identity document.");return;}
+   const documentType=String(d.get("document_type")||"");
+   if(!["CNIC","Passport","Driving License"].includes(documentType)){showKycError("Select a valid identity document type.");return;}
+   if(["CNIC","Driving License"].includes(documentType)&&(!(back instanceof File)||!back.size)){showKycError("Upload both front and back sides for CNIC / Driving License.");return;}
+   for(const [label,doc] of [["Front",front],["Back",back]]){
+    if(!(doc instanceof File)||!doc.size)continue;
+    if(doc.size<minBytes){showKycError(label+" document must be at least 100 KB.");return;}
+    if(doc.size>maxBytes){showKycError(label+" document exceeds the 20 MB limit.");return;}
+    if(!mimeForFile(doc)){showKycError(label+" document must be JPG, PNG, WEBP or PDF.");return;}
+   }
+   if(!String(d.get("first_name")||"").trim()||!String(d.get("last_name")||"").trim()||!String(d.get("document_number")||"").trim()||!String(d.get("dob")||"")||!String(d.get("country")||"").trim()||!String(d.get("address")||"").trim()){showKycError("Complete your first name, last name, ID number, date of birth and address.");return;}
+   let frontPath=f.elements.document_front.dataset.uploadedPath||"",backPath=f.elements.document_back.dataset.uploadedPath||null;
+   button.disabled=true;button.textContent="Uploading & submitting…";if(out){out.textContent="Checking documents and securely saving your KYC request…";out.classList.remove("error");}
+   const newlyUploaded=[];let submissionSaved=false;
+   try{
+    const ensureKycUpload=async(input,file,label)=>{
+     if(!file||!file.size)return null;
+     if(input.dataset.uploadedPath)return input.dataset.uploadedPath;
+     const mime=mimeForFile(file);
+     if(!mime)throw new Error(label+" document must be JPG, PNG, WEBP or PDF.");
+     if(file.size<100*1024)throw new Error(label+" document must be at least 100 KB.");
+     if(file.size>maxBytes)throw new Error(label+" document exceeds the 20 MB limit.");
+     if(out)out.textContent="Uploading "+label.toLowerCase()+" document securely…";
+     const safeName=String(file.name||"document").replace(/[^a-zA-Z0-9._-]/g,"_").slice(-110);
+     const path=user.id+"/"+Date.now()+"-"+input.name+"-"+safeName;
+     const {error:uploadError}=await sb.storage.from("kyc-documents").upload(path,file,{contentType:mime,cacheControl:"3600",upsert:false});
+     if(uploadError)throw new Error(label+" document upload failed: "+uploadError.message);
+     newlyUploaded.push(path);input.dataset.uploadedPath=path;
+     return path;
+    };
+    frontPath=await ensureKycUpload(f.elements.document_front,front,"Front");
+    backPath=await ensureKycUpload(f.elements.document_back,back,"Back");
+    if(!frontPath)throw new Error("Please upload the front of your identity document.");
+    if(["CNIC","Driving License"].includes(documentType)&&!backPath)throw new Error("Please upload both front and back sides for CNIC / Driving License.");
+    if(out)out.textContent="Documents uploaded. Saving your KYC request…";
+    const firstName=String(d.get("first_name")||"").trim(),lastName=String(d.get("last_name")||"").trim(),documentNumber=String(d.get("document_number")||"").trim();
+    const payload={user_id:user.id,first_name:firstName,last_name:lastName,document_number:documentNumber,legal_name:(firstName+" "+lastName).trim(),date_of_birth:String(d.get("dob")),country:String(d.get("country")).trim(),residential_address:String(d.get("address")).trim(),document_type:documentType,document_front_path:frontPath,document_back_path:backPath,status:"pending",rejection_reasons:[]};
+    const {data:submission,error}=await sb.from("kyc_submissions").insert(payload).select("id,status,created_at").single();
+    if(error)throw new Error("Documents are uploaded, but KYC request could not be saved: "+error.message);
+    if(!submission?.id)throw new Error("KYC request could not be confirmed. Please refresh your KYC status before trying again.");
+    submissionSaved=true;
+    if(out){out.textContent="KYC submitted successfully. Your request is now visible to Admin for review.";out.classList.remove("error");}
+    f.reset();for(const el of f.querySelectorAll('input[type="file"]'))delete el.dataset.uploadedPath;await loadPageData();
+   }catch(err){if(!submissionSaved&&newlyUploaded.length)await sb.storage.from("kyc-documents").remove(newlyUploaded).catch(()=>{});showKycError(err?.message||"KYC submission failed. Please retry.");}
+   finally{button.disabled=false;button.textContent="Submit KYC securely";}
+   return;
+  }
+  if(f.matches("[data-support-message-form]")||f.matches("[data-admin-support-message-form]")){
+  e.preventDefault();
+  const admin=f.matches("[data-admin-support-message-form]"),ticketId=admin?f.getAttribute("data-admin-support-message-form"):f.getAttribute("data-support-message-form"),out=f.querySelector("[data-page-message]"),button=f.querySelector("button[type=submit]"),bodyText=String(new FormData(f).get("body")||"").trim();
+  if(!user||!ticketId||bodyText.length<2||bodyText.length>5000){if(out)out.textContent="Enter a message between 2 and 5000 characters.";return;}
+  if(admin&&!isAdmin()){if(out)out.textContent="Administrator permission required.";return;}
+  button.disabled=true;button.textContent="Sending…";
+  try{
+   const {error}=await sb.from("support_ticket_messages").insert({ticket_id:ticketId,author_id:user.id,author_role:admin?"admin":"client",body:bodyText});
+   if(error)throw error;
+   if(admin){
+    const {error:statusError}=await sb.rpc("admin_update_support_ticket",{p_ticket_id:ticketId,p_status:"in_progress",p_admin_reply:bodyText});
+    if(statusError)throw statusError;
+   }
+   f.reset();if(out)out.textContent="Message sent successfully.";await loadPageData();
+  }catch(err){if(out)out.textContent="Message could not be sent: "+(err.message||"Please retry.");}
+  finally{button.disabled=false;button.textContent=admin?"Send message to client":"Send message";}
+  return;
+ }
+ if(f.id==="support-ticket-form"){
+  e.preventDefault();
+  if(!sb||!user){const out=f.querySelector("[data-page-message]");if(out)out.textContent="Please sign in again before submitting a ticket.";return;}
+  const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button");
+  const subject=String(d.get("subject")||"").trim(),category=String(d.get("category")||"other"),bodyText=String(d.get("message")||"").trim();
+  if(subject.length<3||bodyText.length<10){if(out)out.textContent="Enter a clear subject and at least 10 characters describing the issue.";return;}
+  button.disabled=true;button.textContent="Submitting…";
+  try{const {data:ticket,error}=await sb.from("support_tickets").insert({user_id:user.id,subject,category,message:bodyText,status:"open"}).select("id").single();if(error)throw error;const {error:messageError}=await sb.from("support_ticket_messages").insert({ticket_id:ticket.id,author_id:user.id,author_role:"client",body:bodyText});if(messageError)throw messageError;f.reset();if(out)out.textContent="Ticket submitted successfully. BIGBULLS Support can now reply in this conversation.";await loadPageData();}
+  catch(err){if(out)out.textContent="Ticket submission failed: "+(err.message||"Please retry.");}
+  finally{button.disabled=false;button.textContent="Submit support ticket";}
+  return;
+ }
+ if(f.id==="partner-transfer-form"){
+  e.preventDefault();const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button"),accountId=String(d.get("account_id")||""),amount=Number(d.get("amount"));
+  if(!accountId||!Number.isFinite(amount)||amount<=0||Math.round(amount*100)!==amount*100){if(out)out.textContent="Choose an approved Real USD account and enter a valid amount.";return;}
+  button.disabled=true;button.textContent="Transferring securely…";
+  try{const {data,error}=await sb.rpc("partner_transfer_to_real_account",{p_account_id:accountId,p_amount:amount,p_note:"IB commission transfer to Real trading account"});if(error)throw error;if(out)out.textContent="Transfer completed · Reference "+String(data||"");f.reset();await loadPageData();await loadClientTradingAccounts();}
+  catch(err){if(out)out.textContent="IB transfer failed: "+(err.message||"Please retry.");}
+  finally{button.disabled=false;button.textContent="Instant transfer to account";}
+  return;
+ }
+ if(f.id==="partner-payout-form"){
+  e.preventDefault();const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button"),amount=Number(d.get("amount")),method=String(d.get("payout_method")||""),destination=String(d.get("destination")||"").trim();
+  if(!Number.isFinite(amount)||amount<=0||Math.round(amount*100)!==amount*100||destination.length<4||destination.length>500){if(out)out.textContent="Enter a valid payout amount and destination details.";return;}
+  button.disabled=true;button.textContent="Submitting payout request…";
+  try{const {data,error}=await sb.rpc("partner_request_payout",{p_amount:amount,p_payout_method:method,p_destination:destination});if(error)throw error;if(out)out.textContent="Withdrawal request submitted · Reference "+String(data||"");f.reset();await loadPageData();}
+  catch(err){if(out)out.textContent="Payout request failed: "+(err.message||"Please retry.");}
+  finally{button.disabled=false;button.textContent="Request withdrawal";}
+  return;
+ }
+ if(f.id==="admin-ib-adjust-form"){
+  e.preventDefault();if(!isAdmin())return;const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button"),partnerId=String(d.get("partner_user_id")||"").trim(),direction=String(d.get("direction")||""),amount=Number(d.get("amount")),note=String(d.get("note")||"").trim();
+  if(!partnerId||!["credit","debit"].includes(direction)||!Number.isFinite(amount)||amount<=0||Math.round(amount*100)!==amount*100||note.length<4){if(out)out.textContent="Enter a valid partner UUID, amount, direction and audit note.";return;}
+  button.disabled=true;button.textContent="Applying audited adjustment…";
+  try{const {error}=await sb.rpc("admin_adjust_partner_wallet",{p_partner_user_id:partnerId,p_direction:direction,p_amount:amount,p_note:note});if(error)throw error;if(out)out.textContent="IB wallet adjustment saved with audit record.";f.reset();await loadPageData();}
+  catch(err){if(out)out.textContent="Adjustment failed: "+(err.message||"Please retry.");}
+  finally{button.disabled=false;button.textContent="Apply audited adjustment";}
+  return;
+ }
+ if(f.id==="partner-form"){
+  e.preventDefault();const d=new FormData(f),out=f.querySelector("[data-page-message]"),payload={user_id:user.id,partner_type:String(d.get("partner_type")),business_name:String(d.get("business_name")||"").trim()||null,website_or_social:String(d.get("website_or_social")||"").trim()||null,audience_size:String(d.get("audience_size")||"").trim()?Number(d.get("audience_size")):null,experience:String(d.get("experience")||"").trim()||null,status:"pending"};
+  const {error}=await sb.from("partner_applications").insert(payload);if(out)out.textContent=error?error.message:"Partner application submitted for review.";if(!error)loadPageData();return;
+ }
+ if(f.id==="admin-commission-form"){
+  e.preventDefault();if(!isAdmin())return;const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button[type=submit]"),lots=Number(d.get("verified_lots")),commission=Number(d.get("commission_usd")),partnerId=String(d.get("partner_user_id")||"").trim(),source=String(d.get("source_reference")||"").trim();
+  if(!partnerId||!source||!Number.isFinite(lots)||lots<0||!Number.isFinite(commission)||commission<=0){if(out)out.textContent="Enter a valid partner ID, broker reference, lots and positive commission.";return;}
+  button.disabled=true;const {error}=await sb.from("partner_commission_ledger").insert({partner_user_id:partnerId,referred_user_id:String(d.get("referred_user_id")||"").trim()||null,verified_lots:lots,commission_usd:commission,source_reference:source,admin_note:String(d.get("admin_note")||"").trim()||null,status:"pending",created_by:user.id});
+  button.disabled=false;if(out)out.textContent=error?"Commission record failed: "+error.message:"Commission entry saved as pending review.";if(!error){f.reset();loadPageData();}return;
+ }
+ if(f.id==="bb-account-wizard"){
+  e.preventDefault();const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector('button[type="submit"]');
+  const mode=String(d.get("account_mode")),type=String(d.get("account_type")),currency=String(d.get("currency")),name=String(d.get("display_name")||"").trim(),platform=String(d.get("platform")),leverage=String(d.get("leverage")),swapFree=String(d.get("swap_free"))==="true";
+  if(name.length>40){if(out)out.textContent="Nickname must be 40 characters or fewer.";return;}
+  button.disabled=true;button.textContent="Creating securely…";
+  try{
+   const createdAt=new Date().toISOString();
+   const {data:accountNumber,error}=await sb.rpc("create_client_trading_account",{p_account_mode:mode,p_account_type:type,p_currency:currency,p_display_name:name,p_platform:platform,p_leverage:leverage,p_swap_free:swapFree});
+   if(error)throw error;
+   if(accountNumber===null||accountNumber===undefined||String(accountNumber).trim()==="")throw new Error("The account service did not return an account number. No success was assumed.");
+   const accountNumberLabel=String(accountNumber);
+   window.bbAccountMode=mode;
+   await loadClientTradingAccounts();
+   let lookup=await sb.from("trading_accounts").select("id,account_number,status,account_mode").eq("user_id",user.id).eq("account_number",accountNumberLabel).eq("account_mode",mode).maybeSingle();
+   let created=lookup.data||null;
+   if(!created){
+    lookup=await sb.from("trading_accounts").select("id,account_number,status,account_mode").eq("user_id",user.id).eq("account_mode",mode).gte("created_at",createdAt).order("created_at",{ascending:false}).limit(1).maybeSingle();
+    created=lookup.data||null;
+   }
+   await loadClientTradingAccounts();
+   const tradeButton=created?'<button class="portal-primary" type="button" id="bb-trade-created-account">Trade in Terminal</button>':'<div class="notice">Your account creation request was accepted by the secure account service. Refresh My Accounts if it does not appear immediately.</div>';
+   body.innerHTML='<p class="eyebrow">ACCOUNT CREATED · ACTIVE</p><h2>Your '+esc(mode.toUpperCase())+' account is ready</h2><p class="muted">Account #'+esc(accountNumberLabel)+' · '+esc(type)+' · '+esc(leverage)+'</p><section class="account-credential-panel" style="margin:16px 0;padding:14px;border:1px solid var(--border,#e5e7eb);border-radius:14px;background:var(--surface-soft,#f8fafc);text-align:left"><strong style="display:block;margin-bottom:8px">Account access details</strong><div style="font-size:13px;line-height:1.7">Account number: <b>'+esc(accountNumberLabel)+'</b><br>Master password: <b>Not issued</b><br>Investor password: <b>Not issued</b></div><p class="muted" style="font-size:12px;margin:8px 0 0">This BIGBULLS B-Book account uses your secure Client Area sign-in. Separate MT5 master/investor passwords are not available until an MT5 server connection is integrated. No placeholder passwords are generated or stored.</p></section>'+tradeButton+'<button class="copy-wallet" type="button" data-close>Done</button>';
+   if(created)document.getElementById("bb-trade-created-account")?.addEventListener("click",()=>{window.__bbTerminalLaunchAccountId=created.id;showApp("terminal");});
+  }catch(err){if(out)out.textContent=err.message||"Account creation failed.";button.disabled=false;button.textContent="Create account instantly";}
+  return;
+ }
+
+ if(f.id==="account-transfer-form"){
+  e.preventDefault();const d=new FormData(f),fromId=String(d.get("from_account")||""),toId=String(d.get("to_account")||""),amount=Number(d.get("amount")),out=f.querySelector("[data-page-message]"),button=f.querySelector("button"),accounts=window.bbClientAccounts||[],source=accounts.find(x=>x.id===fromId),target=accounts.find(x=>x.id===toId);
+  if(!source||!target||fromId===toId||source.status!=="approved"||target.status!=="approved"||source.archived_at||target.archived_at||source.deleted_at||target.deleted_at||source.account_mode!=="real"||target.account_mode!=="real"||source.currency!=="USD"||target.currency!=="USD"||!(amount>0)||amount>Number(source.balance||0)){if(out)out.textContent="Choose two active Real USD accounts and an amount within the available balance.";return;}
+  button.disabled=true;button.textContent="Processing securely…";
+  const {data,error}=await sb.rpc("client_funds_transfer",{p_from_type:"account",p_from_account_id:fromId,p_to_type:"account",p_to_account_id:toId,p_amount:amount,p_idempotency_key:(f.dataset.idempotencyKey||(f.dataset.idempotencyKey=crypto.randomUUID())),p_note:"Instant account-to-account transfer"});
+  button.disabled=false;button.textContent="Confirm Instant Transfer";
+  if(out)out.textContent=error?"Transfer failed: "+error.message:"Transfer completed instantly · Reference "+data;
+  if(!error){delete f.dataset.idempotencyKey;await loadClientTradingAccounts();await loadPageData();}
+  return;
+ }
+ if(f.id==="transfer-form"){
+  e.preventDefault();const d=new FormData(f),fromValue=String(d.get("from_account")||""),toValue=String(d.get("to_account")||""),amount=Number(d.get("amount")),out=f.querySelector("[data-page-message]"),button=f.querySelector("button");
+  const decode=v=>v==="wallet"?{type:"wallet",id:null}:{type:"account",id:v.split("|")[1]};
+  const from=decode(fromValue),to=decode(toValue);
+  if(!fromValue||!toValue||fromValue===toValue||!(amount>0)||!Number.isFinite(amount)){if(out)out.textContent="Choose different source and destination and enter a valid amount.";return;}
+  button.disabled=true;button.textContent="Processing securely…";
+  const {data,error}=await sb.rpc("client_funds_transfer",{p_from_type:from.type,p_from_account_id:from.id,p_to_type:to.type,p_to_account_id:to.id,p_amount:amount,p_idempotency_key:(f.dataset.idempotencyKey||(f.dataset.idempotencyKey=crypto.randomUUID())),p_note:"Client internal transfer"});
+  button.disabled=false;button.textContent="Confirm Instant Transfer";
+  if(error){if(out)out.textContent="Transfer failed: "+error.message;return;}
+  if(out)out.textContent="Transfer completed instantly · Reference "+data;
+  delete f.dataset.idempotencyKey;await loadClientTradingAccounts();await loadPageData();renderWalletTransfer();return;
+ }
+ if(f.id==="admin-wallet-form"){e.preventDefault();if(!isAdmin())return;const d=new FormData(f),asset=String(d.get("asset")),network=String(d.get("network"));const {error}=await sb.from("crypto_wallets").upsert({asset,network,label:String(d.get("label")||""),address:String(d.get("address")).trim(),active:true},{onConflict:"asset,network"});const out=f.parentElement.querySelector("[data-page-message]");if(out)out.textContent=error?error.message:"Wallet address saved.";if(!error){f.reset();loadPageData();}return;}
+ if(f.id==="admin-package-form"){e.preventDefault();if(!isAdmin())return;const d=new FormData(f),file=d.get("package"),out=f.querySelector("[data-page-message]"),button=f.querySelector("button[type=submit]");if(!(file instanceof File)||!file.size||!file.name.toLowerCase().endsWith(".zip")){out.textContent="Select a valid ZIP package.";return;}if(file.size>104857600){out.textContent="Package must be 100 MB or smaller.";return;}button.disabled=true;button.textContent="Uploading privately…";const path="echo-system/latest-package.zip";const {error:uploadError}=await sb.storage.from("product-downloads").upload(path,file,{upsert:true,contentType:"application/zip"});if(uploadError){out.textContent="Upload failed: "+uploadError.message;button.disabled=false;button.textContent="Upload / replace private package";return;}const {error:updateError}=await sb.from("licenses").update({download_path:path}).eq("status","active");if(updateError){out.textContent="Package uploaded, but license link update failed: "+updateError.message;}else{out.textContent="Private Echo System package uploaded. Active licenses can now download it.";f.reset();}button.disabled=false;button.textContent="Upload / replace private package";return;}
+ if(f.id==="profile-form"){
+  e.preventDefault();const b=f.querySelector("button");b.disabled=true;
+  const {data,error}=await sb.auth.updateUser({data:{full_name:String(new FormData(f).get("full_name")).trim()}});
+  b.disabled=false;const out=f.parentElement.querySelector("[data-page-message]");if(error){out.textContent=error.message;return;}user=data.user;renderApp();return;
+ }
+}
+async function clickHandler(e){
+ const el=e.target instanceof Element?e.target:null;if(!el)return;
+ const authTrigger=el.closest("[data-open=\"login\"],[data-open=\"signup\"]");if(authTrigger){e.preventDefault();e.stopPropagation();openModal(authTrigger.getAttribute("data-open"));return;}
+ const menuToggle=el.closest("[data-menu-toggle]");
+ if(menuToggle){e.preventDefault();const id=menuToggle.dataset.menuToggle,drop=document.querySelector('[data-menu-dropdown="'+id+'"]'),wasOpen=drop&&!drop.hidden;document.querySelectorAll(".top-menu-dropdown,.sidebar-submenu").forEach(x=>x.hidden=true);document.querySelectorAll("[data-menu-toggle]").forEach(x=>x.setAttribute("aria-expanded","false"));if(drop&&!wasOpen){drop.hidden=false;menuToggle.setAttribute("aria-expanded","true");}return;}
+ if(!el.closest(".top-menu-group")){document.querySelectorAll(".top-menu-dropdown,.sidebar-submenu").forEach(x=>x.hidden=true);document.querySelectorAll("[data-menu-toggle]").forEach(x=>x.setAttribute("aria-expanded","false"));}
+ const courseOpen=el.closest("[data-course-open]");
+ if(courseOpen){e.preventDefault();showApp("course-"+courseOpen.dataset.courseOpen);return;}
+ const courseModule=el.closest("[data-course-module]");
+ if(courseModule){const idx=Number(courseModule.dataset.courseModule);const course=BB_COURSES[activePage.replace("course-","")];if(course){document.querySelectorAll("[data-course-module]").forEach(x=>{x.classList.toggle("active",Number(x.dataset.courseModule)===idx);const icon=x.querySelector("i");if(icon)icon.textContent=Number(x.dataset.courseModule)===idx?"●":"○";});const view=document.getElementById("course-lesson-view");if(view)view.innerHTML=courseLessonView(course,idx);}return;}
+ const courseNext=el.closest("[data-course-next]");
+ if(courseNext){const course=BB_COURSES[activePage.replace("course-","")],idx=Number(courseNext.dataset.courseNext)+1;if(course&&idx<course.modules.length)document.querySelector('[data-course-module="'+idx+'"]')?.click();return;}
+ const coursePrev=el.closest("[data-course-prev]");
+ if(coursePrev){const course=BB_COURSES[activePage.replace("course-","")],idx=Number(coursePrev.dataset.coursePrev)-1;if(course&&idx>=0)document.querySelector('[data-course-module="'+idx+'"]')?.click();return;}
+
+ const notificationToggle=el.closest("[data-notification-toggle]");if(notificationToggle){const panel=document.getElementById("client-notification-panel");if(panel){panel.hidden=!panel.hidden;notificationToggle.setAttribute("aria-expanded",String(!panel.hidden));loadClientNotifications();}const menu=document.getElementById("client-profile-menu");if(menu)menu.hidden=true;return;}
+ const profileToggle=el.closest("[data-profile-toggle]");if(profileToggle){const menu=document.getElementById("client-profile-menu");if(menu){menu.hidden=!menu.hidden;profileToggle.setAttribute("aria-expanded",String(!menu.hidden));}const panel=document.getElementById("client-notification-panel");if(panel)panel.hidden=true;return;}
+ const notificationRead=el.closest("[data-notification-read]");if(notificationRead){const {error}=await sb.from("client_notifications").update({read_at:new Date().toISOString()}).eq("id",notificationRead.dataset.notificationRead).eq("user_id",user.id);if(error)alert(error.message);else loadClientNotifications();return;}
+ const accountWizard=el.closest("[data-account-wizard]");if(accountWizard){openAccountWizard();return;}
+ const accountMode=el.closest("[data-account-mode]");
+ if(accountMode){window.bbAccountMode=accountMode.dataset.accountMode;document.querySelectorAll("[data-account-mode]").forEach(x=>x.classList.toggle("active",x===accountMode));const tools=document.getElementById("bb-account-tools");if(tools){tools.hidden=true;tools.innerHTML="";}loadClientTradingAccounts();return;}
+ const accountInfo=el.closest("[data-account-info]");if(accountInfo){openAccountInfoModal(accountInfo.dataset.accountInfo);return;}
+ const accountInfoBack=el.closest("[data-account-info-back]");if(accountInfoBack){openAccountInfoModal(accountInfoBack.dataset.accountInfoBack);return;}
+ const accountTool=el.closest("[data-account-tool]");
+ if(accountTool){if(["deposit","withdraw"].includes(accountTool.dataset.accountTool))showAccountTool(accountTool.dataset.accountId,accountTool.dataset.accountTool);else showAccountTool(accountTool.dataset.accountId,accountTool.dataset.accountTool);return;}
+ const accountAction=el.closest("[data-account-action]");
+ if(accountAction){manageClientAccount(accountAction.dataset.accountId,accountAction.dataset.accountAction);return;}
+ const termSymbol=el.closest("[data-term-symbol]");
+ if(termSymbol){document.querySelectorAll("[data-term-symbol]").forEach(x=>x.classList.toggle("active",x===termSymbol));const sym=termSymbol.dataset.termSymbol,frame=document.getElementById("bb-tv-chart"),label=document.getElementById("bb-current-symbol"),paperSymbol=document.getElementById("bb-paper-symbol");if(paperSymbol){const mapped=sym.split(":").pop();if(Array.from(paperSymbol.options).some(o=>o.value===mapped))paperSymbol.value=mapped;}if(frame){const url=new URL("https://www.tradingview.com/widgetembed/");url.searchParams.set("symbol",sym);url.searchParams.set("interval",window.bbInterval||"1");url.searchParams.set("hidesidetoolbar","0");url.searchParams.set("symboledit","1");url.searchParams.set("saveimage","1");url.searchParams.set("toolbarbg","f1f3f6");url.searchParams.set("theme","light");url.searchParams.set("style","1");url.searchParams.set("timezone","Etc/UTC");url.searchParams.set("withdateranges","1");url.searchParams.set("hideideas","1");url.searchParams.set("allow_symbol_change","1");url.searchParams.set("details","1");url.searchParams.set("hotlist","1");url.searchParams.set("calendar","0");frame.src=url.toString();}if(label)label.textContent=sym.split(":").pop();return;}
+ const termInterval=el.closest("[data-term-interval]");
+ if(termInterval){window.bbInterval=termInterval.dataset.termInterval;document.querySelectorAll("[data-term-interval]").forEach(x=>x.classList.toggle("active",x===termInterval));const symButton=document.querySelector("[data-term-symbol].active");if(symButton)symButton.click();return;}
+ const termBottom=el.closest("[data-term-bottom]");if(termBottom){document.querySelectorAll("[data-term-bottom]").forEach(x=>x.classList.toggle("active",x===termBottom));const box=document.getElementById("bb-bottom-content");if(box)box.textContent=termBottom.dataset.termBottom==="positions"?"No live positions. BIGBULLS execution engine is not connected yet.":termBottom.dataset.termBottom==="orders"?"No active orders. Order routing is disabled until the BIGBULLS trading engine is deployed.":termBottom.dataset.termBottom==="history"?"Trading history will appear after account execution services are connected.":"Trade journal and analysis notes will be available in a future terminal release.";return;}
+ const termTool=el.closest("[data-term-tool]");if(termTool){if(termTool.dataset.termTool==="fullscreen"){const frame=document.querySelector(".bb-tv-frame");if(frame?.requestFullscreen)frame.requestFullscreen();}else if(termTool.dataset.termTool==="indicators")alert("Use the Indicators button in the embedded chart toolbar to add technical indicators.");else if(termTool.dataset.termTool==="compare")alert("Use the Compare symbol control in the embedded chart toolbar.");return;}
+ const termMarket=el.closest("[data-term-market]");if(termMarket){document.querySelectorAll("[data-term-market]").forEach(x=>x.classList.toggle("active",x===termMarket));const groups={forex:["FX:EURUSD","FX:GBPUSD","FX:USDJPY"],metals:["OANDA:XAUUSD"],crypto:["BINANCE:BTCUSDT","BINANCE:ETHUSDT"],indices:["NASDAQ:NDX","TVC:DJI"]};document.querySelectorAll("[data-term-symbol]").forEach(x=>x.hidden=!groups[termMarket.dataset.termMarket].includes(x.dataset.termSymbol));return;}
+ const page=el.closest("[data-page]");if(page){e.preventDefault();document.querySelectorAll(".top-menu-dropdown,.sidebar-submenu").forEach(x=>x.hidden=true);document.querySelectorAll("[data-menu-toggle]").forEach(x=>x.setAttribute("aria-expanded","false"));const destination=page.getAttribute("data-page");if(destination==="terminal"){window.location.assign("/terminal.html?v=20261113-pro-terminal-complete");return;}showApp(destination);return;}
+ const view=el.closest("[data-auth-view]");if(view){if(view.dataset.authView==="signup")signupForm();else loginForm();return;}
+ const lang=el.closest("[data-language]");if(lang){alert("Language selector is a visual prototype. EN / UR / AR translations will be enabled in the localization phase.");return;}
+ const trigger=el.closest("[data-open]");if(trigger){e.preventDefault();openModal(trigger.getAttribute("data-open"));return;}
+ const appOpen=el.closest("[data-app-open]");if(appOpen){e.preventDefault();showApp("dashboard");return;}const appPage=el.closest("[data-app-page]");if(appPage){e.preventDefault();showApp(appPage.getAttribute("data-app-page"));return;}
+
+ const removeAdmin=el.closest("[data-admin-remove]");
+ if(removeAdmin){e.preventDefault();if(!isAdmin()||user?.email?.toLowerCase()!=="sardarjfd5403@gmail.com"){message("Only the primary owner can remove another administrator.",true);return;}if(!confirm("Remove admin access from "+removeAdmin.dataset.adminRemove+"?"))return;removeAdmin.disabled=true;const {error}=await sb.rpc("admin_set_user_role",{p_email:removeAdmin.dataset.adminRemove,p_make_admin:false});if(error){message(error.message,true);removeAdmin.disabled=false;}else{message("Admin access removed. The user must refresh or sign in again.");await loadAdminUsers();}return;}
+ const wt=el.closest("[data-wallet-tab]");if(wt){document.querySelectorAll("[data-wallet-tab]").forEach(x=>x.classList.toggle("active",x===wt));if(wt.dataset.walletTab==="history"){const box=document.getElementById("wallet-content");if(box){box.innerHTML='<h3>Wallet history</h3><div id="wallet-history-list">Loading…</div>';loadWalletHistory();}}else if(wt.dataset.walletTab==="transfer"){renderWalletTransfer();}else if(wt.dataset.walletTab==="withdraw"){renderMainWalletWithdrawal();}else{loadPageData();}return;}
+ const st=el.closest("[data-settings-tab]");if(st){document.querySelectorAll("[data-settings-tab]").forEach(x=>x.classList.toggle("active",x===st));const box=document.getElementById("settings-content");if(box){if(st.dataset.settingsTab==="security"){box.innerHTML='<h3>Security management</h3><p>Signed in as '+esc(user.email)+'</p><button class="copy-wallet" data-action="forgot">Send password reset email</button><div class="notice">KYC approval unlocks the client platform and its available functions. Keep your password private and use a strong password.</div>';}else if(st.dataset.settingsTab==="preferences"){box.innerHTML='<h3>Platform preferences</h3><p>Display preferences and notification controls will be available here.</p><div class="empty-state">Preference controls coming soon.</div>';}else{box.innerHTML='<h3>Manage profile</h3><form id="profile-form" class="client-form"><label>Full name<input name="full_name" value="'+esc(user.user_metadata?.full_name||"")+'" required></label><label>Email address<input value="'+esc(user.email||"")+'" disabled></label><button class="portal-primary">Save profile</button></form><div data-page-message></div>';}}return;}
+ const financialBack=el.closest("[data-financial-back]");if(financialBack){const ctx=window.bbFinancialContext;const account=(window.bbClientAccounts||[]).find(x=>x.id===ctx?.accountId);if(account)openAccountFinancialModal(account.id,"withdraw",ctx.methods);return;}
+ const copy=el.closest("[data-copy-address]");if(copy){if(navigator.clipboard?.writeText)navigator.clipboard.writeText(copy.dataset.copyAddress);else alert(copy.dataset.copyAddress);return;}
+ const toggle=el.closest("[data-wallet-toggle]");if(toggle&&isAdmin()){const {error}=await sb.from("crypto_wallets").update({active:toggle.dataset.active!=="true"}).eq("id",toggle.dataset.walletToggle);if(error)alert(error.message);else loadPageData();return;}
+ const demoBalance=el.closest("[data-demo-balance],[data-admin-demo-balance]");
+ if(demoBalance){
+  const isAdminAction=demoBalance.hasAttribute("data-admin-demo-balance");
+  if(isAdminAction&&!isAdmin())return;
+  const operation=prompt("Enter SET to reset the Demo balance, or TOPUP to add virtual funds:","TOPUP");
+  if(operation===null)return;
+  const op=operation.trim().toLowerCase();
+  if(!["set","topup"].includes(op)){alert("Choose SET or TOPUP.");return;}
+  const raw=prompt(op==="set"?"New Demo balance (USD):":"Amount to add (USD):");
+  if(raw===null)return;
+  const amount=Number(raw);
+  if(!Number.isFinite(amount)||amount<0||(op==="topup"&&amount===0)||amount>100000000){alert("Enter a valid amount.");return;}
+  const note=prompt("Reason / note (optional):",isAdminAction?"Admin Demo balance adjustment":"Client Demo balance adjustment")||"Demo balance adjustment";
+  demoBalance.disabled=true;
+  const payload={action:"set_balance",account_mode:"demo",account_id:isAdminAction?demoBalance.dataset.adminDemoBalance:demoBalance.dataset.demoBalance,operation:op,amount,note};
+  if(isAdminAction)payload.user_id=demoBalance.dataset.userId;
+  const result=await sb.functions.invoke("paper-execution",{body:payload});
+  demoBalance.disabled=false;
+  if(result.error||result.data?.error){alert(result.data?.error||result.error?.message||"Demo balance update failed.");return;}
+  alert("Demo virtual balance updated: $"+Number(result.data.balance_after||0).toFixed(2));
+  if(activePage==="accounts")await loadClientTradingAccounts();else await loadPageData();
+  return;
+ }
+ const adjust=el.closest("[data-admin-adjust]");if(adjust&&isAdmin()){const raw=prompt("Balance adjustment amount (positive to credit, negative to debit):");if(raw===null)return;const amount=Number(raw);if(!Number.isFinite(amount)||amount===0){alert("Enter a valid non-zero amount.");return;}const note=prompt("Reason for this balance adjustment (required):");if(!note||note.trim().length<4){alert("A reason of at least 4 characters is required.");return;}const {error}=await sb.rpc("admin_adjust_account_balance",{p_account_id:adjust.dataset.adminAdjust,p_amount:amount,p_note:note.trim()});if(error)alert(error.message);else{alert("Balance updated and audit record saved.");loadPageData();}return;}
+ const complete=el.closest("[data-complete-withdrawal]");if(complete&&isAdmin()){const ref=prompt("Enter payout blockchain TXID / reference after sending funds:");if(!ref||ref.trim().length<5)return;const {error}=await sb.rpc("admin_complete_withdrawal",{p_transaction_id:complete.dataset.completeWithdrawal,p_payout_reference:ref.trim()});if(error)alert(error.message);else{alert("Payout recorded; client balance and internal B-Book pool debited and reconciled.");loadPageData();}return;}
+ const review=el.closest("[data-review]");if(review&&isAdmin()){const status=review.dataset.status;let note=null;if(status==="rejected"){note=prompt("Enter rejection reason (required):");if(!note||note.trim().length<4){alert("A clear rejection reason is required.");return;}note=note.trim();}const {error}=await sb.rpc("admin_review_wallet_transaction",{p_transaction_id:review.dataset.review,p_status:status,p_admin_note:note});if(error)alert(error.message);else loadPageData();return;}
+ const ar=el.closest("[data-account-review]");if(ar&&isAdmin()){let note=null;if(ar.dataset.status==="rejected"){note=prompt("Enter account request rejection reason (at least 4 characters):");if(!note||note.trim().length<4){alert("A clear rejection reason is required.");return;}note=note.trim();}const {error}=await sb.rpc("admin_review_trading_account",{p_account_id:ar.dataset.accountReview,p_status:ar.dataset.status,p_admin_note:note});if(error)alert(error.message);else{alert(ar.dataset.status==="approved"?"Portal account approved. No broker login has been provisioned.":"Account request rejected.");loadPageData();}return;}
+ const tr=el.closest("[data-transfer-review]");if(tr&&isAdmin()){let note=null;if(tr.dataset.status==="rejected"){note=prompt("Enter transfer rejection reason (at least 4 characters):");if(!note||note.trim().length<4){alert("A clear rejection reason is required.");return;}note=note.trim();}const {error}=await sb.rpc("admin_review_account_transfer",{p_transfer_id:tr.dataset.transferReview,p_status:tr.dataset.status,p_admin_note:note});if(error)alert(error.message);else{alert(tr.dataset.status==="approved"?"Transfer approved. Both account balances and ledgers were updated.":"Transfer rejected.");loadPageData();}return;}
+ if(el.closest("[data-wallet-queue-refresh]")&&isAdmin()){loadPageData();return;}
+ if(el.closest("[data-kyc-refresh]")&&isAdmin()){loadPageData();return;}
+  const kycReview=el.closest("[data-kyc-review]");if(kycReview&&isAdmin()){const row=kycReview.closest(".admin-transaction"),reasons=Array.from(row?.querySelector("[data-kyc-reasons]")?.selectedOptions||[]).map(x=>x.value),note=String(row?.querySelector("[data-kyc-admin-note]")?.value||"").trim();if(kycReview.dataset.status==="rejected"&&!reasons.length){alert("Select at least one KYC rejection reason.");return;}const {error}=await sb.rpc("admin_review_kyc_submission",{p_submission_id:kycReview.dataset.kycReview,p_status:kycReview.dataset.status,p_admin_note:note||null,p_rejection_reasons:kycReview.dataset.status==="rejected"?reasons:[]});if(error)alert(error.message);else loadPageData();return;}
+ const partnerShare=el.closest("[data-partner-share]");
+ if(partnerShare){const url=window.__bbPartnerReferralUrl||"";if(!url){message("Your referral link becomes available after partner approval.",true);return;}try{if(navigator.share){await navigator.share({title:"Join BIGBULLS Global Market",text:"Create your BIGBULLS account using my partner link.",url});}else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(url);message("Partner link copied. Share it with your clients.");}else{window.prompt("Copy your BIGBULLS partner link:",url);}}catch(err){if(err?.name!=="AbortError")message("Share failed: "+(err?.message||"Please copy the link manually."),true);}return;}
+ const partnerCodeCopy=el.closest("[data-partner-copy-code]");
+ if(partnerCodeCopy){const code=window.__bbPartnerReferralCode||"";if(!code){message("Your referral code becomes available after partner approval.",true);return;}try{await navigator.clipboard.writeText(code);message("Referral code copied: "+code);}catch(_){window.prompt("Copy your BIGBULLS referral code:",code);}return;}
+ const ibRateSave=el.closest("[data-ib-rate-save]");
+ if(ibRateSave&&isAdmin()){const row=ibRateSave.closest("[data-ib-rate-row]"),rate=Number(row?.querySelector("[data-ib-rate-value]")?.value),enabled=!!row?.querySelector("[data-ib-rate-enabled]")?.checked,tier=ibRateSave.dataset.ibRateSave;if(!Number.isFinite(rate)||rate<0||rate>1000){message("Commission rate must be between $0 and $1,000 per lot.",true);return;}ibRateSave.disabled=true;const {error}=await sb.rpc("admin_update_partner_commission_rate",{p_tier:tier,p_commission_per_lot:rate,p_enabled:enabled});ibRateSave.disabled=false;if(error)message("Rate update failed: "+error.message,true);else{message(tier.toUpperCase()+" commission rate saved.");await loadPageData();}return;}
+ const ibTierSave=el.closest("[data-ib-partner-tier-save]");
+ if(ibTierSave&&isAdmin()){const row=ibTierSave.closest(".ib-partner-row"),tier=String(row?.querySelector("[data-ib-tier-select]")?.value||"bronze"),partnerId=ibTierSave.dataset.ibPartnerTierSave;ibTierSave.disabled=true;const {error}=await sb.rpc("admin_set_partner_status",{p_partner_user_id:partnerId,p_status:String(row?.dataset.ibCurrentStatus||"approved"),p_tier:tier});ibTierSave.disabled=false;if(error)message("Tier update failed: "+error.message,true);else{message("Partner tier updated to "+tier.toUpperCase()+".");await loadPageData();}return;}
+ const ibStatus=el.closest("[data-ib-partner-status]");
+ if(ibStatus&&isAdmin()){const row=ibStatus.closest(".ib-partner-row"),tier=String(row?.querySelector("[data-ib-tier-select]")?.value||"bronze"),status=ibStatus.dataset.status;if(!confirm((status==="disabled"?"Disable":"Enable")+" IB partner access?"))return;ibStatus.disabled=true;const {error}=await sb.rpc("admin_set_partner_status",{p_partner_user_id:ibStatus.dataset.ibPartnerStatus,p_status:status,p_tier:tier});if(error){ibStatus.disabled=false;message("IB status update failed: "+error.message,true);}else{message("IB partner status updated.");await loadPageData();}return;}
+ const ibPayoutReview=el.closest("[data-ib-payout-review]");
+ if(ibPayoutReview&&isAdmin()){const status=ibPayoutReview.dataset.status;let note=null;if(status==="rejected"){note=window.prompt("Enter rejection reason (minimum 4 characters):");if(!note||note.trim().length<4){message("A clear payout rejection reason is required.",true);return;}note=note.trim();}if(status==="paid"&&!confirm("Confirm that this IB payout has actually been sent?"))return;ibPayoutReview.disabled=true;const {error}=await sb.rpc("admin_review_partner_payout",{p_request_id:ibPayoutReview.dataset.ibPayoutReview,p_status:status,p_admin_note:note});if(error){ibPayoutReview.disabled=false;message("Payout review failed: "+error.message,true);}else{message(status==="paid"?"IB payout marked paid.":"IB payout rejected and wallet funds returned.");await loadPageData();}return;}
+ const partnerReview=el.closest("[data-partner-review]");if(partnerReview&&isAdmin()){let note=null;if(partnerReview.dataset.status==="rejected"){note=prompt("Enter partner rejection reason (required):");if(!note||note.trim().length<4){alert("A clear rejection reason is required.");return;}note=note.trim();}const {error}=await sb.rpc("admin_review_partner_application",{p_application_id:partnerReview.dataset.partnerReview,p_status:partnerReview.dataset.status,p_admin_note:note});if(error)alert(error.message);else loadPageData();return;}
+ if(el.closest("[data-support-queue-refresh]")&&isAdmin()){loadPageData();return;}
+ const supportReview=el.closest("[data-support-review]");
+ if(supportReview&&isAdmin()){
+  const reply=prompt("Enter the reply that the client will receive (required):");
+  if(reply===null)return;
+  if(reply.trim().length<2||reply.trim().length>5000){alert("Reply must be between 2 and 5000 characters.");return;}
+  const {error}=await sb.rpc("admin_update_support_ticket",{p_ticket_id:supportReview.dataset.supportReview,p_status:supportReview.dataset.status,p_admin_reply:reply.trim()});
+  if(error)alert(error.message);else{alert("Support ticket updated and client notified.");loadPageData();}
+  return;
+ }
+ const commissionStatus=el.closest("[data-commission-status]");if(commissionStatus&&isAdmin()){let note=null;if(commissionStatus.dataset.status==="rejected"){note=prompt("Enter commission rejection reason (required):");if(!note||note.trim().length<4){alert("A clear rejection reason is required.");return;}note=note.trim();}const update={status:commissionStatus.dataset.status,reviewed_by:user.id,reviewed_at:new Date().toISOString()};if(note)update.admin_note=note;if(commissionStatus.dataset.status==="paid")update.paid_at=new Date().toISOString();const {error}=await sb.from("partner_commission_ledger").update(update).eq("id",commissionStatus.dataset.commissionStatus);if(error)alert(error.message);else loadPageData();return;}
+ const productOrderReview=el.closest("[data-product-order-review]");if(productOrderReview&&isAdmin()){let note=null;if(productOrderReview.dataset.status==="rejected"){note=prompt("Enter product order rejection reason (at least 4 characters):");if(!note||note.trim().length<4){alert("A clear rejection reason is required.");return;}note=note.trim();}const {data,error}=await sb.rpc("admin_review_product_order",{p_order_id:productOrderReview.dataset.productOrderReview,p_status:productOrderReview.dataset.status,p_admin_note:note});if(error)alert(error.message);else{if(productOrderReview.dataset.status==="paid")alert("Payment marked as verified. License issued: "+String(data||""));else alert("Product order rejected.");loadPageData();}return;}
+ const action=el.closest("[data-action]");if(action){
+  if(action.dataset.action==="package-info"){openModal("buy");return;}
+  if(action.dataset.action==="logout"){const {error}=await sb.auth.signOut();if(error)alert(error.message);else{user=null;hideApp();window.scrollTo({top:0,behavior:"smooth"});}return;}
+  if(action.dataset.action==="forgot"){const email=prompt("Registered email address:");if(!email)return;const {error}=await sb.auth.resetPasswordForEmail(email.trim(),{redirectTo:location.origin+location.pathname});if(error)alert(error.message);else alert("Password reset email requested. Check your inbox.");return;}
+ }
+ if(el.closest("[data-close]")||el.classList.contains("portal-close")||el===modal)closeModal();
+}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
+})();
++Number(x.commission_usd||0).toFixed(2)+' · '+esc(x.symbol||"B-Book trade")+'</b><small>'+esc(x.client_ref||"Client")+' · '+esc(x.masked_email||"")+'</small><small>'+esc(x.masked_account||"Account ••••")+' · '+Number(x.lots||0).toFixed(2)+' lots · '+esc(x.status||"credited")+'</small><small>'+new Date(x.created_at).toLocaleString()+'</small></span></div>').join("")||"No Real B-Book commission records yet.";
+  const depositBox=document.getElementById("partner-deposit-commissions");
+  if(depositBox)depositBox.innerHTML=depositCommissionError?'<div class="notice error">'+esc(depositCommissionError.message)+'</div>':(depositCommissions||[]).map(x=>'<div class="admin-row"><span><b>
+  if(transferSelect){
+   const {data:realAccounts,error:realAccountsError}=await sb.from("trading_accounts").select("id,account_number,display_name,balance,currency").eq("user_id",user.id).eq("account_mode","real").eq("status","approved").is("archived_at",null).is("deleted_at",null).eq("currency","USD").order("created_at",{ascending:false});
+   transferSelect.innerHTML=realAccountsError?'<option value="">Accounts unavailable</option>':'<option value="">Select a Real USD account</option>'+(realAccounts||[]).map(x=>'<option value="'+esc(x.id)+'">'+esc(x.display_name||"Real account")+' · #'+esc(x.account_number||"—")+' · $'+Number(x.balance||0).toFixed(2)+'</option>').join("");
+  }
+  const payoutBox=document.getElementById("partner-payout-history");
+  if(payoutBox)payoutBox.innerHTML=(snapshot?.payouts||[]).map(x=>'<div class="admin-row"><span><b>$'+Number(x.amount||0).toFixed(2)+' · '+esc(x.status.toUpperCase())+'</b><small>'+esc(x.method)+' · '+new Date(x.created_at).toLocaleString()+(x.admin_note?' · '+esc(x.admin_note):"")+'</small></span></div>').join("")||"No payout requests yet.";
+  for(const id of ["partner-transfer-form","partner-payout-form"]){const el=document.getElementById(id);if(el)el.hidden=!approved;}
+ }if(activePage==="accounts"){ await loadClientTradingAccounts(); }
+ }
+async function loadClientTradingAccounts(){
+ const box=document.getElementById("my-trading-accounts");if(!box||!sb||!user)return;
+ box.textContent="Loading accounts…";
+ const {data,error}=await sb.from("trading_accounts").select("id,account_mode,account_number,account_type,currency,balance,credit_bonus,status,display_name,server_name,platform,requested_leverage,leverage_preference,swap_free,archived_at,deleted_at,created_at").eq("user_id",user.id).is("deleted_at",null).order("created_at",{ascending:false});
+ if(error){box.textContent="Trading accounts unavailable: "+error.message;return;}
+ const [{data:demoLedgers,error:demoLedgerError},{data:demoTrades,error:demoTradesError},{data:realPositions,error:realPositionsError}]=await Promise.all([
+  sb.from("bb_paper_execution_accounts").select("account_id,virtual_balance").eq("user_id",user.id).eq("account_mode","demo"),
+  sb.from("bb_paper_execution_trades").select("account_id,unrealized_pnl,status").eq("user_id",user.id).eq("account_mode","demo").eq("status","OPEN"),
+  sb.from("bb_bbook_positions").select("account_id,floating_pnl,margin_used,status").eq("user_id",user.id).eq("account_mode","real").eq("status","OPEN")
+ ]);
+ if(demoLedgerError||demoTradesError||realPositionsError){box.textContent="Account balance / equity ledger unavailable: "+(demoLedgerError||demoTradesError||realPositionsError).message;return;}
+ const demoBalanceByAccount=new Map((demoLedgers||[]).map(x=>[x.account_id,Number(x.virtual_balance||0)]));
+ const demoFloatingByAccount=new Map(),realFloatingByAccount=new Map(),realMarginByAccount=new Map();
+ for(const trade of demoTrades||[])demoFloatingByAccount.set(trade.account_id,(demoFloatingByAccount.get(trade.account_id)||0)+Number(trade.unrealized_pnl||0));
+ for(const position of realPositions||[]){realFloatingByAccount.set(position.account_id,(realFloatingByAccount.get(position.account_id)||0)+Number(position.floating_pnl||0));realMarginByAccount.set(position.account_id,(realMarginByAccount.get(position.account_id)||0)+Number(position.margin_used||0));}
+ window.bbClientAccounts=(data||[]).map(x=>{
+  const demo=x.account_mode==="demo",balance=demo?(demoBalanceByAccount.get(x.id)??Number(x.balance||0)):Number(x.balance||0);
+  const floating=(demo?demoFloatingByAccount:realFloatingByAccount).get(x.id)||0;
+  const creditBonus=demo?0:Number(x.credit_bonus||0),marginUsed=demo?null:(realMarginByAccount.get(x.id)||0);
+  return {...x,balance,credit_bonus:creditBonus,floating_pnl:floating,equity:balance+creditBonus+floating,margin_used:marginUsed,free_margin:marginUsed===null?null:balance+creditBonus+floating-marginUsed,margin_level:marginUsed>0?(balance+creditBonus+floating)/marginUsed*100:null};
+ });
+ const mode=window.bbAccountMode||"real";
+ const title=document.getElementById("bb-account-list-title");if(title)title.textContent=mode==="archived"?"Archived Accounts":"My "+(mode==="real"?"Real":"Demo")+" Accounts";
+ const rows=window.bbClientAccounts.filter(x=>mode==="archived"?!!x.archived_at:!x.archived_at&&x.account_mode===mode);
+ if(!rows.length){box.innerHTML='<div class="empty-state">No '+(mode==="archived"?"archived":mode)+" accounts found.</div>";return;}
+ box.innerHTML=rows.map(x=>'<div class="bb-account-card"><div class="bb-account-card-top"><div><small>'+esc(x.server_name||"BIGBULLS")+' · '+esc(String(x.account_mode||"real").toUpperCase())+'</small><h4>'+esc(x.display_name||x.account_type||"Trading account")+'</h4></div><div class="bb-account-card-head-actions"><span class="bb-account-number">#'+esc(x.account_number||"—")+'</span><button type="button" class="bb-account-info-btn" data-account-info="'+esc(x.id)+'" aria-label="View account details" title="Account information"><span aria-hidden="true">⚙</span></button></div></div><div class="bb-account-meta" hidden aria-hidden="true"></div>'+(x.archived_at?'':x.status==="approved"&&x.account_mode==="demo"?'<div class="bb-account-actions account-demo-actions"><button type="button" data-demo-balance="'+esc(x.id)+'">Set / Top-up Demo Balance</button><a class="button button-primary" href="/terminal.html?v=20261113-pro-terminal-complete&account_id='+encodeURIComponent(x.id)+'">Open in Terminal</a></div>':x.status==="approved"&&x.account_mode==="real"?'':x.status==="approved"?'<div class="notice">Demo account funding is managed separately with demo funds. Crypto deposits and cash withdrawals are available only on approved Real accounts.</div>':'<div class="notice">Awaiting Admin approval. Portal ID only; funding access is not available yet.</div>')+'<div class="bb-account-actions">'+(x.archived_at?'<button type="button" data-account-action="restore" data-account-id="'+esc(x.id)+'">Restore</button>':'<button type="button" data-account-action="rename" data-account-id="'+esc(x.id)+'">Rename</button><button type="button" data-account-action="archive" data-account-id="'+esc(x.id)+'">Archive</button>')+'<button class="danger" type="button" data-account-action="delete" data-account-id="'+esc(x.id)+'">Delete</button>'+(x.status==="approved"&&!x.archived_at?'<a class="button button-primary" href="/terminal.html?v=20261113-pro-terminal-complete&account_id='+encodeURIComponent(x.id)+'">Open in Terminal</a>':'')+'</div></div>').join("");
+ const tools=document.getElementById("bb-account-tools");if(tools){tools.hidden=true;tools.innerHTML="";}
+}
+function openAccountInfoModal(id){
+ const account=(window.bbClientAccounts||[]).find(x=>String(x.id)===String(id));
+ if(!account){message("Account information is unavailable. Refresh your account list and try again.",true);return;}
+ const status=account.archived_at?"ARCHIVED":account.status==="approved"?"ACTIVE":String(account.status||"PENDING").toUpperCase();
+ const rows=[
+  ["Account type",account.account_type||"—"],
+  ["Platform",account.platform||"—"],
+  ["Leverage applied",account.requested_leverage||"1:100"],
+  ["Leverage choice",account.leverage_preference||account.requested_leverage||"1:100"],
+  ["Swap-free",account.swap_free?"ON":"OFF"],
+  ["Currency",account.currency||"—"],
+  ["Balance",(account.currency||"USD")+" "+Number(account.balance||0).toFixed(2)],
+  ["Equity",(account.currency||"USD")+" "+Number(account.equity??account.balance??0).toFixed(2)],
+  ["Status",status]
+ ];
+ const canAct=account.status==="approved"&&!account.archived_at&&!account.deleted_at;
+ const isReal=String(account.account_mode||"").toLowerCase()==="real";
+ const actionButtons=canAct?'<div class="bb-account-modal-actions"><span class="accounts-kicker">ACCOUNT ACTIONS</span><div class="bb-account-action-grid">'+[
+  ["deposit","Deposit"],["withdraw","Withdraw"],["transfer","Transfer Funds"],["trades","Trading History"],["transactions","Transaction History"]
+ ].map(([action,label])=>'<button type="button" data-account-tool="'+action+'" data-account-id="'+esc(account.id)+'" '+(!isReal&&["deposit","withdraw","transfer"].includes(action)?'disabled title="Available for approved Real accounts only"':'')+'><span>'+label+'</span><span aria-hidden="true">›</span></button>').join("")+'</div>'+(!isReal?'<p class="bb-account-info-note">Deposit, withdrawal and transfers are available on approved Real accounts. Demo balances are managed separately.</p>':'')+'</div>':'<p class="bb-account-info-note">Actions become available after this account is approved.</p>';
+ body.innerHTML='<div class="bb-account-info-modal"><span class="accounts-kicker">ACCOUNT INFORMATION</span><h2>'+esc(account.display_name||account.account_type||"Trading account")+'</h2><p class="bb-account-info-number">'+esc(String(account.account_mode||"real").toUpperCase())+' ACCOUNT · #'+esc(account.account_number||"—")+'</p><div class="bb-account-info-grid">'+rows.map(([label,value])=>'<div class="bb-account-info-row"><small>'+esc(label)+'</small><b>'+esc(String(value))+'</b></div>').join("")+'</div>'+actionButtons+'<p class="bb-account-info-note">Details shown for this selected trading account only.</p></div>';
+ showModal();
+}
+async function showAccountTool(id,action){
+ const account=(window.bbClientAccounts||[]).find(x=>String(x.id)===String(id));const box=document.getElementById("bb-account-tools");if(!account||!box)return;
+ box.hidden=true;box.dataset.accountId=id;box.dataset.accountTool=action;
+ const heading=esc(account.display_name||account.account_type)+" · #"+esc(account.account_number);
+ const showTool=(label,content)=>{body.innerHTML='<div class="bb-account-tool-modal"><span class="accounts-kicker">'+label+'</span><h2>'+heading+'</h2>'+content+'<button type="button" class="copy-wallet" data-account-info-back="'+esc(id)+'">Back to account details</button></div>';showModal();};
+ if(action==="trades"){showTool("TRADING HISTORY",'<div class="empty-state">No B-Book REAL or BigBulls DEMO trading history is available yet.</div>');return;}
+ if(action==="transactions"){
+  showTool("TRANSACTION HISTORY",'<p>Complete deposit, withdrawal and transfer history across all your BIGBULLS accounts.</p><div id="bb-account-transactions">Loading…</div>');
+  const [wallets,accountTransfers,fundTransfers,ledger]=await Promise.all([
+   sb.from("wallet_transactions").select("id,kind,asset,network,amount_usd,status,tx_hash,invoice_id,rejection_reason,admin_note,destination_address,payout_reference,created_at,completed_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(200),
+   sb.from("account_transfers").select("id,from_account,to_account,amount_usd,status,created_at,currency").eq("user_id",user.id).order("created_at",{ascending:false}).limit(200),
+   sb.from("client_fund_transfers").select("id,from_type,from_account_id,to_type,to_account_id,amount,currency,status,created_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(200),
+   sb.from("account_balance_ledger").select("id,account_id,entry_type,amount,balance_before,balance_after,note,created_at").eq("user_id",user.id).in("entry_type",["admin_credit","admin_debit"]).order("created_at",{ascending:false}).limit(200)
+  ]);
+  const list=document.getElementById("bb-account-transactions");if(!list)return;
+  const failed=[wallets,accountTransfers,fundTransfers,ledger].find(x=>x.error);
+  if(failed){list.textContent="History unavailable: "+failed.error.message;return;}
+  const items=[
+   ...(wallets.data||[]).map(x=>({date:x.created_at,label:x.kind.toUpperCase()+" · "+x.asset+"/"+x.network,amount:"$"+Number(x.amount_usd).toFixed(2),status:x.status,ref:x.invoice_id||x.tx_hash||x.destination_address||"",note:x.rejection_reason||x.admin_note||x.payout_reference||""})),
+   ...(accountTransfers.data||[]).flatMap(x=>[
+    {date:x.created_at,label:"TRANSFER OUT",amount:"-$"+Number(x.amount_usd).toFixed(2),status:x.status,ref:"To account "+x.to_account},
+    {date:x.created_at,label:"TRANSFER IN",amount:"+$"+Number(x.amount_usd).toFixed(2),status:x.status,ref:"From account "+x.from_account}
+   ]),
+   ...(fundTransfers.data||[]).map(x=>({date:x.created_at,label:(x.from_type==="wallet"?"MAIN WALLET":"TRADING ACCOUNT")+" → "+(x.to_type==="wallet"?"MAIN WALLET":"TRADING ACCOUNT"),amount:"$"+Number(x.amount).toFixed(2)+" "+(x.currency||"USD"),status:x.status,ref:"Transfer "+x.id})),
+   ...(ledger.data||[]).map(x=>({date:x.created_at,label:x.entry_type==="admin_credit"?"ADMIN BALANCE CREDIT":"ADMIN BALANCE DEBIT",amount:(x.entry_type==="admin_debit"?"-":"+")+"$"+Number(x.amount).toFixed(2),status:"posted",ref:"Account "+x.account_id+" · Balance "+Number(x.balance_before).toFixed(2)+" → "+Number(x.balance_after).toFixed(2),note:x.note||""}))
+  ].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  list.innerHTML=items.length?items.map(x=>'<div class="admin-row"><span><b>'+esc(x.label)+'</b><small>'+new Date(x.date).toLocaleString()+(x.ref?' · '+esc(x.ref):'')+(x.note?' · '+esc(x.note):'')+'</small></span><b>'+esc(x.amount)+'</b><em>'+esc(x.status)+'</em></div>').join(""):'<div class="empty-state">No transactions recorded for this client yet.</div>';
+  return;
+ }
+ if(action==="transfer"){
+  if(account.account_mode!=="real"||account.currency!=="USD"){showTool("INTERNAL TRANSFER",'<div class="notice">Instant internal transfers are available for Real USD accounts. Demo balances remain in the separate paper-trading ledger.</div>');return;}
+  const choices=(window.bbClientAccounts||[]).filter(x=>String(x.id)!==String(id)&&!x.archived_at&&!x.deleted_at&&x.status==="approved"&&x.account_mode==="real"&&x.currency==="USD");
+  showTool("INSTANT INTERNAL TRANSFER",'<form class="client-form" id="account-transfer-form"><input type="hidden" name="from_account" value="'+esc(id)+'"><label>Destination account<select name="to_account" required>'+choices.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.display_name||x.account_type)+' · #'+esc(x.account_number)+' · USD</option>').join("")+'</select></label><label>Amount (USD)<input name="amount" type="number" min="0.01" step="0.01" required></label><button class="portal-primary" type="submit" '+(!choices.length?'disabled':'')+'>Confirm Instant Transfer</button><div data-page-message></div></form><div class="notice">Instant settlement between your own active Real USD accounts. Server checks ownership, KYC, available balance and reserved withdrawals.</div>');
+  if(!choices.length)body.querySelector("[data-page-message]").textContent="No other active Real USD account is available as a destination.";
+  return;
+ }
+ const {data:methods,error}=await sb.from("crypto_wallets").select("id,asset,network,label,address").eq("active",true).order("asset");
+ if(error){showTool("ACCOUNT FUNDING",'<p>Payment methods unavailable: '+esc(error.message)+'</p>');return;}
+ const list=methods||[];
+ if(action==="deposit"||action==="withdraw"){openAccountFinancialModal(id,action,list);return;}
+}
+
+async function openAccountFinancialModal(accountId,action,providedMethods){
+ const account=(window.bbClientAccounts||[]).find(x=>x.id===accountId);if(!account)return;
+ const methods=providedMethods||[];window.bbFinancialContext={accountId,action,methods};
+ if(action==="deposit"){
+  body.innerHTML='<p class="eyebrow">ACCOUNT DEPOSIT · #'+esc(account.account_number)+'</p><h2>Deposit funds</h2>'+(methods.length?'<form id="account-deposit-form" class="client-form" method="post" enctype="multipart/form-data" autocomplete="off" novalidate><label>Payment method / network<select name="wallet_id">'+methods.map(w=>'<option value="'+esc(w.id)+'">'+esc(w.asset)+' · '+esc(w.network)+'</option>').join("")+'</select></label><div id="bb-deposit-address"></div><label>Deposit amount (USD)<input name="amount_usd" type="number" min="1" step=".01" required></label><label>Amount sent in crypto<input name="amount_crypto" type="number" min="0.00000001" step="any" required></label><label>Blockchain TXID<input name="tx_hash" minlength="11" required></label><label>Payment screenshot / proof (required)<input name="proof" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf" required><small data-deposit-file-name>No file selected</small></label><p class="fine">Proof file: minimum 100 KB · maximum 10 MB · JPG, PNG, WEBP or PDF.</p><button class="portal-primary" type="submit">Submit deposit request</button><div data-page-message role="status" aria-live="polite"></div></form>':'<div class="empty-state">No deposit methods are enabled by Admin yet.</div>')+'<p class="fine">Funds are credited only after Admin verifies your payment.</p>';
+  const form=document.getElementById("account-deposit-form");if(form){const select=form.elements.wallet_id;const render=()=>{const w=methods.find(x=>x.id===select.value),slot=document.getElementById("bb-deposit-address");if(slot){slot.innerHTML=w?'<div class="wallet-address-card"><small>ADMIN DEPOSIT ADDRESS · '+esc(w.asset)+' / '+esc(w.network)+'</small><div class="deposit-qr" id="bb-account-deposit-qr" aria-label="QR code for the selected deposit address"></div><code>'+esc(w.address)+'</code><button type="button" data-copy-address="'+esc(w.address)+'">Copy address</button><p>'+esc(w.label||"Official deposit wallet")+'</p></div>':'';if(w)renderDepositQr(document.getElementById("bb-account-deposit-qr"),w.address);}};select.addEventListener("change",render);render();}
+  showModal();return;
+ }
+ body.innerHTML='<p class="eyebrow">SECURE WITHDRAWAL · #'+esc(account.account_number)+'</p><h2>Select withdrawal network</h2>'+(methods.length?'<div class="client-form"><label>Available method<select id="bb-withdraw-method">'+methods.map(w=>'<option value="'+esc(w.id)+'">'+esc(w.asset)+' · '+esc(w.network)+'</option>').join("")+'</select></label><button class="portal-primary" type="button" id="bb-withdraw-next">Continue</button></div>':'<div class="empty-state">No withdrawal methods are enabled by Admin.</div>')+'<p class="fine">You will enter your receiving address and amount in the next step.</p>';
+ const next=document.getElementById("bb-withdraw-next");if(next)next.addEventListener("click",()=>{const chosen=methods.find(w=>w.id===document.getElementById("bb-withdraw-method")?.value);if(!chosen)return;renderWithdrawalDetails(account,chosen);});
+ showModal();
+}
+function renderWithdrawalDetails(account,method){
+ body.innerHTML='<p class="eyebrow">WITHDRAWAL DETAILS · #'+esc(account.account_number)+'</p><h2>'+esc(method.asset)+' · '+esc(method.network)+'</h2><form id="account-withdrawal-form" class="client-form"><input type="hidden" name="asset" value="'+esc(method.asset)+'"><input type="hidden" name="network" value="'+esc(method.network)+'"><label>Amount (USD)<input name="amount_usd" type="number" min="1" step=".01" max="'+Number(account.balance||0).toFixed(2)+'" required></label><label>Amount in crypto<input name="amount_crypto" type="number" min="0.00000001" step="any" required></label><label>Your receiving wallet address / Binance ID<input name="destination_address" minlength="6" maxlength="180" placeholder="Paste your own address or Binance Pay ID" required></label><button class="portal-primary" type="submit">Submit withdrawal request</button><div data-page-message></div></form><div class="notice">Available account balance: '+esc(account.currency)+' '+Number(account.balance||0).toFixed(2)+'. Payout is sent manually by Admin after review.</div><button type="button" class="copy-wallet" data-financial-back>Back to methods</button>';
+}
+async function openAccountWizard(){
+ if(!sb||!user){message("Please sign in to create an account.",true);return;}
+ const [{data:kyc,error:kycError},{count,error:countError}]=await Promise.all([
+  sb.from("kyc_submissions").select("status").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1).maybeSingle(),
+  sb.from("trading_accounts").select("id",{count:"exact",head:true}).eq("user_id",user.id).eq("account_mode","real").is("deleted_at",null).is("archived_at",null)
+ ]);
+ if(kycError||countError){message("KYC / account eligibility could not be checked. Please retry.",true);return;}
+ const verified=isAdmin()||["approved","verified"].includes(String(kyc?.status||"").toLowerCase());
+ const realCount=Number(count||0),limitReached=realCount>=50;
+ const initial=window.bbAccountMode==="demo"?"demo":"real";
+ body.innerHTML=`<p class="eyebrow">ACCOUNT CENTRE · INSTANT SETUP</p><h2>Configure your trading account</h2><p class="muted">Your account is created instantly after the server validates eligibility.</p><form id="bb-account-wizard" class="client-form">
+ <label>Account environment<select name="account_mode"><option value="demo" ${initial==="demo"||!verified?"selected":""}>Demo · Practice (no KYC)</option><option value="real" ${initial==="real"&&verified&&!limitReached?"selected":""} ${!verified||limitReached?"disabled":""}>Real · Live account</option></select></label>
+ ${!verified?'<div class="notice">Real accounts require verified/approved KYC. Demo accounts remain available. <button type="button" class="copy-wallet" data-page="verification">Complete KYC</button></div>':""}
+ ${limitReached?'<div class="notice">You have reached the limit of 50 active Real accounts. Archive or delete an existing account to create another.</div>':""}
+ <label>Account type<select name="account_type"><option value="Standard">Standard</option><option value="Pro">Pro</option><option value="Raw Spread">Raw Spread</option><option value="Zero">Zero</option></select></label>
+ <label>Trading platform<select name="platform"><option value="BIGBULLS">BIGBULLS Native Terminal</option></select></label>
+ <label>Leverage request<select name="leverage"><option>1:100</option><option>1:200</option><option>1:500</option><option>1:1000</option><option>1:2000</option><option>Unlimited</option></select></label>
+ <label>Account currency<select name="currency"><option value="USD">USD</option></select></label>
+ <label>Swap-Free (Islamic Mode)<select name="swap_free"><option value="false">Off</option><option value="true">On</option></select></label>
+ <label>Account nickname (optional)<input name="display_name" maxlength="40" placeholder="e.g. Gold Scalping"></label>
+ <button class="portal-primary" type="submit" ${limitReached&&verified?'disabled':''}>Create account instantly</button><div data-page-message role="status" aria-live="polite"></div></form><button class="copy-wallet" type="button" data-close>Cancel</button>`;
+ showModal();
+}
+
+async function manageClientAccount(id,action){
+ let displayName=null;
+ if(action==="rename"){displayName=prompt("Enter a new display name (1–40 characters):");if(displayName===null)return;displayName=displayName.trim();if(!displayName||displayName.length>40){alert("Name must contain 1–40 characters.");return;}}
+ if(action==="delete"&&!confirm("Delete this account record from your active account view?"))return;
+ if(action==="archive"&&!confirm("Archive this account?"))return;
+ const {error}=await sb.rpc("manage_client_trading_account",{p_account_id:id,p_action:action,p_display_name:displayName});
+ if(error){alert("Account action failed: "+error.message);return;}
+ await loadClientTradingAccounts();
+}
+async function refreshMainWalletHeader(){
+ if(!sb||!user)return;const node=document.getElementById("header-wallet-balance");if(!node)return;
+ const {data,error}=await sb.rpc("ensure_client_wallet");
+ if(error){node.textContent="Unavailable";console.warn("Main wallet header balance failed:",error);return;}
+ node.textContent="$"+Number(data||0).toFixed(2);
+}
+async function loadWalletHistory(){
+ const box=document.getElementById('wallet-history-list');if(!box||!sb||!user)return;
+ box.textContent='Loading wallet history…';
+ const [wallet,transfers]=await Promise.all([
+  sb.from('wallet_transactions').select('id,kind,asset,network,amount_usd,status,tx_hash,created_at').eq('user_id',user.id).order('created_at',{ascending:false}).limit(50),
+  sb.from('client_fund_transfers').select('id,from_type,from_account_id,to_type,to_account_id,amount,status,created_at').eq('user_id',user.id).order('created_at',{ascending:false}).limit(50)
+ ]);
+ if(wallet.error||transfers.error){box.textContent='Wallet history unavailable: '+(wallet.error?.message||transfers.error?.message);return;}
+ const items=[...(wallet.data||[]).map(x=>({...x,kindLabel:x.kind+' · '+x.asset+' / '+x.network,amountValue:x.amount_usd,detail:x.tx_hash||''})),...(transfers.data||[]).map(x=>({...x,kindLabel:(x.from_type==='wallet'?'Main Wallet':'Trading account')+' → '+(x.to_type==='wallet'?'Main Wallet':'Trading account'),amountValue:x.amount,detail:'Reference '+x.id}))].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+ box.innerHTML='';if(!items.length){box.textContent='No wallet activity yet.';return;}
+ items.forEach(x=>{const row=document.createElement('div');row.className='admin-row';const info=document.createElement('span');const heading=document.createElement('b');heading.textContent=x.kindLabel;const detail=document.createElement('small');detail.textContent=new Date(x.created_at).toLocaleString()+(x.detail?' · '+x.detail:'');info.append(heading,detail);const amount=document.createElement('b');amount.textContent='$'+Number(x.amountValue||0).toFixed(2);const status=document.createElement('em');status.className='status-'+x.status;status.textContent=x.status;row.append(info,amount,status);box.append(row);});
+}
+function loadQrLibrary(url){return new Promise((resolve,reject)=>{const script=document.createElement("script");script.src=url;script.async=true;script.onload=()=>window.QRCode?resolve():reject(new Error("QR library unavailable"));script.onerror=()=>reject(new Error("QR library failed"));document.head.appendChild(script);});}
+async function renderDepositQr(node,address){if(!node)return;node.innerHTML="";node.setAttribute("aria-label","QR code for the selected deposit address");try{if(!window.QRCode){try{await loadQrLibrary("https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js");}catch(_){await loadQrLibrary("https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js");}}if(!node.isConnected)return;new window.QRCode(node,{text:address,width:192,height:192,colorDark:"#101827",colorLight:"#ffffff",correctLevel:window.QRCode.CorrectLevel.M});}catch(error){node.textContent="QR could not load. Use the Copy address button.";node.classList.add("qr-unavailable");console.error("Deposit QR generation failed:",error);}}
+function showSelectedWallet(wallets){const id=document.getElementById("deposit-asset")?.value,w=wallets.find(x=>String(x.id)===String(id)),box=document.getElementById("selected-wallet");if(!box||!w)return;box.innerHTML='<div class="wallet-address-card"><small>ADMIN CONTROLLED · '+esc(w.asset)+' / '+esc(w.network)+'</small><div class="deposit-qr" id="deposit-wallet-qr" aria-label="Deposit wallet QR code"></div><code>'+esc(w.address)+'</code><button type="button" data-copy-address="'+esc(w.address)+'">Copy address</button><p>'+esc(w.label||"Official deposit wallet")+'</p></div><form class="client-form" id="wallet-form"><input type="hidden" name="kind" value="deposit"><label>Amount (USD equivalent)<input name="amount_usd" type="number" min="1" step=".01" required></label><label>Amount in crypto<input name="amount_crypto" required></label><label>Blockchain TXID<input name="tx_hash" required></label><button class="portal-primary">Submit for verification</button></form><div data-page-message></div><div class="notice">Only send the selected asset on the exact network. Admin must verify the blockchain transaction before approval.</div>';renderDepositQr(document.getElementById("deposit-wallet-qr"),w.address);}
+async function submitHandler(e){
+ const f=e.target;if(!(f instanceof HTMLFormElement))return;
+ if(f.id==="signup-form"||f.id==="login-form"){
+  e.preventDefault();
+  if(f.dataset.explicitAuthSubmit!=="1")return;
+  delete f.dataset.explicitAuthSubmit;
+  const d=new FormData(f),b=f.querySelector("button");
+  if(!sb){message("Account service is unavailable. Refresh the page and try again.",true);return;}
+  b.disabled=true;b.textContent="Please wait…";
+  try{
+   if(f.id==="signup-form"){
+    const {data,error}=await sb.auth.signUp({
+     email:String(d.get("email")).trim(),
+     password:String(d.get("password")),
+     options:{emailRedirectTo:location.origin+location.pathname,data:{
+      full_name:String(d.get("full_name")).trim(),
+      country:String(d.get("country")||""),
+      phone:String(d.get("phone")||""),
+      account_type:String(d.get("account_type")||"Individual"),
+      referral_code:String(d.get("referral_code")||"")
+     }}
+    });
+    if(error)throw error;
+    if(data?.session&&data?.user){
+     user=data.user;
+     await showApp("dashboard");
+    }else{
+     message("Registration submitted. Check your email and verify your address, then log in.",false);
+     b.disabled=false;b.textContent="Create account";
+    }
+   }else{
+    const {data,error}=await sb.auth.signInWithPassword({
+     email:String(d.get("email")).trim(),
+     password:String(d.get("password"))
+    });
+    if(error)throw error;
+    user=data?.user||data?.session?.user||null;
+    if(!user)throw new Error("Login succeeded but no active session was returned. Please try again.");
+    await showApp("dashboard");
+   }
+  }catch(err){
+   console.error("Authentication / portal opening error:",err);
+   message(err?.message||"Authentication failed. Please try again.",true);
+   b.disabled=false;b.textContent=f.id==="signup-form"?"Create account":"Secure login";
+  }
+  return;
+ }
+
+ if(f.id==="bb-admin-user-form"){
+  e.preventDefault();if(!isAdmin()){message("Administrator permission required.",true);return;}
+  const d=new FormData(f),email=String(d.get("email")||"").trim(),button=f.querySelector("button"),out=f.querySelector("[data-page-message]");
+  button.disabled=true;button.textContent="Granting access…";
+  try{const {error}=await sb.rpc("admin_set_user_role",{p_email:email,p_make_admin:true});if(error)throw error;if(out)out.textContent="Administrator access granted. Ask this user to sign out and sign in again.";f.reset();await loadAdminUsers();}
+  catch(err){if(out)out.textContent=err.message||"Could not grant admin access.";}
+  finally{button.disabled=false;button.textContent="Grant admin access";}
+  return;
+ }
+ if(f.id==="echo-purchase-form"){e.preventDefault();if(!user||!sb){alert("Please log in before submitting your payment TXID.");return;}const d=new FormData(f),txid=String(d.get("txid")||"").trim(),button=f.querySelector("button[type=submit]"),out=f.querySelector("[data-page-message]");if(txid.length<11){if(out)out.textContent="Enter a valid blockchain TXID.";return;}button.disabled=true;button.textContent="Submitting order…";const {error}=await sb.from("product_orders").insert({user_id:user.id,product_code:"BIGBULLS_AI_ECHO",amount_usd:199,payment_method:"USDT_TRC20",payment_reference:txid,status:"pending"});button.disabled=false;button.textContent="Submit payment for verification";if(out)out.textContent=error?"Order submission failed: "+error.message:"Payment TXID submitted. Your order is pending admin blockchain verification.";if(!error)button.disabled=true;return;}
+ if(f.id==="account-deposit-form"){
+  e.preventDefault();e.stopPropagation();if(typeof e.stopImmediatePropagation==="function")e.stopImmediatePropagation();
+  const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button"),proof=d.get("proof"),ctx=window.bbFinancialContext,accountId=ctx?.accountId;
+  const amountUsd=Number(d.get("amount_usd")),amountCrypto=Number(d.get("amount_crypto")),txHash=String(d.get("tx_hash")||"").trim();
+  if(!accountId||!ctx||!user){if(out)out.textContent="Your secure account session expired. Refresh and sign in again.";return;}
+  const account=(window.bbClientAccounts||[]).find(x=>x.id===accountId);
+  if(!account||account.account_mode!=="real"||account.status!=="approved"||account.archived_at||account.deleted_at){if(out)out.textContent="Funding is available only for active, approved Real accounts.";return;}
+  if(!(amountUsd>0)||!(amountCrypto>0)||txHash.length<11){if(out)out.textContent="Enter a valid USD amount, crypto amount and blockchain TXID (at least 11 characters).";return;}
+  if(!(proof instanceof File)||!proof.size){if(out)out.textContent="Payment proof is required. Please attach your transfer screenshot or PDF.";return;}
+  const uploadedPath=f.elements.proof.dataset.uploadedPath;
+  if(!uploadedPath){if(out)out.textContent="Payment proof is not uploaded yet. Wait for the secure upload to finish or select it again.";return;}
+  if(button.disabled){if(out)out.textContent="Please wait for the proof upload to finish.";return;}
+  button.disabled=true;button.textContent="Submitting deposit request…";
+  try{
+   const walletId=String(d.get("wallet_id")),w=ctx.methods.find(x=>x.id===walletId);
+   if(!w)throw new Error("Select a valid active Admin payment method.");
+   const {data:tx,error}=await sb.from("wallet_transactions").insert({user_id:user.id,account_id:accountId,kind:"deposit",asset:w.asset,network:w.network,destination_address:w.address,amount_usd:amountUsd,amount_crypto:amountCrypto,tx_hash:txHash,proof_path:uploadedPath,status:"pending"}).select("id,invoice_id").single();
+   if(error)throw error;
+   body.innerHTML='<p class="eyebrow">DEPOSIT SUBMITTED</p><h2>Request received</h2><div class="notice">Invoice '+esc(tx.invoice_id)+' is pending Admin verification. Your Real account balance will update only after payment verification and approval.</div><button class="portal-primary" type="button" data-close>Close</button>';
+   await loadClientTradingAccounts();
+  }catch(err){
+   if(out){out.classList.add("error");out.textContent="Deposit request failed: "+(err?.message||"Please check the details and try again.");}
+   button.disabled=false;button.textContent="Submit deposit request";
+  }
+  return;
+ }
+ if(f.id==="account-withdrawal-form"){
+  e.preventDefault();
+  const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button"),ctx=window.bbFinancialContext,account=(window.bbClientAccounts||[]).find(x=>x.id===ctx?.accountId);
+  if(!ctx||!account||account.account_mode!=="real"||account.status!=="approved"||account.archived_at||account.deleted_at){if(out)out.textContent="Withdrawals are available only from an active, approved Real account.";return;}
+  const method=ctx.methods.find(w=>w.asset===String(d.get("asset"))&&w.network===String(d.get("network")));
+  if(!method){if(out)out.textContent="Withdrawal network is no longer active. Reopen the withdrawal form.";return;}
+  const amount=Number(d.get("amount_usd")),amountCrypto=Number(d.get("amount_crypto")),destination=String(d.get("destination_address")||"").trim();
+  if(!(amount>0)||!(amountCrypto>0)||destination.length<6){if(out)out.textContent="Enter a valid amount, crypto quantity and receiving address.";return;}
+  button.disabled=true;button.textContent="Checking available balance…";
+  try{
+   const {data:reservedRows,error:reserveError}=await sb.from("wallet_transactions").select("amount_usd").eq("account_id",ctx.accountId).eq("kind","withdrawal").in("status",["pending","otp_pending","processing"]);
+   if(reserveError)throw reserveError;
+   const reserved=(reservedRows||[]).reduce((sum,x)=>sum+Number(x.amount_usd||0),0),available=Math.max(0,Number(account.balance||0)-reserved);
+   if(amount>available)throw new Error("Amount exceeds available balance after pending withdrawal holds. Available: "+account.currency+" "+available.toFixed(2));
+   button.textContent="Submitting withdrawal request…";
+   const {data:tx,error}=await sb.from("wallet_transactions").insert({user_id:user.id,account_id:ctx.accountId,kind:"withdrawal",asset:method.asset,network:method.network,destination_address:destination,amount_usd:amount,amount_crypto:amountCrypto,status:"pending"}).select("id,invoice_id").single();
+   if(error)throw error;
+   const requestedAt=new Date().toLocaleString();
+   body.innerHTML='<div class="bb-withdrawal-receipt" style="font-family:Inter,Arial,sans-serif;color:#182230;background:#fff;border:1px solid #e5eaf1;border-radius:16px;padding:18px"><h3>BIGBULLS · Withdrawal receipt</h3><p><b>'+esc(account.currency||"USD")+' '+amount.toFixed(2)+'</b></p><p>'+esc(method.asset)+' · '+esc(method.network)+'</p><p>Crypto amount: '+amountCrypto.toLocaleString(undefined,{maximumFractionDigits:8})+' '+esc(method.asset)+'</p><p>Receipt: '+esc(tx.invoice_id||"Pending reference")+'</p><p>Destination: <span style="overflow-wrap:anywhere">'+esc(destination)+'</span></p><p>Requested: '+esc(requestedAt)+'</p><p><b>Pending Admin Approval</b></p><button class="portal-primary" type="button" data-close>Done</button></div>';
+   await loadClientTradingAccounts();
+  }catch(error){if(out)out.textContent=error?.message||"Withdrawal request failed.";button.disabled=false;button.textContent="Submit withdrawal request";}
+  return;
+ }
+ if(f.id==="bb-main-wallet-withdrawal-form"){
+  e.preventDefault();
+  const d=new FormData(f),button=f.querySelector("button"),out=f.querySelector("[data-page-message]");
+  const amount=Number(d.get("amount_usd")),amountCrypto=Number(d.get("amount_crypto")),destination=String(d.get("destination_address")||"").trim(),pair=String(d.get("asset_network")||"").split("|");
+  if(!(amount>0)||!(amountCrypto>0)||destination.length<10||pair.length!==2){if(out)out.textContent="Enter a valid amount, payout network and destination address.";return;}
+  button.disabled=true;button.textContent="Checking Main Wallet…";
+  try{
+   const [wallet,holds]=await Promise.all([sb.rpc("ensure_client_wallet"),sb.from("wallet_transactions").select("amount_usd").eq("user_id",user.id).is("account_id",null).eq("kind","withdrawal").in("status",["pending","otp_pending","processing"])]);
+   if(wallet.error||holds.error)throw wallet.error||holds.error;
+   const reserved=(holds.data||[]).reduce((n,x)=>n+Number(x.amount_usd||0),0),available=Math.max(0,Number(wallet.data||0)-reserved);
+   if(amount>available)throw new Error("Amount exceeds available Main Wallet balance after payout locks. Available: $"+available.toFixed(2));
+   button.textContent="Creating withdrawal request…";
+   const {data:tx,error}=await sb.from("wallet_transactions").insert({user_id:user.id,account_id:null,kind:"withdrawal",asset:pair[0],network:pair[1],destination_address:destination,amount_usd:amount,amount_crypto:amountCrypto,status:"pending"}).select("id,invoice_id").single();
+   if(error)throw error;
+   const requestedAt=new Date().toLocaleString(),host=f.parentElement;
+   host.innerHTML='<div class="bb-withdrawal-receipt" style="font-family:Inter,Arial,sans-serif;color:#182230;background:#fff;border:1px solid #e5eaf1;border-radius:16px;padding:18px"><h3>BIGBULLS · Withdrawal receipt</h3><p><b>$'+amount.toFixed(2)+'</b></p><p>'+esc(pair[0])+' · '+esc(pair[1])+'</p><p>Crypto amount: '+amountCrypto.toLocaleString(undefined,{maximumFractionDigits:8})+' '+esc(pair[0])+'</p><p>Receipt: '+esc(tx.invoice_id||"Pending reference")+'</p><p>Destination: <span style="overflow-wrap:anywhere">'+esc(destination)+'</span></p><p>Requested: '+esc(requestedAt)+'</p><p><b>Pending Admin Approval</b></p><button class="portal-primary" type="button" data-wallet-tab="history">Done · View wallet history</button></div>';
+   await loadPageData();
+  }catch(error){if(out)out.textContent=error?.message||"Withdrawal request failed.";button.disabled=false;button.textContent="Submit Main Wallet withdrawal";}
+  return;
+ }
+ if(f.id==="wallet-form"){e.preventDefault();const d=new FormData(f),kind=String(d.get("kind")||"deposit"),accountId=String(d.get("account_id")||"")||null,walletId=String(d.get("wallet_id")||document.getElementById("deposit-asset")?.value||"");const msg=f.querySelector("[data-page-message]")||f.parentElement.querySelector("[data-page-message]"),amountUsd=Number(d.get("amount_usd")),amountCrypto=Number(d.get("amount_crypto")),txHash=String(d.get("tx_hash")||"").trim();if(kind!=="deposit"||!walletId||!(amountUsd>0)||!(amountCrypto>0)||txHash.length<11){if(msg)msg.textContent="Enter valid USD and crypto amounts, select a payment network and provide a valid blockchain TXID.";return;}const {data:w,error:walletError}=await sb.from("crypto_wallets").select("asset,network,address").eq("id",walletId).eq("active",true).single();if(walletError||!w){if(msg)msg.textContent="The selected deposit method is unavailable.";return;}const {data:tx,error}=await sb.from("wallet_transactions").insert({user_id:user.id,account_id:accountId,kind:"deposit",asset:w.asset,network:w.network,destination_address:w.address,amount_usd:amountUsd,amount_crypto:amountCrypto,tx_hash:txHash,status:"pending"}).select("id,invoice_id").single();if(msg)msg.textContent=error?"Request failed: "+error.message:"Deposit request "+esc(tx?.invoice_id||"") +" submitted for Main Wallet verification.";if(!error){f.reset();await loadPageData();}return;}
+ if(f.id==="kyc-form"){
+   e.preventDefault();e.stopPropagation();if(typeof e.stopImmediatePropagation==="function")e.stopImmediatePropagation();
+   const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button"),front=d.get("document_front"),back=d.get("document_back"),allowed=["image/jpeg","image/png","image/webp","application/pdf"],minBytes=100*1024,maxBytes=20*1024*1024;
+   const mimeForFile=file=>{const ext=String(file?.name||"").split(".").pop().toLowerCase();const byExt={jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",pdf:"application/pdf"};const typed=String(file?.type||"").toLowerCase();if(allowed.includes(typed))return typed;if(typed==="image/jpg"||typed==="image/pjpeg")return "image/jpeg";return byExt[ext]||"";};
+   const showKycError=message=>{if(out){out.textContent=message;out.classList.add("error");}};
+   if(!button){showKycError("KYC submit control is unavailable. Please refresh once and retry.");return;}
+   if(!user?.id||!sb){showKycError("Your secure session has expired. Please sign in again and retry.");return;}
+   if(!(front instanceof File)||!front.size){showKycError("Please select the front of your identity document.");return;}
+   const documentType=String(d.get("document_type")||"");
+   if(!["CNIC","Passport","Driving License"].includes(documentType)){showKycError("Select a valid identity document type.");return;}
+   if(["CNIC","Driving License"].includes(documentType)&&(!(back instanceof File)||!back.size)){showKycError("Upload both front and back sides for CNIC / Driving License.");return;}
+   for(const [label,doc] of [["Front",front],["Back",back]]){
+    if(!(doc instanceof File)||!doc.size)continue;
+    if(doc.size<minBytes){showKycError(label+" document must be at least 100 KB.");return;}
+    if(doc.size>maxBytes){showKycError(label+" document exceeds the 20 MB limit.");return;}
+    if(!mimeForFile(doc)){showKycError(label+" document must be JPG, PNG, WEBP or PDF.");return;}
+   }
+   if(!String(d.get("first_name")||"").trim()||!String(d.get("last_name")||"").trim()||!String(d.get("document_number")||"").trim()||!String(d.get("dob")||"")||!String(d.get("country")||"").trim()||!String(d.get("address")||"").trim()){showKycError("Complete your first name, last name, ID number, date of birth and address.");return;}
+   let frontPath=f.elements.document_front.dataset.uploadedPath||"",backPath=f.elements.document_back.dataset.uploadedPath||null;
+   button.disabled=true;button.textContent="Uploading & submitting…";if(out){out.textContent="Checking documents and securely saving your KYC request…";out.classList.remove("error");}
+   const newlyUploaded=[];let submissionSaved=false;
+   try{
+    const ensureKycUpload=async(input,file,label)=>{
+     if(!file||!file.size)return null;
+     if(input.dataset.uploadedPath)return input.dataset.uploadedPath;
+     const mime=mimeForFile(file);
+     if(!mime)throw new Error(label+" document must be JPG, PNG, WEBP or PDF.");
+     if(file.size<100*1024)throw new Error(label+" document must be at least 100 KB.");
+     if(file.size>maxBytes)throw new Error(label+" document exceeds the 20 MB limit.");
+     if(out)out.textContent="Uploading "+label.toLowerCase()+" document securely…";
+     const safeName=String(file.name||"document").replace(/[^a-zA-Z0-9._-]/g,"_").slice(-110);
+     const path=user.id+"/"+Date.now()+"-"+input.name+"-"+safeName;
+     const {error:uploadError}=await sb.storage.from("kyc-documents").upload(path,file,{contentType:mime,cacheControl:"3600",upsert:false});
+     if(uploadError)throw new Error(label+" document upload failed: "+uploadError.message);
+     newlyUploaded.push(path);input.dataset.uploadedPath=path;
+     return path;
+    };
+    frontPath=await ensureKycUpload(f.elements.document_front,front,"Front");
+    backPath=await ensureKycUpload(f.elements.document_back,back,"Back");
+    if(!frontPath)throw new Error("Please upload the front of your identity document.");
+    if(["CNIC","Driving License"].includes(documentType)&&!backPath)throw new Error("Please upload both front and back sides for CNIC / Driving License.");
+    if(out)out.textContent="Documents uploaded. Saving your KYC request…";
+    const firstName=String(d.get("first_name")||"").trim(),lastName=String(d.get("last_name")||"").trim(),documentNumber=String(d.get("document_number")||"").trim();
+    const payload={user_id:user.id,first_name:firstName,last_name:lastName,document_number:documentNumber,legal_name:(firstName+" "+lastName).trim(),date_of_birth:String(d.get("dob")),country:String(d.get("country")).trim(),residential_address:String(d.get("address")).trim(),document_type:documentType,document_front_path:frontPath,document_back_path:backPath,status:"pending",rejection_reasons:[]};
+    const {data:submission,error}=await sb.from("kyc_submissions").insert(payload).select("id,status,created_at").single();
+    if(error)throw new Error("Documents are uploaded, but KYC request could not be saved: "+error.message);
+    if(!submission?.id)throw new Error("KYC request could not be confirmed. Please refresh your KYC status before trying again.");
+    submissionSaved=true;
+    if(out){out.textContent="KYC submitted successfully. Your request is now visible to Admin for review.";out.classList.remove("error");}
+    f.reset();for(const el of f.querySelectorAll('input[type="file"]'))delete el.dataset.uploadedPath;await loadPageData();
+   }catch(err){if(!submissionSaved&&newlyUploaded.length)await sb.storage.from("kyc-documents").remove(newlyUploaded).catch(()=>{});showKycError(err?.message||"KYC submission failed. Please retry.");}
+   finally{button.disabled=false;button.textContent="Submit KYC securely";}
+   return;
+  }
+  if(f.matches("[data-support-message-form]")||f.matches("[data-admin-support-message-form]")){
+  e.preventDefault();
+  const admin=f.matches("[data-admin-support-message-form]"),ticketId=admin?f.getAttribute("data-admin-support-message-form"):f.getAttribute("data-support-message-form"),out=f.querySelector("[data-page-message]"),button=f.querySelector("button[type=submit]"),bodyText=String(new FormData(f).get("body")||"").trim();
+  if(!user||!ticketId||bodyText.length<2||bodyText.length>5000){if(out)out.textContent="Enter a message between 2 and 5000 characters.";return;}
+  if(admin&&!isAdmin()){if(out)out.textContent="Administrator permission required.";return;}
+  button.disabled=true;button.textContent="Sending…";
+  try{
+   const {error}=await sb.from("support_ticket_messages").insert({ticket_id:ticketId,author_id:user.id,author_role:admin?"admin":"client",body:bodyText});
+   if(error)throw error;
+   if(admin){
+    const {error:statusError}=await sb.rpc("admin_update_support_ticket",{p_ticket_id:ticketId,p_status:"in_progress",p_admin_reply:bodyText});
+    if(statusError)throw statusError;
+   }
+   f.reset();if(out)out.textContent="Message sent successfully.";await loadPageData();
+  }catch(err){if(out)out.textContent="Message could not be sent: "+(err.message||"Please retry.");}
+  finally{button.disabled=false;button.textContent=admin?"Send message to client":"Send message";}
+  return;
+ }
+ if(f.id==="support-ticket-form"){
+  e.preventDefault();
+  if(!sb||!user){const out=f.querySelector("[data-page-message]");if(out)out.textContent="Please sign in again before submitting a ticket.";return;}
+  const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button");
+  const subject=String(d.get("subject")||"").trim(),category=String(d.get("category")||"other"),bodyText=String(d.get("message")||"").trim();
+  if(subject.length<3||bodyText.length<10){if(out)out.textContent="Enter a clear subject and at least 10 characters describing the issue.";return;}
+  button.disabled=true;button.textContent="Submitting…";
+  try{const {data:ticket,error}=await sb.from("support_tickets").insert({user_id:user.id,subject,category,message:bodyText,status:"open"}).select("id").single();if(error)throw error;const {error:messageError}=await sb.from("support_ticket_messages").insert({ticket_id:ticket.id,author_id:user.id,author_role:"client",body:bodyText});if(messageError)throw messageError;f.reset();if(out)out.textContent="Ticket submitted successfully. BIGBULLS Support can now reply in this conversation.";await loadPageData();}
+  catch(err){if(out)out.textContent="Ticket submission failed: "+(err.message||"Please retry.");}
+  finally{button.disabled=false;button.textContent="Submit support ticket";}
+  return;
+ }
+ if(f.id==="partner-transfer-form"){
+  e.preventDefault();const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button"),accountId=String(d.get("account_id")||""),amount=Number(d.get("amount"));
+  if(!accountId||!Number.isFinite(amount)||amount<=0||Math.round(amount*100)!==amount*100){if(out)out.textContent="Choose an approved Real USD account and enter a valid amount.";return;}
+  button.disabled=true;button.textContent="Transferring securely…";
+  try{const {data,error}=await sb.rpc("partner_transfer_to_real_account",{p_account_id:accountId,p_amount:amount,p_note:"IB commission transfer to Real trading account"});if(error)throw error;if(out)out.textContent="Transfer completed · Reference "+String(data||"");f.reset();await loadPageData();await loadClientTradingAccounts();}
+  catch(err){if(out)out.textContent="IB transfer failed: "+(err.message||"Please retry.");}
+  finally{button.disabled=false;button.textContent="Instant transfer to account";}
+  return;
+ }
+ if(f.id==="partner-payout-form"){
+  e.preventDefault();const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button"),amount=Number(d.get("amount")),method=String(d.get("payout_method")||""),destination=String(d.get("destination")||"").trim();
+  if(!Number.isFinite(amount)||amount<=0||Math.round(amount*100)!==amount*100||destination.length<4||destination.length>500){if(out)out.textContent="Enter a valid payout amount and destination details.";return;}
+  button.disabled=true;button.textContent="Submitting payout request…";
+  try{const {data,error}=await sb.rpc("partner_request_payout",{p_amount:amount,p_payout_method:method,p_destination:destination});if(error)throw error;if(out)out.textContent="Withdrawal request submitted · Reference "+String(data||"");f.reset();await loadPageData();}
+  catch(err){if(out)out.textContent="Payout request failed: "+(err.message||"Please retry.");}
+  finally{button.disabled=false;button.textContent="Request withdrawal";}
+  return;
+ }
+ if(f.id==="admin-ib-adjust-form"){
+  e.preventDefault();if(!isAdmin())return;const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button"),partnerId=String(d.get("partner_user_id")||"").trim(),direction=String(d.get("direction")||""),amount=Number(d.get("amount")),note=String(d.get("note")||"").trim();
+  if(!partnerId||!["credit","debit"].includes(direction)||!Number.isFinite(amount)||amount<=0||Math.round(amount*100)!==amount*100||note.length<4){if(out)out.textContent="Enter a valid partner UUID, amount, direction and audit note.";return;}
+  button.disabled=true;button.textContent="Applying audited adjustment…";
+  try{const {error}=await sb.rpc("admin_adjust_partner_wallet",{p_partner_user_id:partnerId,p_direction:direction,p_amount:amount,p_note:note});if(error)throw error;if(out)out.textContent="IB wallet adjustment saved with audit record.";f.reset();await loadPageData();}
+  catch(err){if(out)out.textContent="Adjustment failed: "+(err.message||"Please retry.");}
+  finally{button.disabled=false;button.textContent="Apply audited adjustment";}
+  return;
+ }
+ if(f.id==="partner-form"){
+  e.preventDefault();const d=new FormData(f),out=f.querySelector("[data-page-message]"),payload={user_id:user.id,partner_type:String(d.get("partner_type")),business_name:String(d.get("business_name")||"").trim()||null,website_or_social:String(d.get("website_or_social")||"").trim()||null,audience_size:String(d.get("audience_size")||"").trim()?Number(d.get("audience_size")):null,experience:String(d.get("experience")||"").trim()||null,status:"pending"};
+  const {error}=await sb.from("partner_applications").insert(payload);if(out)out.textContent=error?error.message:"Partner application submitted for review.";if(!error)loadPageData();return;
+ }
+ if(f.id==="admin-commission-form"){
+  e.preventDefault();if(!isAdmin())return;const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button[type=submit]"),lots=Number(d.get("verified_lots")),commission=Number(d.get("commission_usd")),partnerId=String(d.get("partner_user_id")||"").trim(),source=String(d.get("source_reference")||"").trim();
+  if(!partnerId||!source||!Number.isFinite(lots)||lots<0||!Number.isFinite(commission)||commission<=0){if(out)out.textContent="Enter a valid partner ID, broker reference, lots and positive commission.";return;}
+  button.disabled=true;const {error}=await sb.from("partner_commission_ledger").insert({partner_user_id:partnerId,referred_user_id:String(d.get("referred_user_id")||"").trim()||null,verified_lots:lots,commission_usd:commission,source_reference:source,admin_note:String(d.get("admin_note")||"").trim()||null,status:"pending",created_by:user.id});
+  button.disabled=false;if(out)out.textContent=error?"Commission record failed: "+error.message:"Commission entry saved as pending review.";if(!error){f.reset();loadPageData();}return;
+ }
+ if(f.id==="bb-account-wizard"){
+  e.preventDefault();const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector('button[type="submit"]');
+  const mode=String(d.get("account_mode")),type=String(d.get("account_type")),currency=String(d.get("currency")),name=String(d.get("display_name")||"").trim(),platform=String(d.get("platform")),leverage=String(d.get("leverage")),swapFree=String(d.get("swap_free"))==="true";
+  if(name.length>40){if(out)out.textContent="Nickname must be 40 characters or fewer.";return;}
+  button.disabled=true;button.textContent="Creating securely…";
+  try{
+   const createdAt=new Date().toISOString();
+   const {data:accountNumber,error}=await sb.rpc("create_client_trading_account",{p_account_mode:mode,p_account_type:type,p_currency:currency,p_display_name:name,p_platform:platform,p_leverage:leverage,p_swap_free:swapFree});
+   if(error)throw error;
+   if(accountNumber===null||accountNumber===undefined||String(accountNumber).trim()==="")throw new Error("The account service did not return an account number. No success was assumed.");
+   const accountNumberLabel=String(accountNumber);
+   window.bbAccountMode=mode;
+   await loadClientTradingAccounts();
+   let lookup=await sb.from("trading_accounts").select("id,account_number,status,account_mode").eq("user_id",user.id).eq("account_number",accountNumberLabel).eq("account_mode",mode).maybeSingle();
+   let created=lookup.data||null;
+   if(!created){
+    lookup=await sb.from("trading_accounts").select("id,account_number,status,account_mode").eq("user_id",user.id).eq("account_mode",mode).gte("created_at",createdAt).order("created_at",{ascending:false}).limit(1).maybeSingle();
+    created=lookup.data||null;
+   }
+   await loadClientTradingAccounts();
+   const tradeButton=created?'<button class="portal-primary" type="button" id="bb-trade-created-account">Trade in Terminal</button>':'<div class="notice">Your account creation request was accepted by the secure account service. Refresh My Accounts if it does not appear immediately.</div>';
+   body.innerHTML='<p class="eyebrow">ACCOUNT CREATED · ACTIVE</p><h2>Your '+esc(mode.toUpperCase())+' account is ready</h2><p class="muted">Account #'+esc(accountNumberLabel)+' · '+esc(type)+' · '+esc(leverage)+'</p><section class="account-credential-panel" style="margin:16px 0;padding:14px;border:1px solid var(--border,#e5e7eb);border-radius:14px;background:var(--surface-soft,#f8fafc);text-align:left"><strong style="display:block;margin-bottom:8px">Account access details</strong><div style="font-size:13px;line-height:1.7">Account number: <b>'+esc(accountNumberLabel)+'</b><br>Master password: <b>Not issued</b><br>Investor password: <b>Not issued</b></div><p class="muted" style="font-size:12px;margin:8px 0 0">This BIGBULLS B-Book account uses your secure Client Area sign-in. Separate MT5 master/investor passwords are not available until an MT5 server connection is integrated. No placeholder passwords are generated or stored.</p></section>'+tradeButton+'<button class="copy-wallet" type="button" data-close>Done</button>';
+   if(created)document.getElementById("bb-trade-created-account")?.addEventListener("click",()=>{window.__bbTerminalLaunchAccountId=created.id;showApp("terminal");});
+  }catch(err){if(out)out.textContent=err.message||"Account creation failed.";button.disabled=false;button.textContent="Create account instantly";}
+  return;
+ }
+
+ if(f.id==="account-transfer-form"){
+  e.preventDefault();const d=new FormData(f),fromId=String(d.get("from_account")||""),toId=String(d.get("to_account")||""),amount=Number(d.get("amount")),out=f.querySelector("[data-page-message]"),button=f.querySelector("button"),accounts=window.bbClientAccounts||[],source=accounts.find(x=>x.id===fromId),target=accounts.find(x=>x.id===toId);
+  if(!source||!target||fromId===toId||source.status!=="approved"||target.status!=="approved"||source.archived_at||target.archived_at||source.deleted_at||target.deleted_at||source.account_mode!=="real"||target.account_mode!=="real"||source.currency!=="USD"||target.currency!=="USD"||!(amount>0)||amount>Number(source.balance||0)){if(out)out.textContent="Choose two active Real USD accounts and an amount within the available balance.";return;}
+  button.disabled=true;button.textContent="Processing securely…";
+  const {data,error}=await sb.rpc("client_funds_transfer",{p_from_type:"account",p_from_account_id:fromId,p_to_type:"account",p_to_account_id:toId,p_amount:amount,p_idempotency_key:(f.dataset.idempotencyKey||(f.dataset.idempotencyKey=crypto.randomUUID())),p_note:"Instant account-to-account transfer"});
+  button.disabled=false;button.textContent="Confirm Instant Transfer";
+  if(out)out.textContent=error?"Transfer failed: "+error.message:"Transfer completed instantly · Reference "+data;
+  if(!error){delete f.dataset.idempotencyKey;await loadClientTradingAccounts();await loadPageData();}
+  return;
+ }
+ if(f.id==="transfer-form"){
+  e.preventDefault();const d=new FormData(f),fromValue=String(d.get("from_account")||""),toValue=String(d.get("to_account")||""),amount=Number(d.get("amount")),out=f.querySelector("[data-page-message]"),button=f.querySelector("button");
+  const decode=v=>v==="wallet"?{type:"wallet",id:null}:{type:"account",id:v.split("|")[1]};
+  const from=decode(fromValue),to=decode(toValue);
+  if(!fromValue||!toValue||fromValue===toValue||!(amount>0)||!Number.isFinite(amount)){if(out)out.textContent="Choose different source and destination and enter a valid amount.";return;}
+  button.disabled=true;button.textContent="Processing securely…";
+  const {data,error}=await sb.rpc("client_funds_transfer",{p_from_type:from.type,p_from_account_id:from.id,p_to_type:to.type,p_to_account_id:to.id,p_amount:amount,p_idempotency_key:(f.dataset.idempotencyKey||(f.dataset.idempotencyKey=crypto.randomUUID())),p_note:"Client internal transfer"});
+  button.disabled=false;button.textContent="Confirm Instant Transfer";
+  if(error){if(out)out.textContent="Transfer failed: "+error.message;return;}
+  if(out)out.textContent="Transfer completed instantly · Reference "+data;
+  delete f.dataset.idempotencyKey;await loadClientTradingAccounts();await loadPageData();renderWalletTransfer();return;
+ }
+ if(f.id==="admin-wallet-form"){e.preventDefault();if(!isAdmin())return;const d=new FormData(f),asset=String(d.get("asset")),network=String(d.get("network"));const {error}=await sb.from("crypto_wallets").upsert({asset,network,label:String(d.get("label")||""),address:String(d.get("address")).trim(),active:true},{onConflict:"asset,network"});const out=f.parentElement.querySelector("[data-page-message]");if(out)out.textContent=error?error.message:"Wallet address saved.";if(!error){f.reset();loadPageData();}return;}
+ if(f.id==="admin-package-form"){e.preventDefault();if(!isAdmin())return;const d=new FormData(f),file=d.get("package"),out=f.querySelector("[data-page-message]"),button=f.querySelector("button[type=submit]");if(!(file instanceof File)||!file.size||!file.name.toLowerCase().endsWith(".zip")){out.textContent="Select a valid ZIP package.";return;}if(file.size>104857600){out.textContent="Package must be 100 MB or smaller.";return;}button.disabled=true;button.textContent="Uploading privately…";const path="echo-system/latest-package.zip";const {error:uploadError}=await sb.storage.from("product-downloads").upload(path,file,{upsert:true,contentType:"application/zip"});if(uploadError){out.textContent="Upload failed: "+uploadError.message;button.disabled=false;button.textContent="Upload / replace private package";return;}const {error:updateError}=await sb.from("licenses").update({download_path:path}).eq("status","active");if(updateError){out.textContent="Package uploaded, but license link update failed: "+updateError.message;}else{out.textContent="Private Echo System package uploaded. Active licenses can now download it.";f.reset();}button.disabled=false;button.textContent="Upload / replace private package";return;}
+ if(f.id==="profile-form"){
+  e.preventDefault();const b=f.querySelector("button");b.disabled=true;
+  const {data,error}=await sb.auth.updateUser({data:{full_name:String(new FormData(f).get("full_name")).trim()}});
+  b.disabled=false;const out=f.parentElement.querySelector("[data-page-message]");if(error){out.textContent=error.message;return;}user=data.user;renderApp();return;
+ }
+}
+async function clickHandler(e){
+ const el=e.target instanceof Element?e.target:null;if(!el)return;
+ const authTrigger=el.closest("[data-open=\"login\"],[data-open=\"signup\"]");if(authTrigger){e.preventDefault();e.stopPropagation();openModal(authTrigger.getAttribute("data-open"));return;}
+ const menuToggle=el.closest("[data-menu-toggle]");
+ if(menuToggle){e.preventDefault();const id=menuToggle.dataset.menuToggle,drop=document.querySelector('[data-menu-dropdown="'+id+'"]'),wasOpen=drop&&!drop.hidden;document.querySelectorAll(".top-menu-dropdown,.sidebar-submenu").forEach(x=>x.hidden=true);document.querySelectorAll("[data-menu-toggle]").forEach(x=>x.setAttribute("aria-expanded","false"));if(drop&&!wasOpen){drop.hidden=false;menuToggle.setAttribute("aria-expanded","true");}return;}
+ if(!el.closest(".top-menu-group")){document.querySelectorAll(".top-menu-dropdown,.sidebar-submenu").forEach(x=>x.hidden=true);document.querySelectorAll("[data-menu-toggle]").forEach(x=>x.setAttribute("aria-expanded","false"));}
+ const courseOpen=el.closest("[data-course-open]");
+ if(courseOpen){e.preventDefault();showApp("course-"+courseOpen.dataset.courseOpen);return;}
+ const courseModule=el.closest("[data-course-module]");
+ if(courseModule){const idx=Number(courseModule.dataset.courseModule);const course=BB_COURSES[activePage.replace("course-","")];if(course){document.querySelectorAll("[data-course-module]").forEach(x=>{x.classList.toggle("active",Number(x.dataset.courseModule)===idx);const icon=x.querySelector("i");if(icon)icon.textContent=Number(x.dataset.courseModule)===idx?"●":"○";});const view=document.getElementById("course-lesson-view");if(view)view.innerHTML=courseLessonView(course,idx);}return;}
+ const courseNext=el.closest("[data-course-next]");
+ if(courseNext){const course=BB_COURSES[activePage.replace("course-","")],idx=Number(courseNext.dataset.courseNext)+1;if(course&&idx<course.modules.length)document.querySelector('[data-course-module="'+idx+'"]')?.click();return;}
+ const coursePrev=el.closest("[data-course-prev]");
+ if(coursePrev){const course=BB_COURSES[activePage.replace("course-","")],idx=Number(coursePrev.dataset.coursePrev)-1;if(course&&idx>=0)document.querySelector('[data-course-module="'+idx+'"]')?.click();return;}
+
+ const notificationToggle=el.closest("[data-notification-toggle]");if(notificationToggle){const panel=document.getElementById("client-notification-panel");if(panel){panel.hidden=!panel.hidden;notificationToggle.setAttribute("aria-expanded",String(!panel.hidden));loadClientNotifications();}const menu=document.getElementById("client-profile-menu");if(menu)menu.hidden=true;return;}
+ const profileToggle=el.closest("[data-profile-toggle]");if(profileToggle){const menu=document.getElementById("client-profile-menu");if(menu){menu.hidden=!menu.hidden;profileToggle.setAttribute("aria-expanded",String(!menu.hidden));}const panel=document.getElementById("client-notification-panel");if(panel)panel.hidden=true;return;}
+ const notificationRead=el.closest("[data-notification-read]");if(notificationRead){const {error}=await sb.from("client_notifications").update({read_at:new Date().toISOString()}).eq("id",notificationRead.dataset.notificationRead).eq("user_id",user.id);if(error)alert(error.message);else loadClientNotifications();return;}
+ const accountWizard=el.closest("[data-account-wizard]");if(accountWizard){openAccountWizard();return;}
+ const accountMode=el.closest("[data-account-mode]");
+ if(accountMode){window.bbAccountMode=accountMode.dataset.accountMode;document.querySelectorAll("[data-account-mode]").forEach(x=>x.classList.toggle("active",x===accountMode));const tools=document.getElementById("bb-account-tools");if(tools){tools.hidden=true;tools.innerHTML="";}loadClientTradingAccounts();return;}
+ const accountInfo=el.closest("[data-account-info]");if(accountInfo){openAccountInfoModal(accountInfo.dataset.accountInfo);return;}
+ const accountInfoBack=el.closest("[data-account-info-back]");if(accountInfoBack){openAccountInfoModal(accountInfoBack.dataset.accountInfoBack);return;}
+ const accountTool=el.closest("[data-account-tool]");
+ if(accountTool){if(["deposit","withdraw"].includes(accountTool.dataset.accountTool))showAccountTool(accountTool.dataset.accountId,accountTool.dataset.accountTool);else showAccountTool(accountTool.dataset.accountId,accountTool.dataset.accountTool);return;}
+ const accountAction=el.closest("[data-account-action]");
+ if(accountAction){manageClientAccount(accountAction.dataset.accountId,accountAction.dataset.accountAction);return;}
+ const termSymbol=el.closest("[data-term-symbol]");
+ if(termSymbol){document.querySelectorAll("[data-term-symbol]").forEach(x=>x.classList.toggle("active",x===termSymbol));const sym=termSymbol.dataset.termSymbol,frame=document.getElementById("bb-tv-chart"),label=document.getElementById("bb-current-symbol"),paperSymbol=document.getElementById("bb-paper-symbol");if(paperSymbol){const mapped=sym.split(":").pop();if(Array.from(paperSymbol.options).some(o=>o.value===mapped))paperSymbol.value=mapped;}if(frame){const url=new URL("https://www.tradingview.com/widgetembed/");url.searchParams.set("symbol",sym);url.searchParams.set("interval",window.bbInterval||"1");url.searchParams.set("hidesidetoolbar","0");url.searchParams.set("symboledit","1");url.searchParams.set("saveimage","1");url.searchParams.set("toolbarbg","f1f3f6");url.searchParams.set("theme","light");url.searchParams.set("style","1");url.searchParams.set("timezone","Etc/UTC");url.searchParams.set("withdateranges","1");url.searchParams.set("hideideas","1");url.searchParams.set("allow_symbol_change","1");url.searchParams.set("details","1");url.searchParams.set("hotlist","1");url.searchParams.set("calendar","0");frame.src=url.toString();}if(label)label.textContent=sym.split(":").pop();return;}
+ const termInterval=el.closest("[data-term-interval]");
+ if(termInterval){window.bbInterval=termInterval.dataset.termInterval;document.querySelectorAll("[data-term-interval]").forEach(x=>x.classList.toggle("active",x===termInterval));const symButton=document.querySelector("[data-term-symbol].active");if(symButton)symButton.click();return;}
+ const termBottom=el.closest("[data-term-bottom]");if(termBottom){document.querySelectorAll("[data-term-bottom]").forEach(x=>x.classList.toggle("active",x===termBottom));const box=document.getElementById("bb-bottom-content");if(box)box.textContent=termBottom.dataset.termBottom==="positions"?"No live positions. BIGBULLS execution engine is not connected yet.":termBottom.dataset.termBottom==="orders"?"No active orders. Order routing is disabled until the BIGBULLS trading engine is deployed.":termBottom.dataset.termBottom==="history"?"Trading history will appear after account execution services are connected.":"Trade journal and analysis notes will be available in a future terminal release.";return;}
+ const termTool=el.closest("[data-term-tool]");if(termTool){if(termTool.dataset.termTool==="fullscreen"){const frame=document.querySelector(".bb-tv-frame");if(frame?.requestFullscreen)frame.requestFullscreen();}else if(termTool.dataset.termTool==="indicators")alert("Use the Indicators button in the embedded chart toolbar to add technical indicators.");else if(termTool.dataset.termTool==="compare")alert("Use the Compare symbol control in the embedded chart toolbar.");return;}
+ const termMarket=el.closest("[data-term-market]");if(termMarket){document.querySelectorAll("[data-term-market]").forEach(x=>x.classList.toggle("active",x===termMarket));const groups={forex:["FX:EURUSD","FX:GBPUSD","FX:USDJPY"],metals:["OANDA:XAUUSD"],crypto:["BINANCE:BTCUSDT","BINANCE:ETHUSDT"],indices:["NASDAQ:NDX","TVC:DJI"]};document.querySelectorAll("[data-term-symbol]").forEach(x=>x.hidden=!groups[termMarket.dataset.termMarket].includes(x.dataset.termSymbol));return;}
+ const page=el.closest("[data-page]");if(page){e.preventDefault();document.querySelectorAll(".top-menu-dropdown,.sidebar-submenu").forEach(x=>x.hidden=true);document.querySelectorAll("[data-menu-toggle]").forEach(x=>x.setAttribute("aria-expanded","false"));const destination=page.getAttribute("data-page");if(destination==="terminal"){window.location.assign("/terminal.html?v=20261113-pro-terminal-complete");return;}showApp(destination);return;}
+ const view=el.closest("[data-auth-view]");if(view){if(view.dataset.authView==="signup")signupForm();else loginForm();return;}
+ const lang=el.closest("[data-language]");if(lang){alert("Language selector is a visual prototype. EN / UR / AR translations will be enabled in the localization phase.");return;}
+ const trigger=el.closest("[data-open]");if(trigger){e.preventDefault();openModal(trigger.getAttribute("data-open"));return;}
+ const appOpen=el.closest("[data-app-open]");if(appOpen){e.preventDefault();showApp("dashboard");return;}const appPage=el.closest("[data-app-page]");if(appPage){e.preventDefault();showApp(appPage.getAttribute("data-app-page"));return;}
+
+ const removeAdmin=el.closest("[data-admin-remove]");
+ if(removeAdmin){e.preventDefault();if(!isAdmin()||user?.email?.toLowerCase()!=="sardarjfd5403@gmail.com"){message("Only the primary owner can remove another administrator.",true);return;}if(!confirm("Remove admin access from "+removeAdmin.dataset.adminRemove+"?"))return;removeAdmin.disabled=true;const {error}=await sb.rpc("admin_set_user_role",{p_email:removeAdmin.dataset.adminRemove,p_make_admin:false});if(error){message(error.message,true);removeAdmin.disabled=false;}else{message("Admin access removed. The user must refresh or sign in again.");await loadAdminUsers();}return;}
+ const wt=el.closest("[data-wallet-tab]");if(wt){document.querySelectorAll("[data-wallet-tab]").forEach(x=>x.classList.toggle("active",x===wt));if(wt.dataset.walletTab==="history"){const box=document.getElementById("wallet-content");if(box){box.innerHTML='<h3>Wallet history</h3><div id="wallet-history-list">Loading…</div>';loadWalletHistory();}}else if(wt.dataset.walletTab==="transfer"){renderWalletTransfer();}else if(wt.dataset.walletTab==="withdraw"){renderMainWalletWithdrawal();}else{loadPageData();}return;}
+ const st=el.closest("[data-settings-tab]");if(st){document.querySelectorAll("[data-settings-tab]").forEach(x=>x.classList.toggle("active",x===st));const box=document.getElementById("settings-content");if(box){if(st.dataset.settingsTab==="security"){box.innerHTML='<h3>Security management</h3><p>Signed in as '+esc(user.email)+'</p><button class="copy-wallet" data-action="forgot">Send password reset email</button><div class="notice">KYC approval unlocks the client platform and its available functions. Keep your password private and use a strong password.</div>';}else if(st.dataset.settingsTab==="preferences"){box.innerHTML='<h3>Platform preferences</h3><p>Display preferences and notification controls will be available here.</p><div class="empty-state">Preference controls coming soon.</div>';}else{box.innerHTML='<h3>Manage profile</h3><form id="profile-form" class="client-form"><label>Full name<input name="full_name" value="'+esc(user.user_metadata?.full_name||"")+'" required></label><label>Email address<input value="'+esc(user.email||"")+'" disabled></label><button class="portal-primary">Save profile</button></form><div data-page-message></div>';}}return;}
+ const financialBack=el.closest("[data-financial-back]");if(financialBack){const ctx=window.bbFinancialContext;const account=(window.bbClientAccounts||[]).find(x=>x.id===ctx?.accountId);if(account)openAccountFinancialModal(account.id,"withdraw",ctx.methods);return;}
+ const copy=el.closest("[data-copy-address]");if(copy){if(navigator.clipboard?.writeText)navigator.clipboard.writeText(copy.dataset.copyAddress);else alert(copy.dataset.copyAddress);return;}
+ const toggle=el.closest("[data-wallet-toggle]");if(toggle&&isAdmin()){const {error}=await sb.from("crypto_wallets").update({active:toggle.dataset.active!=="true"}).eq("id",toggle.dataset.walletToggle);if(error)alert(error.message);else loadPageData();return;}
+ const demoBalance=el.closest("[data-demo-balance],[data-admin-demo-balance]");
+ if(demoBalance){
+  const isAdminAction=demoBalance.hasAttribute("data-admin-demo-balance");
+  if(isAdminAction&&!isAdmin())return;
+  const operation=prompt("Enter SET to reset the Demo balance, or TOPUP to add virtual funds:","TOPUP");
+  if(operation===null)return;
+  const op=operation.trim().toLowerCase();
+  if(!["set","topup"].includes(op)){alert("Choose SET or TOPUP.");return;}
+  const raw=prompt(op==="set"?"New Demo balance (USD):":"Amount to add (USD):");
+  if(raw===null)return;
+  const amount=Number(raw);
+  if(!Number.isFinite(amount)||amount<0||(op==="topup"&&amount===0)||amount>100000000){alert("Enter a valid amount.");return;}
+  const note=prompt("Reason / note (optional):",isAdminAction?"Admin Demo balance adjustment":"Client Demo balance adjustment")||"Demo balance adjustment";
+  demoBalance.disabled=true;
+  const payload={action:"set_balance",account_mode:"demo",account_id:isAdminAction?demoBalance.dataset.adminDemoBalance:demoBalance.dataset.demoBalance,operation:op,amount,note};
+  if(isAdminAction)payload.user_id=demoBalance.dataset.userId;
+  const result=await sb.functions.invoke("paper-execution",{body:payload});
+  demoBalance.disabled=false;
+  if(result.error||result.data?.error){alert(result.data?.error||result.error?.message||"Demo balance update failed.");return;}
+  alert("Demo virtual balance updated: $"+Number(result.data.balance_after||0).toFixed(2));
+  if(activePage==="accounts")await loadClientTradingAccounts();else await loadPageData();
+  return;
+ }
+ const adjust=el.closest("[data-admin-adjust]");if(adjust&&isAdmin()){const raw=prompt("Balance adjustment amount (positive to credit, negative to debit):");if(raw===null)return;const amount=Number(raw);if(!Number.isFinite(amount)||amount===0){alert("Enter a valid non-zero amount.");return;}const note=prompt("Reason for this balance adjustment (required):");if(!note||note.trim().length<4){alert("A reason of at least 4 characters is required.");return;}const {error}=await sb.rpc("admin_adjust_account_balance",{p_account_id:adjust.dataset.adminAdjust,p_amount:amount,p_note:note.trim()});if(error)alert(error.message);else{alert("Balance updated and audit record saved.");loadPageData();}return;}
+ const complete=el.closest("[data-complete-withdrawal]");if(complete&&isAdmin()){const ref=prompt("Enter payout blockchain TXID / reference after sending funds:");if(!ref||ref.trim().length<5)return;const {error}=await sb.rpc("admin_complete_withdrawal",{p_transaction_id:complete.dataset.completeWithdrawal,p_payout_reference:ref.trim()});if(error)alert(error.message);else{alert("Payout recorded; client balance and internal B-Book pool debited and reconciled.");loadPageData();}return;}
+ const review=el.closest("[data-review]");if(review&&isAdmin()){const status=review.dataset.status;let note=null;if(status==="rejected"){note=prompt("Enter rejection reason (required):");if(!note||note.trim().length<4){alert("A clear rejection reason is required.");return;}note=note.trim();}const {error}=await sb.rpc("admin_review_wallet_transaction",{p_transaction_id:review.dataset.review,p_status:status,p_admin_note:note});if(error)alert(error.message);else loadPageData();return;}
+ const ar=el.closest("[data-account-review]");if(ar&&isAdmin()){let note=null;if(ar.dataset.status==="rejected"){note=prompt("Enter account request rejection reason (at least 4 characters):");if(!note||note.trim().length<4){alert("A clear rejection reason is required.");return;}note=note.trim();}const {error}=await sb.rpc("admin_review_trading_account",{p_account_id:ar.dataset.accountReview,p_status:ar.dataset.status,p_admin_note:note});if(error)alert(error.message);else{alert(ar.dataset.status==="approved"?"Portal account approved. No broker login has been provisioned.":"Account request rejected.");loadPageData();}return;}
+ const tr=el.closest("[data-transfer-review]");if(tr&&isAdmin()){let note=null;if(tr.dataset.status==="rejected"){note=prompt("Enter transfer rejection reason (at least 4 characters):");if(!note||note.trim().length<4){alert("A clear rejection reason is required.");return;}note=note.trim();}const {error}=await sb.rpc("admin_review_account_transfer",{p_transfer_id:tr.dataset.transferReview,p_status:tr.dataset.status,p_admin_note:note});if(error)alert(error.message);else{alert(tr.dataset.status==="approved"?"Transfer approved. Both account balances and ledgers were updated.":"Transfer rejected.");loadPageData();}return;}
+ if(el.closest("[data-wallet-queue-refresh]")&&isAdmin()){loadPageData();return;}
+ if(el.closest("[data-kyc-refresh]")&&isAdmin()){loadPageData();return;}
+  const kycReview=el.closest("[data-kyc-review]");if(kycReview&&isAdmin()){const row=kycReview.closest(".admin-transaction"),reasons=Array.from(row?.querySelector("[data-kyc-reasons]")?.selectedOptions||[]).map(x=>x.value),note=String(row?.querySelector("[data-kyc-admin-note]")?.value||"").trim();if(kycReview.dataset.status==="rejected"&&!reasons.length){alert("Select at least one KYC rejection reason.");return;}const {error}=await sb.rpc("admin_review_kyc_submission",{p_submission_id:kycReview.dataset.kycReview,p_status:kycReview.dataset.status,p_admin_note:note||null,p_rejection_reasons:kycReview.dataset.status==="rejected"?reasons:[]});if(error)alert(error.message);else loadPageData();return;}
+ const partnerShare=el.closest("[data-partner-share]");
+ if(partnerShare){const url=window.__bbPartnerReferralUrl||"";if(!url){message("Your referral link becomes available after partner approval.",true);return;}try{if(navigator.share){await navigator.share({title:"Join BIGBULLS Global Market",text:"Create your BIGBULLS account using my partner link.",url});}else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(url);message("Partner link copied. Share it with your clients.");}else{window.prompt("Copy your BIGBULLS partner link:",url);}}catch(err){if(err?.name!=="AbortError")message("Share failed: "+(err?.message||"Please copy the link manually."),true);}return;}
+ const partnerCodeCopy=el.closest("[data-partner-copy-code]");
+ if(partnerCodeCopy){const code=window.__bbPartnerReferralCode||"";if(!code){message("Your referral code becomes available after partner approval.",true);return;}try{await navigator.clipboard.writeText(code);message("Referral code copied: "+code);}catch(_){window.prompt("Copy your BIGBULLS referral code:",code);}return;}
+ const ibRateSave=el.closest("[data-ib-rate-save]");
+ if(ibRateSave&&isAdmin()){const row=ibRateSave.closest("[data-ib-rate-row]"),rate=Number(row?.querySelector("[data-ib-rate-value]")?.value),enabled=!!row?.querySelector("[data-ib-rate-enabled]")?.checked,tier=ibRateSave.dataset.ibRateSave;if(!Number.isFinite(rate)||rate<0||rate>1000){message("Commission rate must be between $0 and $1,000 per lot.",true);return;}ibRateSave.disabled=true;const {error}=await sb.rpc("admin_update_partner_commission_rate",{p_tier:tier,p_commission_per_lot:rate,p_enabled:enabled});ibRateSave.disabled=false;if(error)message("Rate update failed: "+error.message,true);else{message(tier.toUpperCase()+" commission rate saved.");await loadPageData();}return;}
+ const ibTierSave=el.closest("[data-ib-partner-tier-save]");
+ if(ibTierSave&&isAdmin()){const row=ibTierSave.closest(".ib-partner-row"),tier=String(row?.querySelector("[data-ib-tier-select]")?.value||"bronze"),partnerId=ibTierSave.dataset.ibPartnerTierSave;ibTierSave.disabled=true;const {error}=await sb.rpc("admin_set_partner_status",{p_partner_user_id:partnerId,p_status:String(row?.dataset.ibCurrentStatus||"approved"),p_tier:tier});ibTierSave.disabled=false;if(error)message("Tier update failed: "+error.message,true);else{message("Partner tier updated to "+tier.toUpperCase()+".");await loadPageData();}return;}
+ const ibStatus=el.closest("[data-ib-partner-status]");
+ if(ibStatus&&isAdmin()){const row=ibStatus.closest(".ib-partner-row"),tier=String(row?.querySelector("[data-ib-tier-select]")?.value||"bronze"),status=ibStatus.dataset.status;if(!confirm((status==="disabled"?"Disable":"Enable")+" IB partner access?"))return;ibStatus.disabled=true;const {error}=await sb.rpc("admin_set_partner_status",{p_partner_user_id:ibStatus.dataset.ibPartnerStatus,p_status:status,p_tier:tier});if(error){ibStatus.disabled=false;message("IB status update failed: "+error.message,true);}else{message("IB partner status updated.");await loadPageData();}return;}
+ const ibPayoutReview=el.closest("[data-ib-payout-review]");
+ if(ibPayoutReview&&isAdmin()){const status=ibPayoutReview.dataset.status;let note=null;if(status==="rejected"){note=window.prompt("Enter rejection reason (minimum 4 characters):");if(!note||note.trim().length<4){message("A clear payout rejection reason is required.",true);return;}note=note.trim();}if(status==="paid"&&!confirm("Confirm that this IB payout has actually been sent?"))return;ibPayoutReview.disabled=true;const {error}=await sb.rpc("admin_review_partner_payout",{p_request_id:ibPayoutReview.dataset.ibPayoutReview,p_status:status,p_admin_note:note});if(error){ibPayoutReview.disabled=false;message("Payout review failed: "+error.message,true);}else{message(status==="paid"?"IB payout marked paid.":"IB payout rejected and wallet funds returned.");await loadPageData();}return;}
+ const partnerReview=el.closest("[data-partner-review]");if(partnerReview&&isAdmin()){let note=null;if(partnerReview.dataset.status==="rejected"){note=prompt("Enter partner rejection reason (required):");if(!note||note.trim().length<4){alert("A clear rejection reason is required.");return;}note=note.trim();}const {error}=await sb.rpc("admin_review_partner_application",{p_application_id:partnerReview.dataset.partnerReview,p_status:partnerReview.dataset.status,p_admin_note:note});if(error)alert(error.message);else loadPageData();return;}
+ if(el.closest("[data-support-queue-refresh]")&&isAdmin()){loadPageData();return;}
+ const supportReview=el.closest("[data-support-review]");
+ if(supportReview&&isAdmin()){
+  const reply=prompt("Enter the reply that the client will receive (required):");
+  if(reply===null)return;
+  if(reply.trim().length<2||reply.trim().length>5000){alert("Reply must be between 2 and 5000 characters.");return;}
+  const {error}=await sb.rpc("admin_update_support_ticket",{p_ticket_id:supportReview.dataset.supportReview,p_status:supportReview.dataset.status,p_admin_reply:reply.trim()});
+  if(error)alert(error.message);else{alert("Support ticket updated and client notified.");loadPageData();}
+  return;
+ }
+ const commissionStatus=el.closest("[data-commission-status]");if(commissionStatus&&isAdmin()){let note=null;if(commissionStatus.dataset.status==="rejected"){note=prompt("Enter commission rejection reason (required):");if(!note||note.trim().length<4){alert("A clear rejection reason is required.");return;}note=note.trim();}const update={status:commissionStatus.dataset.status,reviewed_by:user.id,reviewed_at:new Date().toISOString()};if(note)update.admin_note=note;if(commissionStatus.dataset.status==="paid")update.paid_at=new Date().toISOString();const {error}=await sb.from("partner_commission_ledger").update(update).eq("id",commissionStatus.dataset.commissionStatus);if(error)alert(error.message);else loadPageData();return;}
+ const productOrderReview=el.closest("[data-product-order-review]");if(productOrderReview&&isAdmin()){let note=null;if(productOrderReview.dataset.status==="rejected"){note=prompt("Enter product order rejection reason (at least 4 characters):");if(!note||note.trim().length<4){alert("A clear rejection reason is required.");return;}note=note.trim();}const {data,error}=await sb.rpc("admin_review_product_order",{p_order_id:productOrderReview.dataset.productOrderReview,p_status:productOrderReview.dataset.status,p_admin_note:note});if(error)alert(error.message);else{if(productOrderReview.dataset.status==="paid")alert("Payment marked as verified. License issued: "+String(data||""));else alert("Product order rejected.");loadPageData();}return;}
+ const action=el.closest("[data-action]");if(action){
+  if(action.dataset.action==="package-info"){openModal("buy");return;}
+  if(action.dataset.action==="logout"){const {error}=await sb.auth.signOut();if(error)alert(error.message);else{user=null;hideApp();window.scrollTo({top:0,behavior:"smooth"});}return;}
+  if(action.dataset.action==="forgot"){const email=prompt("Registered email address:");if(!email)return;const {error}=await sb.auth.resetPasswordForEmail(email.trim(),{redirectTo:location.origin+location.pathname});if(error)alert(error.message);else alert("Password reset email requested. Check your inbox.");return;}
+ }
+ if(el.closest("[data-close]")||el.classList.contains("portal-close")||el===modal)closeModal();
+}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
+})();
++Number(x.commission_amount_usd||0).toFixed(2)+' · '+esc(x.status==="paid"?"CREDITED":"PENDING POOL")+'</b><small>Deposit 
+  if(transferSelect){
+   const {data:realAccounts,error:realAccountsError}=await sb.from("trading_accounts").select("id,account_number,display_name,balance,currency").eq("user_id",user.id).eq("account_mode","real").eq("status","approved").is("archived_at",null).is("deleted_at",null).eq("currency","USD").order("created_at",{ascending:false});
+   transferSelect.innerHTML=realAccountsError?'<option value="">Accounts unavailable</option>':'<option value="">Select a Real USD account</option>'+(realAccounts||[]).map(x=>'<option value="'+esc(x.id)+'">'+esc(x.display_name||"Real account")+' · #'+esc(x.account_number||"—")+' · $'+Number(x.balance||0).toFixed(2)+'</option>').join("");
+  }
+  const payoutBox=document.getElementById("partner-payout-history");
+  if(payoutBox)payoutBox.innerHTML=(snapshot?.payouts||[]).map(x=>'<div class="admin-row"><span><b>$'+Number(x.amount||0).toFixed(2)+' · '+esc(x.status.toUpperCase())+'</b><small>'+esc(x.method)+' · '+new Date(x.created_at).toLocaleString()+(x.admin_note?' · '+esc(x.admin_note):"")+'</small></span></div>').join("")||"No payout requests yet.";
+  for(const id of ["partner-transfer-form","partner-payout-form"]){const el=document.getElementById(id);if(el)el.hidden=!approved;}
+ }if(activePage==="accounts"){ await loadClientTradingAccounts(); }
+ }
+async function loadClientTradingAccounts(){
+ const box=document.getElementById("my-trading-accounts");if(!box||!sb||!user)return;
+ box.textContent="Loading accounts…";
+ const {data,error}=await sb.from("trading_accounts").select("id,account_mode,account_number,account_type,currency,balance,credit_bonus,status,display_name,server_name,platform,requested_leverage,leverage_preference,swap_free,archived_at,deleted_at,created_at").eq("user_id",user.id).is("deleted_at",null).order("created_at",{ascending:false});
+ if(error){box.textContent="Trading accounts unavailable: "+error.message;return;}
+ const [{data:demoLedgers,error:demoLedgerError},{data:demoTrades,error:demoTradesError},{data:realPositions,error:realPositionsError}]=await Promise.all([
+  sb.from("bb_paper_execution_accounts").select("account_id,virtual_balance").eq("user_id",user.id).eq("account_mode","demo"),
+  sb.from("bb_paper_execution_trades").select("account_id,unrealized_pnl,status").eq("user_id",user.id).eq("account_mode","demo").eq("status","OPEN"),
+  sb.from("bb_bbook_positions").select("account_id,floating_pnl,margin_used,status").eq("user_id",user.id).eq("account_mode","real").eq("status","OPEN")
+ ]);
+ if(demoLedgerError||demoTradesError||realPositionsError){box.textContent="Account balance / equity ledger unavailable: "+(demoLedgerError||demoTradesError||realPositionsError).message;return;}
+ const demoBalanceByAccount=new Map((demoLedgers||[]).map(x=>[x.account_id,Number(x.virtual_balance||0)]));
+ const demoFloatingByAccount=new Map(),realFloatingByAccount=new Map(),realMarginByAccount=new Map();
+ for(const trade of demoTrades||[])demoFloatingByAccount.set(trade.account_id,(demoFloatingByAccount.get(trade.account_id)||0)+Number(trade.unrealized_pnl||0));
+ for(const position of realPositions||[]){realFloatingByAccount.set(position.account_id,(realFloatingByAccount.get(position.account_id)||0)+Number(position.floating_pnl||0));realMarginByAccount.set(position.account_id,(realMarginByAccount.get(position.account_id)||0)+Number(position.margin_used||0));}
+ window.bbClientAccounts=(data||[]).map(x=>{
+  const demo=x.account_mode==="demo",balance=demo?(demoBalanceByAccount.get(x.id)??Number(x.balance||0)):Number(x.balance||0);
+  const floating=(demo?demoFloatingByAccount:realFloatingByAccount).get(x.id)||0;
+  const creditBonus=demo?0:Number(x.credit_bonus||0),marginUsed=demo?null:(realMarginByAccount.get(x.id)||0);
+  return {...x,balance,credit_bonus:creditBonus,floating_pnl:floating,equity:balance+creditBonus+floating,margin_used:marginUsed,free_margin:marginUsed===null?null:balance+creditBonus+floating-marginUsed,margin_level:marginUsed>0?(balance+creditBonus+floating)/marginUsed*100:null};
+ });
+ const mode=window.bbAccountMode||"real";
+ const title=document.getElementById("bb-account-list-title");if(title)title.textContent=mode==="archived"?"Archived Accounts":"My "+(mode==="real"?"Real":"Demo")+" Accounts";
+ const rows=window.bbClientAccounts.filter(x=>mode==="archived"?!!x.archived_at:!x.archived_at&&x.account_mode===mode);
+ if(!rows.length){box.innerHTML='<div class="empty-state">No '+(mode==="archived"?"archived":mode)+" accounts found.</div>";return;}
+ box.innerHTML=rows.map(x=>'<div class="bb-account-card"><div class="bb-account-card-top"><div><small>'+esc(x.server_name||"BIGBULLS")+' · '+esc(String(x.account_mode||"real").toUpperCase())+'</small><h4>'+esc(x.display_name||x.account_type||"Trading account")+'</h4></div><div class="bb-account-card-head-actions"><span class="bb-account-number">#'+esc(x.account_number||"—")+'</span><button type="button" class="bb-account-info-btn" data-account-info="'+esc(x.id)+'" aria-label="View account details" title="Account information"><span aria-hidden="true">⚙</span></button></div></div><div class="bb-account-meta" hidden aria-hidden="true"></div>'+(x.archived_at?'':x.status==="approved"&&x.account_mode==="demo"?'<div class="bb-account-actions account-demo-actions"><button type="button" data-demo-balance="'+esc(x.id)+'">Set / Top-up Demo Balance</button><a class="button button-primary" href="/terminal.html?v=20261113-pro-terminal-complete&account_id='+encodeURIComponent(x.id)+'">Open in Terminal</a></div>':x.status==="approved"&&x.account_mode==="real"?'':x.status==="approved"?'<div class="notice">Demo account funding is managed separately with demo funds. Crypto deposits and cash withdrawals are available only on approved Real accounts.</div>':'<div class="notice">Awaiting Admin approval. Portal ID only; funding access is not available yet.</div>')+'<div class="bb-account-actions">'+(x.archived_at?'<button type="button" data-account-action="restore" data-account-id="'+esc(x.id)+'">Restore</button>':'<button type="button" data-account-action="rename" data-account-id="'+esc(x.id)+'">Rename</button><button type="button" data-account-action="archive" data-account-id="'+esc(x.id)+'">Archive</button>')+'<button class="danger" type="button" data-account-action="delete" data-account-id="'+esc(x.id)+'">Delete</button>'+(x.status==="approved"&&!x.archived_at?'<a class="button button-primary" href="/terminal.html?v=20261113-pro-terminal-complete&account_id='+encodeURIComponent(x.id)+'">Open in Terminal</a>':'')+'</div></div>').join("");
+ const tools=document.getElementById("bb-account-tools");if(tools){tools.hidden=true;tools.innerHTML="";}
+}
+function openAccountInfoModal(id){
+ const account=(window.bbClientAccounts||[]).find(x=>String(x.id)===String(id));
+ if(!account){message("Account information is unavailable. Refresh your account list and try again.",true);return;}
+ const status=account.archived_at?"ARCHIVED":account.status==="approved"?"ACTIVE":String(account.status||"PENDING").toUpperCase();
+ const rows=[
+  ["Account type",account.account_type||"—"],
+  ["Platform",account.platform||"—"],
+  ["Leverage applied",account.requested_leverage||"1:100"],
+  ["Leverage choice",account.leverage_preference||account.requested_leverage||"1:100"],
+  ["Swap-free",account.swap_free?"ON":"OFF"],
+  ["Currency",account.currency||"—"],
+  ["Balance",(account.currency||"USD")+" "+Number(account.balance||0).toFixed(2)],
+  ["Equity",(account.currency||"USD")+" "+Number(account.equity??account.balance??0).toFixed(2)],
+  ["Status",status]
+ ];
+ const canAct=account.status==="approved"&&!account.archived_at&&!account.deleted_at;
+ const isReal=String(account.account_mode||"").toLowerCase()==="real";
+ const actionButtons=canAct?'<div class="bb-account-modal-actions"><span class="accounts-kicker">ACCOUNT ACTIONS</span><div class="bb-account-action-grid">'+[
+  ["deposit","Deposit"],["withdraw","Withdraw"],["transfer","Transfer Funds"],["trades","Trading History"],["transactions","Transaction History"]
+ ].map(([action,label])=>'<button type="button" data-account-tool="'+action+'" data-account-id="'+esc(account.id)+'" '+(!isReal&&["deposit","withdraw","transfer"].includes(action)?'disabled title="Available for approved Real accounts only"':'')+'><span>'+label+'</span><span aria-hidden="true">›</span></button>').join("")+'</div>'+(!isReal?'<p class="bb-account-info-note">Deposit, withdrawal and transfers are available on approved Real accounts. Demo balances are managed separately.</p>':'')+'</div>':'<p class="bb-account-info-note">Actions become available after this account is approved.</p>';
+ body.innerHTML='<div class="bb-account-info-modal"><span class="accounts-kicker">ACCOUNT INFORMATION</span><h2>'+esc(account.display_name||account.account_type||"Trading account")+'</h2><p class="bb-account-info-number">'+esc(String(account.account_mode||"real").toUpperCase())+' ACCOUNT · #'+esc(account.account_number||"—")+'</p><div class="bb-account-info-grid">'+rows.map(([label,value])=>'<div class="bb-account-info-row"><small>'+esc(label)+'</small><b>'+esc(String(value))+'</b></div>').join("")+'</div>'+actionButtons+'<p class="bb-account-info-note">Details shown for this selected trading account only.</p></div>';
+ showModal();
+}
+async function showAccountTool(id,action){
+ const account=(window.bbClientAccounts||[]).find(x=>String(x.id)===String(id));const box=document.getElementById("bb-account-tools");if(!account||!box)return;
+ box.hidden=true;box.dataset.accountId=id;box.dataset.accountTool=action;
+ const heading=esc(account.display_name||account.account_type)+" · #"+esc(account.account_number);
+ const showTool=(label,content)=>{body.innerHTML='<div class="bb-account-tool-modal"><span class="accounts-kicker">'+label+'</span><h2>'+heading+'</h2>'+content+'<button type="button" class="copy-wallet" data-account-info-back="'+esc(id)+'">Back to account details</button></div>';showModal();};
+ if(action==="trades"){showTool("TRADING HISTORY",'<div class="empty-state">No B-Book REAL or BigBulls DEMO trading history is available yet.</div>');return;}
+ if(action==="transactions"){
+  showTool("TRANSACTION HISTORY",'<p>Complete deposit, withdrawal and transfer history across all your BIGBULLS accounts.</p><div id="bb-account-transactions">Loading…</div>');
+  const [wallets,accountTransfers,fundTransfers,ledger]=await Promise.all([
+   sb.from("wallet_transactions").select("id,kind,asset,network,amount_usd,status,tx_hash,invoice_id,rejection_reason,admin_note,destination_address,payout_reference,created_at,completed_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(200),
+   sb.from("account_transfers").select("id,from_account,to_account,amount_usd,status,created_at,currency").eq("user_id",user.id).order("created_at",{ascending:false}).limit(200),
+   sb.from("client_fund_transfers").select("id,from_type,from_account_id,to_type,to_account_id,amount,currency,status,created_at").eq("user_id",user.id).order("created_at",{ascending:false}).limit(200),
+   sb.from("account_balance_ledger").select("id,account_id,entry_type,amount,balance_before,balance_after,note,created_at").eq("user_id",user.id).in("entry_type",["admin_credit","admin_debit"]).order("created_at",{ascending:false}).limit(200)
+  ]);
+  const list=document.getElementById("bb-account-transactions");if(!list)return;
+  const failed=[wallets,accountTransfers,fundTransfers,ledger].find(x=>x.error);
+  if(failed){list.textContent="History unavailable: "+failed.error.message;return;}
+  const items=[
+   ...(wallets.data||[]).map(x=>({date:x.created_at,label:x.kind.toUpperCase()+" · "+x.asset+"/"+x.network,amount:"$"+Number(x.amount_usd).toFixed(2),status:x.status,ref:x.invoice_id||x.tx_hash||x.destination_address||"",note:x.rejection_reason||x.admin_note||x.payout_reference||""})),
+   ...(accountTransfers.data||[]).flatMap(x=>[
+    {date:x.created_at,label:"TRANSFER OUT",amount:"-$"+Number(x.amount_usd).toFixed(2),status:x.status,ref:"To account "+x.to_account},
+    {date:x.created_at,label:"TRANSFER IN",amount:"+$"+Number(x.amount_usd).toFixed(2),status:x.status,ref:"From account "+x.from_account}
+   ]),
+   ...(fundTransfers.data||[]).map(x=>({date:x.created_at,label:(x.from_type==="wallet"?"MAIN WALLET":"TRADING ACCOUNT")+" → "+(x.to_type==="wallet"?"MAIN WALLET":"TRADING ACCOUNT"),amount:"$"+Number(x.amount).toFixed(2)+" "+(x.currency||"USD"),status:x.status,ref:"Transfer "+x.id})),
+   ...(ledger.data||[]).map(x=>({date:x.created_at,label:x.entry_type==="admin_credit"?"ADMIN BALANCE CREDIT":"ADMIN BALANCE DEBIT",amount:(x.entry_type==="admin_debit"?"-":"+")+"$"+Number(x.amount).toFixed(2),status:"posted",ref:"Account "+x.account_id+" · Balance "+Number(x.balance_before).toFixed(2)+" → "+Number(x.balance_after).toFixed(2),note:x.note||""}))
+  ].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  list.innerHTML=items.length?items.map(x=>'<div class="admin-row"><span><b>'+esc(x.label)+'</b><small>'+new Date(x.date).toLocaleString()+(x.ref?' · '+esc(x.ref):'')+(x.note?' · '+esc(x.note):'')+'</small></span><b>'+esc(x.amount)+'</b><em>'+esc(x.status)+'</em></div>').join(""):'<div class="empty-state">No transactions recorded for this client yet.</div>';
+  return;
+ }
+ if(action==="transfer"){
+  if(account.account_mode!=="real"||account.currency!=="USD"){showTool("INTERNAL TRANSFER",'<div class="notice">Instant internal transfers are available for Real USD accounts. Demo balances remain in the separate paper-trading ledger.</div>');return;}
+  const choices=(window.bbClientAccounts||[]).filter(x=>String(x.id)!==String(id)&&!x.archived_at&&!x.deleted_at&&x.status==="approved"&&x.account_mode==="real"&&x.currency==="USD");
+  showTool("INSTANT INTERNAL TRANSFER",'<form class="client-form" id="account-transfer-form"><input type="hidden" name="from_account" value="'+esc(id)+'"><label>Destination account<select name="to_account" required>'+choices.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.display_name||x.account_type)+' · #'+esc(x.account_number)+' · USD</option>').join("")+'</select></label><label>Amount (USD)<input name="amount" type="number" min="0.01" step="0.01" required></label><button class="portal-primary" type="submit" '+(!choices.length?'disabled':'')+'>Confirm Instant Transfer</button><div data-page-message></div></form><div class="notice">Instant settlement between your own active Real USD accounts. Server checks ownership, KYC, available balance and reserved withdrawals.</div>');
+  if(!choices.length)body.querySelector("[data-page-message]").textContent="No other active Real USD account is available as a destination.";
+  return;
+ }
+ const {data:methods,error}=await sb.from("crypto_wallets").select("id,asset,network,label,address").eq("active",true).order("asset");
+ if(error){showTool("ACCOUNT FUNDING",'<p>Payment methods unavailable: '+esc(error.message)+'</p>');return;}
+ const list=methods||[];
+ if(action==="deposit"||action==="withdraw"){openAccountFinancialModal(id,action,list);return;}
+}
+
+async function openAccountFinancialModal(accountId,action,providedMethods){
+ const account=(window.bbClientAccounts||[]).find(x=>x.id===accountId);if(!account)return;
+ const methods=providedMethods||[];window.bbFinancialContext={accountId,action,methods};
+ if(action==="deposit"){
+  body.innerHTML='<p class="eyebrow">ACCOUNT DEPOSIT · #'+esc(account.account_number)+'</p><h2>Deposit funds</h2>'+(methods.length?'<form id="account-deposit-form" class="client-form" method="post" enctype="multipart/form-data" autocomplete="off" novalidate><label>Payment method / network<select name="wallet_id">'+methods.map(w=>'<option value="'+esc(w.id)+'">'+esc(w.asset)+' · '+esc(w.network)+'</option>').join("")+'</select></label><div id="bb-deposit-address"></div><label>Deposit amount (USD)<input name="amount_usd" type="number" min="1" step=".01" required></label><label>Amount sent in crypto<input name="amount_crypto" type="number" min="0.00000001" step="any" required></label><label>Blockchain TXID<input name="tx_hash" minlength="11" required></label><label>Payment screenshot / proof (required)<input name="proof" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf" required><small data-deposit-file-name>No file selected</small></label><p class="fine">Proof file: minimum 100 KB · maximum 10 MB · JPG, PNG, WEBP or PDF.</p><button class="portal-primary" type="submit">Submit deposit request</button><div data-page-message role="status" aria-live="polite"></div></form>':'<div class="empty-state">No deposit methods are enabled by Admin yet.</div>')+'<p class="fine">Funds are credited only after Admin verifies your payment.</p>';
+  const form=document.getElementById("account-deposit-form");if(form){const select=form.elements.wallet_id;const render=()=>{const w=methods.find(x=>x.id===select.value),slot=document.getElementById("bb-deposit-address");if(slot){slot.innerHTML=w?'<div class="wallet-address-card"><small>ADMIN DEPOSIT ADDRESS · '+esc(w.asset)+' / '+esc(w.network)+'</small><div class="deposit-qr" id="bb-account-deposit-qr" aria-label="QR code for the selected deposit address"></div><code>'+esc(w.address)+'</code><button type="button" data-copy-address="'+esc(w.address)+'">Copy address</button><p>'+esc(w.label||"Official deposit wallet")+'</p></div>':'';if(w)renderDepositQr(document.getElementById("bb-account-deposit-qr"),w.address);}};select.addEventListener("change",render);render();}
+  showModal();return;
+ }
+ body.innerHTML='<p class="eyebrow">SECURE WITHDRAWAL · #'+esc(account.account_number)+'</p><h2>Select withdrawal network</h2>'+(methods.length?'<div class="client-form"><label>Available method<select id="bb-withdraw-method">'+methods.map(w=>'<option value="'+esc(w.id)+'">'+esc(w.asset)+' · '+esc(w.network)+'</option>').join("")+'</select></label><button class="portal-primary" type="button" id="bb-withdraw-next">Continue</button></div>':'<div class="empty-state">No withdrawal methods are enabled by Admin.</div>')+'<p class="fine">You will enter your receiving address and amount in the next step.</p>';
+ const next=document.getElementById("bb-withdraw-next");if(next)next.addEventListener("click",()=>{const chosen=methods.find(w=>w.id===document.getElementById("bb-withdraw-method")?.value);if(!chosen)return;renderWithdrawalDetails(account,chosen);});
+ showModal();
+}
+function renderWithdrawalDetails(account,method){
+ body.innerHTML='<p class="eyebrow">WITHDRAWAL DETAILS · #'+esc(account.account_number)+'</p><h2>'+esc(method.asset)+' · '+esc(method.network)+'</h2><form id="account-withdrawal-form" class="client-form"><input type="hidden" name="asset" value="'+esc(method.asset)+'"><input type="hidden" name="network" value="'+esc(method.network)+'"><label>Amount (USD)<input name="amount_usd" type="number" min="1" step=".01" max="'+Number(account.balance||0).toFixed(2)+'" required></label><label>Amount in crypto<input name="amount_crypto" type="number" min="0.00000001" step="any" required></label><label>Your receiving wallet address / Binance ID<input name="destination_address" minlength="6" maxlength="180" placeholder="Paste your own address or Binance Pay ID" required></label><button class="portal-primary" type="submit">Submit withdrawal request</button><div data-page-message></div></form><div class="notice">Available account balance: '+esc(account.currency)+' '+Number(account.balance||0).toFixed(2)+'. Payout is sent manually by Admin after review.</div><button type="button" class="copy-wallet" data-financial-back>Back to methods</button>';
+}
+async function openAccountWizard(){
+ if(!sb||!user){message("Please sign in to create an account.",true);return;}
+ const [{data:kyc,error:kycError},{count,error:countError}]=await Promise.all([
+  sb.from("kyc_submissions").select("status").eq("user_id",user.id).order("created_at",{ascending:false}).limit(1).maybeSingle(),
+  sb.from("trading_accounts").select("id",{count:"exact",head:true}).eq("user_id",user.id).eq("account_mode","real").is("deleted_at",null).is("archived_at",null)
+ ]);
+ if(kycError||countError){message("KYC / account eligibility could not be checked. Please retry.",true);return;}
+ const verified=isAdmin()||["approved","verified"].includes(String(kyc?.status||"").toLowerCase());
+ const realCount=Number(count||0),limitReached=realCount>=50;
+ const initial=window.bbAccountMode==="demo"?"demo":"real";
+ body.innerHTML=`<p class="eyebrow">ACCOUNT CENTRE · INSTANT SETUP</p><h2>Configure your trading account</h2><p class="muted">Your account is created instantly after the server validates eligibility.</p><form id="bb-account-wizard" class="client-form">
+ <label>Account environment<select name="account_mode"><option value="demo" ${initial==="demo"||!verified?"selected":""}>Demo · Practice (no KYC)</option><option value="real" ${initial==="real"&&verified&&!limitReached?"selected":""} ${!verified||limitReached?"disabled":""}>Real · Live account</option></select></label>
+ ${!verified?'<div class="notice">Real accounts require verified/approved KYC. Demo accounts remain available. <button type="button" class="copy-wallet" data-page="verification">Complete KYC</button></div>':""}
+ ${limitReached?'<div class="notice">You have reached the limit of 50 active Real accounts. Archive or delete an existing account to create another.</div>':""}
+ <label>Account type<select name="account_type"><option value="Standard">Standard</option><option value="Pro">Pro</option><option value="Raw Spread">Raw Spread</option><option value="Zero">Zero</option></select></label>
+ <label>Trading platform<select name="platform"><option value="BIGBULLS">BIGBULLS Native Terminal</option></select></label>
+ <label>Leverage request<select name="leverage"><option>1:100</option><option>1:200</option><option>1:500</option><option>1:1000</option><option>1:2000</option><option>Unlimited</option></select></label>
+ <label>Account currency<select name="currency"><option value="USD">USD</option></select></label>
+ <label>Swap-Free (Islamic Mode)<select name="swap_free"><option value="false">Off</option><option value="true">On</option></select></label>
+ <label>Account nickname (optional)<input name="display_name" maxlength="40" placeholder="e.g. Gold Scalping"></label>
+ <button class="portal-primary" type="submit" ${limitReached&&verified?'disabled':''}>Create account instantly</button><div data-page-message role="status" aria-live="polite"></div></form><button class="copy-wallet" type="button" data-close>Cancel</button>`;
+ showModal();
+}
+
+async function manageClientAccount(id,action){
+ let displayName=null;
+ if(action==="rename"){displayName=prompt("Enter a new display name (1–40 characters):");if(displayName===null)return;displayName=displayName.trim();if(!displayName||displayName.length>40){alert("Name must contain 1–40 characters.");return;}}
+ if(action==="delete"&&!confirm("Delete this account record from your active account view?"))return;
+ if(action==="archive"&&!confirm("Archive this account?"))return;
+ const {error}=await sb.rpc("manage_client_trading_account",{p_account_id:id,p_action:action,p_display_name:displayName});
+ if(error){alert("Account action failed: "+error.message);return;}
+ await loadClientTradingAccounts();
+}
+async function refreshMainWalletHeader(){
+ if(!sb||!user)return;const node=document.getElementById("header-wallet-balance");if(!node)return;
+ const {data,error}=await sb.rpc("ensure_client_wallet");
+ if(error){node.textContent="Unavailable";console.warn("Main wallet header balance failed:",error);return;}
+ node.textContent="$"+Number(data||0).toFixed(2);
+}
+async function loadWalletHistory(){
+ const box=document.getElementById('wallet-history-list');if(!box||!sb||!user)return;
+ box.textContent='Loading wallet history…';
+ const [wallet,transfers]=await Promise.all([
+  sb.from('wallet_transactions').select('id,kind,asset,network,amount_usd,status,tx_hash,created_at').eq('user_id',user.id).order('created_at',{ascending:false}).limit(50),
+  sb.from('client_fund_transfers').select('id,from_type,from_account_id,to_type,to_account_id,amount,status,created_at').eq('user_id',user.id).order('created_at',{ascending:false}).limit(50)
+ ]);
+ if(wallet.error||transfers.error){box.textContent='Wallet history unavailable: '+(wallet.error?.message||transfers.error?.message);return;}
+ const items=[...(wallet.data||[]).map(x=>({...x,kindLabel:x.kind+' · '+x.asset+' / '+x.network,amountValue:x.amount_usd,detail:x.tx_hash||''})),...(transfers.data||[]).map(x=>({...x,kindLabel:(x.from_type==='wallet'?'Main Wallet':'Trading account')+' → '+(x.to_type==='wallet'?'Main Wallet':'Trading account'),amountValue:x.amount,detail:'Reference '+x.id}))].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+ box.innerHTML='';if(!items.length){box.textContent='No wallet activity yet.';return;}
+ items.forEach(x=>{const row=document.createElement('div');row.className='admin-row';const info=document.createElement('span');const heading=document.createElement('b');heading.textContent=x.kindLabel;const detail=document.createElement('small');detail.textContent=new Date(x.created_at).toLocaleString()+(x.detail?' · '+x.detail:'');info.append(heading,detail);const amount=document.createElement('b');amount.textContent='$'+Number(x.amountValue||0).toFixed(2);const status=document.createElement('em');status.className='status-'+x.status;status.textContent=x.status;row.append(info,amount,status);box.append(row);});
+}
+function loadQrLibrary(url){return new Promise((resolve,reject)=>{const script=document.createElement("script");script.src=url;script.async=true;script.onload=()=>window.QRCode?resolve():reject(new Error("QR library unavailable"));script.onerror=()=>reject(new Error("QR library failed"));document.head.appendChild(script);});}
+async function renderDepositQr(node,address){if(!node)return;node.innerHTML="";node.setAttribute("aria-label","QR code for the selected deposit address");try{if(!window.QRCode){try{await loadQrLibrary("https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js");}catch(_){await loadQrLibrary("https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js");}}if(!node.isConnected)return;new window.QRCode(node,{text:address,width:192,height:192,colorDark:"#101827",colorLight:"#ffffff",correctLevel:window.QRCode.CorrectLevel.M});}catch(error){node.textContent="QR could not load. Use the Copy address button.";node.classList.add("qr-unavailable");console.error("Deposit QR generation failed:",error);}}
+function showSelectedWallet(wallets){const id=document.getElementById("deposit-asset")?.value,w=wallets.find(x=>String(x.id)===String(id)),box=document.getElementById("selected-wallet");if(!box||!w)return;box.innerHTML='<div class="wallet-address-card"><small>ADMIN CONTROLLED · '+esc(w.asset)+' / '+esc(w.network)+'</small><div class="deposit-qr" id="deposit-wallet-qr" aria-label="Deposit wallet QR code"></div><code>'+esc(w.address)+'</code><button type="button" data-copy-address="'+esc(w.address)+'">Copy address</button><p>'+esc(w.label||"Official deposit wallet")+'</p></div><form class="client-form" id="wallet-form"><input type="hidden" name="kind" value="deposit"><label>Amount (USD equivalent)<input name="amount_usd" type="number" min="1" step=".01" required></label><label>Amount in crypto<input name="amount_crypto" required></label><label>Blockchain TXID<input name="tx_hash" required></label><button class="portal-primary">Submit for verification</button></form><div data-page-message></div><div class="notice">Only send the selected asset on the exact network. Admin must verify the blockchain transaction before approval.</div>';renderDepositQr(document.getElementById("deposit-wallet-qr"),w.address);}
+async function submitHandler(e){
+ const f=e.target;if(!(f instanceof HTMLFormElement))return;
+ if(f.id==="signup-form"||f.id==="login-form"){
+  e.preventDefault();
+  if(f.dataset.explicitAuthSubmit!=="1")return;
+  delete f.dataset.explicitAuthSubmit;
+  const d=new FormData(f),b=f.querySelector("button");
+  if(!sb){message("Account service is unavailable. Refresh the page and try again.",true);return;}
+  b.disabled=true;b.textContent="Please wait…";
+  try{
+   if(f.id==="signup-form"){
+    const {data,error}=await sb.auth.signUp({
+     email:String(d.get("email")).trim(),
+     password:String(d.get("password")),
+     options:{emailRedirectTo:location.origin+location.pathname,data:{
+      full_name:String(d.get("full_name")).trim(),
+      country:String(d.get("country")||""),
+      phone:String(d.get("phone")||""),
+      account_type:String(d.get("account_type")||"Individual"),
+      referral_code:String(d.get("referral_code")||"")
+     }}
+    });
+    if(error)throw error;
+    if(data?.session&&data?.user){
+     user=data.user;
+     await showApp("dashboard");
+    }else{
+     message("Registration submitted. Check your email and verify your address, then log in.",false);
+     b.disabled=false;b.textContent="Create account";
+    }
+   }else{
+    const {data,error}=await sb.auth.signInWithPassword({
+     email:String(d.get("email")).trim(),
+     password:String(d.get("password"))
+    });
+    if(error)throw error;
+    user=data?.user||data?.session?.user||null;
+    if(!user)throw new Error("Login succeeded but no active session was returned. Please try again.");
+    await showApp("dashboard");
+   }
+  }catch(err){
+   console.error("Authentication / portal opening error:",err);
+   message(err?.message||"Authentication failed. Please try again.",true);
+   b.disabled=false;b.textContent=f.id==="signup-form"?"Create account":"Secure login";
+  }
+  return;
+ }
+
+ if(f.id==="bb-admin-user-form"){
+  e.preventDefault();if(!isAdmin()){message("Administrator permission required.",true);return;}
+  const d=new FormData(f),email=String(d.get("email")||"").trim(),button=f.querySelector("button"),out=f.querySelector("[data-page-message]");
+  button.disabled=true;button.textContent="Granting access…";
+  try{const {error}=await sb.rpc("admin_set_user_role",{p_email:email,p_make_admin:true});if(error)throw error;if(out)out.textContent="Administrator access granted. Ask this user to sign out and sign in again.";f.reset();await loadAdminUsers();}
+  catch(err){if(out)out.textContent=err.message||"Could not grant admin access.";}
+  finally{button.disabled=false;button.textContent="Grant admin access";}
+  return;
+ }
+ if(f.id==="echo-purchase-form"){e.preventDefault();if(!user||!sb){alert("Please log in before submitting your payment TXID.");return;}const d=new FormData(f),txid=String(d.get("txid")||"").trim(),button=f.querySelector("button[type=submit]"),out=f.querySelector("[data-page-message]");if(txid.length<11){if(out)out.textContent="Enter a valid blockchain TXID.";return;}button.disabled=true;button.textContent="Submitting order…";const {error}=await sb.from("product_orders").insert({user_id:user.id,product_code:"BIGBULLS_AI_ECHO",amount_usd:199,payment_method:"USDT_TRC20",payment_reference:txid,status:"pending"});button.disabled=false;button.textContent="Submit payment for verification";if(out)out.textContent=error?"Order submission failed: "+error.message:"Payment TXID submitted. Your order is pending admin blockchain verification.";if(!error)button.disabled=true;return;}
+ if(f.id==="account-deposit-form"){
+  e.preventDefault();e.stopPropagation();if(typeof e.stopImmediatePropagation==="function")e.stopImmediatePropagation();
+  const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button"),proof=d.get("proof"),ctx=window.bbFinancialContext,accountId=ctx?.accountId;
+  const amountUsd=Number(d.get("amount_usd")),amountCrypto=Number(d.get("amount_crypto")),txHash=String(d.get("tx_hash")||"").trim();
+  if(!accountId||!ctx||!user){if(out)out.textContent="Your secure account session expired. Refresh and sign in again.";return;}
+  const account=(window.bbClientAccounts||[]).find(x=>x.id===accountId);
+  if(!account||account.account_mode!=="real"||account.status!=="approved"||account.archived_at||account.deleted_at){if(out)out.textContent="Funding is available only for active, approved Real accounts.";return;}
+  if(!(amountUsd>0)||!(amountCrypto>0)||txHash.length<11){if(out)out.textContent="Enter a valid USD amount, crypto amount and blockchain TXID (at least 11 characters).";return;}
+  if(!(proof instanceof File)||!proof.size){if(out)out.textContent="Payment proof is required. Please attach your transfer screenshot or PDF.";return;}
+  const uploadedPath=f.elements.proof.dataset.uploadedPath;
+  if(!uploadedPath){if(out)out.textContent="Payment proof is not uploaded yet. Wait for the secure upload to finish or select it again.";return;}
+  if(button.disabled){if(out)out.textContent="Please wait for the proof upload to finish.";return;}
+  button.disabled=true;button.textContent="Submitting deposit request…";
+  try{
+   const walletId=String(d.get("wallet_id")),w=ctx.methods.find(x=>x.id===walletId);
+   if(!w)throw new Error("Select a valid active Admin payment method.");
+   const {data:tx,error}=await sb.from("wallet_transactions").insert({user_id:user.id,account_id:accountId,kind:"deposit",asset:w.asset,network:w.network,destination_address:w.address,amount_usd:amountUsd,amount_crypto:amountCrypto,tx_hash:txHash,proof_path:uploadedPath,status:"pending"}).select("id,invoice_id").single();
+   if(error)throw error;
+   body.innerHTML='<p class="eyebrow">DEPOSIT SUBMITTED</p><h2>Request received</h2><div class="notice">Invoice '+esc(tx.invoice_id)+' is pending Admin verification. Your Real account balance will update only after payment verification and approval.</div><button class="portal-primary" type="button" data-close>Close</button>';
+   await loadClientTradingAccounts();
+  }catch(err){
+   if(out){out.classList.add("error");out.textContent="Deposit request failed: "+(err?.message||"Please check the details and try again.");}
+   button.disabled=false;button.textContent="Submit deposit request";
+  }
+  return;
+ }
+ if(f.id==="account-withdrawal-form"){
+  e.preventDefault();
+  const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button"),ctx=window.bbFinancialContext,account=(window.bbClientAccounts||[]).find(x=>x.id===ctx?.accountId);
+  if(!ctx||!account||account.account_mode!=="real"||account.status!=="approved"||account.archived_at||account.deleted_at){if(out)out.textContent="Withdrawals are available only from an active, approved Real account.";return;}
+  const method=ctx.methods.find(w=>w.asset===String(d.get("asset"))&&w.network===String(d.get("network")));
+  if(!method){if(out)out.textContent="Withdrawal network is no longer active. Reopen the withdrawal form.";return;}
+  const amount=Number(d.get("amount_usd")),amountCrypto=Number(d.get("amount_crypto")),destination=String(d.get("destination_address")||"").trim();
+  if(!(amount>0)||!(amountCrypto>0)||destination.length<6){if(out)out.textContent="Enter a valid amount, crypto quantity and receiving address.";return;}
+  button.disabled=true;button.textContent="Checking available balance…";
+  try{
+   const {data:reservedRows,error:reserveError}=await sb.from("wallet_transactions").select("amount_usd").eq("account_id",ctx.accountId).eq("kind","withdrawal").in("status",["pending","otp_pending","processing"]);
+   if(reserveError)throw reserveError;
+   const reserved=(reservedRows||[]).reduce((sum,x)=>sum+Number(x.amount_usd||0),0),available=Math.max(0,Number(account.balance||0)-reserved);
+   if(amount>available)throw new Error("Amount exceeds available balance after pending withdrawal holds. Available: "+account.currency+" "+available.toFixed(2));
+   button.textContent="Submitting withdrawal request…";
+   const {data:tx,error}=await sb.from("wallet_transactions").insert({user_id:user.id,account_id:ctx.accountId,kind:"withdrawal",asset:method.asset,network:method.network,destination_address:destination,amount_usd:amount,amount_crypto:amountCrypto,status:"pending"}).select("id,invoice_id").single();
+   if(error)throw error;
+   const requestedAt=new Date().toLocaleString();
+   body.innerHTML='<div class="bb-withdrawal-receipt" style="font-family:Inter,Arial,sans-serif;color:#182230;background:#fff;border:1px solid #e5eaf1;border-radius:16px;padding:18px"><h3>BIGBULLS · Withdrawal receipt</h3><p><b>'+esc(account.currency||"USD")+' '+amount.toFixed(2)+'</b></p><p>'+esc(method.asset)+' · '+esc(method.network)+'</p><p>Crypto amount: '+amountCrypto.toLocaleString(undefined,{maximumFractionDigits:8})+' '+esc(method.asset)+'</p><p>Receipt: '+esc(tx.invoice_id||"Pending reference")+'</p><p>Destination: <span style="overflow-wrap:anywhere">'+esc(destination)+'</span></p><p>Requested: '+esc(requestedAt)+'</p><p><b>Pending Admin Approval</b></p><button class="portal-primary" type="button" data-close>Done</button></div>';
+   await loadClientTradingAccounts();
+  }catch(error){if(out)out.textContent=error?.message||"Withdrawal request failed.";button.disabled=false;button.textContent="Submit withdrawal request";}
+  return;
+ }
+ if(f.id==="bb-main-wallet-withdrawal-form"){
+  e.preventDefault();
+  const d=new FormData(f),button=f.querySelector("button"),out=f.querySelector("[data-page-message]");
+  const amount=Number(d.get("amount_usd")),amountCrypto=Number(d.get("amount_crypto")),destination=String(d.get("destination_address")||"").trim(),pair=String(d.get("asset_network")||"").split("|");
+  if(!(amount>0)||!(amountCrypto>0)||destination.length<10||pair.length!==2){if(out)out.textContent="Enter a valid amount, payout network and destination address.";return;}
+  button.disabled=true;button.textContent="Checking Main Wallet…";
+  try{
+   const [wallet,holds]=await Promise.all([sb.rpc("ensure_client_wallet"),sb.from("wallet_transactions").select("amount_usd").eq("user_id",user.id).is("account_id",null).eq("kind","withdrawal").in("status",["pending","otp_pending","processing"])]);
+   if(wallet.error||holds.error)throw wallet.error||holds.error;
+   const reserved=(holds.data||[]).reduce((n,x)=>n+Number(x.amount_usd||0),0),available=Math.max(0,Number(wallet.data||0)-reserved);
+   if(amount>available)throw new Error("Amount exceeds available Main Wallet balance after payout locks. Available: $"+available.toFixed(2));
+   button.textContent="Creating withdrawal request…";
+   const {data:tx,error}=await sb.from("wallet_transactions").insert({user_id:user.id,account_id:null,kind:"withdrawal",asset:pair[0],network:pair[1],destination_address:destination,amount_usd:amount,amount_crypto:amountCrypto,status:"pending"}).select("id,invoice_id").single();
+   if(error)throw error;
+   const requestedAt=new Date().toLocaleString(),host=f.parentElement;
+   host.innerHTML='<div class="bb-withdrawal-receipt" style="font-family:Inter,Arial,sans-serif;color:#182230;background:#fff;border:1px solid #e5eaf1;border-radius:16px;padding:18px"><h3>BIGBULLS · Withdrawal receipt</h3><p><b>$'+amount.toFixed(2)+'</b></p><p>'+esc(pair[0])+' · '+esc(pair[1])+'</p><p>Crypto amount: '+amountCrypto.toLocaleString(undefined,{maximumFractionDigits:8})+' '+esc(pair[0])+'</p><p>Receipt: '+esc(tx.invoice_id||"Pending reference")+'</p><p>Destination: <span style="overflow-wrap:anywhere">'+esc(destination)+'</span></p><p>Requested: '+esc(requestedAt)+'</p><p><b>Pending Admin Approval</b></p><button class="portal-primary" type="button" data-wallet-tab="history">Done · View wallet history</button></div>';
+   await loadPageData();
+  }catch(error){if(out)out.textContent=error?.message||"Withdrawal request failed.";button.disabled=false;button.textContent="Submit Main Wallet withdrawal";}
+  return;
+ }
+ if(f.id==="wallet-form"){e.preventDefault();const d=new FormData(f),kind=String(d.get("kind")||"deposit"),accountId=String(d.get("account_id")||"")||null,walletId=String(d.get("wallet_id")||document.getElementById("deposit-asset")?.value||"");const msg=f.querySelector("[data-page-message]")||f.parentElement.querySelector("[data-page-message]"),amountUsd=Number(d.get("amount_usd")),amountCrypto=Number(d.get("amount_crypto")),txHash=String(d.get("tx_hash")||"").trim();if(kind!=="deposit"||!walletId||!(amountUsd>0)||!(amountCrypto>0)||txHash.length<11){if(msg)msg.textContent="Enter valid USD and crypto amounts, select a payment network and provide a valid blockchain TXID.";return;}const {data:w,error:walletError}=await sb.from("crypto_wallets").select("asset,network,address").eq("id",walletId).eq("active",true).single();if(walletError||!w){if(msg)msg.textContent="The selected deposit method is unavailable.";return;}const {data:tx,error}=await sb.from("wallet_transactions").insert({user_id:user.id,account_id:accountId,kind:"deposit",asset:w.asset,network:w.network,destination_address:w.address,amount_usd:amountUsd,amount_crypto:amountCrypto,tx_hash:txHash,status:"pending"}).select("id,invoice_id").single();if(msg)msg.textContent=error?"Request failed: "+error.message:"Deposit request "+esc(tx?.invoice_id||"") +" submitted for Main Wallet verification.";if(!error){f.reset();await loadPageData();}return;}
+ if(f.id==="kyc-form"){
+   e.preventDefault();e.stopPropagation();if(typeof e.stopImmediatePropagation==="function")e.stopImmediatePropagation();
+   const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button"),front=d.get("document_front"),back=d.get("document_back"),allowed=["image/jpeg","image/png","image/webp","application/pdf"],minBytes=100*1024,maxBytes=20*1024*1024;
+   const mimeForFile=file=>{const ext=String(file?.name||"").split(".").pop().toLowerCase();const byExt={jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",pdf:"application/pdf"};const typed=String(file?.type||"").toLowerCase();if(allowed.includes(typed))return typed;if(typed==="image/jpg"||typed==="image/pjpeg")return "image/jpeg";return byExt[ext]||"";};
+   const showKycError=message=>{if(out){out.textContent=message;out.classList.add("error");}};
+   if(!button){showKycError("KYC submit control is unavailable. Please refresh once and retry.");return;}
+   if(!user?.id||!sb){showKycError("Your secure session has expired. Please sign in again and retry.");return;}
+   if(!(front instanceof File)||!front.size){showKycError("Please select the front of your identity document.");return;}
+   const documentType=String(d.get("document_type")||"");
+   if(!["CNIC","Passport","Driving License"].includes(documentType)){showKycError("Select a valid identity document type.");return;}
+   if(["CNIC","Driving License"].includes(documentType)&&(!(back instanceof File)||!back.size)){showKycError("Upload both front and back sides for CNIC / Driving License.");return;}
+   for(const [label,doc] of [["Front",front],["Back",back]]){
+    if(!(doc instanceof File)||!doc.size)continue;
+    if(doc.size<minBytes){showKycError(label+" document must be at least 100 KB.");return;}
+    if(doc.size>maxBytes){showKycError(label+" document exceeds the 20 MB limit.");return;}
+    if(!mimeForFile(doc)){showKycError(label+" document must be JPG, PNG, WEBP or PDF.");return;}
+   }
+   if(!String(d.get("first_name")||"").trim()||!String(d.get("last_name")||"").trim()||!String(d.get("document_number")||"").trim()||!String(d.get("dob")||"")||!String(d.get("country")||"").trim()||!String(d.get("address")||"").trim()){showKycError("Complete your first name, last name, ID number, date of birth and address.");return;}
+   let frontPath=f.elements.document_front.dataset.uploadedPath||"",backPath=f.elements.document_back.dataset.uploadedPath||null;
+   button.disabled=true;button.textContent="Uploading & submitting…";if(out){out.textContent="Checking documents and securely saving your KYC request…";out.classList.remove("error");}
+   const newlyUploaded=[];let submissionSaved=false;
+   try{
+    const ensureKycUpload=async(input,file,label)=>{
+     if(!file||!file.size)return null;
+     if(input.dataset.uploadedPath)return input.dataset.uploadedPath;
+     const mime=mimeForFile(file);
+     if(!mime)throw new Error(label+" document must be JPG, PNG, WEBP or PDF.");
+     if(file.size<100*1024)throw new Error(label+" document must be at least 100 KB.");
+     if(file.size>maxBytes)throw new Error(label+" document exceeds the 20 MB limit.");
+     if(out)out.textContent="Uploading "+label.toLowerCase()+" document securely…";
+     const safeName=String(file.name||"document").replace(/[^a-zA-Z0-9._-]/g,"_").slice(-110);
+     const path=user.id+"/"+Date.now()+"-"+input.name+"-"+safeName;
+     const {error:uploadError}=await sb.storage.from("kyc-documents").upload(path,file,{contentType:mime,cacheControl:"3600",upsert:false});
+     if(uploadError)throw new Error(label+" document upload failed: "+uploadError.message);
+     newlyUploaded.push(path);input.dataset.uploadedPath=path;
+     return path;
+    };
+    frontPath=await ensureKycUpload(f.elements.document_front,front,"Front");
+    backPath=await ensureKycUpload(f.elements.document_back,back,"Back");
+    if(!frontPath)throw new Error("Please upload the front of your identity document.");
+    if(["CNIC","Driving License"].includes(documentType)&&!backPath)throw new Error("Please upload both front and back sides for CNIC / Driving License.");
+    if(out)out.textContent="Documents uploaded. Saving your KYC request…";
+    const firstName=String(d.get("first_name")||"").trim(),lastName=String(d.get("last_name")||"").trim(),documentNumber=String(d.get("document_number")||"").trim();
+    const payload={user_id:user.id,first_name:firstName,last_name:lastName,document_number:documentNumber,legal_name:(firstName+" "+lastName).trim(),date_of_birth:String(d.get("dob")),country:String(d.get("country")).trim(),residential_address:String(d.get("address")).trim(),document_type:documentType,document_front_path:frontPath,document_back_path:backPath,status:"pending",rejection_reasons:[]};
+    const {data:submission,error}=await sb.from("kyc_submissions").insert(payload).select("id,status,created_at").single();
+    if(error)throw new Error("Documents are uploaded, but KYC request could not be saved: "+error.message);
+    if(!submission?.id)throw new Error("KYC request could not be confirmed. Please refresh your KYC status before trying again.");
+    submissionSaved=true;
+    if(out){out.textContent="KYC submitted successfully. Your request is now visible to Admin for review.";out.classList.remove("error");}
+    f.reset();for(const el of f.querySelectorAll('input[type="file"]'))delete el.dataset.uploadedPath;await loadPageData();
+   }catch(err){if(!submissionSaved&&newlyUploaded.length)await sb.storage.from("kyc-documents").remove(newlyUploaded).catch(()=>{});showKycError(err?.message||"KYC submission failed. Please retry.");}
+   finally{button.disabled=false;button.textContent="Submit KYC securely";}
+   return;
+  }
+  if(f.matches("[data-support-message-form]")||f.matches("[data-admin-support-message-form]")){
+  e.preventDefault();
+  const admin=f.matches("[data-admin-support-message-form]"),ticketId=admin?f.getAttribute("data-admin-support-message-form"):f.getAttribute("data-support-message-form"),out=f.querySelector("[data-page-message]"),button=f.querySelector("button[type=submit]"),bodyText=String(new FormData(f).get("body")||"").trim();
+  if(!user||!ticketId||bodyText.length<2||bodyText.length>5000){if(out)out.textContent="Enter a message between 2 and 5000 characters.";return;}
+  if(admin&&!isAdmin()){if(out)out.textContent="Administrator permission required.";return;}
+  button.disabled=true;button.textContent="Sending…";
+  try{
+   const {error}=await sb.from("support_ticket_messages").insert({ticket_id:ticketId,author_id:user.id,author_role:admin?"admin":"client",body:bodyText});
+   if(error)throw error;
+   if(admin){
+    const {error:statusError}=await sb.rpc("admin_update_support_ticket",{p_ticket_id:ticketId,p_status:"in_progress",p_admin_reply:bodyText});
+    if(statusError)throw statusError;
+   }
+   f.reset();if(out)out.textContent="Message sent successfully.";await loadPageData();
+  }catch(err){if(out)out.textContent="Message could not be sent: "+(err.message||"Please retry.");}
+  finally{button.disabled=false;button.textContent=admin?"Send message to client":"Send message";}
+  return;
+ }
+ if(f.id==="support-ticket-form"){
+  e.preventDefault();
+  if(!sb||!user){const out=f.querySelector("[data-page-message]");if(out)out.textContent="Please sign in again before submitting a ticket.";return;}
+  const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button");
+  const subject=String(d.get("subject")||"").trim(),category=String(d.get("category")||"other"),bodyText=String(d.get("message")||"").trim();
+  if(subject.length<3||bodyText.length<10){if(out)out.textContent="Enter a clear subject and at least 10 characters describing the issue.";return;}
+  button.disabled=true;button.textContent="Submitting…";
+  try{const {data:ticket,error}=await sb.from("support_tickets").insert({user_id:user.id,subject,category,message:bodyText,status:"open"}).select("id").single();if(error)throw error;const {error:messageError}=await sb.from("support_ticket_messages").insert({ticket_id:ticket.id,author_id:user.id,author_role:"client",body:bodyText});if(messageError)throw messageError;f.reset();if(out)out.textContent="Ticket submitted successfully. BIGBULLS Support can now reply in this conversation.";await loadPageData();}
+  catch(err){if(out)out.textContent="Ticket submission failed: "+(err.message||"Please retry.");}
+  finally{button.disabled=false;button.textContent="Submit support ticket";}
+  return;
+ }
+ if(f.id==="partner-transfer-form"){
+  e.preventDefault();const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button"),accountId=String(d.get("account_id")||""),amount=Number(d.get("amount"));
+  if(!accountId||!Number.isFinite(amount)||amount<=0||Math.round(amount*100)!==amount*100){if(out)out.textContent="Choose an approved Real USD account and enter a valid amount.";return;}
+  button.disabled=true;button.textContent="Transferring securely…";
+  try{const {data,error}=await sb.rpc("partner_transfer_to_real_account",{p_account_id:accountId,p_amount:amount,p_note:"IB commission transfer to Real trading account"});if(error)throw error;if(out)out.textContent="Transfer completed · Reference "+String(data||"");f.reset();await loadPageData();await loadClientTradingAccounts();}
+  catch(err){if(out)out.textContent="IB transfer failed: "+(err.message||"Please retry.");}
+  finally{button.disabled=false;button.textContent="Instant transfer to account";}
+  return;
+ }
+ if(f.id==="partner-payout-form"){
+  e.preventDefault();const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button"),amount=Number(d.get("amount")),method=String(d.get("payout_method")||""),destination=String(d.get("destination")||"").trim();
+  if(!Number.isFinite(amount)||amount<=0||Math.round(amount*100)!==amount*100||destination.length<4||destination.length>500){if(out)out.textContent="Enter a valid payout amount and destination details.";return;}
+  button.disabled=true;button.textContent="Submitting payout request…";
+  try{const {data,error}=await sb.rpc("partner_request_payout",{p_amount:amount,p_payout_method:method,p_destination:destination});if(error)throw error;if(out)out.textContent="Withdrawal request submitted · Reference "+String(data||"");f.reset();await loadPageData();}
+  catch(err){if(out)out.textContent="Payout request failed: "+(err.message||"Please retry.");}
+  finally{button.disabled=false;button.textContent="Request withdrawal";}
+  return;
+ }
+ if(f.id==="admin-ib-adjust-form"){
+  e.preventDefault();if(!isAdmin())return;const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button"),partnerId=String(d.get("partner_user_id")||"").trim(),direction=String(d.get("direction")||""),amount=Number(d.get("amount")),note=String(d.get("note")||"").trim();
+  if(!partnerId||!["credit","debit"].includes(direction)||!Number.isFinite(amount)||amount<=0||Math.round(amount*100)!==amount*100||note.length<4){if(out)out.textContent="Enter a valid partner UUID, amount, direction and audit note.";return;}
+  button.disabled=true;button.textContent="Applying audited adjustment…";
+  try{const {error}=await sb.rpc("admin_adjust_partner_wallet",{p_partner_user_id:partnerId,p_direction:direction,p_amount:amount,p_note:note});if(error)throw error;if(out)out.textContent="IB wallet adjustment saved with audit record.";f.reset();await loadPageData();}
+  catch(err){if(out)out.textContent="Adjustment failed: "+(err.message||"Please retry.");}
+  finally{button.disabled=false;button.textContent="Apply audited adjustment";}
+  return;
+ }
+ if(f.id==="partner-form"){
+  e.preventDefault();const d=new FormData(f),out=f.querySelector("[data-page-message]"),payload={user_id:user.id,partner_type:String(d.get("partner_type")),business_name:String(d.get("business_name")||"").trim()||null,website_or_social:String(d.get("website_or_social")||"").trim()||null,audience_size:String(d.get("audience_size")||"").trim()?Number(d.get("audience_size")):null,experience:String(d.get("experience")||"").trim()||null,status:"pending"};
+  const {error}=await sb.from("partner_applications").insert(payload);if(out)out.textContent=error?error.message:"Partner application submitted for review.";if(!error)loadPageData();return;
+ }
+ if(f.id==="admin-commission-form"){
+  e.preventDefault();if(!isAdmin())return;const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector("button[type=submit]"),lots=Number(d.get("verified_lots")),commission=Number(d.get("commission_usd")),partnerId=String(d.get("partner_user_id")||"").trim(),source=String(d.get("source_reference")||"").trim();
+  if(!partnerId||!source||!Number.isFinite(lots)||lots<0||!Number.isFinite(commission)||commission<=0){if(out)out.textContent="Enter a valid partner ID, broker reference, lots and positive commission.";return;}
+  button.disabled=true;const {error}=await sb.from("partner_commission_ledger").insert({partner_user_id:partnerId,referred_user_id:String(d.get("referred_user_id")||"").trim()||null,verified_lots:lots,commission_usd:commission,source_reference:source,admin_note:String(d.get("admin_note")||"").trim()||null,status:"pending",created_by:user.id});
+  button.disabled=false;if(out)out.textContent=error?"Commission record failed: "+error.message:"Commission entry saved as pending review.";if(!error){f.reset();loadPageData();}return;
+ }
+ if(f.id==="bb-account-wizard"){
+  e.preventDefault();const d=new FormData(f),out=f.querySelector("[data-page-message]"),button=f.querySelector('button[type="submit"]');
+  const mode=String(d.get("account_mode")),type=String(d.get("account_type")),currency=String(d.get("currency")),name=String(d.get("display_name")||"").trim(),platform=String(d.get("platform")),leverage=String(d.get("leverage")),swapFree=String(d.get("swap_free"))==="true";
+  if(name.length>40){if(out)out.textContent="Nickname must be 40 characters or fewer.";return;}
+  button.disabled=true;button.textContent="Creating securely…";
+  try{
+   const createdAt=new Date().toISOString();
+   const {data:accountNumber,error}=await sb.rpc("create_client_trading_account",{p_account_mode:mode,p_account_type:type,p_currency:currency,p_display_name:name,p_platform:platform,p_leverage:leverage,p_swap_free:swapFree});
+   if(error)throw error;
+   if(accountNumber===null||accountNumber===undefined||String(accountNumber).trim()==="")throw new Error("The account service did not return an account number. No success was assumed.");
+   const accountNumberLabel=String(accountNumber);
+   window.bbAccountMode=mode;
+   await loadClientTradingAccounts();
+   let lookup=await sb.from("trading_accounts").select("id,account_number,status,account_mode").eq("user_id",user.id).eq("account_number",accountNumberLabel).eq("account_mode",mode).maybeSingle();
+   let created=lookup.data||null;
+   if(!created){
+    lookup=await sb.from("trading_accounts").select("id,account_number,status,account_mode").eq("user_id",user.id).eq("account_mode",mode).gte("created_at",createdAt).order("created_at",{ascending:false}).limit(1).maybeSingle();
+    created=lookup.data||null;
+   }
+   await loadClientTradingAccounts();
+   const tradeButton=created?'<button class="portal-primary" type="button" id="bb-trade-created-account">Trade in Terminal</button>':'<div class="notice">Your account creation request was accepted by the secure account service. Refresh My Accounts if it does not appear immediately.</div>';
+   body.innerHTML='<p class="eyebrow">ACCOUNT CREATED · ACTIVE</p><h2>Your '+esc(mode.toUpperCase())+' account is ready</h2><p class="muted">Account #'+esc(accountNumberLabel)+' · '+esc(type)+' · '+esc(leverage)+'</p><section class="account-credential-panel" style="margin:16px 0;padding:14px;border:1px solid var(--border,#e5e7eb);border-radius:14px;background:var(--surface-soft,#f8fafc);text-align:left"><strong style="display:block;margin-bottom:8px">Account access details</strong><div style="font-size:13px;line-height:1.7">Account number: <b>'+esc(accountNumberLabel)+'</b><br>Master password: <b>Not issued</b><br>Investor password: <b>Not issued</b></div><p class="muted" style="font-size:12px;margin:8px 0 0">This BIGBULLS B-Book account uses your secure Client Area sign-in. Separate MT5 master/investor passwords are not available until an MT5 server connection is integrated. No placeholder passwords are generated or stored.</p></section>'+tradeButton+'<button class="copy-wallet" type="button" data-close>Done</button>';
+   if(created)document.getElementById("bb-trade-created-account")?.addEventListener("click",()=>{window.__bbTerminalLaunchAccountId=created.id;showApp("terminal");});
+  }catch(err){if(out)out.textContent=err.message||"Account creation failed.";button.disabled=false;button.textContent="Create account instantly";}
+  return;
+ }
+
+ if(f.id==="account-transfer-form"){
+  e.preventDefault();const d=new FormData(f),fromId=String(d.get("from_account")||""),toId=String(d.get("to_account")||""),amount=Number(d.get("amount")),out=f.querySelector("[data-page-message]"),button=f.querySelector("button"),accounts=window.bbClientAccounts||[],source=accounts.find(x=>x.id===fromId),target=accounts.find(x=>x.id===toId);
+  if(!source||!target||fromId===toId||source.status!=="approved"||target.status!=="approved"||source.archived_at||target.archived_at||source.deleted_at||target.deleted_at||source.account_mode!=="real"||target.account_mode!=="real"||source.currency!=="USD"||target.currency!=="USD"||!(amount>0)||amount>Number(source.balance||0)){if(out)out.textContent="Choose two active Real USD accounts and an amount within the available balance.";return;}
+  button.disabled=true;button.textContent="Processing securely…";
+  const {data,error}=await sb.rpc("client_funds_transfer",{p_from_type:"account",p_from_account_id:fromId,p_to_type:"account",p_to_account_id:toId,p_amount:amount,p_idempotency_key:(f.dataset.idempotencyKey||(f.dataset.idempotencyKey=crypto.randomUUID())),p_note:"Instant account-to-account transfer"});
+  button.disabled=false;button.textContent="Confirm Instant Transfer";
+  if(out)out.textContent=error?"Transfer failed: "+error.message:"Transfer completed instantly · Reference "+data;
+  if(!error){delete f.dataset.idempotencyKey;await loadClientTradingAccounts();await loadPageData();}
+  return;
+ }
+ if(f.id==="transfer-form"){
+  e.preventDefault();const d=new FormData(f),fromValue=String(d.get("from_account")||""),toValue=String(d.get("to_account")||""),amount=Number(d.get("amount")),out=f.querySelector("[data-page-message]"),button=f.querySelector("button");
+  const decode=v=>v==="wallet"?{type:"wallet",id:null}:{type:"account",id:v.split("|")[1]};
+  const from=decode(fromValue),to=decode(toValue);
+  if(!fromValue||!toValue||fromValue===toValue||!(amount>0)||!Number.isFinite(amount)){if(out)out.textContent="Choose different source and destination and enter a valid amount.";return;}
+  button.disabled=true;button.textContent="Processing securely…";
+  const {data,error}=await sb.rpc("client_funds_transfer",{p_from_type:from.type,p_from_account_id:from.id,p_to_type:to.type,p_to_account_id:to.id,p_amount:amount,p_idempotency_key:(f.dataset.idempotencyKey||(f.dataset.idempotencyKey=crypto.randomUUID())),p_note:"Client internal transfer"});
+  button.disabled=false;button.textContent="Confirm Instant Transfer";
+  if(error){if(out)out.textContent="Transfer failed: "+error.message;return;}
+  if(out)out.textContent="Transfer completed instantly · Reference "+data;
+  delete f.dataset.idempotencyKey;await loadClientTradingAccounts();await loadPageData();renderWalletTransfer();return;
+ }
+ if(f.id==="admin-wallet-form"){e.preventDefault();if(!isAdmin())return;const d=new FormData(f),asset=String(d.get("asset")),network=String(d.get("network"));const {error}=await sb.from("crypto_wallets").upsert({asset,network,label:String(d.get("label")||""),address:String(d.get("address")).trim(),active:true},{onConflict:"asset,network"});const out=f.parentElement.querySelector("[data-page-message]");if(out)out.textContent=error?error.message:"Wallet address saved.";if(!error){f.reset();loadPageData();}return;}
+ if(f.id==="admin-package-form"){e.preventDefault();if(!isAdmin())return;const d=new FormData(f),file=d.get("package"),out=f.querySelector("[data-page-message]"),button=f.querySelector("button[type=submit]");if(!(file instanceof File)||!file.size||!file.name.toLowerCase().endsWith(".zip")){out.textContent="Select a valid ZIP package.";return;}if(file.size>104857600){out.textContent="Package must be 100 MB or smaller.";return;}button.disabled=true;button.textContent="Uploading privately…";const path="echo-system/latest-package.zip";const {error:uploadError}=await sb.storage.from("product-downloads").upload(path,file,{upsert:true,contentType:"application/zip"});if(uploadError){out.textContent="Upload failed: "+uploadError.message;button.disabled=false;button.textContent="Upload / replace private package";return;}const {error:updateError}=await sb.from("licenses").update({download_path:path}).eq("status","active");if(updateError){out.textContent="Package uploaded, but license link update failed: "+updateError.message;}else{out.textContent="Private Echo System package uploaded. Active licenses can now download it.";f.reset();}button.disabled=false;button.textContent="Upload / replace private package";return;}
+ if(f.id==="profile-form"){
+  e.preventDefault();const b=f.querySelector("button");b.disabled=true;
+  const {data,error}=await sb.auth.updateUser({data:{full_name:String(new FormData(f).get("full_name")).trim()}});
+  b.disabled=false;const out=f.parentElement.querySelector("[data-page-message]");if(error){out.textContent=error.message;return;}user=data.user;renderApp();return;
+ }
+}
+async function clickHandler(e){
+ const el=e.target instanceof Element?e.target:null;if(!el)return;
+ const authTrigger=el.closest("[data-open=\"login\"],[data-open=\"signup\"]");if(authTrigger){e.preventDefault();e.stopPropagation();openModal(authTrigger.getAttribute("data-open"));return;}
+ const menuToggle=el.closest("[data-menu-toggle]");
+ if(menuToggle){e.preventDefault();const id=menuToggle.dataset.menuToggle,drop=document.querySelector('[data-menu-dropdown="'+id+'"]'),wasOpen=drop&&!drop.hidden;document.querySelectorAll(".top-menu-dropdown,.sidebar-submenu").forEach(x=>x.hidden=true);document.querySelectorAll("[data-menu-toggle]").forEach(x=>x.setAttribute("aria-expanded","false"));if(drop&&!wasOpen){drop.hidden=false;menuToggle.setAttribute("aria-expanded","true");}return;}
+ if(!el.closest(".top-menu-group")){document.querySelectorAll(".top-menu-dropdown,.sidebar-submenu").forEach(x=>x.hidden=true);document.querySelectorAll("[data-menu-toggle]").forEach(x=>x.setAttribute("aria-expanded","false"));}
+ const courseOpen=el.closest("[data-course-open]");
+ if(courseOpen){e.preventDefault();showApp("course-"+courseOpen.dataset.courseOpen);return;}
+ const courseModule=el.closest("[data-course-module]");
+ if(courseModule){const idx=Number(courseModule.dataset.courseModule);const course=BB_COURSES[activePage.replace("course-","")];if(course){document.querySelectorAll("[data-course-module]").forEach(x=>{x.classList.toggle("active",Number(x.dataset.courseModule)===idx);const icon=x.querySelector("i");if(icon)icon.textContent=Number(x.dataset.courseModule)===idx?"●":"○";});const view=document.getElementById("course-lesson-view");if(view)view.innerHTML=courseLessonView(course,idx);}return;}
+ const courseNext=el.closest("[data-course-next]");
+ if(courseNext){const course=BB_COURSES[activePage.replace("course-","")],idx=Number(courseNext.dataset.courseNext)+1;if(course&&idx<course.modules.length)document.querySelector('[data-course-module="'+idx+'"]')?.click();return;}
+ const coursePrev=el.closest("[data-course-prev]");
+ if(coursePrev){const course=BB_COURSES[activePage.replace("course-","")],idx=Number(coursePrev.dataset.coursePrev)-1;if(course&&idx>=0)document.querySelector('[data-course-module="'+idx+'"]')?.click();return;}
+
+ const notificationToggle=el.closest("[data-notification-toggle]");if(notificationToggle){const panel=document.getElementById("client-notification-panel");if(panel){panel.hidden=!panel.hidden;notificationToggle.setAttribute("aria-expanded",String(!panel.hidden));loadClientNotifications();}const menu=document.getElementById("client-profile-menu");if(menu)menu.hidden=true;return;}
+ const profileToggle=el.closest("[data-profile-toggle]");if(profileToggle){const menu=document.getElementById("client-profile-menu");if(menu){menu.hidden=!menu.hidden;profileToggle.setAttribute("aria-expanded",String(!menu.hidden));}const panel=document.getElementById("client-notification-panel");if(panel)panel.hidden=true;return;}
+ const notificationRead=el.closest("[data-notification-read]");if(notificationRead){const {error}=await sb.from("client_notifications").update({read_at:new Date().toISOString()}).eq("id",notificationRead.dataset.notificationRead).eq("user_id",user.id);if(error)alert(error.message);else loadClientNotifications();return;}
+ const accountWizard=el.closest("[data-account-wizard]");if(accountWizard){openAccountWizard();return;}
+ const accountMode=el.closest("[data-account-mode]");
+ if(accountMode){window.bbAccountMode=accountMode.dataset.accountMode;document.querySelectorAll("[data-account-mode]").forEach(x=>x.classList.toggle("active",x===accountMode));const tools=document.getElementById("bb-account-tools");if(tools){tools.hidden=true;tools.innerHTML="";}loadClientTradingAccounts();return;}
+ const accountInfo=el.closest("[data-account-info]");if(accountInfo){openAccountInfoModal(accountInfo.dataset.accountInfo);return;}
+ const accountInfoBack=el.closest("[data-account-info-back]");if(accountInfoBack){openAccountInfoModal(accountInfoBack.dataset.accountInfoBack);return;}
+ const accountTool=el.closest("[data-account-tool]");
+ if(accountTool){if(["deposit","withdraw"].includes(accountTool.dataset.accountTool))showAccountTool(accountTool.dataset.accountId,accountTool.dataset.accountTool);else showAccountTool(accountTool.dataset.accountId,accountTool.dataset.accountTool);return;}
+ const accountAction=el.closest("[data-account-action]");
+ if(accountAction){manageClientAccount(accountAction.dataset.accountId,accountAction.dataset.accountAction);return;}
+ const termSymbol=el.closest("[data-term-symbol]");
+ if(termSymbol){document.querySelectorAll("[data-term-symbol]").forEach(x=>x.classList.toggle("active",x===termSymbol));const sym=termSymbol.dataset.termSymbol,frame=document.getElementById("bb-tv-chart"),label=document.getElementById("bb-current-symbol"),paperSymbol=document.getElementById("bb-paper-symbol");if(paperSymbol){const mapped=sym.split(":").pop();if(Array.from(paperSymbol.options).some(o=>o.value===mapped))paperSymbol.value=mapped;}if(frame){const url=new URL("https://www.tradingview.com/widgetembed/");url.searchParams.set("symbol",sym);url.searchParams.set("interval",window.bbInterval||"1");url.searchParams.set("hidesidetoolbar","0");url.searchParams.set("symboledit","1");url.searchParams.set("saveimage","1");url.searchParams.set("toolbarbg","f1f3f6");url.searchParams.set("theme","light");url.searchParams.set("style","1");url.searchParams.set("timezone","Etc/UTC");url.searchParams.set("withdateranges","1");url.searchParams.set("hideideas","1");url.searchParams.set("allow_symbol_change","1");url.searchParams.set("details","1");url.searchParams.set("hotlist","1");url.searchParams.set("calendar","0");frame.src=url.toString();}if(label)label.textContent=sym.split(":").pop();return;}
+ const termInterval=el.closest("[data-term-interval]");
+ if(termInterval){window.bbInterval=termInterval.dataset.termInterval;document.querySelectorAll("[data-term-interval]").forEach(x=>x.classList.toggle("active",x===termInterval));const symButton=document.querySelector("[data-term-symbol].active");if(symButton)symButton.click();return;}
+ const termBottom=el.closest("[data-term-bottom]");if(termBottom){document.querySelectorAll("[data-term-bottom]").forEach(x=>x.classList.toggle("active",x===termBottom));const box=document.getElementById("bb-bottom-content");if(box)box.textContent=termBottom.dataset.termBottom==="positions"?"No live positions. BIGBULLS execution engine is not connected yet.":termBottom.dataset.termBottom==="orders"?"No active orders. Order routing is disabled until the BIGBULLS trading engine is deployed.":termBottom.dataset.termBottom==="history"?"Trading history will appear after account execution services are connected.":"Trade journal and analysis notes will be available in a future terminal release.";return;}
+ const termTool=el.closest("[data-term-tool]");if(termTool){if(termTool.dataset.termTool==="fullscreen"){const frame=document.querySelector(".bb-tv-frame");if(frame?.requestFullscreen)frame.requestFullscreen();}else if(termTool.dataset.termTool==="indicators")alert("Use the Indicators button in the embedded chart toolbar to add technical indicators.");else if(termTool.dataset.termTool==="compare")alert("Use the Compare symbol control in the embedded chart toolbar.");return;}
+ const termMarket=el.closest("[data-term-market]");if(termMarket){document.querySelectorAll("[data-term-market]").forEach(x=>x.classList.toggle("active",x===termMarket));const groups={forex:["FX:EURUSD","FX:GBPUSD","FX:USDJPY"],metals:["OANDA:XAUUSD"],crypto:["BINANCE:BTCUSDT","BINANCE:ETHUSDT"],indices:["NASDAQ:NDX","TVC:DJI"]};document.querySelectorAll("[data-term-symbol]").forEach(x=>x.hidden=!groups[termMarket.dataset.termMarket].includes(x.dataset.termSymbol));return;}
+ const page=el.closest("[data-page]");if(page){e.preventDefault();document.querySelectorAll(".top-menu-dropdown,.sidebar-submenu").forEach(x=>x.hidden=true);document.querySelectorAll("[data-menu-toggle]").forEach(x=>x.setAttribute("aria-expanded","false"));const destination=page.getAttribute("data-page");if(destination==="terminal"){window.location.assign("/terminal.html?v=20261113-pro-terminal-complete");return;}showApp(destination);return;}
+ const view=el.closest("[data-auth-view]");if(view){if(view.dataset.authView==="signup")signupForm();else loginForm();return;}
+ const lang=el.closest("[data-language]");if(lang){alert("Language selector is a visual prototype. EN / UR / AR translations will be enabled in the localization phase.");return;}
+ const trigger=el.closest("[data-open]");if(trigger){e.preventDefault();openModal(trigger.getAttribute("data-open"));return;}
+ const appOpen=el.closest("[data-app-open]");if(appOpen){e.preventDefault();showApp("dashboard");return;}const appPage=el.closest("[data-app-page]");if(appPage){e.preventDefault();showApp(appPage.getAttribute("data-app-page"));return;}
+
+ const removeAdmin=el.closest("[data-admin-remove]");
+ if(removeAdmin){e.preventDefault();if(!isAdmin()||user?.email?.toLowerCase()!=="sardarjfd5403@gmail.com"){message("Only the primary owner can remove another administrator.",true);return;}if(!confirm("Remove admin access from "+removeAdmin.dataset.adminRemove+"?"))return;removeAdmin.disabled=true;const {error}=await sb.rpc("admin_set_user_role",{p_email:removeAdmin.dataset.adminRemove,p_make_admin:false});if(error){message(error.message,true);removeAdmin.disabled=false;}else{message("Admin access removed. The user must refresh or sign in again.");await loadAdminUsers();}return;}
+ const wt=el.closest("[data-wallet-tab]");if(wt){document.querySelectorAll("[data-wallet-tab]").forEach(x=>x.classList.toggle("active",x===wt));if(wt.dataset.walletTab==="history"){const box=document.getElementById("wallet-content");if(box){box.innerHTML='<h3>Wallet history</h3><div id="wallet-history-list">Loading…</div>';loadWalletHistory();}}else if(wt.dataset.walletTab==="transfer"){renderWalletTransfer();}else if(wt.dataset.walletTab==="withdraw"){renderMainWalletWithdrawal();}else{loadPageData();}return;}
+ const st=el.closest("[data-settings-tab]");if(st){document.querySelectorAll("[data-settings-tab]").forEach(x=>x.classList.toggle("active",x===st));const box=document.getElementById("settings-content");if(box){if(st.dataset.settingsTab==="security"){box.innerHTML='<h3>Security management</h3><p>Signed in as '+esc(user.email)+'</p><button class="copy-wallet" data-action="forgot">Send password reset email</button><div class="notice">KYC approval unlocks the client platform and its available functions. Keep your password private and use a strong password.</div>';}else if(st.dataset.settingsTab==="preferences"){box.innerHTML='<h3>Platform preferences</h3><p>Display preferences and notification controls will be available here.</p><div class="empty-state">Preference controls coming soon.</div>';}else{box.innerHTML='<h3>Manage profile</h3><form id="profile-form" class="client-form"><label>Full name<input name="full_name" value="'+esc(user.user_metadata?.full_name||"")+'" required></label><label>Email address<input value="'+esc(user.email||"")+'" disabled></label><button class="portal-primary">Save profile</button></form><div data-page-message></div>';}}return;}
+ const financialBack=el.closest("[data-financial-back]");if(financialBack){const ctx=window.bbFinancialContext;const account=(window.bbClientAccounts||[]).find(x=>x.id===ctx?.accountId);if(account)openAccountFinancialModal(account.id,"withdraw",ctx.methods);return;}
+ const copy=el.closest("[data-copy-address]");if(copy){if(navigator.clipboard?.writeText)navigator.clipboard.writeText(copy.dataset.copyAddress);else alert(copy.dataset.copyAddress);return;}
+ const toggle=el.closest("[data-wallet-toggle]");if(toggle&&isAdmin()){const {error}=await sb.from("crypto_wallets").update({active:toggle.dataset.active!=="true"}).eq("id",toggle.dataset.walletToggle);if(error)alert(error.message);else loadPageData();return;}
+ const demoBalance=el.closest("[data-demo-balance],[data-admin-demo-balance]");
+ if(demoBalance){
+  const isAdminAction=demoBalance.hasAttribute("data-admin-demo-balance");
+  if(isAdminAction&&!isAdmin())return;
+  const operation=prompt("Enter SET to reset the Demo balance, or TOPUP to add virtual funds:","TOPUP");
+  if(operation===null)return;
+  const op=operation.trim().toLowerCase();
+  if(!["set","topup"].includes(op)){alert("Choose SET or TOPUP.");return;}
+  const raw=prompt(op==="set"?"New Demo balance (USD):":"Amount to add (USD):");
+  if(raw===null)return;
+  const amount=Number(raw);
+  if(!Number.isFinite(amount)||amount<0||(op==="topup"&&amount===0)||amount>100000000){alert("Enter a valid amount.");return;}
+  const note=prompt("Reason / note (optional):",isAdminAction?"Admin Demo balance adjustment":"Client Demo balance adjustment")||"Demo balance adjustment";
+  demoBalance.disabled=true;
+  const payload={action:"set_balance",account_mode:"demo",account_id:isAdminAction?demoBalance.dataset.adminDemoBalance:demoBalance.dataset.demoBalance,operation:op,amount,note};
+  if(isAdminAction)payload.user_id=demoBalance.dataset.userId;
+  const result=await sb.functions.invoke("paper-execution",{body:payload});
+  demoBalance.disabled=false;
+  if(result.error||result.data?.error){alert(result.data?.error||result.error?.message||"Demo balance update failed.");return;}
+  alert("Demo virtual balance updated: $"+Number(result.data.balance_after||0).toFixed(2));
+  if(activePage==="accounts")await loadClientTradingAccounts();else await loadPageData();
+  return;
+ }
+ const adjust=el.closest("[data-admin-adjust]");if(adjust&&isAdmin()){const raw=prompt("Balance adjustment amount (positive to credit, negative to debit):");if(raw===null)return;const amount=Number(raw);if(!Number.isFinite(amount)||amount===0){alert("Enter a valid non-zero amount.");return;}const note=prompt("Reason for this balance adjustment (required):");if(!note||note.trim().length<4){alert("A reason of at least 4 characters is required.");return;}const {error}=await sb.rpc("admin_adjust_account_balance",{p_account_id:adjust.dataset.adminAdjust,p_amount:amount,p_note:note.trim()});if(error)alert(error.message);else{alert("Balance updated and audit record saved.");loadPageData();}return;}
+ const complete=el.closest("[data-complete-withdrawal]");if(complete&&isAdmin()){const ref=prompt("Enter payout blockchain TXID / reference after sending funds:");if(!ref||ref.trim().length<5)return;const {error}=await sb.rpc("admin_complete_withdrawal",{p_transaction_id:complete.dataset.completeWithdrawal,p_payout_reference:ref.trim()});if(error)alert(error.message);else{alert("Payout recorded; client balance and internal B-Book pool debited and reconciled.");loadPageData();}return;}
+ const review=el.closest("[data-review]");if(review&&isAdmin()){const status=review.dataset.status;let note=null;if(status==="rejected"){note=prompt("Enter rejection reason (required):");if(!note||note.trim().length<4){alert("A clear rejection reason is required.");return;}note=note.trim();}const {error}=await sb.rpc("admin_review_wallet_transaction",{p_transaction_id:review.dataset.review,p_status:status,p_admin_note:note});if(error)alert(error.message);else loadPageData();return;}
+ const ar=el.closest("[data-account-review]");if(ar&&isAdmin()){let note=null;if(ar.dataset.status==="rejected"){note=prompt("Enter account request rejection reason (at least 4 characters):");if(!note||note.trim().length<4){alert("A clear rejection reason is required.");return;}note=note.trim();}const {error}=await sb.rpc("admin_review_trading_account",{p_account_id:ar.dataset.accountReview,p_status:ar.dataset.status,p_admin_note:note});if(error)alert(error.message);else{alert(ar.dataset.status==="approved"?"Portal account approved. No broker login has been provisioned.":"Account request rejected.");loadPageData();}return;}
+ const tr=el.closest("[data-transfer-review]");if(tr&&isAdmin()){let note=null;if(tr.dataset.status==="rejected"){note=prompt("Enter transfer rejection reason (at least 4 characters):");if(!note||note.trim().length<4){alert("A clear rejection reason is required.");return;}note=note.trim();}const {error}=await sb.rpc("admin_review_account_transfer",{p_transfer_id:tr.dataset.transferReview,p_status:tr.dataset.status,p_admin_note:note});if(error)alert(error.message);else{alert(tr.dataset.status==="approved"?"Transfer approved. Both account balances and ledgers were updated.":"Transfer rejected.");loadPageData();}return;}
+ if(el.closest("[data-wallet-queue-refresh]")&&isAdmin()){loadPageData();return;}
+ if(el.closest("[data-kyc-refresh]")&&isAdmin()){loadPageData();return;}
+  const kycReview=el.closest("[data-kyc-review]");if(kycReview&&isAdmin()){const row=kycReview.closest(".admin-transaction"),reasons=Array.from(row?.querySelector("[data-kyc-reasons]")?.selectedOptions||[]).map(x=>x.value),note=String(row?.querySelector("[data-kyc-admin-note]")?.value||"").trim();if(kycReview.dataset.status==="rejected"&&!reasons.length){alert("Select at least one KYC rejection reason.");return;}const {error}=await sb.rpc("admin_review_kyc_submission",{p_submission_id:kycReview.dataset.kycReview,p_status:kycReview.dataset.status,p_admin_note:note||null,p_rejection_reasons:kycReview.dataset.status==="rejected"?reasons:[]});if(error)alert(error.message);else loadPageData();return;}
+ const partnerShare=el.closest("[data-partner-share]");
+ if(partnerShare){const url=window.__bbPartnerReferralUrl||"";if(!url){message("Your referral link becomes available after partner approval.",true);return;}try{if(navigator.share){await navigator.share({title:"Join BIGBULLS Global Market",text:"Create your BIGBULLS account using my partner link.",url});}else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(url);message("Partner link copied. Share it with your clients.");}else{window.prompt("Copy your BIGBULLS partner link:",url);}}catch(err){if(err?.name!=="AbortError")message("Share failed: "+(err?.message||"Please copy the link manually."),true);}return;}
+ const partnerCodeCopy=el.closest("[data-partner-copy-code]");
+ if(partnerCodeCopy){const code=window.__bbPartnerReferralCode||"";if(!code){message("Your referral code becomes available after partner approval.",true);return;}try{await navigator.clipboard.writeText(code);message("Referral code copied: "+code);}catch(_){window.prompt("Copy your BIGBULLS referral code:",code);}return;}
+ const ibRateSave=el.closest("[data-ib-rate-save]");
+ if(ibRateSave&&isAdmin()){const row=ibRateSave.closest("[data-ib-rate-row]"),rate=Number(row?.querySelector("[data-ib-rate-value]")?.value),enabled=!!row?.querySelector("[data-ib-rate-enabled]")?.checked,tier=ibRateSave.dataset.ibRateSave;if(!Number.isFinite(rate)||rate<0||rate>1000){message("Commission rate must be between $0 and $1,000 per lot.",true);return;}ibRateSave.disabled=true;const {error}=await sb.rpc("admin_update_partner_commission_rate",{p_tier:tier,p_commission_per_lot:rate,p_enabled:enabled});ibRateSave.disabled=false;if(error)message("Rate update failed: "+error.message,true);else{message(tier.toUpperCase()+" commission rate saved.");await loadPageData();}return;}
+ const ibTierSave=el.closest("[data-ib-partner-tier-save]");
+ if(ibTierSave&&isAdmin()){const row=ibTierSave.closest(".ib-partner-row"),tier=String(row?.querySelector("[data-ib-tier-select]")?.value||"bronze"),partnerId=ibTierSave.dataset.ibPartnerTierSave;ibTierSave.disabled=true;const {error}=await sb.rpc("admin_set_partner_status",{p_partner_user_id:partnerId,p_status:String(row?.dataset.ibCurrentStatus||"approved"),p_tier:tier});ibTierSave.disabled=false;if(error)message("Tier update failed: "+error.message,true);else{message("Partner tier updated to "+tier.toUpperCase()+".");await loadPageData();}return;}
+ const ibStatus=el.closest("[data-ib-partner-status]");
+ if(ibStatus&&isAdmin()){const row=ibStatus.closest(".ib-partner-row"),tier=String(row?.querySelector("[data-ib-tier-select]")?.value||"bronze"),status=ibStatus.dataset.status;if(!confirm((status==="disabled"?"Disable":"Enable")+" IB partner access?"))return;ibStatus.disabled=true;const {error}=await sb.rpc("admin_set_partner_status",{p_partner_user_id:ibStatus.dataset.ibPartnerStatus,p_status:status,p_tier:tier});if(error){ibStatus.disabled=false;message("IB status update failed: "+error.message,true);}else{message("IB partner status updated.");await loadPageData();}return;}
+ const ibPayoutReview=el.closest("[data-ib-payout-review]");
+ if(ibPayoutReview&&isAdmin()){const status=ibPayoutReview.dataset.status;let note=null;if(status==="rejected"){note=window.prompt("Enter rejection reason (minimum 4 characters):");if(!note||note.trim().length<4){message("A clear payout rejection reason is required.",true);return;}note=note.trim();}if(status==="paid"&&!confirm("Confirm that this IB payout has actually been sent?"))return;ibPayoutReview.disabled=true;const {error}=await sb.rpc("admin_review_partner_payout",{p_request_id:ibPayoutReview.dataset.ibPayoutReview,p_status:status,p_admin_note:note});if(error){ibPayoutReview.disabled=false;message("Payout review failed: "+error.message,true);}else{message(status==="paid"?"IB payout marked paid.":"IB payout rejected and wallet funds returned.");await loadPageData();}return;}
+ const partnerReview=el.closest("[data-partner-review]");if(partnerReview&&isAdmin()){let note=null;if(partnerReview.dataset.status==="rejected"){note=prompt("Enter partner rejection reason (required):");if(!note||note.trim().length<4){alert("A clear rejection reason is required.");return;}note=note.trim();}const {error}=await sb.rpc("admin_review_partner_application",{p_application_id:partnerReview.dataset.partnerReview,p_status:partnerReview.dataset.status,p_admin_note:note});if(error)alert(error.message);else loadPageData();return;}
+ if(el.closest("[data-support-queue-refresh]")&&isAdmin()){loadPageData();return;}
+ const supportReview=el.closest("[data-support-review]");
+ if(supportReview&&isAdmin()){
+  const reply=prompt("Enter the reply that the client will receive (required):");
+  if(reply===null)return;
+  if(reply.trim().length<2||reply.trim().length>5000){alert("Reply must be between 2 and 5000 characters.");return;}
+  const {error}=await sb.rpc("admin_update_support_ticket",{p_ticket_id:supportReview.dataset.supportReview,p_status:supportReview.dataset.status,p_admin_reply:reply.trim()});
+  if(error)alert(error.message);else{alert("Support ticket updated and client notified.");loadPageData();}
+  return;
+ }
+ const commissionStatus=el.closest("[data-commission-status]");if(commissionStatus&&isAdmin()){let note=null;if(commissionStatus.dataset.status==="rejected"){note=prompt("Enter commission rejection reason (required):");if(!note||note.trim().length<4){alert("A clear rejection reason is required.");return;}note=note.trim();}const update={status:commissionStatus.dataset.status,reviewed_by:user.id,reviewed_at:new Date().toISOString()};if(note)update.admin_note=note;if(commissionStatus.dataset.status==="paid")update.paid_at=new Date().toISOString();const {error}=await sb.from("partner_commission_ledger").update(update).eq("id",commissionStatus.dataset.commissionStatus);if(error)alert(error.message);else loadPageData();return;}
+ const productOrderReview=el.closest("[data-product-order-review]");if(productOrderReview&&isAdmin()){let note=null;if(productOrderReview.dataset.status==="rejected"){note=prompt("Enter product order rejection reason (at least 4 characters):");if(!note||note.trim().length<4){alert("A clear rejection reason is required.");return;}note=note.trim();}const {data,error}=await sb.rpc("admin_review_product_order",{p_order_id:productOrderReview.dataset.productOrderReview,p_status:productOrderReview.dataset.status,p_admin_note:note});if(error)alert(error.message);else{if(productOrderReview.dataset.status==="paid")alert("Payment marked as verified. License issued: "+String(data||""));else alert("Product order rejected.");loadPageData();}return;}
+ const action=el.closest("[data-action]");if(action){
+  if(action.dataset.action==="package-info"){openModal("buy");return;}
+  if(action.dataset.action==="logout"){const {error}=await sb.auth.signOut();if(error)alert(error.message);else{user=null;hideApp();window.scrollTo({top:0,behavior:"smooth"});}return;}
+  if(action.dataset.action==="forgot"){const email=prompt("Registered email address:");if(!email)return;const {error}=await sb.auth.resetPasswordForEmail(email.trim(),{redirectTo:location.origin+location.pathname});if(error)alert(error.message);else alert("Password reset email requested. Check your inbox.");return;}
+ }
+ if(el.closest("[data-close]")||el.classList.contains("portal-close")||el===modal)closeModal();
+}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
+})();
++Number(x.deposit_amount_usd||0).toFixed(2)+' × '+Number(x.commission_rate||10).toFixed(0)+'% · Client '+esc(String(x.referred_user_id).slice(0,8))+'…</small><small>'+(x.status==="paid"?"Credited to IB wallet":"Waiting for available liquidity pool funds")+' · '+new Date(x.created_at).toLocaleString()+'</small></span></div>').join("")||"No referred-client deposit commissions yet.";
   const transferSelect=document.getElementById("partner-transfer-account");
   if(transferSelect){
    const {data:realAccounts,error:realAccountsError}=await sb.from("trading_accounts").select("id,account_number,display_name,balance,currency").eq("user_id",user.id).eq("account_mode","real").eq("status","approved").is("archived_at",null).is("deleted_at",null).eq("currency","USD").order("created_at",{ascending:false});
