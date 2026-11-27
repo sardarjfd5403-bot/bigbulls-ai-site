@@ -5,6 +5,32 @@ const SB_URL=window.BB_SUPABASE_URL||"https://ztiiyulusburxjkpcfxu.supabase.co",
 const $=s=>document.querySelector(s), esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let db=null,user=null,profile=null,accounts=[],activeAccount=null,realtime=null,lastSessionUserId=null,marketRefreshTimer=null,appUnlocked=false,lockOverlay=null,wasBackgrounded=false;
 const symbols={EURUSD:"EUR/USD",GBPUSD:"GBP/USD",USDJPY:"USD/JPY",XAUUSD:"XAU/USD",BTCUSDT:"BTC",ETHUSDT:"ETH/USD",SOLUSDT:"SOL/USD",XRPUSDT:"XRP/USD",BNBUSDT:"BNB/USD",US30:"US30",USTEC:"USTEC",US500:"US500",DE30:"DE30",UK100:"UK100",JP225:"JP225",USOIL:"USOIL",UKOIL:"UKOIL",NATGAS:"NATGASUSDT"};
+
+const ANDROID_BUILD_TAG="android-build-46";
+const ANDROID_RELEASES_API="https://api.github.com/repos/sardarjfd5403-bot/bigbulls-ai-site/releases?per_page=1";
+function showAppUpdate(release){
+ if(document.getElementById("bbUpdateOverlay"))return;
+ const overlay=document.createElement("div");overlay.id="bbUpdateOverlay";
+ overlay.style.cssText="position:fixed;inset:0;z-index:100001;background:#07152acc;display:grid;place-items:center;padding:20px;font-family:system-ui,Arial,sans-serif";
+ const card=document.createElement("div");card.style.cssText="width:min(100%,390px);background:#fff;border-radius:22px;padding:24px;box-shadow:0 24px 80px #0005;color:#14233b";
+ const title=document.createElement("h2");title.textContent="BIGBULLS Update Available";title.style.cssText="margin:0 0 8px;font-size:22px";
+ const msg=document.createElement("p");msg.textContent="A newer version of BIGBULLS is ready. Update now for the latest features and improvements.";msg.style.cssText="color:#64748b;font-size:14px;line-height:1.5";
+ const version=document.createElement("p");version.textContent="Latest version: "+String(release.tag_name||"New version");version.style.cssText="font-weight:700;font-size:13px";
+ const update=document.createElement("button");update.type="button";update.textContent="UPDATE NOW";update.style.cssText="width:100%;padding:14px;border:0;border-radius:11px;background:#0757c8;color:white;font-weight:800;margin-top:8px";
+ update.onclick=()=>{const url=release.html_url||"https://github.com/sardarjfd5403-bot/bigbulls-ai-site/releases/latest";window.open(url,"_blank")|| (window.location.href=url);};
+ const later=document.createElement("button");later.type="button";later.textContent="Maybe later";later.style.cssText="width:100%;padding:12px;border:0;background:#eff6ff;color:#0757c8;border-radius:11px;font-weight:700;margin-top:9px";later.onclick=()=>overlay.remove();
+ card.append(title,msg,version,update,later);overlay.appendChild(card);document.body.appendChild(overlay);
+}
+async function checkForAppUpdate(){
+ try{
+  const response=await fetch(ANDROID_RELEASES_API,{cache:"no-store",headers:{Accept:"application/vnd.github+json"}});
+  if(!response.ok)throw Error("Release check unavailable");
+  const releases=await response.json(),release=Array.isArray(releases)?releases[0]:null;
+  if(!release||release.draft||release.prerelease||!release.tag_name)return;
+  const current=Number((ANDROID_BUILD_TAG.match(/(\\d+)$/)||[])[1]||0),latest=Number((String(release.tag_name).match(/(\\d+)$/)||[])[1]||0);
+  if(latest>current&&Array.isArray(release.assets)&&release.assets.some(a=>a.name==="BIGBULLS-Android.apk"))showAppUpdate(release);
+ }catch(error){console.info("[BIGBULLS UPDATE] Check skipped:",error.message);}
+}
 function say(s,bad){const auth=$("#authMessage");if(!$("#auth-view").hidden&&auth){auth.hidden=false;auth.textContent=s;auth.className=bad?"notice error":"notice";return;}const n=$("#appMessage");if(n){n.textContent=s;n.className=bad?"notice error":"notice";}}
 function client(){if(!db)throw Error("Supabase client unavailable.");return db;}
 async function invoke(fn,body){const r=await client().functions.invoke(fn,{body});if(r.error)throw Error(r.data?.error||r.error.message);if(r.data?.error)throw Error(r.data.error);return r.data||{};}
@@ -130,5 +156,6 @@ $("#sellBtn").onclick=()=>placeOrder("SELL").catch(e=>say(e.message,true));
 $("#refreshBtn").onclick=()=>loadAccounts().catch(e=>say(e.message,true));
 $("#tradingNav")?.addEventListener("click",()=>ensureChartLoaded());
 function ensureChartLoaded(){const frame=$("#chartFrame");if(frame&&frame.dataset.loaded!=="1"){const sym=$("#tradeSymbol").value;const map={XAUUSD:"OANDA:XAUUSD",EURUSD:"OANDA:EURUSD",GBPUSD:"OANDA:GBPUSD",USDJPY:"OANDA:USDJPY",BTCUSDT:"BINANCE:BTCUSDT",ETHUSDT:"BINANCE:ETHUSDT"};frame.src="https://www.tradingview.com/widgetembed/?symbol="+encodeURIComponent(map[sym]||"OANDA:XAUUSD")+"&interval=15&theme=light&style=1&locale=en&toolbarbg=f1f3f6&saveimage=0&calendar=0&details=1";frame.dataset.loaded="1";}}
+checkForAppUpdate();
 (async()=>{try{if(!window.supabase?.createClient)await new Promise((resolve,reject)=>{const tag=document.createElement("script");tag.src="https://unpkg.com/@supabase/supabase-js@2";tag.onload=resolve;tag.onerror=()=>reject(new Error("Supabase SDK could not load from either CDN."));document.head.appendChild(tag);});db=window.bbSupabase||window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:window.localStorage,storageKey:"bb-global-client-auth-v1"}});window.bbSupabase=db;window.__bbSupabaseClient=db;db.auth.onAuthStateChange((ev,s)=>{if(ev==="SIGNED_OUT"){setTimeout(()=>sessionReady(null),0);return;}if(s?.user?.id!==lastSessionUserId)setTimeout(()=>sessionReady(s),0);});const r=await db.auth.getSession();if(r.error)throw r.error;await sessionReady(r.data.session);}catch(e){say("Secure login connection failed: "+e.message,true);authView("login");}})();
 })();
