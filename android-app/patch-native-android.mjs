@@ -122,7 +122,6 @@ const pluginSource = [
 '      }};',
 '      IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);',
 '      if (Build.VERSION.SDK_INT >= 33) getContext().registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED); else getContext().registerReceiver(receiver, filter);',
-'      call.resolve();',
 '    } catch (Exception error) { call.reject("Could not start APK download: " + error.getMessage()); }',
 '  }',
 '}'
