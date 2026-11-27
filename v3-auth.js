@@ -25,7 +25,7 @@ document.addEventListener("submit",async e=>{
   if(f.id==="login"){const email=String(d.get("email")).trim();const {data,error}=await sb.auth.signInWithPassword({email,password:String(d.get("password"))});if(error){if(/email not confirmed/i.test(error.message)){verificationNotice(email,"Your email is not verified yet. Confirm it first, then log in.");b.disabled=false;b.textContent="Secure login →";return}throw error}if(!data.session)throw new Error("No active session returned. Please retry.");portal()}
   else if(f.id==="signup"){const {data,error}=await sb.auth.signUp({email:String(d.get("email")).trim(),password:String(d.get("password")),options:{emailRedirectTo:location.origin+location.pathname+"?mode=login&verified=1",data:{full_name:String(d.get("full_name")).trim(),country:String(d.get("country")||""),phone:String(d.get("phone")||""),account_type:String(d.get("account_type")||"Individual"),referral_code:String(d.get("referral_code")||"")}}});if(error)throw error;if(data.session){await sb.auth.signOut();verificationNotice(String(d.get("email")).trim(),"Registration received. Please check your inbox and confirm your email before logging in.");}else{verificationNotice(String(d.get("email")).trim(),"Registration received. A BIGBULLS confirmation email has been requested. Please confirm your email before logging in.");}f.reset();b.disabled=false;b.textContent="Create secure account →"}
   else if(f.id==="forgot"){const {error}=await sb.auth.resetPasswordForEmail(String(d.get("email")).trim(),{redirectTo:location.origin+location.pathname+"?mode=reset"});if(error)throw error;msg("If an account exists for that email, a password reset link has been sent.");b.disabled=false;b.textContent="Send reset link";return}
-  else{const {error}=await sb.auth.updateUser({password:String(d.get("password"))});if(error)throw error;msg("Password updated. You can now log in.");mode="login";setTimeout(render,900)}
+  else{const {error}=await sb.auth.updateUser({password:String(d.get("password"))});if(error)throw error;await sb.auth.signOut();mode="login";render();msg("Password updated successfully. Please log in with your new password.")}
  }catch(err){msg(err.message||"Authentication failed. Please retry.",true);b.disabled=false;b.textContent=f.id==="login"?"Secure login →":f.id==="signup"?"Create secure account →":f.id==="forgot"?"Send reset link":"Update password"}
 });
 (async()=>{try{
@@ -33,7 +33,7 @@ document.addEventListener("submit",async e=>{
  sb=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
  const {data,error}=await sb.auth.getSession();if(error)throw error;
  if(data?.session&&q.get("verified")==="1"){await sb.auth.signOut();render();msg("Your email has been successfully verified. Please log in with your email and password.");return}
- if(data?.session){portal();return}
+ if(data?.session&&mode!=="reset"){portal();return}
  sb.auth.onAuthStateChange((event,session)=>{if(session&&["SIGNED_IN","TOKEN_REFRESHED","INITIAL_SESSION"].includes(event)&&mode!=="reset")portal()});
  render();
  if(q.get("verified")==="1")msg("Email verified. Please log in to access your client portal.");
