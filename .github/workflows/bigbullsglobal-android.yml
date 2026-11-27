@@ -60,6 +60,11 @@ jobs:
               s=re.sub(r'<application\b', '<application android:hardwareAccelerated="true"', s, count=1)
           p.write_text(s)
           PY
+      - name: Restore stable Android debug signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: bigbulls-android-debug-signing-v1
       - name: Build debug APK
         run: cd android && ./gradlew --no-daemon assembleDebug
       - name: Publish latest public Android APK release
