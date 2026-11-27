@@ -58,6 +58,7 @@ function connectSupabase(){
  // Keep the public landing page visible; authentication opens only when the visitor selects Login or Sign up.
  // Keep this callback synchronous to avoid waiting on the Supabase auth lock.
  sb.auth.onAuthStateChange((event,session)=>{
+  if(event==="PASSWORD_RECOVERY"){location.replace("auth.html?mode=reset"+location.hash);return;}
   user=session?session.user:null;
   window.__bbAuthSession=session||null;window.__bbTerminalAuthSession=session||null;window.__bbAuthUser=user;
   updateHeader();
