@@ -911,6 +911,18 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
       openModal(renderTicketHTML());
     }
 
+
+    function bbQuickMarketOrder(side) {
+      state.orderTicket.side = side;
+      state.orderTicket.mode = 'Market';
+      if (state.oneClickTrade) {
+        void place();
+        return;
+      }
+      openOrderTicketModal(side, 'Market');
+    }
+    window.bbQuickMarketOrder = bbQuickMarketOrder;
+
     function submitOrderExecution() {
       const acc = getActiveAccount();
       const m = state.orderTicket;
@@ -1332,11 +1344,11 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
                 `).join('')}
               </div>
               <div class="grid grid-cols-2 gap-2 relative">
-                <button onclick="openOrderTicketModal('Sell', 'Market')" class="py-2.5 rounded-xl bg-bullRed hover:bg-red-600 text-white text-center shadow">
+                <button onclick="bbQuickMarketOrder('Sell')" class="py-2.5 rounded-xl bg-bullRed hover:bg-red-600 text-white text-center shadow">
                   <div class="text-[11px] font-semibold opacity-90">Sell</div>
                   <div data-bid="${inst.symbol}" class="font-mono font-bold text-sm">${inst.bid.toFixed(inst.digits)}</div>
                 </button>
-                <button onclick="openOrderTicketModal('Buy', 'Market')" class="py-2.5 rounded-xl bg-bullBlue hover:bg-blue-600 text-white text-center shadow">
+                <button onclick="bbQuickMarketOrder('Buy')" class="py-2.5 rounded-xl bg-bullBlue hover:bg-blue-600 text-white text-center shadow">
                   <div class="text-[11px] font-semibold opacity-90">Buy</div>
                   <div data-ask="${inst.symbol}" class="font-mono font-bold text-sm">${inst.ask.toFixed(inst.digits)}</div>
                 </button>
@@ -1610,12 +1622,12 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
                 <span data-live-pl class="font-mono text-xs font-bold mr-2 ${m.floatingPL >= 0 ? 'text-bullGreen' : 'text-bullRed'}">
                   ${m.floatingPL >= 0 ? '+' : ''}${formatMoney(m.floatingPL)} USD
                 </span>
-                <button onclick="openOrderTicketModal('Sell', 'Market')" class="bg-bullRed hover:bg-red-600 text-white font-mono font-bold text-xs px-3 py-1 rounded-md flex items-center gap-1.5 transition shadow">
+                <button onclick="bbQuickMarketOrder('Sell')" class="bg-bullRed hover:bg-red-600 text-white font-mono font-bold text-xs px-3 py-1 rounded-md flex items-center gap-1.5 transition shadow">
                   <span class="font-sans font-semibold text-[11px] opacity-90">Sell</span>
                   <span data-bid="${inst.symbol}">${inst.bid.toFixed(inst.digits)}</span>
                 </button>
                 <span class="text-[10px] font-mono text-gray-400 px-1">${inst.spread}</span>
-                <button onclick="openOrderTicketModal('Buy', 'Market')" class="bg-bullBlue hover:bg-blue-600 text-white font-mono font-bold text-xs px-3 py-1 rounded-md flex items-center gap-1.5 transition shadow">
+                <button onclick="bbQuickMarketOrder('Buy')" class="bg-bullBlue hover:bg-blue-600 text-white font-mono font-bold text-xs px-3 py-1 rounded-md flex items-center gap-1.5 transition shadow">
                   <span class="font-sans font-semibold text-[11px] opacity-90">Buy</span>
                   <span data-ask="${inst.symbol}">${inst.ask.toFixed(inst.digits)}</span>
                 </button>
