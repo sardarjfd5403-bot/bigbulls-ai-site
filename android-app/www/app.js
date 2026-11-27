@@ -1,4 +1,6 @@
 import { NativeBiometric } from "@capgo/capacitor-native-biometric";
+import { registerPlugin } from "@capacitor/core";
+const ApkUpdater = registerPlugin("ApkUpdater");
 (() => {
 "use strict";
 const SB_URL=window.BB_SUPABASE_URL||"https://ztiiyulusburxjkpcfxu.supabase.co", SB_KEY=window.BB_SUPABASE_PUBLISHABLE_KEY||"sb_publishable_5hDwqvbcUHeSJdXFHf9ugw_VPYGN4J_";
@@ -17,7 +19,7 @@ function showAppUpdate(release){
  const msg=document.createElement("p");msg.textContent="A newer version of BIGBULLS is ready. Update now for the latest features and improvements.";msg.style.cssText="color:#64748b;font-size:14px;line-height:1.5";
  const version=document.createElement("p");version.textContent="Latest version: "+String(release.tag_name||"New version");version.style.cssText="font-weight:700;font-size:13px";
  const update=document.createElement("button");update.type="button";update.textContent="UPDATE NOW";update.style.cssText="width:100%;padding:14px;border:0;border-radius:11px;background:#0757c8;color:white;font-weight:800;margin-top:8px";
- update.onclick=()=>{const url=release.html_url||"https://github.com/sardarjfd5403-bot/bigbulls-ai-site/releases/latest";window.open(url,"_blank")|| (window.location.href=url);};
+ update.onclick=async()=>{const apk=(release.assets||[]).find(a=>a.name==="BIGBULLS-Android.apk");if(!apk){say("Latest APK file is not available yet.",true);return;}if(!ApkUpdater?.downloadAndInstall){window.open(apk.browser_download_url,"_blank");return;}update.disabled=true;update.textContent="DOWNLOADING UPDATE…";try{await ApkUpdater.downloadAndInstall({url:apk.browser_download_url});update.textContent="OPENING ANDROID INSTALLER…";}catch(error){update.disabled=false;update.textContent="UPDATE NOW";say(error?.message||"Update could not start.",true);}};
  const later=document.createElement("button");later.type="button";later.textContent="Maybe later";later.style.cssText="width:100%;padding:12px;border:0;background:#eff6ff;color:#0757c8;border-radius:11px;font-weight:700;margin-top:9px";later.onclick=()=>overlay.remove();
  card.append(title,msg,version,update,later);overlay.appendChild(card);document.body.appendChild(overlay);
 }
