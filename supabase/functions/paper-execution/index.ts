@@ -1,15 +1,19 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.0";
 
 const ORIGIN = "*";
+const ALLOWED_ORIGINS = new Set([ORIGIN, "https://localhost", "http://localhost", "capacitor://localhost", "ionic://localhost"]);
 const cors = {
-  "Access-Control-Allow-Origin": ORIGIN,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Vary": "Origin",
   "X-Content-Type-Options": "nosniff",
 };
-const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" } });
+const corsFor = (origin: string | null) => ({
+  ...cors,
+  "Access-Control-Allow-Origin": origin && ALLOWED_ORIGINS.has(origin) ? origin : ORIGIN,
+});
+const json = (body: unknown, status = 200, origin: string | null = null) =>
+  new Response(JSON.stringify(body), { status, headers: { ...corsFor(origin), "Content-Type": "application/json", "Cache-Control": "no-store" } });
 const num = (v: unknown) => {
   const n = Number(v);
   if (!Number.isFinite(n)) throw new Error("A valid numeric value is required.");
@@ -58,18 +62,18 @@ function costs(symbol: string, side: string, qty: number, mid: number) {
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
-  if (req.method !== "POST") return json({ error: "POST required." }, 405);
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsFor(req.headers.get("Origin")) });
+  if (req.method !== "POST") return json({ error: "POST required." }, 405, req.headers.get("Origin"));
   try {
     const url = Deno.env.get("SUPABASE_URL");
     const anon = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
     const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SECRET_KEY");
-    if (!url || !anon || !service) return json({ error: "Server execution credentials are not configured." }, 503);
+    if (!url || !anon || !service) return json({ error: "Server execution credentials are not configured." }, 503, req.headers.get("Origin"));
     const token = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
-    if (!token) return json({ error: "Authentication required." }, 401);
+    if (!token) return json({ error: "Authentication required." }, 401, req.headers.get("Origin"));
     const auth = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false }, global: { headers: { Authorization: "Bearer " + token } } });
     const { data: authData, error: authError } = await auth.auth.getUser(token);
-    if (authError || !authData.user) return json({ error: "Invalid or expired session." }, 401);
+    if (authError || !authData.user) return json({ error: "Invalid or expired session." }, 401, req.headers.get("Origin"));
     const user = authData.user;
     const admin = createClient(url, service, { auth: { persistSession: false, autoRefreshToken: false } });
     const body = await req.json().catch(() => ({}));
@@ -80,7 +84,7 @@ Deno.serve(async (req: Request) => {
     const targetUserId = actorIsAdmin === true && body.user_id ? String(body.user_id) : user.id;
     let account: any = null;
     const mode = String(body.account_mode || (accountId ? "" : "demo"));
-    if (!["demo","real"].includes(mode)) return json({ error: "Unsupported account mode." }, 400);
+    if (!["demo","real"].includes(mode)) return json({ error: "Unsupported account mode." }, 400, req.headers.get("Origin"));
     if (accountId) {
       const { data, error } = await admin.from("trading_accounts")
         .select("id,user_id,account_mode,status,currency,archived_at,deleted_at")
@@ -88,10 +92,10 @@ Deno.serve(async (req: Request) => {
       if (error) throw error;
       account = data;
       if (!account || account.account_mode !== mode || account.status !== "approved" || account.archived_at || account.deleted_at) {
-        return json({ error: "Approved account not found or account access is restricted." }, 403);
+        return json({ error: "Approved account not found or account access is restricted." }, 403, req.headers.get("Origin"));
       }
     } else if (mode !== "demo") {
-      return json({ error: "A linked approved account is required." }, 400);
+      return json({ error: "A linked approved account is required." }, 400, req.headers.get("Origin"));
     }
     if (mode === "real") {
       if (actorIsAdmin !== true) {
@@ -99,7 +103,7 @@ Deno.serve(async (req: Request) => {
           .select("status").eq("user_id", user.id).eq("status", "approved").maybeSingle();
         if (kycError) throw kycError;
         if (!kyc) {
-          return json({ error: "Real-account test execution requires approved KYC.", code: "KYC_APPROVAL_REQUIRED" }, 403);
+          return json({ error: "Real-account test execution requires approved KYC.", code: "KYC_APPROVAL_REQUIRED" }, 403, req.headers.get("Origin"));
         }
       }
     }
@@ -109,7 +113,7 @@ Deno.serve(async (req: Request) => {
       .eq("singleton", true).single();
     if (settingsError) throw settingsError;
     if (settings.global_halt || !settings.paper_execution_enabled || (mode === "demo" && !settings.demo_execution_enabled)) {
-      return json({ error: "Paper execution is currently disabled by the administrator.", code: "EXECUTION_HALTED" }, 423);
+      return json({ error: "Paper execution is currently disabled by the administrator.", code: "EXECUTION_HALTED" }, 423, req.headers.get("Origin"));
     }
 
     const { error: ledgerInsertError } = await admin.from("bb_paper_execution_accounts")
@@ -121,26 +125,26 @@ Deno.serve(async (req: Request) => {
     if (readLedgerError) throw readLedgerError;
 
     if (action === "set_balance") {
-      if (mode !== "demo" || !accountId) return json({ error: "Demo account ID is required for virtual balance changes." }, 400);
-      if (targetUserId !== user.id && actorIsAdmin !== true) return json({ error: "Administrator permission required." }, 403);
+      if (mode !== "demo" || !accountId) return json({ error: "Demo account ID is required for virtual balance changes." }, 400, req.headers.get("Origin"));
+      if (targetUserId !== user.id && actorIsAdmin !== true) return json({ error: "Administrator permission required." }, 403, req.headers.get("Origin"));
       const operation = String(body.operation || "topup").toLowerCase();
       const amount = Number(body.amount);
       const note = String(body.note || (actorIsAdmin === true ? "Administrator demo balance adjustment" : "Client demo balance adjustment")).trim().slice(0,240);
       if (!["set","topup"].includes(operation) || !Number.isFinite(amount) || amount < 0 || amount > 100000000 || (operation === "topup" && amount <= 0)) {
-        return json({ error: "Enter a valid demo balance amount between 0 and 100,000,000." }, 400);
+        return json({ error: "Enter a valid demo balance amount between 0 and 100,000,000." }, 400, req.headers.get("Origin"));
       }
       if (operation === "set") {
         const { data: openTrades, error: openTradesError } = await admin.from("bb_paper_execution_trades")
           .select("id").eq("paper_account_id", ledger.id).eq("user_id", targetUserId).eq("status", "OPEN").limit(1);
         if (openTradesError) throw openTradesError;
-        if ((openTrades || []).length) return json({ error: "Close all open Demo positions before resetting the balance. Top-up remains available." }, 409);
+        if ((openTrades || []).length) return json({ error: "Close all open Demo positions before resetting the balance. Top-up remains available." }, 409, req.headers.get("Origin"));
       }
       const { data: adjustment, error: adjustmentError } = await admin.rpc("bb_paper_adjust_demo_balance", {
         p_actor_id: user.id, p_user_id: targetUserId, p_account_id: accountId,
         p_operation: operation, p_amount: amount, p_note: note || "Demo balance adjustment"
       });
       if (adjustmentError) throw adjustmentError;
-      return json(adjustment, 200);
+      return json(adjustment, 200, req.headers.get("Origin"));
     }
 
     if (action === "status" || action === "refresh") {
@@ -149,12 +153,13 @@ Deno.serve(async (req: Request) => {
       if (tradesError) throw tradesError;
       const open = (trades || []).filter((t: any) => t.status === "OPEN");
       const prices: Record<string, number> = {};
-      for (const s of [...new Set(open.map((t: any) => t.symbol))] as string[]) {
+      const symbols = [...new Set(open.map((t: any) => t.symbol))] as string[];
+      await Promise.all(symbols.map(async (s) => {
         try { prices[s] = await quoteFor(s, url, anon); } catch (_) { /* stale quote fails closed for mark updates */ }
-      }
-      for (const t of open) {
+      }));
+      await Promise.all(open.map(async (t: any) => {
         const mid = prices[t.symbol];
-        if (!(mid > 0)) continue;
+        if (!(mid > 0)) return;
         const side = t.side;
         let stopLoss = Number(t.stop_loss);
         const trailing = Number(t.trailing_distance || 0);
@@ -185,7 +190,7 @@ Deno.serve(async (req: Request) => {
             .eq("id", t.id).eq("paper_account_id", ledger.id).eq("status", "OPEN");
           if (error) throw error;
         }
-      }
+      }));
       const [{ data: freshLedger, error: freshLedgerError }, { data: freshTrades, error: freshTradesError }] = await Promise.all([
         admin.from("bb_paper_execution_accounts").select("*").eq("id", ledger.id).single(),
         admin.from("bb_paper_execution_trades").select("*").eq("paper_account_id", ledger.id).eq("user_id", user.id).order("opened_at", { ascending: false }).limit(500)
@@ -193,13 +198,13 @@ Deno.serve(async (req: Request) => {
       if (freshLedgerError || freshTradesError) throw freshLedgerError || freshTradesError;
       return json({ account: { id: accountId, account_mode: mode, currency: account?.currency || "USD" },
         execution: { mode: "PAPER", label: "Paper execution · testing only", broker_routing: false, paper_enabled: true },
-        ledger: freshLedger, trades: freshTrades || [], prices, generated_at: new Date().toISOString() });
+        ledger: freshLedger, trades: freshTrades || [], prices, generated_at: new Date().toISOString() }, req.headers.get("Origin"));
     }
 
     if (action === "open") {
       const source = String(body.source || "MANUAL");
       if (source.toUpperCase().startsWith("AI") && ledger.auto_enabled !== true) {
-        return json({ error: "AI automation is not enabled for this account.", code: "AUTO_DISABLED" }, 423);
+        return json({ error: "AI automation is not enabled for this account.", code: "AUTO_DISABLED" }, 423, req.headers.get("Origin"));
       }
       const symbol = String(body.symbol || "");
       const normalized = normalize(symbol);
@@ -207,14 +212,14 @@ Deno.serve(async (req: Request) => {
       const quantity = num(body.quantity);
       const sl = num(body.stop_loss);
       const tp = body.take_profit == null || body.take_profit === "" ? null : num(body.take_profit);
-      if (!allowed.has(normalized)) return json({ error: "Instrument is not enabled for this paper engine." }, 400);
-      if (!["BUY","SELL"].includes(side) || quantity <= 0) return json({ error: "Invalid side or quantity." }, 400);
+      if (!allowed.has(normalized)) return json({ error: "Instrument is not enabled for this paper engine." }, 400, req.headers.get("Origin"));
+      if (!["BUY","SELL"].includes(side) || quantity <= 0) return json({ error: "Invalid side or quantity." }, 400, req.headers.get("Origin"));
       const mid = await quoteFor(normalized, url, anon);
       const c = costs(normalized, side, quantity, mid);
       const trailingDistance = body.trailing_distance == null ? 0 : num(body.trailing_distance);
-      if (trailingDistance < 0 || trailingDistance >= mid) return json({ error: "Trailing-stop distance must be positive and smaller than the current price." }, 400);
-      if ((side === "BUY" && sl >= c.fill) || (side === "SELL" && sl <= c.fill)) return json({ error: "Stop loss must be beyond the current market price." }, 400);
-      if (tp != null && ((side === "BUY" && tp <= c.fill) || (side === "SELL" && tp >= c.fill))) return json({ error: "Take profit must be beyond the current market price." }, 400);
+      if (trailingDistance < 0 || trailingDistance >= mid) return json({ error: "Trailing-stop distance must be positive and smaller than the current price." }, 400, req.headers.get("Origin"));
+      if ((side === "BUY" && sl >= c.fill) || (side === "SELL" && sl <= c.fill)) return json({ error: "Stop loss must be beyond the current market price." }, 400, req.headers.get("Origin"));
+      if (tp != null && ((side === "BUY" && tp <= c.fill) || (side === "SELL" && tp >= c.fill))) return json({ error: "Take profit must be beyond the current market price." }, 400, req.headers.get("Origin"));
       const { data, error } = await admin.rpc("bb_paper_open_position", {
         p: { user_id: user.id, account_id: accountId, paper_account_id: ledger.id, account_mode: mode, symbol: normalized,
           side, quantity, fill_price: c.fill, stop_loss: sl, take_profit: tp,
@@ -227,15 +232,16 @@ Deno.serve(async (req: Request) => {
           .update({ trailing_distance: trailingDistance }).eq("id", data.trade.id).eq("paper_account_id", ledger.id);
         if (trailingError) throw trailingError;
       }
-      return json({ success: true, ...data, quote: mid, execution: { mode: "PAPER", broker_routing: false } });
+      return json({ success: true, ...data, quote: mid, execution: { mode: "PAPER", broker_routing: false } }, req.headers.get("Origin"));
     }
 
     if (action === "close") {
       const tradeId = String(body.trade_id || "");
-      const { data: trade, error: tradeError } = await auth.from("bb_paper_execution_trades")
-        .select("id,symbol,side,quantity").eq("id", tradeId).eq("paper_account_id", ledger.id).eq("status","OPEN").maybeSingle();
+      const { data: trade, error: tradeError } = await admin.from("bb_paper_execution_trades")
+        .select("id,symbol,side,quantity").eq("id", tradeId).eq("paper_account_id", ledger.id)
+        .eq("user_id", targetUserId).eq("status", "OPEN").maybeSingle();
       if (tradeError) throw tradeError;
-      if (!trade) return json({ error: "Open paper position not found." }, 404);
+      if (!trade) return json({ error: "Open paper position not found." }, 404, req.headers.get("Origin"));
       const mid = await quoteFor(trade.symbol, url, anon);
       const c = costs(trade.symbol, trade.side === "BUY" ? "SELL" : "BUY", Number(trade.quantity), mid);
       const { data, error } = await admin.rpc("bb_paper_close_position", {
@@ -244,7 +250,7 @@ Deno.serve(async (req: Request) => {
           reason: String(body.reason || "MANUAL CLOSE").slice(0,100) }
       });
       if (error) throw error;
-      return json({ success: true, ...data, quote: mid, execution: { mode: "PAPER", broker_routing: false } });
+      return json({ success: true, ...data, quote: mid, execution: { mode: "PAPER", broker_routing: false } }, req.headers.get("Origin"));
     }
 
     if (action === "auto_toggle") {
@@ -253,34 +259,34 @@ Deno.serve(async (req: Request) => {
         .update({ auto_enabled: enabled, emergency_stop: enabled ? false : ledger.emergency_stop, updated_at: new Date().toISOString() })
         .eq("id", ledger.id).eq("user_id", user.id);
       if (error) throw error;
-      return json({ success: true, auto_enabled: enabled, execution_mode: "PAPER" });
+      return json({ success: true, auto_enabled: enabled, execution_mode: "PAPER" }, req.headers.get("Origin"));
     }
     if (action === "stop") {
       const { error } = await admin.from("bb_paper_execution_accounts")
         .update({ auto_enabled: false, emergency_stop: true, updated_at: new Date().toISOString() })
         .eq("id", ledger.id).eq("user_id", user.id);
       if (error) throw error;
-      return json({ success: true, emergency_stop: true, auto_enabled: false });
+      return json({ success: true, emergency_stop: true, auto_enabled: false }, req.headers.get("Origin"));
     }
     if (action === "modify") {
       const tradeId = String(body.trade_id || "");
       const { data: trade, error: tradeError } = await auth.from("bb_paper_execution_trades")
         .select("id,side,mark_price,entry_price").eq("id", tradeId).eq("paper_account_id", ledger.id).eq("status","OPEN").maybeSingle();
       if (tradeError) throw tradeError;
-      if (!trade) return json({ error: "Open paper position not found." }, 404);
+      if (!trade) return json({ error: "Open paper position not found." }, 404, req.headers.get("Origin"));
       const sl = num(body.stop_loss);
       const tp = body.take_profit == null || body.take_profit === "" ? null : num(body.take_profit);
       const current = Number(trade.mark_price || trade.entry_price);
-      if ((trade.side === "BUY" && sl >= current) || (trade.side === "SELL" && sl <= current)) return json({ error: "Invalid stop loss." }, 400);
-      if (tp != null && ((trade.side === "BUY" && tp <= current) || (trade.side === "SELL" && tp >= current))) return json({ error: "Invalid take profit." }, 400);
+      if ((trade.side === "BUY" && sl >= current) || (trade.side === "SELL" && sl <= current)) return json({ error: "Invalid stop loss." }, 400, req.headers.get("Origin"));
+      if (tp != null && ((trade.side === "BUY" && tp <= current) || (trade.side === "SELL" && tp >= current))) return json({ error: "Invalid take profit." }, 400, req.headers.get("Origin"));
       const { error } = await admin.from("bb_paper_execution_trades").update({ stop_loss: sl, take_profit: tp })
         .eq("id", tradeId).eq("paper_account_id", ledger.id).eq("status","OPEN");
       if (error) throw error;
-      return json({ success: true });
+      return json({ success: true }, req.headers.get("Origin"));
     }
-    return json({ error: "Unsupported action." }, 400);
+    return json({ error: "Unsupported action." }, 400, req.headers.get("Origin"));
   } catch (e) {
     console.error("paper-execution:", e);
-    return json({ error: e instanceof Error ? e.message : "Paper execution error." }, 400);
+    return json({ error: e instanceof Error ? e.message : "Paper execution error." }, 400, req.headers.get("Origin"));
   }
 });
