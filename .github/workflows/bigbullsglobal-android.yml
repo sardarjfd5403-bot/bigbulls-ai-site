@@ -34,7 +34,7 @@ jobs:
           npm audit --json > npm-audit.json || true
           node -e 'const a=require("./npm-audit.json"); for (const [name,v] of Object.entries(a.vulnerabilities || {})) console.log(JSON.stringify({name,severity:v.severity,range:v.range,fixAvailable:v.fixAvailable}))'
       - name: Set embedded Android build number
-        run: sed -i "s/android-build-46/android-build-${GITHUB_RUN_NUMBER}/g" android-app/www/app.js
+        run: sed -i "s/android-build-46/android-build-${GITHUB_RUN_NUMBER}/g" www/app.js
       - name: Bundle web app and native biometric plugin
         working-directory: android-app
         run: npm run build:web
