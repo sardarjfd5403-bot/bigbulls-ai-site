@@ -3,7 +3,7 @@ const URL="https://ztiiyulusburxjkpcfxu.supabase.co";
 const KEY="sb_publishable_5hDwqvbcUHeSJdXFHf9ugw_VPYGN4J_";
 const root=document.getElementById("auth-content"),q=new URLSearchParams(location.search);
 let mode=["login","signup","reset","forgot"].includes(q.get("mode"))?q.get("mode"):"login",sb,redirecting=false;
-const esc=s=>String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;");function msg(t,bad=false){let n=root.querySelector("[data-msg]");if(!n){n=document.createElement("div");n.dataset.msg="";root.append(n)}n.className="auth-message"+(bad?" error":"");n.textContent=t}
+const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/\'/g,"&#39;");function msg(t,bad=false){let n=root.querySelector("[data-msg]");if(!n){n=document.createElement("div");n.dataset.msg="";root.append(n)}n.className="auth-message"+(bad?" error":"");n.textContent=t}
 function tabs(){document.getElementById("tab-login").classList.toggle("active",mode==="login");document.getElementById("tab-signup").classList.toggle("active",mode==="signup")}
 function verificationNotice(email,text="Check your inbox and confirm your email before logging in."){msg(text+" Email: "+email);let n=root.querySelector("[data-msg]");const b=document.createElement("button");b.type="button";b.className="auth-submit";b.style.marginTop="12px";b.textContent="Resend confirmation email";b.addEventListener("click",async()=>{b.disabled=true;b.textContent="Sending…";try{const {error}=await sb.auth.resend({type:"signup",email,options:{emailRedirectTo:location.origin+location.pathname+"?mode=login&verified=1"}});if(error)throw error;b.textContent="Confirmation email resent";}catch(e){b.disabled=false;b.textContent="Resend confirmation email";msg(e.message||"Could not resend confirmation email.",true)}});n.appendChild(document.createElement("br"));n.appendChild(b)}
 function render(){tabs();
@@ -13,10 +13,10 @@ function render(){tabs();
  else{root.innerHTML='<h2>Welcome back</h2><p class="auth-subtitle">Sign in to continue to your secure client portal.</p><form class="auth-form" id="login"><label>Email address<input name="email" type="email" autocomplete="username" required placeholder="you@example.com"></label><label>Password<input name="password" type="password" autocomplete="current-password" required></label><button type="submit" class="auth-submit">Secure login →</button></form><div class="auth-links"><button type="button" data-mode="signup">Create an account</button><button type="button" data-mode="forgot">Forgot password?</button></div><div data-msg></div>'}
 }
 function portal(){if(redirecting)return;redirecting=true;const next=q.get("next");const destination=next==="terminal.html"?"terminal.html"+(location.search.includes("account_id=")?"?"+new URLSearchParams(location.search).get("account_id"):""):"index.html#dashboard";location.replace(destination)}
-document.addEventListener("click",e=>{const target=e.target instanceof Element?e.target:null,b=target?.closest("[data-mode]");if(b){mode=b.dataset.mode;render()}});
-document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target instanceof HTMLInputElement&&["login","signup"].includes(e.target.form?.id))e.preventDefault()},true);
+document.addEventListener("click",e=>{const target=e.target instanceof Element?e.target:null,b=target?target.closest("[data-mode]"):null;if(b){mode=b.dataset.mode;render()}});
+document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target instanceof HTMLInputElement&&["login","signup"].includes((e.target.form&&e.target.form.id)))e.preventDefault()},true);
 document.addEventListener("submit",async e=>{
- const f=e.target;if(!["login","signup","forgot","reset"].includes(f?.id))return;
+ const f=e.target;if(!["login","signup","forgot","reset"].includes(f&&f.id))return;
  e.preventDefault();
  if(["login","signup"].includes(f.id)){const submit=f.querySelector('button[type="submit"]');if(!e.isTrusted||e.submitter!==submit)return;}
  const b=f.querySelector('button[type="submit"]'),d=new FormData(f);if(!b)return;
@@ -29,11 +29,11 @@ document.addEventListener("submit",async e=>{
  }catch(err){msg(err.message||"Authentication failed. Please retry.",true);b.disabled=false;b.textContent=f.id==="login"?"Secure login →":f.id==="signup"?"Create secure account →":f.id==="forgot"?"Send reset link":"Update password"}
 });
 (async()=>{try{
- if(!window.supabase?.createClient)throw new Error("Authentication library failed to load. Refresh the page.");
+ if(!window.supabase&&window.supabase.createClient)throw new Error("Authentication library failed to load. Refresh the page.");
  sb=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
  const {data,error}=await sb.auth.getSession();if(error)throw error;
- if(data?.session&&q.get("verified")==="1"){await sb.auth.signOut();render();msg("Your email has been successfully verified. Please log in with your email and password.");return}
- if(data?.session&&mode!=="reset"){portal();return}
+ if(data&&data.session&&q.get("verified")==="1"){await sb.auth.signOut();render();msg("Your email has been successfully verified. Please log in with your email and password.");return}
+ if(data&&data.session&&mode!=="reset"){portal();return}
  sb.auth.onAuthStateChange((event,session)=>{if(session&&["SIGNED_IN","TOKEN_REFRESHED","INITIAL_SESSION"].includes(event)&&mode!=="reset")portal()});
  render();
  if(q.get("verified")==="1")msg("Email verified. Please log in to access your client portal.");
