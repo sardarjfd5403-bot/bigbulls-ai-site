@@ -140,7 +140,7 @@ Deno.serve(async (req: Request) => {
         p_operation: operation, p_amount: amount, p_note: note || "Demo balance adjustment"
       });
       if (adjustmentError) throw adjustmentError;
-      return json(adjustment);
+      return json(adjustment, 200);
     }
 
     if (action === "status" || action === "refresh") {
