@@ -1,1 +1,34 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 200" role="img" aria-label="BIGBULLS golden bull head"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff0a6"/><stop offset=".35" stop-color="#f8c64b"/><stop offset=".7" stop-color="#b87913"/><stop offset="1" stop-color="#ffe28a"/></linearGradient></defs><path fill="url(#g)" stroke="#8d5b0b" stroke-width="3" stroke-linejoin="round" d="M120 22C95 12 77 21 58 38 39 54 22 57 8 46c8 29 28 45 55 42-13 15-19 33-18 52 2 29 25 49 75 55 50-6 73-26 75-55 1-19-5-37-18-52 27 3 47-13 55-42-14 11-31 8-50-8-19-17-37-26-62-16z"/><path fill="#17243c" d="M76 89c13-9 28-9 39 2-10 11-26 14-39-2zm88 0c-13-9-28-9-39 2 10 11 26 14 39-2z"/><path fill="#fff0bd" d="M87 89l24 4-20 5zm66 0l-24 4 20 5z"/><path fill="url(#g)" stroke="#8d5b0b" stroke-width="2" d="M91 117c8-9 18-12 29-12s21 3 29 12l-8 30c-5 11-13 17-21 17s-16-6-21-17z"/><path fill="#5d3510" d="M104 133q8-8 16 0 8-8 16 0l-5 9h-22z"/><path fill="none" stroke="#8d5b0b" stroke-width="4" stroke-linecap="round" d="M66 108q-10 28 5 48m103-48q10 28-5 48M98 168q22 12 44 0"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 520" role="img" aria-label="BIGBULLS detailed golden bull head">
+<defs>
+ <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff8c9"/><stop offset=".18" stop-color="#ffd85b"/><stop offset=".42" stop-color="#b96b08"/><stop offset=".62" stop-color="#fff0a0"/><stop offset=".82" stop-color="#d18a16"/><stop offset="1" stop-color="#7b4307"/></linearGradient>
+ <linearGradient id="shade" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffed9b"/><stop offset=".48" stop-color="#b8750e"/><stop offset="1" stop-color="#613707"/></linearGradient>
+ <radialGradient id="face"><stop stop-color="#ffe58a"/><stop offset=".56" stop-color="#d99822"/><stop offset="1" stop-color="#75410a"/></radialGradient>
+ <filter id="glow"><feGaussianBlur stdDeviation="5"/></filter>
+</defs>
+<path d="M300 72C239 23 185 30 137 76 91 120 54 126 22 101c15 62 57 103 125 102-36 34-53 77-47 130 8 72 73 125 200 153 127-28 192-81 200-153 6-53-11-96-47-130 68 1 110-40 125-102-32 25-69 19-115-25-48-46-102-53-163-4Z" fill="#e9a92f" opacity=".45" filter="url(#glow)"/>
+<!-- sweeping horns -->
+<path d="M230 118C164 42 91 32 34 82c40 2 65 26 75 69 10 41 40 62 91 56l55-42-25-47Z" fill="url(#gold)" stroke="#75440a" stroke-width="8" stroke-linejoin="round"/>
+<path d="M370 118c66-76 139-86 196-36-40 2-65 26-75 69-10 41-40 62-91 56l-55-42 25-47Z" fill="url(#gold)" stroke="#75440a" stroke-width="8" stroke-linejoin="round"/>
+<path d="M50 87c48-12 88 14 113 72m387-72c-48-12-88 14-113 72" fill="none" stroke="#fff2b4" stroke-width="8" stroke-linecap="round"/>
+<!-- ears -->
+<path d="M165 173c-65-40-111-30-137 13 40 5 70 31 93 74l64-24-20-63Zm270 0c65-40 111-30 137 13-40 5-70 31-93 74l-64-24 20-63Z" fill="url(#shade)" stroke="#75440a" stroke-width="8"/>
+<path d="M64 194q45 5 78 45m394-45q-45 5-78 45" fill="none" stroke="#ffdf76" stroke-width="7"/>
+<!-- head silhouette -->
+<path d="M188 130q42-48 112-35 70-13 112 35l37 97-23 130q-27 75-126 112-99-37-126-112l-23-130 37-97Z" fill="url(#face)" stroke="#75440a" stroke-width="9" stroke-linejoin="round"/>
+<!-- brow ridges -->
+<path d="M166 213q54-53 119-8-36 44-105 40l-14-32Zm268 0q-54-53-119-8 36 44 105 40l14-32Z" fill="url(#gold)" stroke="#75440a" stroke-width="7"/>
+<!-- eyes -->
+<path d="M184 251q43-35 86 0-39 38-86 0Zm232 0q-43-35-86 0 39 38 86 0Z" fill="#1a1a1a" stroke="#ffdc70" stroke-width="7"/>
+<ellipse cx="228" cy="251" rx="10" ry="16" fill="#ffc943"/><ellipse cx="372" cy="251" rx="10" ry="16" fill="#ffc943"/>
+<path d="M199 254l30-7m172 7-30-7" stroke="#fff2b9" stroke-width="4" stroke-linecap="round"/>
+<!-- bridge and cheek armor -->
+<path d="M266 220q34-31 68 0l28 125q-24 50-62 58-38-8-62-58l28-125Z" fill="url(#gold)" stroke="#8c540d" stroke-width="6"/>
+<path d="M177 292q34 13 69 0m177 0q-34 13-69 0M175 324q30 20 66 14m184-14q-30 20-66 14" fill="none" stroke="#ffdf7d" stroke-width="8" stroke-linecap="round"/>
+<!-- muzzle -->
+<path d="M215 352q85-55 170 0l-15 68q-27 39-70 44-43-5-70-44l-15-68Z" fill="url(#gold)" stroke="#75440a" stroke-width="8"/>
+<path d="M240 374q22-20 43 0-6 26-24 25-16-2-19-25Zm120 0q-22-20-43 0 6 26 24 25 16-2 19-25Z" fill="#4a2608" stroke="#ffedaa" stroke-width="5"/>
+<path d="M268 431q32 18 64 0" fill="none" stroke="#6c3b08" stroke-width="8" stroke-linecap="round"/>
+<!-- sculpted highlights -->
+<path d="M300 116q-30 45-21 91m21-91q30 45 21 91M199 151q-20 31-14 57m216-57q20 31 14 57M153 278q-8 52 22 90m272-90q8 52-22 90" fill="none" stroke="#fff0a4" stroke-width="6" stroke-linecap="round" opacity=".8"/>
+<path d="M300 472v24m-15-16 15 16 15-16" fill="none" stroke="#b87913" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
