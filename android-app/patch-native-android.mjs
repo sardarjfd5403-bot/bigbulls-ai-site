@@ -59,6 +59,15 @@ if (fs.existsSync(styles)) {
   fs.writeFileSync(styles, x);
 }
 
+
+const appGradle = path.join(root, "app/build.gradle");
+if (fs.existsSync(appGradle)) {
+  let gradle = fs.readFileSync(appGradle, "utf8");
+  const buildNumber = Number(process.env.GITHUB_RUN_NUMBER || 1);
+  gradle = gradle.replace(/versionCode\\s+\\d+/, "versionCode " + buildNumber);
+  gradle = gradle.replace(/versionName\\s+["'][^"']+["']/, 'versionName "1.' + buildNumber + '"');
+  fs.writeFileSync(appGradle, gradle);
+}
 console.log("Android manifest hardening verified: HTTPS-only traffic, backup disabled, biometric permission, hardware acceleration.");
 
 const javaRoot = path.join(root, "app/src/main/java");
