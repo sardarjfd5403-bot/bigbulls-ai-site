@@ -9,7 +9,7 @@ let db=null,user=null,profile=null,accounts=[],activeAccount=null,realtime=null,
 const symbols={EURUSD:"EUR/USD",GBPUSD:"GBP/USD",USDJPY:"USD/JPY",XAUUSD:"XAU/USD",BTCUSDT:"BTC",ETHUSDT:"ETH/USD",SOLUSDT:"SOL/USD",XRPUSDT:"XRP/USD",BNBUSDT:"BNB/USD",US30:"US30",USTEC:"USTEC",US500:"US500",DE30:"DE30",UK100:"UK100",JP225:"JP225",USOIL:"USOIL",UKOIL:"UKOIL",NATGAS:"NATGASUSDT"};
 
 const ANDROID_BUILD_TAG="android-build-46";
-const ANDROID_RELEASES_API="https://api.github.com/repos/sardarjfd5403-bot/bigbulls-ai-site/releases?per_page=1";
+const ANDROID_RELEASES_API="https://api.github.com/repos/sardarjfd5403-bot/bigbulls-ai-site/releases?per_page=20";
 function showAppUpdate(release){
  if(document.getElementById("bbUpdateOverlay"))return;
  const overlay=document.createElement("div");overlay.id="bbUpdateOverlay";
@@ -27,7 +27,7 @@ async function checkForAppUpdate(){
  try{
   const response=await fetch(ANDROID_RELEASES_API,{cache:"no-store",headers:{Accept:"application/vnd.github+json"}});
   if(!response.ok)throw Error("Release check unavailable");
-  const releases=await response.json(),release=Array.isArray(releases)?releases[0]:null;
+  const releases=await response.json(),release=Array.isArray(releases)?releases.filter(r=>!r.draft&&!r.prerelease&&/android-build-\\d+$/.test(r.tag_name||"")).sort((a,b)=>Number((String(b.tag_name).match(/(\\d+)$/)||[])[1]||0)-Number((String(a.tag_name).match(/(\\d+)$/)||[])[1]||0))[0]:releases;
   if(!release||release.draft||release.prerelease||!release.tag_name)return;
   const current=Number((ANDROID_BUILD_TAG.match(/(\\d+)$/)||[])[1]||0),latest=Number((String(release.tag_name).match(/(\\d+)$/)||[])[1]||0);
   if(latest>current&&Array.isArray(release.assets)&&release.assets.some(a=>a.name==="BIGBULLS-Android.apk"))showAppUpdate(release);
