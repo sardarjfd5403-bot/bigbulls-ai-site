@@ -9,6 +9,9 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+concurrency:
+  group: bigbulls-android-release
+  cancel-in-progress: false
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -64,7 +67,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.android/debug.keystore
-          key: bigbulls-android-debug-signing-v1
+          key: bigbulls-android-debug-signing-v2
       - name: Build debug APK
         run: cd android && ./gradlew --no-daemon assembleDebug
       - name: Publish latest public Android APK release
