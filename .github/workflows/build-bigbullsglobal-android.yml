@@ -7,6 +7,8 @@ on:
   push:
     branches:
       - feature/bigbullsglobal-android-app
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -60,3 +62,11 @@ jobs:
           name: BigbullsGlobal-test-apk
           path: android-app/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+      - name: Publish versioned APK release
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p release
+          cp android-app/android/app/build/outputs/apk/debug/app-debug.apk release/BIGBULLS-Android.apk
+          gh release create android-build-46 release/BIGBULLS-Android.apk --repo "${{ github.repository }}" --title "BIGBULLS Android Update 46" --notes "BIGBULLS Android build 46. Includes in-app update availability popup and Demo balance top-up."
