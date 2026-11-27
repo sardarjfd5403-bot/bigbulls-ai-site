@@ -30,13 +30,22 @@ document.addEventListener("submit",async e=>{
 });
 (async()=>{try{
  if(!window.supabase||typeof window.supabase.createClient!=="function")throw new Error("Authentication library failed to load. Refresh the page.");
- sb=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+ sb=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+ // Handle both Supabase PKCE (?code=...) and implicit-token (#access_token=...) recovery callbacks.
+ const callbackParams=new URLSearchParams(location.search),callbackHash=new URLSearchParams(location.hash.replace(/^#/,""));
+ if(mode==="reset"&&callbackParams.has("code")){
+  const {error:exchangeError}=await sb.auth.exchangeCodeForSession(callbackParams.get("code"));if(exchangeError)throw exchangeError;
+  history.replaceState(null,"",location.pathname+"?mode=reset");
+ }else if(mode==="reset"&&callbackHash.has("access_token")&&callbackHash.has("refresh_token")){
+  const {error:setError}=await sb.auth.setSession({access_token:callbackHash.get("access_token"),refresh_token:callbackHash.get("refresh_token")});if(setError)throw setError;
+  history.replaceState(null,"",location.pathname+"?mode=reset");
+ }
  const {data,error}=await sb.auth.getSession();if(error)throw error;
  if(data&&data.session&&q.get("verified")==="1"){await sb.auth.signOut();render();msg("Your email has been successfully verified. Please log in with your email and password.");return}
  if(data&&data.session&&mode!=="reset"){portal();return}
  sb.auth.onAuthStateChange((event,session)=>{if(session&&["SIGNED_IN","TOKEN_REFRESHED","INITIAL_SESSION"].includes(event)&&mode!=="reset")portal()});
  render();
  if(q.get("verified")==="1")msg("Email verified. Please log in to access your client portal.");
- if(mode==="reset"&&!location.hash.includes("access_token"))msg("Open the password reset link from your email to continue.",true);
+ if(mode==="reset"&&!(data&&data.session))msg("This reset link is invalid or expired. Request a fresh password reset email and open the newest link.",true);
 }catch(e){root.innerHTML='<div class="auth-message error">'+esc(e.message)+'</div>'}})();
 })();
