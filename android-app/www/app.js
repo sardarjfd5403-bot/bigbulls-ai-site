@@ -27,9 +27,9 @@ async function checkForAppUpdate(){
  try{
   const response=await fetch(ANDROID_RELEASES_API,{cache:"no-store",headers:{Accept:"application/vnd.github+json"}});
   if(!response.ok)throw Error("Release check unavailable");
-  const releases=await response.json(),release=Array.isArray(releases)?releases.filter(r=>!r.draft&&!r.prerelease&&/android-build-\\d+$/.test(r.tag_name||"")).sort((a,b)=>Number((String(b.tag_name).match(/(\\d+)$/)||[])[1]||0)-Number((String(a.tag_name).match(/(\\d+)$/)||[])[1]||0))[0]:releases;
+  const releases=await response.json(),release=Array.isArray(releases)?releases.filter(r=>!r.draft&&!r.prerelease&&/android-build-\d+$/.test(r.tag_name||"")).sort((a,b)=>Number((String(b.tag_name).match(/(\d+)$/)||[])[1]||0)-Number((String(a.tag_name).match(/(\d+)$/)||[])[1]||0))[0]:releases;
   if(!release||release.draft||release.prerelease||!release.tag_name)return;
-  const current=Number((ANDROID_BUILD_TAG.match(/(\\d+)$/)||[])[1]||0),latest=Number((String(release.tag_name).match(/(\\d+)$/)||[])[1]||0);
+  const current=Number((ANDROID_BUILD_TAG.match(/(\d+)$/)||[])[1]||0),latest=Number((String(release.tag_name).match(/(\d+)$/)||[])[1]||0);
   if(latest>current&&Array.isArray(release.assets)&&release.assets.some(a=>a.name==="BIGBULLS-Android.apk"))showAppUpdate(release);
  }catch(error){console.info("[BIGBULLS UPDATE] Check skipped:",error.message);}
 }
