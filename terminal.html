@@ -121,7 +121,7 @@ html.bb-auth-pending #bb-auth-boot{display:flex}
 #bb-auth-boot .bb-auth-spinner{width:28px;height:28px;border:3px solid #dbeafe;border-top-color:#2979ff;border-radius:50%;animation:bb-auth-spin .8s linear infinite}
 @keyframes bb-auth-spin{to{transform:rotate(360deg)}}
 </style>
-  <script async src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
   <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="terminal-theme.css?v=20261114-terminal-glitch-close-fix">
 <script id="bb-cache-cleanup">
@@ -2657,8 +2657,11 @@ function bbStartBackgroundLoops(c){
  window.addEventListener('focus',()=>{void hydrateFromServer('terminal focus');});
  window.addEventListener('pageshow',()=>{void hydrateFromServer('pageshow');});
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)void hydrateFromServer('visibility restore');});
- setInterval(()=>{if(!document.hidden)quotes().catch(e=>console.warn('Quote refresh:',e));},15000);
- setInterval(()=>{if(document.hidden)return;const activeQuote=state.instruments[state.selectedSymbol]?.quoteReceivedAt||0;if(!activeQuote||Date.now()-activeQuote>3500)void refreshSelectedQuote();if(state.activeTab==='trade'&&(state.viewportMode==='desktop'||state.tradeSubView==='chart'))candles().catch(e=>console.warn('Chart refresh:',e.message));},2500);
+ setInterval(()=>{if(!document.hidden)quotes().catch(e=>console.warn('Quote refresh:',e));},10000);
+ // Keep the streaming connection alive; retry startup if the SignalR library or network was late.
+ setInterval(()=>{if(document.hidden)return;const connected=!!(biQuoteConnection&&window.signalR?.HubConnectionState?.Connected===biQuoteConnection.state);if(!connected)startBiQuoteRealtime().catch(e=>console.warn('BiQuote stream retry:',e));},5000);
+ // One-second safety poll only when the selected instrument has not received a recent stream tick.
+ setInterval(()=>{if(document.hidden)return;const activeQuote=state.instruments[state.selectedSymbol]?.quoteReceivedAt||0;if(!activeQuote||Date.now()-activeQuote>1500)void refreshSelectedQuote();if(state.activeTab==='trade'&&(state.viewportMode==='desktop'||state.tradeSubView==='chart')){if(!state.instruments[state.selectedSymbol]?.candles?.length)candles().catch(e=>console.warn('Chart refresh:',e.message));}},1000);
  setInterval(async()=>{if(document.hidden)return;try{const current=getActiveAccount()?.backendId||null;await accounts(current);renderApp();await refresh(true);await window.bbLoadAiAutoTradeSetting();}catch(e){console.warn('Account balance refresh:',e);}},10000);
 }
 async function start(){
